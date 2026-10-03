@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reserve Records – Sorting Decimals</title>
+<style>
+:root{--forest:#1f3d2b;--moss:#3f6b45;--parch:#f4eedb;--card:#fffdf4;--edge:#cdbf98;--ink:#22303a;--amber:#e0a526;--orange:#c4501f;--blue:#2a5676;--zero:#17805f;--zerobg:#d9f1e4;--bad:#c0392b}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);min-height:100vh;
+ background:radial-gradient(circle at 15% 0%,#fbf7ea 0,transparent 55%),linear-gradient(180deg,#efe7cd,#e6dcba)}
+header{background:var(--forest);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 20px;flex-wrap:wrap}
+header h1{font-size:1.4rem;margin:0;flex:1;min-width:220px}
+header h1 small{display:block;font-size:.8rem;font-weight:400;opacity:.8}
+.pill{background:rgba(255,255,255,.14);padding:6px 14px;border-radius:999px;font-weight:700;white-space:nowrap}
+.hb{border:0;border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;background:#e8d9a0;color:var(--forest)}
+.hb:hover{background:#f3e7b8}
+main{display:grid;grid-template-columns:minmax(300px,430px) minmax(440px,620px);gap:24px;justify-content:center;padding:18px}
+@media(max-width:960px){main{grid-template-columns:1fr}}
+.sheet{background:#fff;border:2px solid var(--edge);border-radius:16px;padding:14px 18px;display:flex;gap:16px;align-items:center;box-shadow:0 3px 0 #d8cba4}
+.sico{font-size:3.2rem;line-height:1}
+.sheet h2{margin:0;font-size:1.6rem;color:var(--forest)}
+.sheet .meas{font-size:1.25rem;font-weight:700;color:var(--orange);text-transform:capitalize}
+.sheet .un{font-size:.95rem;color:#5a6a60}
+.story{margin:12px 2px;font-size:1.1rem;line-height:1.4}
+.steps{background:#fffbe8;border:2px dashed var(--edge);border-radius:12px;padding:12px 14px;font-size:1.08rem;line-height:1.45;min-height:70px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.btn{border:0;border-radius:12px;padding:14px 20px;font:inherit;font-size:1.1rem;font-weight:700;cursor:pointer;background:var(--moss);color:#fff;box-shadow:0 3px 0 #2b4d30}
+.btn.alt{background:#fff;color:var(--forest);border:2px solid var(--moss);box-shadow:none}
+.btn.go{background:var(--orange);box-shadow:0 3px 0 #94391a}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:active:not(:disabled){transform:translateY(2px)}
+.res{padding:14px 16px;border-radius:12px;background:#fff;border-left:7px solid;line-height:1.5}
+.res h3{margin:0 0 6px;font-size:1.3rem}
+.res.good{border-color:#2e9d62;background:#eaf8ef}
+.res.bad{border-color:var(--bad);background:#fdeeec}
+.res .ord{font-family:ui-monospace,Menlo,Consolas,"Courier New",monospace;font-size:1.05rem;background:rgba(255,255,255,.7);padding:6px 10px;border-radius:8px}
+.stage{min-width:0}
+.endlab{font-weight:700;color:#6b7a70;letter-spacing:.08em;font-size:.85rem;text-align:center;height:22px;visibility:hidden}
+[data-m=sort] ~ .endlab,[data-m=pick] ~ .endlab,[data-m=result] ~ .endlab{visibility:visible}
+.col{position:relative;--fs:36px}
+.col.init .card{transition:none}
+.card{position:absolute;left:0;right:0;background:var(--card);border:2px solid var(--edge);border-radius:12px;
+ box-shadow:0 3px 0 #d8cba4,0 6px 14px rgba(0,0,0,.08);user-select:none;-webkit-user-select:none;
+ transition:top .35s cubic-bezier(.3,.7,.3,1),box-shadow .2s,transform .2s,opacity .3s,border-color .2s,background .3s}
+.card.drag{transition:box-shadow .2s,transform .2s;z-index:20;box-shadow:0 14px 26px rgba(0,0,0,.28);transform:scale(1.02)}
+.area{position:absolute;left:58px;right:118px;top:0;bottom:0}
+.num{position:absolute;top:50%;transform:translateY(-50%);left:12px;white-space:nowrap;
+ font-family:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace;font-weight:700;font-size:var(--fs);line-height:1;
+ transition:left .9s ease}
+.al .num{left:calc(50% - (var(--il) + .5) * 1ch)}
+.num .pt{color:var(--orange)}
+.num.nodot .pt{display:none}
+.al .num.nodot .pt{display:inline;opacity:.3}
+.al .num .f{color:var(--blue)}
+.z b{color:var(--zero);background:var(--zerobg);border-radius:4px;font-weight:700;animation:pop .5s ease both}
+@keyframes pop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+.guide{position:absolute;top:-6px;bottom:-6px;left:calc(58px + (100% - 176px)/2);width:0;border-left:3px dashed rgba(196,80,31,.55);z-index:6;pointer-events:none;opacity:0;transition:opacity .8s}
+.al .guide{opacity:1}
+.unit{position:absolute;right:62px;top:50%;transform:translateY(-50%);font-weight:700;color:#6b7a70;font-size:1.1rem}
+.arr{position:absolute;right:10px;top:6px;bottom:6px;width:42px;display:none;flex-direction:column;gap:4px}
+.arr button{flex:1;border:0;border-radius:8px;background:var(--moss);color:#fff;font-size:1rem;cursor:pointer;padding:0}
+.arr button:disabled{opacity:.25;cursor:default}
+.grip{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.5rem;color:#a99a70;display:none;letter-spacing:-3px}
+[data-m=sort] .arr{display:flex}
+[data-m=sort] .grip{display:block}
+[data-m=sort] .card{cursor:grab;touch-action:none}
+[data-m=pick] .card{cursor:pointer}
+[data-m=pick] .card:hover{transform:translateY(-3px);border-color:var(--amber);box-shadow:0 0 0 4px rgba(224,165,38,.35)}
+.badge{position:absolute;top:-11px;right:62px;background:var(--amber);color:#3a2a00;font-weight:800;font-size:.8rem;padding:2px 10px;border-radius:999px;display:none;letter-spacing:.05em}
+.card.median{border-color:var(--amber);background:#fff7d6;box-shadow:0 0 0 5px rgba(224,165,38,.5)}
+.card.median .badge{display:block}
+.card.wrong{border-color:var(--bad);box-shadow:0 0 0 4px rgba(192,57,43,.3)}
+.card.wrong .badge{display:block;background:var(--bad);color:#fff}
+.card.dim{opacity:.55}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
+.confetti i{position:absolute;top:-20px;width:10px;height:16px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{top:105%;transform:rotate(720deg)}}
+@media(prefers-reduced-motion:reduce){.confetti{display:none}.num{transition:none}}
+dialog{border:0;border-radius:16px;padding:20px 24px;max-width:420px;box-shadow:0 10px 40px rgba(0,0,0,.35);font-family:inherit}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin-top:0}
+dialog fieldset{border:2px solid var(--edge);border-radius:10px;margin:0 0 12px}
+dialog label{display:block;margin:5px 0;font-size:1rem}
+dialog select{font:inherit;padding:4px}
+dialog menu{display:flex;gap:10px;justify-content:flex-end;padding:0;margin:14px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Reserve Records<small>Sorting decimals – find the median</small></h1>
+  <span class="pill" id="score">Correct: 0 / 0</span>
+  <span class="pill" id="streak">Streak: 0</span>
+  <button class="hb" id="bNew">New set</button>
+  <button class="hb" id="bSet">⚙ Settings</button>
+</header>
+
+<main>
+  <section>
+    <div class="sheet">
+      <div class="sico" id="sico">🦡</div>
+      <div>
+        <h2 id="sname">Badger</h2>
+        <div class="meas" id="smeas">body mass</div>
+        <div class="un" id="sunit"></div>
+      </div>
+    </div>
+    <p class="story" id="story"></p>
+    <div class="steps" id="steps" aria-live="polite"></div>
+    <div class="actions">
+      <button class="btn go" id="bAlign">Line up the decimal points</button>
+      <button class="btn alt" id="bZeros">Add zeros</button>
+      <button class="btn go" id="bDone">I've sorted them ✔</button>
+      <button class="btn alt" id="bBack">← Back to sorting</button>
+      <button class="btn go" id="bNext">Another go ➜</button>
+    </div>
+    <div id="resbox"></div>
+  </section>
+
+  <section class="stage">
+    <div class="endlab" id="topLab" style="visibility:hidden">▲ SMALLEST</div>
+    <div class="col init" id="col" data-m="raw"></div>
+    <div class="endlab" id="botLab" style="visibility:hidden;margin-top:8px">LARGEST ▼</div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h3>Settings</h3>
+    <fieldset><legend>Level</legend>
+      <label><input type="radio" name="level" value="1"> 1 – up to 2 decimal places</label>
+      <label><input type="radio" name="level" value="2"> 2 – up to 3 decimal places</label>
+      <label><input type="radio" name="level" value="3"> 3 – tricky: 3 d.p. with lots of traps</label>
+    </fieldset>
+    <fieldset><legend>Number of cards</legend>
+      <label><input type="radio" name="n" value="3"> 3</label>
+      <label><input type="radio" name="n" value="5"> 5 (usual)</label>
+      <label><input type="radio" name="n" value="7"> 7</label>
+    </fieldset>
+    <label>Animals:
+      <select id="grp">
+        <option value="all">All</option>
+        <option value="mammals">Mammals</option>
+        <option value="bats">Bats</option>
+        <option value="birds">Birds</option>
+        <option value="herps">Reptiles &amp; amphibians</option>
+      </select>
+    </label>
+    <menu>
+      <button class="btn alt" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn" value="ok">Save &amp; new set</button>
+    </menu>
+  </form>
+</dialog>
+
+<script>
+/*GEN*/
+// [species, icon, measure, unit, min, max, max d.p., group]  – typical adult UK ranges
+const DATA=[
+['Badger','🦡','body mass','kg',7,14,3,'mammals'],
+['Red fox','🦊','body mass','kg',4,8,3,'mammals'],
+['Hedgehog','🦔','body mass','kg',0.45,1.2,3,'mammals'],
+['Red squirrel','🐿️','body mass','kg',0.24,0.34,3,'mammals'],
+['Grey squirrel','🐿️','body mass','kg',0.4,0.7,3,'mammals'],
+['Otter','🦦','body mass','kg',5,12,3,'mammals'],
+['Brown hare','🐇','body mass','kg',2.8,4.8,3,'mammals'],
+['Rabbit','🐇','body mass','kg',1.2,2,3,'mammals'],
+['Pine marten','🐾','body mass','kg',0.9,2.2,3,'mammals'],
+['Weasel','🐾','body mass','g',45,130,2,'mammals'],
+['Common shrew','🐁','body mass','g',5,14,3,'mammals'],
+['Pygmy shrew','🐁','body mass','g',2.5,6,3,'mammals'],
+['Wood mouse','🐁','body mass','g',15,30,3,'mammals'],
+['Field vole','🐁','body mass','g',18,40,3,'mammals'],
+['Bank vole','🐁','body mass','g',15,35,3,'mammals'],
+['Harvest mouse','🐁','body mass','g',4,7,3,'mammals'],
+['Roe deer','🦌','body mass','kg',15,30,2,'mammals'],
+['Red deer hind','🦌','body mass','kg',85,125,1,'mammals'],
+['Grey seal (cow)','🦭','body mass','kg',100,190,1,'mammals'],
+['Harbour porpoise','🐬','body mass','kg',40,70,1,'mammals'],
+['Badger','🦡','head-and-body length','m',0.65,0.9,3,'mammals'],
+['Red fox','🦊','head-and-body length','m',0.6,0.9,3,'mammals'],
+['Hedgehog','🦔','body length','m',0.2,0.3,3,'mammals'],
+['Otter','🦦','head-and-body length','m',0.6,0.9,3,'mammals'],
+['Brown hare','🐇','head-and-body length','m',0.5,0.7,3,'mammals'],
+['Common pipistrelle','🦇','body mass','g',3.5,8.5,3,'bats'],
+["Daubenton's bat",'🦇','body mass','g',6,10,3,'bats'],
+['Noctule bat','🦇','body mass','g',20,40,3,'bats'],
+['Greater horseshoe bat','🦇','body mass','g',17,34,3,'bats'],
+['Common pipistrelle','🦇','wingspan','m',0.19,0.25,3,'bats'],
+['Brown long-eared bat','🦇','wingspan','m',0.23,0.285,3,'bats'],
+['Noctule bat','🦇','wingspan','m',0.32,0.4,3,'bats'],
+['Greater horseshoe bat','🦇','wingspan','m',0.35,0.4,3,'bats'],
+['Robin','🐦','body mass','g',14,20,3,'birds'],
+['Wren','🐦','body mass','g',8,13,3,'birds'],
+['Blue tit','🐦','body mass','g',9,12.5,3,'birds'],
+['Great tit','🐦','body mass','g',16,21,3,'birds'],
+['House sparrow','🐦','body mass','g',24,38,3,'birds'],
+['Blackbird','🐦','body mass','g',80,120,2,'birds'],
+['Song thrush','🐦','body mass','g',65,95,2,'birds'],
+['Barn owl','🦉','body mass','g',250,400,1,'birds'],
+['Tawny owl','🦉','body mass','g',350,600,1,'birds'],
+['Kestrel','🦅','body mass','g',140,260,1,'birds'],
+['Mallard','🦆','body mass','kg',0.9,1.4,3,'birds'],
+['Mute swan','🦢','body mass','kg',8,14,2,'birds'],
+['Blue tit','🐦','wingspan','m',0.17,0.2,3,'birds'],
+['Barn owl','🦉','wingspan','m',0.8,0.95,3,'birds'],
+['Kestrel','🦅','wingspan','m',0.68,0.78,3,'birds'],
+['Buzzard','🦅','wingspan','m',1.1,1.35,3,'birds'],
+['Red kite','🦅','wingspan','m',1.75,1.95,3,'birds'],
+['Mute swan','🦢','wingspan','m',2,2.4,3,'birds'],
+['Common frog','🐸','body length','m',0.06,0.09,3,'herps'],
+['Grass snake','🐍','length','m',0.6,1.1,3,'herps'],
+['Adder','🐍','length','m',0.5,0.7,3,'herps'],
+['Slow worm','🐍','length','m',0.3,0.45,3,'herps'],
+['Great crested newt','🦎','length','m',0.1,0.15,3,'herps']
+];
+function toEntry(a){return{sp:a[0],ico:a[1],meas:a[2],u:a[3],min:a[4],max:a[5],dp:a[6],grp:a[7]}}
+function rnd(a,b){return a+Math.random()*(b-a)}
+function fmt(x,d){let s=x.toFixed(d);if(s.indexOf('.')>=0)s=s.replace(/0+$/,'').replace(/\.$/,'');return s}
+function fracLen(s){const i=s.indexOf('.');return i<0?0:s.length-i-1}
+function pickDp(t){
+  const W={0:[1],1:[.2,.8],2:[.1,.35,.55],3:[.06,.2,.3,.44]}[t];let r=Math.random(),a=0;
+  for(let i=0;i<W.length;i++){a+=W[i];if(r<a)return i}return t;
+}
+function makeSet(e,n,level){
+  const levelMax=level===1?2:3, target=Math.min(levelMax,e.dp), need=level;
+  for(let t=0;t<800;t++){
+    const relax=Math.floor(t/200);
+    const w=(e.max-e.min)*(level===3?0.3:0.45);
+    const lo=rnd(e.min,e.max-w);
+    const arr=[],seen=new Set();let ok=true;
+    for(let i=0;i<n;i++){
+      let tries=0,s;
+      do{s=fmt(rnd(lo,lo+w),pickDp(target));tries++}
+      while((seen.has(+s)||+s<e.min||+s>e.max)&&tries<40);
+      if(seen.has(+s)||+s<e.min||+s>e.max){ok=false;break}
+      seen.add(+s);arr.push(s);
+    }
+    if(!ok)continue;
+    const lens=arr.map(fracLen);
+    if(Math.max(...lens)!==target||Math.min(...lens)===target)continue;
+    let inv=0;
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(+arr[i]<+arr[j]&&lens[i]>lens[j])inv++;
+    if(inv<Math.max(1,need-relax))continue;
+    return arr;
+  }
+  const arr=[],seen=new Set();let g=0;
+  while(arr.length<n&&g++<2000){const s=fmt(rnd(e.min,e.max),Math.floor(Math.random()*(target+1)));
+    if(!seen.has(+s)&&+s>=e.min&&+s<=e.max){seen.add(+s);arr.push(s)}}
+  return arr;
+}
+/*ENDGEN*/
+
+(function(){
+const UNIT={kg:'kilograms (kg)',g:'grams (g)',m:'metres (m)'};
+const SITE={mammals:'trapping and weighing survey',bats:'bat roost survey',birds:'ringing station',herps:'pond and hedgerow survey'};
+const WORDS={3:'Three',5:'Five',7:'Seven'};
+const ORD=['1st','2nd','3rd','4th','5th','6th','7th'];
+const PRAISE=['Excellent fieldwork!','Spot on, researcher!','Peer review passed!','Brilliant sorting!','Top-notch data handling!'];
+const G=12;
+let S={level:2,n:5,grp:'all'};
+try{Object.assign(S,JSON.parse(localStorage.getItem('rr_settings')||'{}'))}catch(e){}
+let score=0,total=0,streak=0,last=-1;
+let P=null,order=[],mode='raw',aligned=false,padded=false,maxdp=0,drag=null,H=74;
+const $=id=>document.getElementById(id);
+const col=$('col');
+
+function calcH(){H=Math.max(52,Math.min(80,Math.floor((innerHeight-300)/S.n)-G))}
+function step(){return H+G}
+function sizes(){
+  col.style.height=((order.length||S.n)*step()-G)+'px';
+  col.style.setProperty('--fs',Math.round(H*0.5)+'px');
+  order.forEach(c=>c.el.style.height=H+'px');
+}
+function layout(skip){order.forEach((c,i)=>{if(c!==skip)c.el.style.top=(i*step())+'px'})}
+
+function newPuzzle(){
+  $('resbox').innerHTML='';
+  document.querySelectorAll('.confetti').forEach(x=>x.remove());
+  const pool=[];DATA.forEach((d,i)=>{if(S.grp==='all'||d[7]===S.grp)pool.push(i)});
+  let idx,e,strs,guard=0;
+  do{
+    do{idx=pool[Math.floor(Math.random()*pool.length)]}while(pool.length>1&&idx===last);
+    e=toEntry(DATA[idx]);strs=makeSet(e,S.n,S.level);guard++;
+    if(strs.length<S.n)last=idx;
+  }while(strs.length<S.n&&guard<60);
+  last=idx;
+  let cards=strs.map((s,i)=>{const p=s.split('.');return{id:i,s:s,int:p[0],frac:p[1]||'',v:parseFloat(s),z:-1}});
+  maxdp=Math.max(...cards.map(c=>c.frac.length));
+  const asc=[...cards].sort((a,b)=>a.v-b.v);
+  do{for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]]}}
+  while(cards.every((c,i)=>c===asc[i]));
+  P=e;order=cards;aligned=false;padded=false;mode='raw';
+  $('sico').textContent=e.ico;$('sname').textContent=e.sp;$('smeas').textContent=e.meas;
+  $('sunit').textContent='All readings are in '+UNIT[e.u];
+  $('story').innerHTML=WORDS[S.n]+' readings of '+e.meas+' have come in from the '+SITE[e.grp]+'. Find the <b>median</b> '+e.meas+'.';
+  col.innerHTML='<div class="guide"></div>';
+  col.classList.add('init');
+  cards.forEach(c=>{
+    const el=document.createElement('div');el.className='card';c.el=el;
+    el.innerHTML='<div class="grip">⋮⋮</div><div class="area"><span class="num" style="--il:'+c.int.length+'"><span class="i">'+c.int+'</span><span class="pt">.</span><span class="f">'+c.frac+'</span><span class="z"></span></span></div><div class="unit">'+e.u+'</div><div class="arr"><button class="up" aria-label="Move up">▲</button><button class="dn" aria-label="Move down">▼</button></div><div class="badge"></div>';
+    el.querySelector('.up').onclick=()=>move(c,-1);
+    el.querySelector('.dn').onclick=()=>move(c,1);
+    el.addEventListener('click',()=>pick(c));
+    el.addEventListener('pointerdown',ev=>down(ev,c));
+    el.addEventListener('pointermove',ev=>mv(ev));
+    el.addEventListener('pointerup',up);
+    el.addEventListener('pointercancel',up);
+    col.appendChild(el);
+  });
+  calcH();sizes();layout();
+  void col.offsetHeight;col.classList.remove('init');
+  ui();
+}
+
+function ui(){
+  col.dataset.m=mode;
+  col.classList.toggle('al',aligned);
+  $('topLab').style.visibility=$('botLab').style.visibility=(mode==='raw')?'hidden':'visible';
+  $('bAlign').style.display=mode==='raw'?'':'none';
+  $('bZeros').style.display=mode==='sort'?'':'none';
+  $('bZeros').disabled=padded;
+  $('bDone').style.display=mode==='sort'?'':'none';
+  $('bBack').style.display=mode==='pick'?'':'none';
+  $('bNext').style.display=mode==='result'?'':'none';
+  order.forEach((c,i)=>{
+    const z=padded?maxdp-c.frac.length:0;
+    if(c.z!==z){c.z=z;c.el.querySelector('.z').innerHTML='<b>0</b>'.repeat(z)}
+    c.el.querySelector('.num').classList.toggle('nodot',c.frac===''&&z===0);
+    c.el.querySelector('.up').disabled=(i===0);
+    c.el.querySelector('.dn').disabled=(i===order.length-1);
+  });
+  let t='';
+  if(mode==='raw')t='<b>Step 1</b> – The readings are all jumbled up. Line up the decimal points so digits with the same place value sit in the same column.';
+  else if(mode==='sort')t=padded?'Every reading now has '+maxdp+' decimal place'+(maxdp===1?'':'s')+', so you can compare them digit by digit. Slide the cards into order – <b>smallest at the top</b>. Press “I’ve sorted them” when you’re happy.':'<b>Step 2</b> – The decimal points are lined up. Add zeros so every reading has '+maxdp+' decimal place'+(maxdp===1?'':'s')+' (this doesn’t change their value), then slide the cards into order: drag a card or use its arrows. <b>Smallest at the top.</b>';
+  else if(mode==='pick')t='<b>Which reading is the median?</b> It’s the middle value of the sorted list. Click the card you think it is.';
+  else t='';
+  $('steps').innerHTML=t;
+  $('steps').style.display=t?'':'none';
+}
+
+function move(c,d){
+  if(mode!=='sort')return;
+  const oi=order.indexOf(c),ni=oi+d;if(ni<0||ni>=order.length)return;
+  order.splice(oi,1);order.splice(ni,0,c);layout();ui();
+}
+function down(ev,c){
+  if(mode!=='sort'||ev.target.closest('button'))return;
+  c.el.setPointerCapture(ev.pointerId);
+  drag={c:c,y:ev.clientY,top:order.indexOf(c)*step()};
+  c.el.classList.add('drag');
+}
+function mv(ev){
+  if(!drag)return;
+  const max=(order.length-1)*step();
+  const top=Math.max(0,Math.min(max,drag.top+ev.clientY-drag.y));
+  drag.c.el.style.top=top+'px';
+  const ni=Math.round(top/step()),oi=order.indexOf(drag.c);
+  if(ni!==oi){order.splice(oi,1);order.splice(ni,0,drag.c);layout(drag.c)}
+}
+function up(){
+  if(!drag)return;
+  drag.c.el.classList.remove('drag');drag=null;layout();ui();
+}
+
+function padStr(c){return c.int+(maxdp?'.'+c.frac.padEnd(maxdp,'0'):'')}
+function pick(c){
+  if(mode!=='pick')return;
+  const sorted=[...order].sort((a,b)=>a.v-b.v);
+  const mid=(sorted.length-1)/2,med=sorted[mid];
+  const wasSorted=order.every((x,i)=>x===sorted[i]);
+  const ok=c.v===med.v;
+  total++;if(ok){score++;streak++}else streak=0;
+  mode='result';aligned=true;padded=true;
+  order=sorted;layout();
+  order.forEach(x=>{
+    x.el.classList.remove('median','wrong','dim');
+    if(x===med){x.el.classList.add('median');x.el.querySelector('.badge').textContent='MEDIAN'}
+    else if(x===c){x.el.classList.add('wrong');x.el.querySelector('.badge').textContent='YOUR PICK'}
+    else x.el.classList.add('dim');
+  });
+  const line=sorted.map(padStr).join(' &lt; ');
+  const n=sorted.length,medT='<b>'+padStr(med)+' '+P.u+'</b>';
+  let h;
+  if(ok){
+    h='<div class="res good"><h3>🎉 '+PRAISE[Math.floor(Math.random()*PRAISE.length)]+'</h3><p>Correct! With '+n+' readings in order, the median is the '+ORD[mid]+' one: '+medT+'.</p>'+(wasSorted?'':'<p>Your column wasn’t quite in order, though – the correct order is now shown.</p>')+'<p class="ord">'+line+'</p></div>';
+  }else{
+    const rank=sorted.indexOf(c);
+    let trap='';
+    outer:for(const a of sorted)for(const b of sorted){
+      if(a.v<b.v&&a.frac.length>b.frac.length){
+        trap='<p><b>Careful:</b> '+a.s+' has more digits than '+b.s+', but it isn’t bigger – '+padStr(a)+' &lt; '+padStr(b)+'. Longer doesn’t mean larger!</p>';break outer}
+    }
+    h='<div class="res bad"><h3>Not quite</h3><p>You chose <b>'+padStr(c)+' '+P.u+'</b>, which is the '+ORD[rank]+' smallest. The median is the <i>middle</i> reading – the '+ORD[mid]+' of '+n+'.</p><p>Sorted, with zeros added:</p><p class="ord">'+line+'</p><p>So the median is '+medT+'.</p>'+trap+'</div>';
+  }
+  $('resbox').innerHTML=h;
+  ui();score_();
+  if(ok)confetti();
+}
+
+function score_(){$('score').textContent='Correct: '+score+' / '+total;$('streak').textContent='Streak: '+streak}
+function confetti(){
+  const box=document.createElement('div');box.className='confetti';
+  const cols=['#e0a526','#3f6b45','#c4501f','#2a5676','#8fbf6a','#f2d16b'];
+  for(let i=0;i<80;i++){const s=document.createElement('i');
+    s.style.left=Math.random()*100+'%';s.style.background=cols[i%cols.length];
+    s.style.animationDelay=(Math.random()*.8)+'s';s.style.animationDuration=(2.2+Math.random()*1.8)+'s';
+    s.style.transform='rotate('+Math.random()*360+'deg)';box.appendChild(s)}
+  document.body.appendChild(box);setTimeout(()=>box.remove(),5000);
+}
+
+$('bAlign').onclick=()=>{aligned=true;mode='sort';ui()};
+$('bZeros').onclick=()=>{padded=true;ui()};
+$('bDone').onclick=()=>{mode='pick';ui()};
+$('bBack').onclick=()=>{mode='sort';ui()};
+$('bNext').onclick=newPuzzle;
+$('bNew').onclick=newPuzzle;
+const dlg=$('dlg');
+$('bSet').onclick=()=>{
+  document.querySelector('input[name=level][value="'+S.level+'"]').checked=true;
+  document.querySelector('input[name=n][value="'+S.n+'"]').checked=true;
+  $('grp').value=S.grp;dlg.returnValue='';dlg.showModal();
+};
+dlg.addEventListener('close',()=>{
+  if(dlg.returnValue==='ok'){
+    S.level=+document.querySelector('input[name=level]:checked').value;
+    S.n=+document.querySelector('input[name=n]:checked').value;
+    S.grp=$('grp').value;
+    try{localStorage.setItem('rr_settings',JSON.stringify(S))}catch(e){}
+    newPuzzle();
+  }
+});
+addEventListener('resize',()=>{calcH();sizes();layout()});
+score_();newPuzzle();
+})();
+</script>
+</body>
+</html>
