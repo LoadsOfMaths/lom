@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#d62828">
+<title>Lucky Duck</title>
+<style>
+:root{
+  --red:#d62828; --red-dark:#8b1c1c; --cream:#fff6e0; --gold:#ffc93c; --navy:#14213d;
+  --sign-font:'Cooper Black','Rockwell Extra Bold','Arial Rounded MT Bold','Arial Black',sans-serif;
+  --ui-font:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{height:100vh;height:100dvh;touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{font-family:var(--ui-font);color:#fff;display:flex;flex-direction:column;user-select:none;-webkit-user-select:none;
+  background:radial-gradient(ellipse at 50% 25%,#34457a 0%,#1a2748 55%,#0b1326 100%)}
+
+/* ---------- Header: striped canopy + light-up sign ---------- */
+header{position:relative;flex:0 0 auto;z-index:6}
+.canopy{height:7vh;background:repeating-linear-gradient(90deg,var(--red) 0 60px,var(--cream) 60px 120px);box-shadow:inset 0 -10px 14px rgba(0,0,0,.18)}
+.scallop{height:30px;filter:drop-shadow(0 5px 3px rgba(0,0,0,.35));
+  background:radial-gradient(circle at 30px 0,var(--red) 29px,transparent 30px) 0 0/120px 30px repeat-x,
+             radial-gradient(circle at 30px 0,var(--cream) 29px,transparent 30px) 60px 0/120px 30px repeat-x}
+.sign{position:absolute;left:50%;top:1vh;transform:translateX(-50%);text-align:center;white-space:nowrap;
+  background:linear-gradient(#5b2a86,#3a1859);border:7px dotted var(--gold);border-radius:20px;padding:.3vh 3.2vw .7vh;
+  box-shadow:0 0 0 5px #3a1859,0 8px 20px rgba(0,0,0,.5);animation:bulbs 1.1s steps(2) infinite}
+@keyframes bulbs{50%{border-color:#fff4c2}}
+.sign h1{margin:0;font-family:var(--sign-font);font-size:clamp(24px,min(6.4vh,9.5vw),78px);letter-spacing:.05em;line-height:1.05;
+  color:var(--gold);text-shadow:0 3px 0 #b8741a,0 7px 12px rgba(0,0,0,.55)}
+.sign p{margin:0;font-size:clamp(12px,1.9vh,22px);color:#ffe9b8;font-style:italic}
+
+/* ---------- Stage: water trough and ducks ---------- */
+.stage{position:relative;flex:1 1 auto;overflow:hidden;min-height:0}
+.bunting{position:absolute;top:0;left:0;width:100%;height:5vh;z-index:1;opacity:.9}
+.water{position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(#5cc0ec,#1f73ab 70%,#185e8d);z-index:0}
+.water-top{position:absolute;left:0;bottom:calc(100% - 1px);width:200%;height:3.5vh;animation:drift 12s linear infinite reverse}
+.front-wave{position:absolute;left:0;bottom:0;width:200%;height:16%;z-index:3;animation:drift 8s linear infinite;pointer-events:none}
+@keyframes drift{to{transform:translateX(-50%)}}
+.trough-rim{position:absolute;left:0;right:0;bottom:0;height:2.2vh;z-index:4;background:linear-gradient(#b07a45,#6d4320);box-shadow:0 -3px 6px rgba(0,0,0,.3)}
+
+.ducks{position:absolute;left:2vw;right:2vw;bottom:8%;display:flex;justify-content:space-around;align-items:flex-end;z-index:2}
+.slot{position:relative;width:min(14.5vw,36vh);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.phase-revealing .slot,.phase-revealed .slot{cursor:default}
+.bob{position:relative;animation:bob 2.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-2.5deg)}50%{transform:translateY(-5%) rotate(2.5deg)}}
+.duck{position:relative;transform-origin:50% 90%;transition:transform 1s cubic-bezier(.45,-0.45,.55,1.35),filter .8s}
+.duck svg.d{display:block;width:100%;height:auto;overflow:visible}
+@media (hover:hover){.slot:not(.picked):hover .duck{filter:brightness(1.06)}}
+.slot.picked .duck{filter:drop-shadow(0 0 1.2vh #fff6a8) drop-shadow(0 0 2.4vh var(--gold))}
+.slot.wobble .duck{animation:wobble .25s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+.slot.toppled .duck{transform:translateY(6%) rotate(var(--rot,100deg));filter:grayscale(.45) brightness(.85)}
+.slot.winner .duck{transform:translateY(-16%) scale(1.14);filter:drop-shadow(0 0 2vh #fff3a0)}
+.slot.winner .bob{animation-duration:1.3s}
+
+/* Hook-a-duck pole */
+.hook{position:absolute;left:29%;bottom:84%;width:13%;display:flex;flex-direction:column;align-items:center;pointer-events:none;
+  transform:translateY(-130vh);transition:transform .55s cubic-bezier(.3,1.35,.6,1)}
+.hook .line{width:3px;height:70vh;background:linear-gradient(#e8d9b0,#c9b27a)}
+.hook svg{width:100%;display:block;margin-top:-2px}
+.slot.picked .hook{transform:translateY(0)}
+.phase-revealed .slot .hook{transform:translateY(-130vh);transition-duration:.8s}
+
+.pick-tag{position:absolute;left:50%;top:14%;transform:translateX(-50%);z-index:5;white-space:nowrap;
+  font:700 clamp(10px,1.8vh,20px) var(--ui-font);background:var(--navy);color:var(--gold);border:2px solid var(--gold);border-radius:20px;padding:.2vh .8vw;display:none}
+.phase-revealed .slot.picked .pick-tag{display:block}
+
+/* Crown and glitter */
+.crown{position:absolute;width:44%;left:14%;top:-17%;transform-origin:50% 100%;animation:crown-drop .9s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes crown-drop{0%{transform:translateY(-320%) rotate(-40deg);opacity:0}60%{opacity:1}100%{transform:translateY(0) rotate(-12deg);opacity:1}}
+.spark{position:absolute;width:7%;aspect-ratio:1;background:#fff8c4;pointer-events:none;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:twinkle 1.4s ease-in-out infinite}
+@keyframes twinkle{0%,100%{transform:scale(.2) rotate(0);opacity:0}50%{transform:scale(1) rotate(45deg);opacity:1}}
+
+.banner{position:absolute;left:50%;top:13%;transform:translate(-50%,0) scale(0);z-index:5;text-align:center;pointer-events:none;transition:transform .45s cubic-bezier(.3,1.6,.5,1)}
+.banner.show{transform:translate(-50%,0) scale(1)}
+.banner{width:max-content;max-width:96vw}
+.banner .big{font-family:var(--sign-font);font-size:clamp(28px,min(8.5vh,12vw),110px);color:var(--gold);text-shadow:0 4px 0 #b8741a,0 8px 18px rgba(0,0,0,.6);line-height:1}
+.banner.lose .big{color:#ffd7d7;text-shadow:0 4px 0 #8b1c1c,0 8px 18px rgba(0,0,0,.6)}
+.banner .small{font-size:clamp(14px,2.8vh,34px);color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.7);margin-top:.5vh}
+
+/* ---------- Question board ---------- */
+.board{flex:0 0 auto;position:relative;z-index:5;align-self:center;min-width:55vw;max-width:94vw;margin:1.2vh auto 1vh;text-align:center;color:var(--navy);
+  background:linear-gradient(#fffaf0,#f3e1b8);border:6px solid var(--red);border-radius:18px;padding:.6vh 3vw .8vh;
+  box-shadow:0 6px 0 var(--red-dark),0 12px 24px rgba(0,0,0,.45)}
+.board .rule{font-size:clamp(11px,1.8vh,22px);color:#8b1c1c;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.q{font:700 clamp(28px,7.6vh,96px)/1.15 var(--ui-font);white-space:nowrap;max-width:100%;overflow:hidden}
+.q sup{font-size:.6em;line-height:0}
+.rad{display:inline-flex;align-items:flex-start}
+.rad .rs{position:relative;padding-right:.02em}
+.rad .ri{position:absolute;font-size:.45em;left:-.15em;top:.15em}
+.rad .ov{border-top:.07em solid currentColor;padding:0 .08em;margin-top:.12em;line-height:1.05}
+.mini{display:inline-block;height:1em;width:1.05em;vertical-align:-.12em}
+.ans{min-height:1.3em;font:600 clamp(14px,3.3vh,40px)/1.3 var(--ui-font);visibility:hidden;color:#1d4e89}
+.ans.show{visibility:visible;animation:fadein .5s}
+.ans .closest{display:inline-block;margin-left:1.2vw;background:var(--gold);color:var(--navy);border-radius:12px;padding:0 .8vw;font-weight:800}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+
+/* ---------- Bottom bar ---------- */
+.row-wave{display:none}
+.bar{flex:0 0 auto;display:flex;align-items:center;gap:1vw;padding:.7vh max(1.5vw,env(safe-area-inset-right)) max(1.1vh,env(safe-area-inset-bottom)) max(1.5vw,env(safe-area-inset-left));background:rgba(0,0,0,.3);z-index:6}
+.levels{display:flex;gap:.5vw}
+.chip{font:700 clamp(11px,1.9vh,22px) var(--ui-font);padding:.6vh 1vw;border-radius:30px;border:2px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;cursor:pointer}
+.chip small{display:block;font-weight:500;font-size:.72em;opacity:.8}
+.chip.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.tally{margin-left:auto;font-size:clamp(12px,2.2vh,26px);text-align:right;line-height:1.25}
+.tally b{color:var(--gold)}
+.go{font:700 clamp(18px,3.6vh,44px) var(--sign-font);padding:.7vh 2.6vw;border:none;border-radius:40px;cursor:pointer;color:#5a2d00;
+  background:linear-gradient(#ffe07a,#f4a300);box-shadow:0 5px 0 #a86a00,0 8px 14px rgba(0,0,0,.35)}
+.go:active{transform:translateY(3px);box-shadow:0 2px 0 #a86a00}
+.go:disabled{filter:grayscale(.6);opacity:.7;cursor:default}
+.icon{width:clamp(34px,5.4vh,64px);height:clamp(34px,5.4vh,64px);border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);cursor:pointer;display:grid;place-items:center;padding:0}
+.icon svg{width:58%;height:58%}
+
+/* ---------- Settings ---------- */
+.modal{position:fixed;inset:0;background:rgba(5,10,25,.72);display:none;place-items:center;z-index:50}
+.modal.open{display:grid}
+.panel{background:var(--cream);color:var(--navy);border:6px solid var(--red);border-radius:18px;width:min(760px,92vw);max-height:90vh;overflow:auto;padding:2.4vh 2.4vw;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.panel h2{font-family:var(--sign-font);color:var(--red);margin:0 0 1vh;font-size:clamp(22px,3.6vh,40px)}
+.panel h3{margin:1.6vh 0 .6vh;font-size:clamp(14px,2.2vh,24px)}
+.panel p{margin:.4vh 0;font-size:clamp(13px,1.9vh,20px)}
+.types{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.6vh 1vw}
+.types label{display:flex;align-items:center;gap:.5em;font-size:clamp(13px,2vh,21px);background:#fff;border:2px solid #e7cf9c;border-radius:10px;padding:.5vh .6vw;cursor:pointer}
+
+.spacing{display:grid;grid-template-columns:repeat(3,1fr);gap:.8vh 1vw}
+.spacing button{font:700 clamp(13px,2vh,21px) var(--ui-font);color:var(--navy);background:#fff;border:2px solid #e7cf9c;border-radius:10px;padding:.8vh .6vw;cursor:pointer;line-height:1.2}
+.spacing button small{display:block;font-weight:500;font-size:.74em;color:#555;margin-top:.2vh}
+.spacing button.on{background:var(--gold);border-color:#d9941c}
+.spacing button.on small{color:#4a3500}
+.eg{font-size:clamp(12px,1.8vh,19px);color:#555;margin:.8vh 0 0}
+.eg b{color:var(--navy)}
+.types input{width:1.2em;height:1.2em;accent-color:var(--red)}
+.panel .row{display:flex;gap:1vw;justify-content:flex-end;margin-top:2vh;flex-wrap:wrap}
+.btn{font:700 clamp(13px,2vh,20px) var(--ui-font);padding:.8vh 1.6vw;border-radius:10px;border:2px solid var(--navy);background:#fff;color:var(--navy);cursor:pointer}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.keys{font-size:clamp(12px,1.7vh,18px);color:#555}
+kbd{background:#fff;border:1px solid #bbb;border-bottom-width:2px;border-radius:4px;padding:0 .35em;font-family:inherit}
+
+/* =========================================================
+   Phones and tablets
+   ========================================================= */
+/* Touch screens: no keyboard help, bigger tap targets in Settings */
+@media (hover:none){ .kbd-help{display:none} .types label{padding:1.1vh 2vw} }
+.no-fs #fs{display:none}
+
+/* ---- Portrait: two rows of three ducks ---- */
+@media (orientation:portrait){
+  :root{--w:min(29vw,14vh);--dh:calc(var(--w)*.95);--gap:calc(var(--w)*.3);--base:3.2vh}
+  .canopy{height:5.2vh}
+  .scallop{height:22px;background-size:88px 22px,88px 22px;
+    background-image:radial-gradient(circle at 22px 0,var(--red) 21px,transparent 22px),radial-gradient(circle at 22px 0,var(--cream) 21px,transparent 22px);
+    background-position:0 0,44px 0}
+  .canopy{background:repeating-linear-gradient(90deg,var(--red) 0 44px,var(--cream) 44px 88px)}
+  .sign{border-width:5px;padding:.2vh 4vw .5vh;top:.6vh}
+  .sign p{font-size:clamp(11px,3.1vw,20px)}
+  .bunting{height:3.4vh}
+
+  .water{height:calc(var(--base) + var(--dh)*1.42 + var(--gap))}
+  .front-wave{display:none}
+  .ducks{left:2vw;right:2vw;bottom:var(--base);display:grid;grid-template-columns:repeat(3,1fr);row-gap:var(--gap);justify-items:center}
+  .slot{width:var(--w)}
+  .slot.winner{z-index:3}
+  .duck{transform-origin:50% 62%}
+  .slot.toppled .duck{transform:translateY(10%) rotate(var(--rot,100deg)) scale(.92);filter:grayscale(.6) brightness(.8) opacity(.8)}
+  .row-wave{display:block;position:absolute;left:-6vw;width:224vw;height:calc(var(--dh)*.3);z-index:2;pointer-events:none;animation:drift 9s linear infinite}
+  .row-wave.rw1{bottom:calc(var(--dh) + var(--gap) - var(--dh)*.05)}
+  .row-wave.rw2{bottom:calc(var(--dh)*-.05);animation-duration:7s;animation-direction:reverse}
+  .hook .line{height:100vh}
+
+  .banner{top:auto;bottom:calc(var(--base) + var(--dh)*2.42 + var(--gap))}
+  .banner .big{font-size:clamp(24px,min(5.4vh,11vw),80px)}
+  .banner .small{font-size:clamp(13px,min(2.4vh,4.4vw),30px);margin-top:.2vh}
+
+  .board{width:94vw;min-width:0;border-width:5px;padding:.6vh 2.5vw .8vh;margin:1vh auto .8vh}
+  .board .rule{font-size:clamp(11px,3.2vw,22px)}
+  .q{font-size:clamp(26px,min(7vh,13vw),96px)}
+  .ans{font-size:clamp(14px,min(2.9vh,5vw),36px);min-height:2.75em}
+  .ans .closest{display:table;margin:.2vh auto 0;padding:0 3vw}
+
+  .bar{flex-wrap:wrap;gap:1vh 2vw;padding-top:1vh}
+  .tally{flex:0 0 auto;white-space:nowrap}
+  .levels{order:1;flex:1 0 100%;gap:1.4vw}
+  .chip{flex:1 1 0;min-width:0;padding:.8vh .2vw;font-size:clamp(10px,2.9vw,20px);line-height:1.1;border-radius:14px}
+  .tally{order:2;margin:0;text-align:left;font-size:clamp(12px,3.5vw,24px)}
+  .go{order:3;flex:1 1 0;min-width:0;white-space:nowrap;font-size:clamp(16px,5.2vw,40px);padding:1vh 1vw}
+  .icon{order:4;flex:0 0 auto;width:clamp(40px,10.5vw,64px);height:clamp(40px,10.5vw,64px)}
+
+  .panel{width:94vw;padding:2vh 4vw;border-width:5px}
+  .types{grid-template-columns:1fr 1fr}
+  .spacing{gap:1vh 1.6vw}
+  .spacing button{padding:1vh .4vw;font-size:clamp(12px,3.4vw,20px)}
+}
+
+/* ---- Short landscape (phone on its side) ---- */
+@media (orientation:landscape) and (max-height:540px){
+  .canopy{height:16px}
+  .scallop{height:14px;background-size:56px 14px,56px 14px;
+    background-image:radial-gradient(circle at 14px 0,var(--red) 13px,transparent 14px),radial-gradient(circle at 14px 0,var(--cream) 13px,transparent 14px);
+    background-position:0 0,28px 0}
+  .canopy{background:repeating-linear-gradient(90deg,var(--red) 0 28px,var(--cream) 28px 56px)}
+  .sign{top:2px;border-width:3px;border-radius:12px;padding:0 14px 1px;box-shadow:0 0 0 3px #3a1859,0 4px 10px rgba(0,0,0,.5)}
+  .sign h1{font-size:22px}
+  .sign p{display:none}
+  .bunting{display:none}
+  .slot{width:min(13.5vw,34vh)}
+  .ducks{bottom:5%}
+  .water{height:52%}
+  .slot.winner .duck{transform:translateY(-6%) scale(1.08)}
+  .banner{top:6px;display:flex;align-items:baseline;gap:12px}
+  .banner .big{font-size:26px}
+  .banner .small{font-size:15px;margin:0}
+  .board{margin:4px auto;padding:1px 16px 3px;border-width:4px;border-radius:12px;box-shadow:0 3px 0 var(--red-dark);display:grid;grid-template-columns:auto auto;align-items:center;column-gap:18px}
+  .board .rule{grid-column:1/-1;font-size:10px}
+  .q{font-size:clamp(24px,11vh,44px)}
+  .ans{font-size:clamp(13px,5vh,20px);min-height:0}
+  .ans:not(.show){display:none}
+  .bar{padding-top:4px;padding-bottom:max(5px,env(safe-area-inset-bottom));gap:8px}
+  .chip{font-size:12px;padding:4px 10px}
+  .chip small{display:none}
+  .tally{font-size:12px}
+  .go{font-size:20px;padding:5px 22px;box-shadow:0 3px 0 #a86a00}
+  .icon{width:36px;height:36px}
+}
+
+canvas#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40}
+</style>
+</head>
+<body>
+
+<!-- Shared gradients for all ducks -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gBody" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff27a"/><stop offset=".55" stop-color="#ffd21f"/><stop offset="1" stop-color="#f2a900"/></radialGradient>
+    <radialGradient id="gHead" cx="42%" cy="32%" r="70%"><stop offset="0" stop-color="#fff59a"/><stop offset=".6" stop-color="#ffd21f"/><stop offset="1" stop-color="#f0a800"/></radialGradient>
+    <linearGradient id="gWave" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a8ccb" stop-opacity=".95"/><stop offset=".55" stop-color="#2a8ccb" stop-opacity=".8"/><stop offset="1" stop-color="#2a8ccb" stop-opacity="0"/></linearGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1a1"/><stop offset=".5" stop-color="#ffc93c"/><stop offset="1" stop-color="#d9941c"/></linearGradient>
+  </defs>
+</svg>
+
+<header>
+  <div class="canopy"></div>
+  <div class="scallop"></div>
+  <div class="sign"><h1>LUCKY DUCK</h1><p>Hook the duck closest to the answer!</p></div>
+</header>
+
+<main class="stage" id="stage">
+  <svg class="bunting" id="bunting" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <div class="banner" id="banner"><div class="big"></div><div class="small"></div></div>
+  <div class="ducks" id="ducks"></div>
+  <div class="water">
+    <svg class="water-top" viewBox="0 0 2400 100" preserveAspectRatio="none" aria-hidden="true"><path id="wt" fill="#5cc0ec"/></svg>
+  </div>
+  <svg class="front-wave" viewBox="0 0 2400 100" preserveAspectRatio="none" aria-hidden="true">
+    <path id="fw" fill="#2a8ccb" fill-opacity=".93" stroke="#bfe8ff" stroke-width="5" stroke-opacity=".7"/>
+  </svg>
+  <div class="trough-rim"></div>
+</main>
+
+<section class="board" id="board">
+  <div class="rule" id="rule">Which duck is closest?</div>
+  <div class="q" id="q"></div>
+  <div class="ans" id="ans"></div>
+</section>
+
+<nav class="bar">
+  <div class="levels" id="levels"></div>
+  <div class="tally" id="tally"></div>
+  <button class="go" id="go">Reveal!</button>
+  <button class="icon" id="gear" title="Settings (S)" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+  <button class="icon" id="fs" title="Full screen (F)" aria-label="Full screen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
+</nav>
+
+<div class="modal" id="modal">
+  <div class="panel">
+    <h2>Lucky Duck — Settings</h2>
+    <p><b>How to play:</b> Six ducks, one calculation. Pick the duck whose number is <b>closest</b> to the answer, then press <b>Reveal!</b> The lucky duck gets the crown — the rest topple over.</p>
+    <p>Non-exact questions (roots, trig, awkward divisions) are never close to halfway between two ducks.</p>
+    <h3>Duck spacing</h3>
+    <div class="spacing" id="spacing"></div>
+    <p class="eg" id="spacingEg"></p>
+    <h3>Last digits</h3>
+    <div class="spacing" id="lastDigit"></div>
+    <p class="eg" id="lastDigitEg"></p>
+    <h3>Question types</h3>
+    <div id="typeGroups"></div>
+    <h3 class="kbd-help">Keyboard</h3>
+    <p class="keys kbd-help"><kbd>1</kbd>–<kbd>6</kbd> pick a duck &nbsp; <kbd>Space</kbd>/<kbd>Enter</kbd> reveal / next &nbsp; <kbd>F</kbd> full screen &nbsp; <kbd>S</kbd> settings</p>
+    <div class="row">
+      <button class="btn" id="resetTally">Reset tally</button>
+      <button class="btn primary" id="closeSettings">Done</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+'use strict';
+/* =========================================================
+   Utilities
+   ========================================================= */
+const R = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const shuffle = arr => { for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; };
+const messy = (lo,hi) => { let x; do { x = R(lo,hi); } while (x % 10 === 0); return x; };
+const N = x => x.toLocaleString('en-GB');
+const D = (x,dp) => x.toLocaleString('en-GB',{minimumFractionDigits:dp,maximumFractionDigits:dp});
+const rad = d => d*Math.PI/180, deg = r => r*180/Math.PI;
+/* Exact decimals print as they are; anything longer is cut to dp places with an ellipsis */
+function approx(v,dp=3){
+  const r = Math.round(v*10**dp)/10**dp;
+  const exact = Math.abs(r-v) < 1e-9;
+  const s = r.toLocaleString('en-GB',{minimumFractionDigits:exact?0:dp,maximumFractionDigits:dp});
+  return exact ? s : s + '…';
+}
+const sqrtHTML = x => `<span class="rad"><span class="rs">√</span><span class="ov">${x}</span></span>`;
+const cbrtHTML = x => `<span class="rad"><span class="rs"><span class="ri">3</span>√</span><span class="ov">${x}</span></span>`;
+
+/* =========================================================
+   Duck artwork
+   ========================================================= */
+function duckSVG(label){
+  const len = label.length;
+  const fs = Math.min(46, 150/Math.max(len,1)*1.05);
+  const fit = len >= 5 ? ` textLength="88" lengthAdjust="spacingAndGlyphs"` : '';
+  return `<svg class="d" viewBox="0 0 200 190" aria-hidden="true">
+    <path d="M30,125 C30,95 60,92 90,98 L150,98 C165,98 178,90 192,72 C198,95 196,120 188,138 C176,168 140,178 105,178 C60,178 30,160 30,125 Z" fill="url(#gBody)" stroke="#e09600" stroke-width="3"/>
+    <path d="M124,112 C144,98 176,102 184,118 C170,130 146,134 126,128 Z" fill="#f6b400" stroke="#e09600" stroke-width="2.5"/>
+    <circle cx="72" cy="62" r="42" fill="url(#gHead)" stroke="#e09600" stroke-width="3"/>
+    <path d="M38,64 C24,56 5,60 5,69 C5,76 22,78 40,75 Z" fill="#ff8a1f" stroke="#d9650a" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M40,75 C27,79 12,81 13,86 C17,92 31,90 44,83 Z" fill="#f26b0f" stroke="#d9650a" stroke-width="2.5" stroke-linejoin="round"/>
+    <ellipse cx="60" cy="51" rx="7" ry="8.5" fill="#1b1b1b"/><circle cx="62.5" cy="48" r="2.6" fill="#fff"/>
+    <ellipse cx="76" cy="76" rx="8" ry="5" fill="#ff9e7a" opacity=".55"/>
+    <ellipse cx="88" cy="36" rx="11" ry="6" fill="#fff" opacity=".5" transform="rotate(-25 88 36)"/>
+    <ellipse cx="100" cy="148" rx="49" ry="24" fill="#fffdf4" stroke="#d62828" stroke-width="4"/>
+    <text x="100" y="149" dy=".35em" text-anchor="middle" font-size="${fs.toFixed(1)}" font-weight="700" fill="#14213d"
+      font-family="'Cooper Black','Rockwell Extra Bold','Arial Rounded MT Bold','Arial Black',sans-serif"${fit}>${label}</text>
+  </svg>`;
+}
+const MINIDUCK = `<svg class="mini" viewBox="0 0 200 190" aria-label="duck"><path d="M30,125 C30,95 60,92 90,98 L150,98 C165,98 178,90 192,72 C198,95 196,120 188,138 C176,168 140,178 105,178 C60,178 30,160 30,125 Z" fill="#ffd21f" stroke="#c98700" stroke-width="8"/><circle cx="72" cy="62" r="42" fill="#ffd21f" stroke="#c98700" stroke-width="8"/><path d="M38,64 C24,56 5,60 5,69 C5,76 22,78 40,75 Z" fill="#ff8a1f" stroke="#d9650a" stroke-width="6"/><ellipse cx="60" cy="51" rx="8" ry="10" fill="#1b1b1b"/></svg>`;
+const CROWN = `<svg class="crown" viewBox="0 0 100 72" aria-hidden="true">
+  <path d="M8,60 L4,18 L28,38 L50,6 L72,38 L96,18 L92,60 Z" fill="url(#gGold)" stroke="#b8741a" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="7" y="56" width="86" height="12" rx="3" fill="#e8b23a" stroke="#b8741a" stroke-width="2.5"/>
+  <circle cx="50" cy="6" r="5.5" fill="#d62828"/><circle cx="4" cy="18" r="4.5" fill="#2a9d8f"/><circle cx="96" cy="18" r="4.5" fill="#2a9d8f"/>
+  <circle cx="50" cy="42" r="6" fill="#d62828" stroke="#fff" stroke-width="1.5"/><circle cx="28" cy="49" r="4" fill="#3a86ff"/><circle cx="72" cy="49" r="4" fill="#3a86ff"/>
+  <circle cx="30" cy="62" r="2.5" fill="#fff"/><circle cx="50" cy="62" r="2.5" fill="#fff"/><circle cx="70" cy="62" r="2.5" fill="#fff"/>
+</svg>`;
+const HOOK = `<div class="hook"><div class="line"></div><svg viewBox="0 0 30 52"><path d="M15,0 L15,30 A9.5,9.5 0 1 1 4,38" fill="none" stroke="#d6dbe2" stroke-width="4" stroke-linecap="round"/><path d="M1,40 l1,-10 l7,6 z" fill="#d6dbe2"/></svg></div>`;
+
+/* Waves and bunting */
+function wavePath(){ let d='M0 40 Q 50 10 100 40'; for(let x=200;x<=2400;x+=100) d+=` T ${x} 40`; return d+' L2400 100 L0 100 Z'; }
+document.getElementById('wt').setAttribute('d', wavePath());
+document.getElementById('fw').setAttribute('d', wavePath());
+(function bunting(){
+  const cols=['#d62828','#ffc93c','#3a86ff','#fff6e0','#2a9d8f'], n=24, svg=document.getElementById('bunting');
+  svg.setAttribute('viewBox','0 0 1200 60');
+  let s='<path d="M0 6 Q 600 34 1200 6" fill="none" stroke="#e8d9b0" stroke-width="2"/>';
+  for(let i=0;i<n;i++){
+    const x0=i*50, x1=x0+50, y=t=>6+28*(1-Math.pow((t-600)/600,2));
+    s+=`<path d="M${x0+4} ${y(x0+4)} L${x1-4} ${y(x1-4)} L${x0+25} ${y(x0+25)+26} Z" fill="${cols[i%cols.length]}"/>`;
+  }
+  svg.innerHTML=s;
+})();
+
+/* =========================================================
+   Question generators — each returns {q, v, [spacing], [min], [max], [unit], [stmt]}
+   v integer & no spacing  → exact question, same-last-digit decoys
+   otherwise               → closest duck on a grid of the given spacing
+   ========================================================= */
+const GEN = {
+  add(L){
+    if(L===1){const a=messy(23,89),b=messy(23,89);return{q:`${a} + ${b}`,v:a+b};}
+    if(L===2){const a=messy(123,899),b=messy(123,899);return{q:`${a} + ${b}`,v:a+b};}
+    if(L===3){const a=messy(1234,8999),b=messy(234,8999);return{q:`${N(a)} + ${N(b)}`,v:a+b};}
+    const A=messy(1001,9999), B=messy(101,999)*10;               // hundredths
+    return{q:`${D(A/100,2)} + ${D(B/100,1)}`,v:(A+B)/100};
+  },
+  sub(L){
+    if(L===1){const a=messy(52,98),b=messy(13,a-12);return{q:`${a} − ${b}`,v:a-b};}
+    if(L===2){const a=messy(412,989),b=messy(123,a-100);return{q:`${a} − ${b}`,v:a-b};}
+    if(L===3){const a=messy(3012,9899),b=messy(1234,a-500);return{q:`${N(a)} − ${N(b)}`,v:a-b};}
+    const A=messy(5001,9999), B=messy(101,Math.floor(A/10)-50)*10;
+    return{q:`${D(A/100,2)} − ${D(B/100,1)}`,v:(A-B)/100};
+  },
+  mul(L){
+    if(L===1){const a=messy(13,99),b=R(3,9);return{q:`${a} × ${b}`,v:a*b};}
+    if(L===2){const a=messy(13,99),b=messy(13,49);return{q:`${a} × ${b}`,v:a*b};}
+    if(L===3){const a=messy(102,999),b=messy(13,99);return{q:`${a} × ${b}`,v:a*b};}
+    if(Math.random()<.5){const a=messy(102,999),b=messy(102,999);return{q:`${a} × ${b}`,v:a*b};}
+    const a=messy(11,99),b=messy(11,99);
+    return{q:`${D(a/10,1)} × ${D(b/10,1)}`,v:a*b/100};
+  },
+  div(L){
+    if(L===1){const q=R(12,49),d=R(3,9);return{q:`${q*d} ÷ ${d}`,v:q};}
+    if(L===2){const q=messy(12,79),d=messy(12,29);return{q:`${N(q*d)} ÷ ${d}`,v:q};}
+    if(L===3){let n,d;do{n=messy(200,2000);d=R(3,19);}while(n%d===0);return{q:`${N(n)} ÷ ${d}`,v:n/d,spacing:1};}
+    if(Math.random()<.5){let n,d;do{n=messy(2000,20000);d=messy(11,49);}while(n%d===0);return{q:`${N(n)} ÷ ${d}`,v:n/d,spacing:1};}
+    let n,d;do{n=messy(101,999);d=messy(11,99);}while(n%d===0);
+    return{q:`${D(n/10,1)} ÷ ${D(d/10,1)}`,v:n/d,spacing:1};
+  },
+  pct(L){
+    let p,amt;
+    if(L===1){p=pick([10,20,25,50,75]);amt=(p===10||p===20)?R(4,60)*10:(p===50?R(10,150)*2:R(5,60)*4);}
+    else if(L===2){p=R(1,19)*5;amt=R(3,45)*20;}
+    else if(L===3){do{p=R(3,97);}while(p%5===0);amt=R(40,900);}
+    else{p=Math.random()<.5?pick([2.5,7.5,12.5,17.5,22.5,37.5,62.5,87.5]):R(101,250);amt=R(120,990);}
+    const v=Math.round(p*10*amt)/1000;
+    return{q:`${N(p)}% of ${N(amt)}`,v,spacing:Number.isInteger(v)?undefined:1};
+  },
+  sq(L){
+    if(L<4||Math.random()<.5){const a=L===1?messy(11,25):L===2?messy(26,60):L===3?messy(61,130):messy(131,299);return{q:`${a}<sup>2</sup>`,v:a*a};}
+    const a=messy(21,99);return{q:`${D(a/10,1)}<sup>2</sup>`,v:a*a/100,spacing:1};
+  },
+  sqrt(L){
+    const [lo,hi]=[[5,99],[101,400],[401,2500],[2501,20000]][L-1];
+    let n;do{n=R(lo,hi);}while(Number.isInteger(Math.sqrt(n)));
+    return{q:sqrtHTML(N(n)),v:Math.sqrt(n),spacing:1};
+  },
+  cube(L){
+    if(L<4||Math.random()<.5){let a;do{a=L===1?R(4,12):L===2?messy(13,25):L===3?messy(26,50):messy(51,99);}while(a===10);return{q:`${a}<sup>3</sup>`,v:a*a*a};}
+    const a=messy(11,49);return{q:`${D(a/10,1)}<sup>3</sup>`,v:a*a*a/1000,spacing:1};
+  },
+  cbrt(L){
+    const [lo,hi]=[[10,200],[201,2000],[2001,30000],[30001,500000]][L-1];
+    let n;do{n=R(lo,hi);}while(Math.round(Math.cbrt(n))**3===n);
+    return{q:cbrtHTML(N(n)),v:Math.cbrt(n),spacing:1};
+  },
+  trig(L,sp=0){
+    if(L>=3&&Math.random()<.35){
+      const a=R(55,86),v=Math.tan(rad(a));
+      return{q:`tan ${a}°`,v,spacing:1};
+    }
+    const s=[[10,5,2,2],[15,10,5,5],[15,15,10,10]][sp][L-1], f=pick(['sin','cos','tan']);
+    const lo=s, hi=f==='tan'?80:90-s, a=lo+Math.random()*(hi-lo);
+    let x=f==='sin'?Math.sin(rad(a)):f==='cos'?Math.cos(rad(a)):Math.tan(rad(a));
+    x=Math.round(x*1000)/1000;
+    const t=deg(f==='sin'?Math.asin(x):f==='cos'?Math.acos(x):Math.atan(x));
+    return{q:`${f}(${MINIDUCK}) = ${approx(x)}`,v:t,spacing:s,min:0,max:90,unit:'°',
+           stmt:`${MINIDUCK} = ${f}<sup>−1</sup>(${approx(x)}) = ${approx(t,2)}°`};
+  }
+};
+const TYPES = [
+  {id:'add', label:'Addition', group:'Arithmetic'},
+  {id:'sub', label:'Subtraction', group:'Arithmetic'},
+  {id:'mul', label:'Multiplication', group:'Arithmetic'},
+  {id:'div', label:'Division', group:'Arithmetic'},
+  {id:'pct', label:'Percentages', group:'Arithmetic'},
+  {id:'sq',  label:'Squares', group:'Powers and roots'},
+  {id:'sqrt',label:'Square roots', group:'Powers and roots'},
+  {id:'cube',label:'Cubes', group:'Powers and roots'},
+  {id:'cbrt',label:'Cube roots', group:'Powers and roots'},
+  {id:'trig',label:'sin, cos, tan', group:'Trigonometry'}
+];
+const LEVELS = [
+  {name:'Paddling Pool', sub:'Easy'},
+  {name:'Village Pond',  sub:'Medium'},
+  {name:'Boating Lake',  sub:'Hard'},
+  {name:'High Seas',     sub:'Expert'}
+];
+
+/* Six ducks for an exact integer answer: every decoy shares the last digit */
+function exactDucks(A){
+  const d=String(A).length, kmax=Math.max(1,d-2);
+  const small=[10,20,30], big=[];
+  if(kmax===1) small.push(40,50);
+  if(d===3) big.push(100,200);
+  for(let k=2;k<=kmax;k++) for(const m of [1,2,3]) big.push(m*10**k);
+  if(kmax>=2) big.push(90,110);
+  const mk=offs=>{const c=[];offs.forEach(o=>{c.push(A+o);if(A-o>0)c.push(A-o);});return c;};
+  const set=new Set([A]);
+  const nSmall=big.length?2:5;
+  for(const c of shuffle(mk(small))){ if(set.size>=1+nSmall) break; set.add(c); }
+  for(const c of shuffle(mk([...small,...big]))){ if(set.size>=6) break; set.add(c); }
+  return [...set].sort((a,b)=>a-b);
+}
+/* Six evenly spaced ducks around a non-exact answer */
+function estimateDucks(v,s,min,max){
+  const near=Math.round(v/s)*s;
+  let start=near-R(0,5)*s;
+  if(start<min) start=Math.ceil(min/s)*s;
+  if(start+5*s>max) start=Math.floor(max/s)*s-5*s;
+  return [0,1,2,3,4,5].map(i=>start+i*s);
+}
+/* Spread-out ducks: each duck is roughly `ratio` times its neighbour, so a sensible
+   estimate is enough to choose. step = the grid the ducks sit on (10 keeps the last digit
+   the same on exact questions; 1 for closest-integer questions). */
+const RATIO=[1,1.18,1.4];
+function spreadDucks(A,ratio,step,min){
+  const snap=x=>A+step*Math.round((x-A)/step);
+  const hop=()=>Math.pow(ratio,1+(Math.random()-.5)*.5);
+  for(let t=0;t<60;t++){
+    const p=t<50?pick([0,1,1,2,2,2,3,3,3,4,4,5]):0, d=new Array(6); d[p]=A; let ok=true;
+    for(let k=p+1;k<6;k++) d[k]=Math.max(snap(d[k-1]*hop()), d[k-1]+step);
+    for(let k=p-1;k>=0;k--){ d[k]=Math.min(snap(d[k+1]/hop()), d[k+1]-step); if(d[k]<min){ok=false;break;} }
+    if(ok) return d;
+  }
+}
+/* Mixed last digits: nudge three of the five decoys so their last digit is wrong.
+   The last-digit check then rules out three ducks and leaves the answer plus two. */
+function mixLastDigits(d,A){
+  const idx=shuffle(d.map((x,i)=>i).filter(i=>d[i]!==A)).slice(0,3);
+  for(const i of idx){ let k=pick([-4,-3,-2,-1,1,2,3,4]); if(d[i]+k<1) k=-k; d[i]+=k; }
+  return d.sort((a,b)=>a-b);
+}
+/* lastDigit setting: 0 = always the same, 1 = mixed on the two easier levels, 2 = mixed on every level */
+const mixedAt=(level,ld=settings.lastDigit)=>ld===2||(ld===1&&level<=2);
+let lastQ='';
+function makeRound(level, enabled, spread=settings.spread, mixed=mixedAt(level)){
+  for(let tries=0;tries<800;tries++){
+    const type=pick(enabled);
+    const r=GEN[type](level,spread);
+    if(r.q===lastQ) continue;
+    const isExact = !r.spacing && Math.abs(r.v-Math.round(r.v))<1e-9;
+    if(isExact){
+      r.v=Math.round(r.v); r.answer=r.v; r.ducks = spread ? spreadDucks(r.v,RATIO[spread],10,1) : exactDucks(r.v);
+      if(mixed) mixLastDigits(r.ducks,r.v);
+    } else {
+      const s=r.spacing||1, near=Math.round(r.v/s)*s;
+      if(Math.abs(r.v-near)>0.35*s) continue;              // keep well clear of halfway
+      r.answer=near;
+      r.ducks = (spread && r.max===undefined) ? spreadDucks(near,RATIO[spread],1,r.min??1) : estimateDucks(r.v,s,r.min??1,r.max??Infinity);
+    }
+    r.exact=isExact; r.type=type;
+    r.stmt = r.stmt || `${r.q} = ${isExact?N(r.v):approx(r.v)}`;
+    lastQ=r.q;
+    return r;
+  }
+  throw new Error('Could not make a question');
+}
+
+/* =========================================================
+   State and settings
+   ========================================================= */
+const KEY='luckyDuck.settings.v1';
+let settings={level:1,spread:1,lastDigit:1,types:{add:true,sub:true,mul:true,div:true,pct:false,sq:false,sqrt:false,cube:false,cbrt:false,trig:false}};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.types){settings.level=s.level||1;if([0,1,2].includes(s.spread))settings.spread=s.spread;if([0,1,2].includes(s.lastDigit))settings.lastDigit=s.lastDigit;Object.assign(settings.types,s.types);}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(settings));}catch(e){}};
+const state={phase:'pick',picked:null,round:null,qn:0,wins:0,picks:0};
+
+const $=id=>document.getElementById(id);
+const ducksEl=$('ducks'), stageEl=$('stage'), goBtn=$('go'), banner=$('banner');
+
+function setPhase(p){ state.phase=p; document.body.classList.remove('phase-pick','phase-revealing','phase-revealed'); document.body.classList.add('phase-'+p); }
+
+function newRound(){
+  const enabled=TYPES.map(t=>t.id).filter(id=>settings.types[id]);
+  const r=makeRound(settings.level, enabled);
+  state.round=r; state.picked=null; state.qn++;
+  ducksEl.innerHTML=r.ducks.map((n,i)=>{
+    const rot=(Math.random()<.5?-1:1)*R(92,108);
+    return `<div class="slot" data-i="${i}" style="--rot:${rot}deg">
+      <div class="bob" style="animation-delay:-${(i*0.43+Math.random()*.3).toFixed(2)}s">
+        <div class="duck">${duckSVG(N(n)+(r.unit||''))}</div>${HOOK}
+      </div><div class="pick-tag">Your pick</div></div>`;
+  }).join('') + ['rw1','rw2'].map(c=>`<svg class="row-wave ${c}" viewBox="0 0 2400 100" preserveAspectRatio="none" aria-hidden="true"><path d="${wavePath()}" fill="url(#gWave)"/><path d="${wavePath().split(' L')[0]}" fill="none" stroke="#bfe8ff" stroke-width="5" stroke-opacity=".7"/></svg>`).join('');
+  $('q').innerHTML=r.q;
+  $('rule').textContent = r.exact ? 'Which duck has the answer?' : 'Which duck is closest?';
+  const ans=$('ans'); ans.classList.remove('show'); ans.innerHTML='&nbsp;';
+  banner.classList.remove('show','lose');
+  goBtn.textContent='Reveal!'; goBtn.disabled=false;
+  setPhase('pick'); updateTally(); fitBoard();
+}
+
+function choose(i){
+  if(state.phase!=='pick') return;
+  state.picked = state.picked===i ? null : i;
+  ducksEl.querySelectorAll('.slot').forEach((el,j)=>el.classList.toggle('picked',j===state.picked));
+}
+
+function reveal(){
+  if(state.phase!=='pick') return;
+  setPhase('revealing'); goBtn.disabled=true;
+  const slots=[...ducksEl.querySelectorAll('.slot')], r=state.round, win=r.ducks.indexOf(r.answer);
+  slots.forEach(s=>s.classList.add('wobble'));
+  setTimeout(()=>{
+    slots.forEach((s,i)=>{
+      s.classList.remove('wobble');
+      if(i===win){ s.classList.add('winner'); decorateWinner(s); }
+      else setTimeout(()=>s.classList.add('toppled'), 80+Math.random()*500);
+    });
+    const unit=r.unit||'';
+    $('ans').innerHTML = `${r.stmt}` + (r.exact?'':`<span class="closest">Closest: ${N(r.answer)}${unit}</span>`);
+    $('ans').classList.add('show');
+    const big=banner.querySelector('.big'), small=banner.querySelector('.small');
+    if(state.picked===null){ big.textContent='Lucky Duck!'; small.textContent=`It's number ${N(r.answer)}${unit}`; banner.classList.remove('lose'); }
+    else{
+      state.picks++;
+      if(state.picked===win){ state.wins++; big.textContent='WINNER!'; small.textContent='Top prize — well hooked!'; banner.classList.remove('lose'); }
+      else { big.textContent='Unlucky!'; small.textContent=`The lucky duck was ${N(r.answer)}${unit}`; banner.classList.add('lose'); }
+    }
+    setTimeout(()=>banner.classList.add('show'),350);
+    if(state.picked===null||state.picked===win) setTimeout(()=>confetti(slots[win]),450);
+    updateTally();
+    setTimeout(()=>{ setPhase('revealed'); goBtn.textContent='Next duck ›'; goBtn.disabled=false; },700);
+  },1100);
+}
+
+function decorateWinner(slot){
+  const duck=slot.querySelector('.duck');
+  duck.insertAdjacentHTML('beforeend',CROWN);
+  for(let k=0;k<12;k++){
+    const sp=document.createElement('span'); sp.className='spark';
+    sp.style.left=(R(-10,100))+'%'; sp.style.top=(R(-25,85))+'%';
+    sp.style.animationDelay=(Math.random()*1.4).toFixed(2)+'s';
+    sp.style.width=R(5,10)+'%';
+    duck.appendChild(sp);
+  }
+}
+
+/* Shrink the question (and answer line) to fit narrow screens */
+function fitLine(el){
+  el.style.fontSize='';
+  if(el.scrollWidth>el.clientWidth+1){
+    const fs=parseFloat(getComputedStyle(el).fontSize);
+    el.style.fontSize=Math.max(14,Math.floor(fs*el.clientWidth/el.scrollWidth*0.97))+'px';
+  }
+}
+function fitBoard(){ fitLine($('q')); }
+addEventListener('resize',fitBoard);
+
+function updateTally(){
+  $('tally').innerHTML=`Duck <b>${state.qn}</b><br>Lucky picks: <b>${state.wins}</b> / ${state.picks}`;
+}
+
+function goPressed(){ if(state.phase==='pick') reveal(); else if(state.phase==='revealed') newRound(); }
+
+/* =========================================================
+   Confetti
+   ========================================================= */
+const cv=$('confetti'), ctx=cv.getContext('2d'); let parts=[], raf=null;
+function confetti(el){
+  const dpr=window.devicePixelRatio||1; cv.width=innerWidth*dpr; cv.height=innerHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  const b=el.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height*.3;
+  const cols=['#ffc93c','#d62828','#3a86ff','#fff6e0','#2a9d8f','#ff8a1f'];
+  for(let i=0;i<170;i++) parts.push({x,y,vx:(Math.random()-.5)*16,vy:-Math.random()*15-4,r:Math.random()*6+4,a:Math.random()*6,va:(Math.random()-.5)*.4,c:pick(cols),life:0});
+  if(!raf) raf=requestAnimationFrame(tick);
+}
+function tick(){
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+  parts.forEach(p=>{p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;p.life++;
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.globalAlpha=Math.max(0,1-p.life/170);
+    ctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);ctx.restore();});
+  parts=parts.filter(p=>p.y<innerHeight+40&&p.life<170);
+  raf = parts.length ? requestAnimationFrame(tick) : (ctx.clearRect(0,0,innerWidth,innerHeight), null);
+}
+
+/* =========================================================
+   UI wiring
+   ========================================================= */
+function buildLevels(){
+  $('levels').innerHTML=LEVELS.map((l,i)=>`<button class="chip${settings.level===i+1?' on':''}" data-l="${i+1}">${l.name}<small>${l.sub}</small></button>`).join('');
+}
+$('levels').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b) return;
+  settings.level=+b.dataset.l; save(); buildLevels(); newRound();
+});
+const SPACING=[
+  {name:'Close together', sub:'Work it out', eg:'the ducks are near misses, so it has to be calculated.'},
+  {name:'Spread out',     sub:'Careful estimate', eg:'each duck is roughly 15–20% away from the next.'},
+  {name:'Far apart',      sub:'Quick estimate', eg:'each duck is roughly 40% bigger than the one before.'}
+];
+function buildSpacing(){
+  $('spacing').innerHTML=SPACING.map((o,i)=>`<button type="button" data-s="${i}" class="${settings.spread===i?'on':''}">${o.name}<small>${o.sub}</small></button>`).join('');
+  $('spacingEg').innerHTML=`<b>${SPACING[settings.spread].name}:</b> ${SPACING[settings.spread].eg}`;
+}
+$('spacing').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  settings.spread=+b.dataset.s; save(); buildSpacing(); typesChanged=true;
+});
+const LASTDIGIT=[
+  {name:'All the same', sub:'No shortcut', eg:'every duck ends in the same digit as the answer, so checking the last digit never helps.'},
+  {name:'Mixed: easier levels', sub:'Paddling Pool, Village Pond', eg:'on the two easier levels three ducks end in the wrong digit, so the last-digit check rules them out and leaves three to choose from. The two harder levels keep every last digit the same.'},
+  {name:'Mixed: every level', sub:'Always rules some out', eg:'on every level three ducks end in the wrong digit, so the last-digit check rules them out and leaves three to choose from.'}
+];
+function buildLastDigit(){
+  $('lastDigit').innerHTML=LASTDIGIT.map((o,i)=>`<button type="button" data-s="${i}" class="${settings.lastDigit===i?'on':''}">${o.name}<small>${o.sub}</small></button>`).join('');
+  $('lastDigitEg').innerHTML=`<b>${LASTDIGIT[settings.lastDigit].name}:</b> ${LASTDIGIT[settings.lastDigit].eg} Only applies to questions with an exact whole-number answer.`;
+}
+$('lastDigit').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  settings.lastDigit=+b.dataset.s; save(); buildLastDigit(); typesChanged=true;
+});
+function buildTypes(){
+  const groups=[...new Set(TYPES.map(t=>t.group))];
+  $('typeGroups').innerHTML=groups.map(g=>`<p style="margin:1vh 0 .4vh;font-weight:700">${g}</p><div class="types">`+
+    TYPES.filter(t=>t.group===g).map(t=>`<label><input type="checkbox" data-t="${t.id}"${settings.types[t.id]?' checked':''}>${t.label}</label>`).join('')+'</div>').join('');
+}
+$('typeGroups').addEventListener('change',e=>{
+  const id=e.target.dataset.t; if(!id) return;
+  settings.types[id]=e.target.checked;
+  if(!Object.values(settings.types).some(Boolean)){ settings.types[id]=true; e.target.checked=true; }
+  save(); typesChanged=true;
+});
+let typesChanged=false;
+function openSettings(){ typesChanged=false; buildSpacing(); buildLastDigit(); buildTypes(); $('modal').classList.add('open'); }
+function closeSettings(){ $('modal').classList.remove('open'); if(typesChanged && state.phase!=='revealing') newRound(); }
+$('gear').onclick=openSettings; $('closeSettings').onclick=closeSettings;
+$('modal').addEventListener('click',e=>{ if(e.target.id==='modal') closeSettings(); });
+$('resetTally').onclick=()=>{ state.qn=state.phase==='pick'?1:state.qn; state.wins=0; state.picks=0; updateTally(); };
+$('fs').onclick=()=>{ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); };
+goBtn.onclick=goPressed;
+ducksEl.addEventListener('click',e=>{ const s=e.target.closest('.slot'); if(s) choose(+s.dataset.i); });
+document.addEventListener('keydown',e=>{
+  if($('modal').classList.contains('open')){ if(e.key==='Escape') closeSettings(); return; }
+  if(e.key>='1'&&e.key<='6'){ choose(+e.key-1); }
+  else if(e.key===' '||e.key==='Enter'){ e.preventDefault(); goPressed(); }
+  else if(e.key==='f'||e.key==='F'){ $('fs').click(); }
+  else if(e.key==='s'||e.key==='S'){ openSettings(); }
+});
+
+if(!document.documentElement.requestFullscreen) document.body.classList.add('no-fs');
+buildLevels();
+newRound();
+</script>
+</body>
+</html>

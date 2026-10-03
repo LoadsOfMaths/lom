@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bouncer</title>
+<style>
+:root{--bg:#07060d;--ink:#f5f3ff;--pink:#ff3fb4;--cyan:#39e6ff;--gold:#ffc94d;--line:#2d1f4d}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+header{display:flex;align-items:center;gap:12px;padding:8px 16px;background:linear-gradient(#1a1030,#0d0918);border-bottom:2px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1.05}
+.brand h1{margin:0;font-size:34px;color:#fff;letter-spacing:3px;text-shadow:0 0 6px var(--pink),0 0 18px var(--pink)}
+.brand .tag{font-size:14px;color:#c9b8ff;font-style:italic}
+.chip{background:#231a3b;border:1px solid #4a3a78;border-radius:999px;padding:5px 14px;font-size:16px;color:#e8dcff;white-space:nowrap}
+.spacer{flex:1}
+#timer{font-size:32px;font-weight:bold;font-variant-numeric:tabular-nums;color:var(--gold);min-width:96px;text-align:center;display:none}
+#timer.low{color:#ff5a5a}
+#timer.done{animation:flash .5s steps(2) infinite}
+@keyframes flash{50%{opacity:.2}}
+button{font:inherit;font-size:18px;font-weight:bold;color:#fff;background:#1d1533;border:2px solid #6c4bd6;border-radius:10px;padding:9px 16px;cursor:pointer;transition:background .15s,transform .1s}
+button:hover:not(:disabled){background:#2d1f55}
+button:active:not(:disabled){transform:scale(.96)}
+button:disabled{opacity:.35;cursor:default}
+button.go{border-color:var(--cyan);box-shadow:0 0 10px rgba(57,230,255,.35)}
+button.hot{border-color:var(--pink);box-shadow:0 0 10px rgba(255,63,180,.4)}
+button.icon{padding:9px 13px}
+#stage{flex:1;min-height:0;position:relative;background:#1a0f10}
+#stage svg{width:100%;height:100%;display:block}
+footer{height:100px;display:flex;align-items:center;justify-content:center;gap:18px;background:#0d0918;border-top:2px solid var(--line);padding:0 20px;text-align:center}
+#msg{font-size:30px;color:#d9ccff}
+#msg .sum{font-size:48px;font-weight:bold;color:#fff;letter-spacing:1px}
+#msg .sum b{color:var(--gold);text-shadow:0 0 12px rgba(255,201,77,.6)}
+#msg .run{font-size:40px;color:#fff}
+#msg.timesup{color:#ff6b6b;font-size:44px;font-weight:bold;animation:flash .6s steps(2) 6}
+
+/* SVG animation bits */
+.bob{animation:bob 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-1.5deg)}75%{transform:translateY(-4px) rotate(1.5deg)}}
+.walk .bob{animation:bob .45s ease-in-out infinite}
+.hi .bob{animation:hop .5s ease-in-out infinite}
+@keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.cust{transition:transform .9s cubic-bezier(.3,.8,.3,1),opacity .6s}
+.cust.clickable{cursor:pointer}
+@media (hover:hover){
+.cust.clickable:hover .bob{filter:drop-shadow(0 0 10px #39e6ff) drop-shadow(0 0 3px #39e6ff)}
+.cust.clickable:hover .card{stroke:#39e6ff}
+}
+.stamp{opacity:0;transition:opacity .25s}
+.stamp.on{opacity:1}
+.lbl{opacity:0;transition:opacity .3s}
+.lbl.on{opacity:1}
+.flick{animation:flick 5s infinite}
+@keyframes flick{0%,40%,44%,48%,100%{opacity:1}42%,46%{opacity:.25}}
+.disco{animation:disco 1.2s ease-in-out infinite alternate}
+@keyframes disco{from{opacity:.25}to{opacity:.95}}
+.leaf{transition:transform 1s ease-in-out}
+#leafL.open{transform:scaleX(.12)}
+#leafR.open{transform:scaleX(.12)}
+#bubble{transition:opacity .2s}
+#beam{transition:opacity .25s}
+
+/* Settings */
+#overlay{position:fixed;inset:0;background:rgba(3,2,8,.78);display:none;align-items:center;justify-content:center;z-index:10}
+#overlay.on{display:flex}
+.panel{background:#130e22;border:2px solid #6c4bd6;border-radius:16px;box-shadow:0 0 40px rgba(108,75,214,.45);width:min(760px,94vw);max-height:92vh;overflow:auto;padding:22px 26px}
+.panel h2{margin:0 0 14px;color:#fff;text-shadow:0 0 8px var(--pink)}
+.panel h3{margin:18px 0 8px;font-size:17px;color:var(--cyan);text-transform:uppercase;letter-spacing:1.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.opt{display:flex;align-items:center;gap:8px;background:#1c1533;border:1px solid #3b2d63;border-radius:10px;padding:9px 12px;font-size:17px;cursor:pointer}
+.opt input{transform:scale(1.3);accent-color:#ff3fb4}
+.opt small{color:#a894e0}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:17px}
+select,input[type=number]{font:inherit;font-size:17px;background:#0c0916;color:#fff;border:1px solid #5a47a0;border-radius:8px;padding:6px 8px}
+input[type=number]{width:90px}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin:14px -26px -22px;padding:12px 26px 16px;position:sticky;bottom:-22px;background:#130e22;border-top:1px solid #3b2d63}
+.note{color:#a894e0;font-size:14px;margin-top:6px}
+.keys{color:#a894e0;font-size:14px;margin-top:14px;line-height:1.5}
+.tabs{display:flex;gap:6px;border-bottom:2px solid #3b2d63;margin:0 0 6px}
+.tabBtn{border:2px solid #3b2d63;border-bottom:none;border-radius:10px 10px 0 0;background:#1a1330;color:#b9a8ee;font-size:17px;padding:8px 18px;margin-bottom:-2px}
+.tabBtn.on{background:#130e22;color:#fff;border-color:#6c4bd6;box-shadow:none}
+.tab[hidden]{display:none}
+#tabLines{padding-top:12px}
+.lines{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.lines{grid-template-columns:1fr}}
+.lineBox label{display:block;font-size:16px;color:#e8dcff;margin-bottom:4px;font-weight:bold}
+.lineBox label small{font-weight:normal;color:#a894e0}
+.lineBox textarea{width:100%;font:inherit;font-size:16px;line-height:1.45;background:#0c0916;color:#fff;border:2px solid #5a47a0;border-radius:8px;padding:6px 8px;resize:vertical}
+.lineBox textarea.amber{border-color:#ffb020}
+.lineBox textarea.red{border-color:#ff4d6d}
+.lnWarn{font-size:14px;min-height:18px;margin-top:3px;line-height:1.4}
+.lnWarn .ok{color:#6ee7a0}
+.lnWarn .amber{color:#ffc14d}
+.lnWarn .red{color:#ff7a8f}
+.lnHint{color:#a894e0;font-size:14px;margin:-2px 0 10px}
+button.small{font-size:15px;padding:6px 12px;margin-top:10px}
+kbd{background:#2a2145;border:1px solid #5a47a0;border-radius:4px;padding:0 6px;font-family:inherit;color:#fff}
+
+/* ---- Tablets and phones ---- */
+html{-webkit-text-size-adjust:100%}
+button,.cust{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#rotate{display:none;position:fixed;inset:0;z-index:50;background:#07060d;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:18px}
+#rotate .ph{width:70px;height:120px;border:5px solid #39e6ff;border-radius:14px;box-shadow:0 0 16px rgba(57,230,255,.6);animation:turn 2.4s ease-in-out infinite}
+@keyframes turn{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+#rotate h2{margin:0;font-size:26px;text-shadow:0 0 8px var(--pink)}
+#rotate p{margin:0;color:#c9b8ff;font-size:17px}
+@media (orientation:portrait) and (max-width:900px){ #rotate{display:flex} }
+/* narrower screens (tablets): tighten the top bar so it stays on one row */
+@media (max-width:1280px){
+  header{gap:8px;padding:6px 10px}
+  .brand h1{font-size:26px;letter-spacing:2px}
+  .brand .tag{display:none}
+  .chip{font-size:14px;padding:4px 10px}
+  button{font-size:15px;padding:8px 11px}
+  #timer{font-size:26px;min-width:76px}
+}
+@media (max-width:1100px){ .chip{display:none} header{flex-wrap:nowrap} button{white-space:nowrap} }
+/* short screens (phones in landscape) */
+@media (max-height:560px){
+  header{gap:6px;padding:4px 8px;flex-wrap:nowrap}
+  .brand h1{font-size:19px;letter-spacing:1px}
+  .brand .tag,.chip{display:none}
+  button{font-size:12.5px;padding:6px 8px;border-radius:8px;border-width:1.5px;white-space:nowrap}
+  button.icon{padding:6px 9px}
+  #timer{font-size:20px;min-width:56px}
+  footer{height:50px;padding:0 10px}
+  #msg{font-size:17px}
+  #msg .sum{font-size:24px}
+  #msg .run{font-size:21px}
+  #msg.timesup{font-size:24px}
+  .panel{padding:12px 14px;max-height:96vh;max-height:96dvh}
+  .panel h2{font-size:19px;margin-bottom:8px}
+  .panel h3{margin:10px 0 6px;font-size:14px}
+  .opt{font-size:14px;padding:6px 9px}
+  .row{font-size:14px;gap:9px}
+  select,input[type=number]{font-size:14px}
+  .keys{display:none}
+  .actions{margin:10px -14px -12px;padding:8px 14px 10px;bottom:-12px}
+  .tabBtn{font-size:14px;padding:6px 12px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><h1>BOUNCER</h1><span class="tag">If your number's not down, you're not coming in.</span></div>
+    <span class="chip" id="chipLevel"></span>
+    <span class="chip" id="chipRule"></span>
+    <div class="spacer"></div>
+    <div id="timer"></div>
+    <button id="bNew" class="go" title="New queue (N)">New Queue</button>
+    <button id="bCheck" class="hot" title="Bouncers check the queue one by one (Space)">Check the Queue</button>
+    <button id="bAns" title="Skip straight to the answer (A)">Show Answer</button>
+    <button id="bDoors" title="Let the lucky ones in (D)">Open the Doors</button>
+    <button id="bSet" class="icon" title="Settings (S)">⚙</button>
+    <button id="bFull" class="icon" title="Full screen (F)">⛶</button>
+  </header>
+  <div id="stage"></div>
+  <footer><div id="msg"></div></footer>
+</div>
+
+<div id="rotate"><div class="ph"></div><h2>Turn your device sideways</h2><p>Bouncer needs a landscape screen.</p></div>
+<div id="overlay">
+  <div class="panel">
+    <h2>Settings</h2>
+    <div class="tabs"><button type="button" class="tabBtn on" data-tab="tabGame">Game</button><button type="button" class="tabBtn" data-tab="tabLines">Bouncer's Lines</button></div>
+    <div class="tab" id="tabGame">
+    <h3>Level (biggest number in the queue)</h3>
+    <div class="grid" id="setLevel">
+      <label class="opt"><input type="radio" name="lvl" value="early">Early Doors <small>up to 20</small></label>
+      <label class="opt"><input type="radio" name="lvl" value="main">Main Room <small>up to 50</small></label>
+      <label class="opt"><input type="radio" name="lvl" value="vip">VIP Lounge <small>up to 100</small></label>
+      <label class="opt"><input type="radio" name="lvl" value="after">After Party <small>up to 200</small></label>
+      <label class="opt"><input type="radio" name="lvl" value="custom">Custom <small>up to</small> <input type="number" id="customMax" min="20" max="999" step="1"></label>
+    </div>
+
+    <h3>Door policies in rotation</h3>
+    <div class="grid" id="setRules"></div>
+    <div class="row" style="margin-top:10px">
+      <label>Multiples of <select id="multN"></select></label>
+      <label>Factors of <select id="factMode"><option value="random">random N</option><option value="fixed">fixed N</option></select> <input type="number" id="factN" min="2" max="5000"></label>
+    </div>
+
+    <h3>Queue</h3>
+    <div class="row">
+      <label>Customers <select id="queueSel"></select></label>
+      <label>Timer <select id="timerSel"><option value="0">Off</option><option value="20">20 s</option><option value="30">30 s</option><option value="45">45 s</option><option value="60">60 s</option><option value="90">90 s</option><option value="120">2 min</option></select></label>
+      <label>Checking <select id="checkMode"><option value="click">Click each customer</option><option value="auto">Automatic</option></select></label>
+      <label id="speedLbl">Automatic speed <select id="speed"><option value="slow">Slow</option><option value="normal">Normal</option><option value="fast">Fast</option></select></label>
+      <label class="opt" style="padding:6px 10px"><input type="checkbox" id="reasons">Show reasons on reveal</label>
+    </div>
+    </div>
+    <div class="tab" id="tabLines" hidden>
+    <div class="lnHint">One line per phrase; one is picked at random each time. Up to <b id="lnFit"></b> letters fits at full size, longer lines shrink to fit, and over <b id="lnMax"></b> letters gets hard to read from the back of the room.</div>
+    <div class="lines" id="linesWrap"></div>
+    <button id="lnReset" class="small">Reset lines to defaults</button>
+    </div>
+    <div class="keys">Keys: <kbd>N</kbd> new queue · <kbd>Space</kbd> check the queue · <kbd>A</kbd> show answer · <kbd>D</kbd> open the doors · <kbd>S</kbd> settings · <kbd>F</kbd> full screen</div>
+    <div class="actions">
+      <button id="sCancel">Cancel</button>
+      <button id="sApply" class="go">Save &amp; New Queue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Bouncer: pure logic (no DOM) =====
+const LEVELS = {
+  early: { name: 'Early Doors', max: 20 },
+  main:  { name: 'Main Room',   max: 50 },
+  vip:   { name: 'VIP Lounge',  max: 100 },
+  after: { name: 'After Party', max: 200 },
+  custom:{ name: 'Custom',      max: null }
+};
+const RULE_TYPES = ['primes','composites','multiples','factors','squares','cubes','triangular'];
+const RULE_NAMES = {
+  primes:'Prime numbers', composites:'Composite numbers', multiples:'Multiples of n',
+  factors:'Factors of N', squares:'Square numbers', cubes:'Cube numbers', triangular:'Triangular numbers'
+};
+
+function randInt(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
+function isPrime(n){ if(n<2) return false; for(let d=2;d*d<=n;d++) if(n%d===0) return false; return true; }
+function spf(n){ for(let d=2;d*d<=n;d++) if(n%d===0) return d; return n; }
+function isqrt(n){ return Math.round(Math.sqrt(n)); }
+function icbrt(n){ return Math.round(Math.cbrt(n)); }
+function isSquare(n){ const r=isqrt(n); return r*r===n; }
+function isCube(n){ const r=icbrt(n); return r*r*r===n; }
+function triIndex(n){ const k=Math.round((Math.sqrt(8*n+1)-1)/2); return k*(k+1)/2===n ? k : 0; }
+function isTri(n){ return triIndex(n)>0; }
+function numFactors(n){ let c=0; for(let d=1;d*d<=n;d++) if(n%d===0) c += (d*d===n?1:2); return c; }
+function distTo(x, pred, max){ for(let d=0; d<=3; d++){ if((x-d>=1 && pred(x-d)) || (x+d<=max+10 && pred(x+d))) return d; } return 99; }
+function pickWeighted(items, weights){
+  let tot=0; for(const w of weights) tot+=w;
+  let r=Math.random()*tot;
+  for(let i=0;i<items.length;i++){ r-=weights[i]; if(r<=0) return i; }
+  return items.length-1;
+}
+function sampleWeighted(pool, k, wfn){
+  const items=pool.slice(), w=items.map(wfn), out=[];
+  while(out.length<k && items.length){ const i=pickWeighted(items,w); out.push(items[i]); items.splice(i,1); w.splice(i,1); }
+  return out;
+}
+
+function getMax(s){
+  if(s.level==='custom'){ let m=parseInt(s.customMax,10); if(!(m>=20)) m=20; if(m>999) m=999; return m; }
+  return (LEVELS[s.level]||LEVELS.main).max;
+}
+
+function buildRule(type, max, s){
+  switch(type){
+    case 'primes': return {
+      type, sign:'PRIME NUMBERS ONLY', chip:'Primes only', test:isPrime,
+      reason:(x,ok)=> ok ? 'prime' : (x===1 ? 'not prime' : `${spf(x)}×${x/spf(x)}`),
+      weight:x=> x===1 ? 4 : (x%2===1 ? 5 : 1)
+    };
+    case 'composites': return {
+      type, sign:'COMPOSITE NUMBERS ONLY', chip:'Composites only', test:x=>x>1&&!isPrime(x),
+      reason:(x,ok)=> ok ? `${spf(x)}×${x/spf(x)}` : (x===1 ? 'neither' : 'prime'),
+      weight:x=> x===1 ? 3 : 2
+    };
+    case 'multiples': {
+      let n;
+      if(s.multN==='random'){
+        const c=[]; for(let k=2;k<=12;k++) if(Math.floor(max/k)>=3) c.push(k);
+        if(!c.length) return null; n=c[randInt(0,c.length-1)];
+      } else n=parseInt(s.multN,10);
+      if(!(n>=2)) return null;
+      return {
+        type, param:n, sign:`MULTIPLES OF ${n} ONLY`, chip:`Multiples of ${n}`, test:x=>x%n===0,
+        reason:(x,ok)=> ok ? `${n}×${x/n}` : (x<n ? `${x} < ${n}` : `${n}×${Math.floor(x/n)} r${x%n}`),
+        weight:x=>{ const r=x%n, d=Math.min(r,n-r); return (d<=2?3:1) + (gcd(x,n)>1?2:0); }
+      };
+    }
+    case 'factors': {
+      let N;
+      if(s.factN==='random'){
+        const lo=Math.max(6,Math.ceil(max*0.4));
+        let c=[];
+        for(const need of [8,6,4]){ c=[]; for(let k=lo;k<=max;k++) if(numFactors(k)>=need) c.push(k); if(c.length) break; }
+        if(!c.length) return null; N=c[randInt(0,c.length-1)];
+      } else { N=parseInt(s.factN,10); if(!(N>=2)) return null; if(N>5000) N=5000; }
+      return {
+        type, param:N, sign:`FACTORS OF ${N} ONLY`, chip:`Factors of ${N}`, test:x=>N%x===0,
+        reason:(x,ok)=> ok ? `${N}÷${x}=${N/x}` : (x>N ? (x%N===0 ? `${N}×${x/N}` : `${x} > ${N}`) : `${N}÷${x} r${N%x}`),
+        weight:x=> x>N ? (x%N===0 ? 5 : 0.6) : (x>N/2 ? 0.5 : (gcd(x,N)>1 ? 3 : 1))
+      };
+    }
+    case 'squares': return {
+      type, sign:'SQUARE NUMBERS ONLY', chip:'Squares only', test:isSquare,
+      reason:(x,ok)=> ok ? `${isqrt(x)}²` : 'not square',
+      weight:x=> (distTo(x,isSquare,max)<=2?3:1) + (x%2===0 && (x/2)*(x/2)<=max ? 2 : 0)
+    };
+    case 'cubes': return {
+      type, sign:'CUBE NUMBERS ONLY', chip:'Cubes only', test:isCube,
+      reason:(x,ok)=> ok ? `${icbrt(x)}³` : (isSquare(x) ? 'square, not cube' : 'not cube'),
+      weight:x=> isSquare(x) ? 4 : ((x%3===0 && (x/3)**3<=max*2) || distTo(x,isCube,max)<=2 ? 3 : 1)
+    };
+    case 'triangular': return {
+      type, sign:'TRIANGULAR NUMBERS ONLY', chip:'Triangular only', test:isTri,
+      reason:(x,ok)=>{ if(!ok) return 'not triangular'; const k=triIndex(x); return k===1?'1st one':k<=4?Array.from({length:k},(_,j)=>j+1).join('+'):`1+…+${k}`; },
+      weight:x=> (distTo(x,isTri,max)<=1?3:1) + (isSquare(x)?2:0)
+    };
+  }
+  return null;
+}
+
+// Returns {rule, max, customers:[{n,ok}], total} or null
+function generateQueue(s, lastType){
+  const max=getMax(s);
+  let q = s.queue==='random' ? randInt(6,12) : parseInt(s.queue,10);
+  if(!(q>=6)) q=6; if(q>12) q=12;
+  q=Math.min(q, Math.floor(max*0.75));
+  let types=RULE_TYPES.filter(t=>s.rules && s.rules[t]);
+  if(!types.length) types=['primes'];
+  let order=shuffle(types);
+  if(order.length>1 && order[0]===lastType) order.push(order.shift());
+  order=order.concat(['primes']); // safety fallback
+  for(const t of order){
+    const rule=buildRule(t,max,s); if(!rule) continue;
+    const valid=[], invalid=[];
+    for(let x=1;x<=max;x++) (rule.test(x)?valid:invalid).push(x);
+    const kmax=Math.min(valid.length, q-2, Math.ceil(q*0.6));
+    const kmin=Math.max(2, Math.floor(q*0.3), q-invalid.length);
+    if(kmin>kmax) continue;
+    const k=randInt(kmin,kmax);
+    const allowed=shuffle(valid).slice(0,k);
+    const rejected=sampleWeighted(invalid, q-k, rule.weight);
+    const customers=shuffle(allowed.map(n=>({n,ok:true})).concat(rejected.map(n=>({n,ok:false}))));
+    customers.forEach(c=>c.reason=rule.reason(c.n,c.ok));
+    const total=allowed.reduce((a,b)=>a+b,0);
+    return {rule, max, customers, total};
+  }
+  return null;
+}
+
+if(typeof module!=='undefined') module.exports={generateQueue,buildRule,getMax,isPrime,isSquare,isCube,isTri,RULE_TYPES,LEVELS};
+
+</script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const W=1600,H=820,FOOT=640,DOORX=1360,QL=40,QR=1118;
+const DEFAULTS={level:'main',customMax:100,queue:'random',rules:{primes:true,composites:true,multiples:true,factors:true,squares:true,cubes:true,triangular:true},multN:'random',factN:'random',timer:0,reasons:true,speed:'normal',checkMode:'click'};
+const KEY='bouncer-settings-v1';
+const LINE_FIT=25, LINE_MAX=40;
+const DEFAULT_LINES={
+  in:["In you go.","Go on then.","You're on the list.","Have a good night.","Welcome in.","Looking sharp. In."],
+  out:["Not tonight, mate.","Not on the list.","Not in those trainers.","On your way.","Nice try.","You're barred."],
+  open:["Right, in you come."],
+  close:["Rest of you, jog on.","Not tonight, the rest of you.","Better luck next time."]
+};
+const LINE_LABELS={in:['Letting someone in','during the check'],out:['Turning someone away','during the check'],open:['Opening the doors','as the doors open'],close:['Everyone else','after the doors close']};
+function linesFor(k){ const a=(S.lines&&Array.isArray(S.lines[k]))?S.lines[k].filter(x=>x&&x.trim()):[]; return a.length?a:DEFAULT_LINES[k]; }
+let S=load();
+function load(){ try{ const o=JSON.parse(localStorage.getItem(KEY)); if(o){ return Object.assign({},DEFAULTS,o,{rules:Object.assign({},DEFAULTS.rules,o.rules||{}),lines:Object.assign({},o.lines||{})}); } }catch(e){} return JSON.parse(JSON.stringify(DEFAULTS)); }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
+
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+// ---------- Scene ----------
+const SKIN=['#f6d3b8','#eab893','#d19a6e','#a86f45','#7a4a2a','#5a3620','#f1c27d'];
+const HAIR=['#1e140c','#4a2c16','#8a5a2b','#c9a15b','#111','#a0442a','#d94f8a','#5e4bd6','#e8e2d5'];
+const OUT=['#e63946','#ffb703','#8338ec','#3a86ff','#06d6a0','#ff006e','#fb5607','#2ec4b6','#f15bb5','#ffd60a','#4cc9f0','#c77dff'];
+const LEGS=['#1b1b2f','#2b2d42','#3d2b1f','#14213d','#222','#4a4e69'];
+const STYLES=['short','long','bun','afro','mohican','cap','bob','quiff','pony','bald'];
+
+function hairBack(st,c){
+  if(st==='long') return `<path d="M-31,-238 Q-34,-270 0,-268 Q34,-270 31,-238 L34,-186 Q0,-178 -34,-186Z" fill="${c}"/>`;
+  if(st==='bob') return `<path d="M-32,-236 Q-34,-270 0,-268 Q34,-270 32,-236 L33,-210 Q0,-204 -33,-210Z" fill="${c}"/>`;
+  if(st==='afro') return `<circle cx="0" cy="-246" r="40" fill="${c}"/>`;
+  if(st==='pony') return `<ellipse cx="30" cy="-228" rx="9" ry="22" fill="${c}" transform="rotate(-15 30 -228)"/>`;
+  return '';
+}
+function hairFront(st,c,alt){
+  const cap='M-27,-236 Q-28,-266 0,-265 Q28,-266 27,-236 Q20,-252 0,-251 Q-20,-252 -27,-236Z';
+  switch(st){
+    case 'short': case 'long': case 'bob': case 'pony': return `<path d="${cap}" fill="${c}"/>`;
+    case 'bun': return `<circle cx="0" cy="-268" r="12" fill="${c}"/><path d="${cap}" fill="${c}"/>`;
+    case 'quiff': return `<path d="${cap}" fill="${c}"/><ellipse cx="7" cy="-264" rx="18" ry="10" fill="${c}"/>`;
+    case 'mohican': return `<path d="M-6,-258 L-10,-280 L-3,-266 L0,-286 L3,-266 L10,-280 L6,-258Z" fill="${alt}"/>`;
+    case 'cap': return `<path d="M-28,-238 Q-28,-268 0,-268 Q28,-268 28,-238Z" fill="${alt}"/><rect x="8" y="-243" width="40" height="7" rx="3" fill="${alt}"/>`;
+    default: return '';
+  }
+}
+function person(n,look){
+  const {skin,hair,out,legs,st,dress,alt,shoe}=look;
+  let body='';
+  body+=`<ellipse cx="0" cy="0" rx="40" ry="7" fill="rgba(0,0,0,.4)"/>`;
+  if(dress){
+    body+=`<rect x="-15" y="-92" width="9" height="88" fill="${skin}"/><rect x="6" y="-92" width="9" height="88" fill="${skin}"/>`;
+  } else {
+    body+=`<rect x="-24" y="-112" width="21" height="108" rx="6" fill="${legs}"/><rect x="3" y="-112" width="21" height="108" rx="6" fill="${legs}"/>`;
+  }
+  body+=`<ellipse cx="-13" cy="-4" rx="15" ry="7" fill="${shoe}"/><ellipse cx="13" cy="-4" rx="15" ry="7" fill="${shoe}"/>`;
+  body+=hairBack(st,hair);
+  if(dress) body+=`<path d="M-30,-198 Q-36,-150 -46,-86 L46,-86 Q36,-150 30,-198 Q0,-206 -30,-198Z" fill="${out}"/>`;
+  else body+=`<path d="M-34,-196 Q-37,-150 -31,-104 L31,-104 Q37,-150 34,-196 Q0,-207 -34,-196Z" fill="${out}"/>`;
+  body+=`<rect x="-8" y="-214" width="16" height="20" fill="${skin}"/>`;
+  body+=`<circle cx="0" cy="-234" r="26" fill="${skin}"/>`;
+  body+=`<circle cx="-9" cy="-236" r="3.2" fill="#1a1020"/><circle cx="9" cy="-236" r="3.2" fill="#1a1020"/>`;
+  body+=`<circle cx="-16" cy="-226" r="4.5" fill="#ff7b9c" opacity=".35"/><circle cx="16" cy="-226" r="4.5" fill="#ff7b9c" opacity=".35"/>`;
+  body+=`<path d="M-8,-222 Q0,-214 8,-222" stroke="#5a1f2a" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  body+=hairFront(st,hair,alt);
+  body+=`<path d="M-32,-190 Q-44,-172 -44,-156" stroke="${out}" stroke-width="15" fill="none" stroke-linecap="round"/><path d="M32,-190 Q44,-172 44,-156" stroke="${out}" stroke-width="15" fill="none" stroke-linecap="round"/>`;
+  const card=`<rect class="card" x="-46" y="-188" width="92" height="60" rx="7" fill="#fffdf4" stroke="#1d1330" stroke-width="3"/>`+
+    `<text x="0" y="-144" text-anchor="middle" font-size="${String(n).length>=3?38:42}" font-weight="900" fill="#1d1330" font-family="Arial Black,Arial,sans-serif">${n}</text>`;
+  const hands=`<circle cx="-46" cy="-156" r="8" fill="${skin}"/><circle cx="46" cy="-156" r="8" fill="${skin}"/>`;
+  return `<g class="body">${body}</g><g class="cardg">${card}</g><g class="body">${hands}</g>`;
+}
+function stampSvg(ok){
+  if(ok) return `<g class="stamp"><circle cx="44" cy="-192" r="21" fill="#16a34a" stroke="#fff" stroke-width="3"/><path d="M33,-192 L41,-183 L56,-201" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  return `<g class="stamp"><circle cx="44" cy="-192" r="21" fill="#e11d48" stroke="#fff" stroke-width="3"/><path d="M36,-200 L52,-184 M52,-200 L36,-184" stroke="#fff" stroke-width="6" stroke-linecap="round"/></g>`;
+}
+function bouncer(v){
+  const skin=v?'#c68d62':'#e8b48f';
+  return `<g>
+  <ellipse cx="0" cy="0" rx="66" ry="10" fill="rgba(0,0,0,.5)"/>
+  <rect x="-42" y="-146" width="36" height="140" rx="8" fill="#15151c"/><rect x="6" y="-146" width="36" height="140" rx="8" fill="#15151c"/>
+  <ellipse cx="-24" cy="-6" rx="26" ry="10" fill="#050507"/><ellipse cx="24" cy="-6" rx="26" ry="10" fill="#050507"/>
+  <path d="M-74,-282 Q-84,-200 -58,-132 L58,-132 Q84,-200 74,-282 Q0,-302 -74,-282Z" fill="#1c1c26"/>
+  <path d="M-24,-292 L0,-236 L24,-292Z" fill="#f2f2f2"/>
+  <path d="M-6,-286 L6,-286 L9,-246 L0,-236 L-9,-246Z" fill="#0b0b10"/>
+  <path d="M-24,-292 L-4,-236 L-40,-250Z M24,-292 L4,-236 L40,-250Z" fill="#26263a"/>
+  <rect x="-78" y="-232" width="156" height="36" rx="18" fill="#262634"/>
+  <rect x="-72" y="-210" width="144" height="32" rx="16" fill="#1f1f2c"/>
+  <circle cx="64" cy="-214" r="15" fill="${skin}"/><circle cx="-62" cy="-194" r="15" fill="${skin}"/>
+  <rect x="-22" y="-316" width="44" height="30" fill="${skin}"/>
+  <ellipse cx="0" cy="-336" rx="35" ry="39" fill="${skin}"/>
+  <ellipse cx="-12" cy="-360" rx="12" ry="6" fill="#fff" opacity=".25"/>
+  <circle cx="-35" cy="-334" r="7" fill="${skin}"/><circle cx="35" cy="-334" r="7" fill="${skin}"/>
+  <path d="M-28,-356 L-6,-352 M28,-356 L6,-352" stroke="#2a1a10" stroke-width="4" stroke-linecap="round"/>
+  <rect x="-32" y="-350" width="28" height="15" rx="5" fill="#050507"/><rect x="4" y="-350" width="28" height="15" rx="5" fill="#050507"/>
+  <path d="M-4,-345 L4,-345" stroke="#050507" stroke-width="4"/>
+  <path d="M-26,-346 L-18,-346" stroke="#9fe8ff" stroke-width="2.5" stroke-linecap="round" opacity=".9"/><path d="M10,-346 L18,-346" stroke="#9fe8ff" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>
+  <path d="M-11,-314 L11,-314" stroke="#5a2a1a" stroke-width="3.5" stroke-linecap="round"/>
+  ${v?'<ellipse cx="0" cy="-310" rx="24" ry="14" fill="none" stroke="#2a1a10" stroke-width="10" stroke-dasharray="1.5 3" opacity=".45"/>':''}
+  <circle cx="37" cy="-330" r="4.5" fill="#2a2a2a"/>
+  <path d="M38,-326 q7,5 0,10 q-7,5 0,10 q7,5 0,10 q-5,4 -8,8" stroke="#c9d2dc" stroke-width="2.2" fill="none"/>
+  </g>`;
+}
+
+function buildScene(){
+  const s=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="bricks" width="120" height="60" patternUnits="userSpaceOnUse">
+      <rect width="120" height="60" fill="#241615"/>
+      <rect x="2" y="2" width="56" height="26" rx="2" fill="#5a2e28"/><rect x="62" y="2" width="56" height="26" rx="2" fill="#51291f"/>
+      <rect x="-28" y="32" width="56" height="26" rx="2" fill="#4d2822"/><rect x="32" y="32" width="56" height="26" rx="2" fill="#5e3129"/><rect x="92" y="32" width="56" height="26" rx="2" fill="#4d2822"/>
+    </pattern>
+    <pattern id="slabs" width="160" height="60" patternUnits="userSpaceOnUse">
+      <rect width="160" height="60" fill="#3a3c44"/><path d="M0,0.5 H160 M0.5,0 V60" stroke="#2a2b31" stroke-width="3"/>
+    </pattern>
+    <linearGradient id="night" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${FOOT}"><stop offset="0" stop-color="#05030c" stop-opacity=".82"/><stop offset=".7" stop-color="#05030c" stop-opacity=".35"/><stop offset="1" stop-color="#05030c" stop-opacity=".55"/></linearGradient>
+    <radialGradient id="warm" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff5fc8" stop-opacity=".35"/><stop offset="1" stop-color="#ff5fc8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="spot" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff7c2" stop-opacity=".75"/><stop offset="1" stop-color="#fff7c2" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beamG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7c2" stop-opacity=".05"/><stop offset="1" stop-color="#fff7c2" stop-opacity=".28"/></linearGradient>
+    <linearGradient id="brass" x1="0" x2="1"><stop offset="0" stop-color="#8a6a1f"/><stop offset=".45" stop-color="#ffe08a"/><stop offset="1" stop-color="#8a6a1f"/></linearGradient>
+    <linearGradient id="inside" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a0a4a"/><stop offset="1" stop-color="#12031f"/></linearGradient>
+    <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="dim"><feColorMatrix type="saturate" values="0.12"/><feComponentTransfer><feFuncR type="linear" slope=".55"/><feFuncG type="linear" slope=".55"/><feFuncB type="linear" slope=".6"/></feComponentTransfer></filter>
+  </defs>
+  <rect x="-3000" y="-1500" width="${W+6000}" height="${FOOT+1500}" fill="url(#bricks)"/>
+  <rect x="-3000" y="-1500" width="${W+6000}" height="${FOOT+1500}" fill="url(#night)"/>
+  <ellipse cx="${DOORX}" cy="470" rx="330" ry="260" fill="url(#warm)"/>
+
+  <!-- rule board -->
+  <g>
+    <rect x="300" y="30" width="16" height="30" fill="#555"/><rect x="890" y="30" width="16" height="30" fill="#555"/>
+    <rect x="70" y="44" width="1060" height="196" rx="20" fill="#0c0916" stroke="#3a2f55" stroke-width="4"/>
+    <rect x="86" y="58" width="1028" height="168" rx="14" fill="none" stroke="#39e6ff" stroke-width="4" filter="url(#glow)" opacity=".85"/>
+    <text x="600" y="104" text-anchor="middle" font-size="30" letter-spacing="8" fill="#ff7bd0" filter="url(#glow)" font-weight="bold">TONIGHT'S DOOR POLICY</text>
+    <text id="ruleText" x="600" y="190" text-anchor="middle" font-size="76" font-weight="900" fill="#d8fdff" filter="url(#glow)" font-family="Arial Black,Arial,sans-serif">PRIME NUMBERS ONLY</text>
+  </g>
+
+  <!-- club sign -->
+  <g>
+    <text x="${DOORX+10}" y="100" text-anchor="middle" font-size="48" font-weight="900" fill="#ffd1f0" filter="url(#glow)" font-family="Arial Black,Arial,sans-serif" letter-spacing="2">CLUB <tspan fill="#ffe27a">INTE</tspan><tspan class="flick" fill="#ffe27a">G</tspan><tspan fill="#ffe27a">ER</tspan></text>
+    <text x="${DOORX+10}" y="136" text-anchor="middle" font-size="20" letter-spacing="7" fill="#9ff3ff" filter="url(#glow)">EST. 1557</text>
+  </g>
+
+  <!-- door -->
+  <g>
+    <rect x="1262" y="300" width="196" height="30" rx="4" fill="#0a0a0f"/>
+    <rect x="1262" y="326" width="196" height="5" fill="url(#brass)"/>
+    <rect x="1276" y="331" width="168" height="${FOOT-331}" fill="#1b0f0a"/>
+    <rect x="1288" y="338" width="144" height="${FOOT-338}" fill="url(#inside)"/>
+    <circle class="disco" cx="1320" cy="400" r="26" fill="#ff3fb4" opacity=".6" filter="url(#glow)"/>
+    <circle class="disco" style="animation-delay:.4s" cx="1395" cy="440" r="22" fill="#39e6ff" opacity=".6" filter="url(#glow)"/>
+    <circle class="disco" style="animation-delay:.8s" cx="1350" cy="520" r="30" fill="#ffd60a" opacity=".5" filter="url(#glow)"/>
+    <g id="leafL" class="leaf" style="transform-origin:1288px 490px">
+      <rect x="1288" y="338" width="72" height="${FOOT-338}" fill="#5a0f1f" stroke="#2a050c" stroke-width="3"/>
+      <rect x="1298" y="352" width="52" height="120" rx="4" fill="none" stroke="#7c1a2e" stroke-width="3"/>
+      <rect x="1298" y="488" width="52" height="136" rx="4" fill="none" stroke="#7c1a2e" stroke-width="3"/>
+      <rect x="1350" y="468" width="5" height="44" rx="2" fill="url(#brass)"/>
+    </g>
+    <g id="leafR" class="leaf" style="transform-origin:1432px 490px">
+      <rect x="1360" y="338" width="72" height="${FOOT-338}" fill="#5a0f1f" stroke="#2a050c" stroke-width="3"/>
+      <rect x="1370" y="352" width="52" height="120" rx="4" fill="none" stroke="#7c1a2e" stroke-width="3"/>
+      <rect x="1370" y="488" width="52" height="136" rx="4" fill="none" stroke="#7c1a2e" stroke-width="3"/>
+      <rect x="1365" y="468" width="5" height="44" rx="2" fill="url(#brass)"/>
+    </g>
+  </g>
+
+  <!-- pavement -->
+  <rect x="-3000" y="${FOOT}" width="${W+6000}" height="${H-FOOT}" fill="url(#slabs)"/>
+  <rect x="-3000" y="${FOOT}" width="${W+6000}" height="6" fill="#55575f"/>
+  <rect x="-3000" y="${H-18}" width="${W+6000}" height="18" fill="#6c6e76"/>
+  <rect x="-3000" y="${H}" width="${W+6000}" height="1500" fill="#16161b"/>
+  <rect x="-3000" y="${FOOT}" width="${W+6000}" height="${H-FOOT}" fill="#05030c" opacity=".35"/>
+
+  <g id="beam" opacity="0"><polygon id="beamPoly" points="0,0 0,0 0,0 0,0" fill="url(#beamG)"/><ellipse id="beamSpot" cx="0" cy="${FOOT}" rx="80" ry="16" fill="url(#spot)"/></g>
+  <g id="queue"></g>
+  <g id="rope"></g>
+  <g transform="translate(1196 ${FOOT+6})">${bouncer(0)}</g>
+  <g transform="translate(1524 ${FOOT+6}) scale(-1 1)">${bouncer(1)}</g>
+  <g id="bubble" opacity="0">
+    <path id="bubblePath" d="" fill="#fff" stroke="#1d1330" stroke-width="4"/>
+    <text id="bubbleText" x="1283" y="229" text-anchor="middle" font-size="30" font-weight="bold" fill="#1d1330"></text>
+  </g>
+  </svg>`;
+  $('stage').innerHTML=s;
+  // rope posts
+  let r='';const posts=[];for(let x=QL-10;x<=QR+20;x+=(QR-QL+30)/4) posts.push(x);
+  for(let i=0;i<posts.length-1;i++){const a=posts[i],b=posts[i+1];r+=`<path d="M${a},574 Q${(a+b)/2},616 ${b},574" stroke="#8b0f2a" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M${a},572 Q${(a+b)/2},612 ${b},572" stroke="#d6335a" stroke-width="3" fill="none" opacity=".6"/>`;}
+  posts.forEach(x=>{r+=`<ellipse cx="${x}" cy="${FOOT+22}" rx="20" ry="7" fill="url(#brass)"/><rect x="${x-5}" y="570" width="10" height="${FOOT+20-570}" fill="url(#brass)"/><circle cx="${x}" cy="568" r="10" fill="url(#brass)"/>`;});
+  $('rope').innerHTML=r;
+}
+
+// ---------- State ----------
+let G=null, state='ready', lastType=null, token=0, timerId=null, timeLeft=0, custEls=[];
+const speedMs=()=>({slow:1500,normal:950,fast:480}[S.speed]||950);
+
+function randomLook(){
+  const st=pick(STYLES);
+  return {skin:pick(SKIN),hair:pick(HAIR),out:pick(OUT),legs:pick(LEGS),alt:pick(OUT),shoe:pick(['#111','#fff','#7a1d1d','#1d3b7a','#333']),st,dress:Math.random()<.35};
+}
+function slotX(i,q){ const sp=(QR-QL)/q; return QR-sp*(i+.5); }
+
+function newQueue(){
+  token++; stopTimer();
+  const g=generateQueue(S,lastType); if(!g) return;
+  G=g; lastType=g.rule.type; state='ready';
+  const q=g.customers.length, sp=(QR-QL)/q, sc=Math.min(1,sp/100);
+  // rule text sizing
+  const rt=$('ruleText'); rt.textContent=g.rule.sign;
+  rt.setAttribute('font-size',80);
+  const tw=rt.getComputedTextLength(); if(tw>940) rt.setAttribute('font-size',Math.floor(80*940/tw));
+  $('chipRule').textContent=g.rule.chip;
+  $('chipLevel').textContent=(S.level==='custom'?'Custom':LEVELS[S.level].name)+' · up to '+g.max;
+  // leaves shut
+  $('leafL').classList.remove('open'); $('leafR').classList.remove('open');
+  hideBubble(); $('beam').setAttribute('opacity',0);
+  // build customers
+  const lf=Math.max(16,Math.min(24,sp*0.24));
+  let h='';
+  g.customers.forEach((c,i)=>{
+    const x=slotX(i,q);
+    h+=`<g class="cust" data-i="${i}" style="transform:translate(${x-420}px,${FOOT}px);opacity:0">
+      <g transform="scale(${sc.toFixed(3)})"><g class="bob" style="animation-delay:${(-Math.random()*1.6).toFixed(2)}s">${person(c.n,randomLook())}${stampSvg(c.ok)}</g></g>
+      <text class="lbl" x="0" y="${i%2?118:84}" text-anchor="middle" font-size="${lf.toFixed(1)}" font-weight="bold" fill="${c.ok?'#5dff9a':'#ff7a8f'}" stroke="#05030c" stroke-width="4" paint-order="stroke">${c.reason}</text>
+    </g>`;
+  });
+  // draw back of queue first so the front overlaps
+  const q2=$('queue'); q2.innerHTML=h;
+  const els=[...q2.children]; els.reverse().forEach(e=>q2.appendChild(e));
+  custEls=[]; els.forEach(e=>custEls[+e.dataset.i]=e);
+  clickBusy=false; clickList=[];
+  custEls.forEach((e,i)=>{ if(S.checkMode==='click') e.classList.add('clickable'); e.addEventListener('click',()=>clickCustomer(i)); });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    custEls.forEach((e,i)=>{ const x=slotX(i,q); e.style.transitionDelay=(0.05*(q-i))+'s'; e.style.transform=`translate(${x}px,${FOOT}px)`; e.style.opacity=1; });
+    setTimeout(()=>custEls.forEach(e=>e.style.transitionDelay='0s'),1200);
+  }));
+  setMsg(`Add up the numbers the bouncers will let in.`);
+  startTimer(); buttons();
+}
+
+function setMsg(html,cls){ const m=$('msg'); m.className=cls||''; m.innerHTML=html; }
+function buttons(){
+  const clickMode=S.checkMode==='click';
+  $('bCheck').disabled = !(state==='ready' || (clickMode && state==='checking'));
+  $('bCheck').textContent = (clickMode && state==='checking') ? 'Next in Line' : 'Check the Queue';
+  $('bCheck').title = clickMode ? (state==='checking' ? 'Check the next customer from the front (Space)' : 'Start checking: click each customer to hear the verdict (Space)') : 'Bouncers check the queue one by one (Space)';
+  $('bAns').disabled = !(state==='ready'||state==='checking');
+  $('bDoors').disabled = state!=='revealed';
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+function showBubble(t){
+  const bt=$('bubbleText'), MAXT=380, L=1146;
+  bt.textContent=t; bt.setAttribute('font-size',30);
+  let tw=bt.getComputedTextLength();
+  if(tw>MAXT){ bt.setAttribute('font-size',Math.floor(30*MAXT/tw)); tw=bt.getComputedTextLength(); }
+  const w=Math.max(200,Math.ceil(tw)+60), r=18, top=178, h=80, bot=top+h;
+  // tail points down at the left bouncer's head
+  $('bubblePath').setAttribute('d',`M${L+r},${top} H${L+w-r} a${r},${r} 0 0 1 ${r},${r} V${bot-r} a${r},${r} 0 0 1 -${r},${r} H${L+74} l-24,28 l-4,-28 H${L+r} a${r},${r} 0 0 1 -${r},-${r} V${top+r} a${r},${r} 0 0 1 ${r},-${r}Z`);
+  bt.setAttribute('x',L+w/2);
+  $('bubble').setAttribute('opacity',1);
+}
+function hideBubble(){ $('bubble').setAttribute('opacity',0); }
+function beamTo(i){
+  const x=slotX(i,G.customers.length);
+  $('beamPoly').setAttribute('points',`${x-18},0 ${x+18},0 ${x+78},${FOOT} ${x-78},${FOOT}`);
+  $('beamSpot').setAttribute('cx',x); $('beam').setAttribute('opacity',1);
+}
+function reveal(i){
+  const e=custEls[i], c=G.customers[i];
+  e.classList.remove('hi');
+  e.querySelector('.stamp').classList.add('on');
+  if(S.reasons) e.querySelector('.lbl').classList.add('on');
+  if(!c.ok){ e.querySelectorAll('.body').forEach(b=>b.setAttribute('filter','url(#dim)')); e.querySelector('.card').setAttribute('stroke','#e11d48'); e.querySelector('.cardg').setAttribute('opacity','.8'); }
+  else e.querySelector('.card').setAttribute('stroke','#16a34a');
+}
+function runLine(list,final){
+  if(!list.length) return `<span class="run">Running total: 0</span>`;
+  const s=list.join(' + ');
+  return final ? `<span class="sum">${s} = <b>${G.total}</b></span>` : `<span class="run">${s} = ${list.reduce((a,b)=>a+b,0)}</span>`;
+}
+// ---- Click-to-check mode ----
+let clickList=[], clickBusy=false;
+function startClickCheck(){
+  state='checking'; stopTimer(); buttons(); clickList=[];
+  setMsg(`<span class="run">Click a customer to check them</span>`);
+}
+async function clickCustomer(i){
+  if(S.checkMode!=='click' || clickBusy) return;
+  if(state==='ready') startClickCheck();
+  if(state!=='checking') return;
+  const c=G.customers[i]; if(c.done) return;
+  const my=token; clickBusy=true; c.done=true;
+  const e=custEls[i]; e.classList.remove('clickable');
+  hideBubble(); beamTo(i); e.classList.add('hi');
+  await wait(650);
+  clickBusy=false;
+  if(my!==token||state!=='checking') return;
+  reveal(i); showBubble(pick(linesFor(c.ok?'in':'out')));
+  if(c.ok) clickList.push(c.n);
+  setMsg(runLine(clickList));
+  if(G.customers.every(x=>x.done)){
+    await wait(1400);
+    if(my===token && state==='checking') finish();
+  }
+}
+function nextUnchecked(){ return G.customers.findIndex(c=>!c.done); }
+
+async function checkQueue(){
+  if(S.checkMode==='click'){
+    if(state==='ready'){ startClickCheck(); return; }
+    if(state==='checking'){ const i=nextUnchecked(); if(i>=0) clickCustomer(i); }
+    return;
+  }
+  if(state!=='ready') return;
+  state='checking'; stopTimer(); buttons();
+  const my=token, ms=speedMs(), list=[];
+  setMsg(runLine(list));
+  for(let i=0;i<G.customers.length;i++){
+    if(my!==token||state!=='checking') return;
+    const c=G.customers[i];
+    beamTo(i); custEls[i].classList.add('hi');
+    await wait(ms*0.55); if(my!==token||state!=='checking') return;
+    reveal(i); showBubble(pick(linesFor(c.ok?'in':'out')));
+    if(c.ok){ list.push(c.n); }
+    setMsg(runLine(list));
+    await wait(ms*0.45);
+  }
+  if(my===token && state==='checking') finish();
+}
+function finish(){
+  G.customers.forEach((c,i)=>{ c.done=true; custEls[i].classList.remove('clickable'); reveal(i); });
+  $('beam').setAttribute('opacity',0); hideBubble();
+  state='revealed'; stopTimer();
+  const list=G.customers.filter(c=>c.ok).map(c=>c.n);
+  setMsg(runLine(list,true)); buttons();
+}
+function showAnswer(){ if(state==='ready'||state==='checking'){ state='checking'; finish(); } }
+
+async function openDoors(){
+  if(state!=='revealed') return;
+  state='admitted'; buttons();
+  const my=token;
+  showBubble(pick(linesFor('open')));
+  $('leafL').classList.add('open'); $('leafR').classList.add('open');
+  await wait(700);
+  for(let i=0;i<G.customers.length;i++){
+    if(my!==token) return;
+    const c=G.customers[i]; if(!c.ok) continue;
+    const e=custEls[i];
+    e.querySelector('.lbl').classList.remove('on');
+    e.classList.add('walk');
+    e.style.transition='transform 1.3s ease-in, opacity .5s ease-in .95s';
+    e.style.transform=`translate(${DOORX}px,${FOOT-4}px) scale(.8)`;
+    e.style.opacity=0;
+    await wait(420);
+  }
+  await wait(900); if(my!==token) return;
+  showBubble(pick(linesFor('close')));
+  await wait(1800); if(my===token) hideBubble();
+}
+
+// ---------- Timer ----------
+function startTimer(){
+  const t=$('timer'); t.className='';
+  if(!+S.timer){ t.style.display='none'; return; }
+  timeLeft=+S.timer; t.style.display='block'; drawTimer();
+  timerId=setInterval(()=>{
+    timeLeft--; drawTimer();
+    if(timeLeft<=0){ clearInterval(timerId); timerId=null; t.className='done'; if(state==='ready') setMsg("Time's up! Pens down.","timesup"); }
+  },1000);
+}
+function drawTimer(){ const t=$('timer'); const m=Math.floor(Math.max(0,timeLeft)/60), s=Math.max(0,timeLeft)%60; t.textContent=`${m}:${String(s).padStart(2,'0')}`; t.classList.toggle('low',timeLeft<=10); }
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } const t=$('timer'); t.classList.remove('done'); }
+
+// ---------- Settings ----------
+function openSettings(){
+  showTab('tabGame');
+  document.querySelectorAll('input[name=lvl]').forEach(r=>r.checked=r.value===S.level);
+  $('customMax').value=S.customMax;
+  $('setRules').innerHTML=RULE_TYPES.map(t=>`<label class="opt"><input type="checkbox" data-r="${t}" ${S.rules[t]?'checked':''}>${RULE_NAMES[t]}</label>`).join('');
+  $('multN').innerHTML=`<option value="random">random (2–12)</option>`+Array.from({length:19},(_,k)=>k+2).map(n=>`<option value="${n}">${n}</option>`).join('');
+  $('multN').value=S.multN;
+  $('factMode').value=S.factN==='random'?'random':'fixed'; $('factN').value=S.factN==='random'?48:S.factN;
+  $('queueSel').innerHTML=`<option value="random">Random (6–12)</option>`+[6,7,8,9,10,11,12].map(n=>`<option value="${n}">${n}</option>`).join('');
+  $('queueSel').value=S.queue; $('timerSel').value=S.timer; $('speed').value=S.speed; $('checkMode').value=S.checkMode||'click'; syncSpeed(); $('reasons').checked=!!S.reasons;
+  fillLines(k=>linesFor(k));
+  $('overlay').classList.add('on');
+}
+function applySettings(){
+  const lv=document.querySelector('input[name=lvl]:checked'); if(lv) S.level=lv.value;
+  S.customMax=Math.max(20,Math.min(999,parseInt($('customMax').value,10)||100));
+  document.querySelectorAll('#setRules input').forEach(c=>S.rules[c.dataset.r]=c.checked);
+  if(!RULE_TYPES.some(t=>S.rules[t])) S.rules.primes=true;
+  S.multN=$('multN').value;
+  S.factN=$('factMode').value==='random'?'random':String(Math.max(2,Math.min(5000,parseInt($('factN').value,10)||48)));
+  S.queue=$('queueSel').value; S.timer=+$('timerSel').value; S.speed=$('speed').value; S.checkMode=$('checkMode').value; S.reasons=$('reasons').checked;
+  S.lines={}; Object.keys(DEFAULT_LINES).forEach(k=>{ const a=$('ln_'+k).value.split('\n').map(x=>x.trim()).filter(Boolean); S.lines[k]=a.length?a:DEFAULT_LINES[k].slice(); });
+  save(); $('overlay').classList.remove('on'); lastType=null; newQueue();
+}
+// ---------- Bouncer's lines editor ----------
+function buildLinesUI(){
+  $('lnFit').textContent=LINE_FIT; $('lnMax').textContent=LINE_MAX;
+  $('linesWrap').innerHTML=Object.keys(DEFAULT_LINES).map(k=>`<div class="lineBox"><label for="ln_${k}">${LINE_LABELS[k][0]} <small>${LINE_LABELS[k][1]}</small></label><textarea id="ln_${k}" rows="${k==='open'?3:5}" spellcheck="true"></textarea><div class="lnWarn" id="lw_${k}"></div></div>`).join('');
+  Object.keys(DEFAULT_LINES).forEach(k=>$('ln_'+k).addEventListener('input',()=>checkLines(k)));
+  $('lnReset').onclick=()=>fillLines(k=>DEFAULT_LINES[k]);
+}
+function fillLines(get){ Object.keys(DEFAULT_LINES).forEach(k=>{ $('ln_'+k).value=get(k).join('\n'); checkLines(k); }); }
+function checkLines(k){
+  const ta=$('ln_'+k), box=$('lw_'+k);
+  const rows=ta.value.split('\n').map((t,i)=>({t:t.trim(),n:i+1})).filter(r=>r.t);
+  const esc=t=>t.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const short=t=>esc(t.length>22?t.slice(0,20)+'…':t);
+  const msgs=[]; let worst=0;
+  rows.forEach(r=>{
+    const L=r.t.length;
+    if(L>LINE_MAX){ worst=2; msgs.push(`<div class="red">⚠ "${short(r.t)}" is ${L} letters, too long to read easily (max ${LINE_MAX})</div>`); }
+    else if(L>LINE_FIT){ worst=Math.max(worst,1); msgs.push(`<div class="amber">"${short(r.t)}" is ${L} letters, so it will shrink a little</div>`); }
+  });
+  if(!rows.length) msgs.push(`<div class="amber">Empty, so the default lines will be used</div>`);
+  else if(!msgs.length) msgs.push(`<div class="ok">✓ ${rows.length} line${rows.length>1?'s':''}, all fit</div>`);
+  box.innerHTML=msgs.join('');
+  ta.classList.toggle('amber',worst===1); ta.classList.toggle('red',worst===2);
+}
+buildLinesUI();
+function showTab(id){ document.querySelectorAll('.tabBtn').forEach(b=>b.classList.toggle('on',b.dataset.tab===id)); document.querySelectorAll('.tab').forEach(t=>t.hidden=t.id!==id); }
+document.querySelectorAll('.tabBtn').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+function syncSpeed(){ $('speedLbl').style.opacity=$('checkMode').value==='auto'?1:.4; $('speed').disabled=$('checkMode').value!=='auto'; }
+$('checkMode').addEventListener('change',syncSpeed);
+$('factN').addEventListener('input',()=>$('factMode').value='fixed');
+$('customMax').addEventListener('focus',()=>{document.querySelector('input[name=lvl][value=custom]').checked=true;});
+
+// ---------- Wiring ----------
+function lockLandscape(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){} }
+function toggleFull(){
+  const el=document.documentElement;
+  if(!document.fullscreenElement){ if(el.requestFullscreen) el.requestFullscreen().then(lockLandscape).catch(()=>{}); }
+  else document.exitFullscreen&&document.exitFullscreen();
+}
+// hide the full-screen button where the browser can't do it (e.g. iPhone)
+if(!document.documentElement.requestFullscreen) $('bFull').style.display='none';
+$('bNew').onclick=newQueue; $('bCheck').onclick=checkQueue; $('bAns').onclick=showAnswer; $('bDoors').onclick=openDoors;
+$('bSet').onclick=openSettings; $('bFull').onclick=toggleFull; $('sCancel').onclick=()=>$('overlay').classList.remove('on'); $('sApply').onclick=applySettings;
+document.addEventListener('keydown',e=>{
+  if($('overlay').classList.contains('on')){ if(e.key==='Escape') $('overlay').classList.remove('on'); return; }
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  const k=e.key.toLowerCase();
+  if(k==='n') newQueue();
+  else if(k===' '||k==='r'){ e.preventDefault(); checkQueue(); }
+  else if(k==='a') showAnswer();
+  else if(k==='d') openDoors();
+  else if(k==='s') openSettings();
+  else if(k==='f') toggleFull();
+});
+
+buildScene(); newQueue();
+})();
+</script>
+</body>
+</html>

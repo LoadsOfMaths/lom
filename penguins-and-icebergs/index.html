@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a2340">
+<title>Penguins &amp; Icebergs</title>
+<style>
+:root{
+  --sky-top:#0a2340; --sky-mid:#14406b; --sky-low:#2a6f9e;
+  --sea:#0b3d66; --sea-deep:#062540;
+  --ice:#f2faff; --ice-edge:#bfe3f7; --ice-shadow:#8cc4e4;
+  --ink:#0d2a45; --ink-soft:#4a6b86;
+  --orange:#ff9f1c; --orange-dk:#e07b00;
+  --pos:#ffffff; --neg:#0b4f86;
+  --good:#2e9e5b;
+}
+*{box-sizing:border-box}
+button,.card,select,input{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;height:100%}
+body{
+  font-family:"Segoe UI","Trebuchet MS",Arial,sans-serif;
+  color:var(--ink);
+  background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-mid) 45%,var(--sky-low) 100%);
+  background-attachment:fixed;
+  min-height:100vh; overflow-x:hidden;
+}
+.hidden{display:none !important}
+/* ---------- snow + sea ---------- */
+#snow{position:fixed;inset:0;pointer-events:none;z-index:0}
+.flake{position:absolute;top:-10px;color:#fff;opacity:.7;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(105vh) translateX(20px)}}
+body.calm .flake{display:none}
+#sea{position:fixed;left:0;right:0;bottom:0;width:100%;height:90px;z-index:0;pointer-events:none}
+/* ---------- easter-egg penguins ---------- */
+#egg{position:fixed;left:0;right:0;bottom:0;height:170px;z-index:50;pointer-events:none;overflow:hidden}
+#egg .pg{position:absolute;left:0;bottom:24px;width:48px;height:54px;transform-origin:50% 100%}
+#egg .pg svg{width:100%;height:100%;display:block}
+#egg .hole{position:absolute;bottom:17px;width:74px;height:15px;border-radius:50%;background:#062540;box-shadow:0 0 0 3px #fff,inset 0 4px 6px rgba(0,0,0,.5);opacity:0}
+#egg .diver{position:absolute;bottom:24px;width:160px;height:150px;overflow:hidden}
+#egg .diver .pg{left:56px;bottom:0}
+#egg .drop{position:absolute;width:7px;height:7px;border-radius:50%;background:#bfe7ff}
+#egg .note{position:absolute;color:#fff;font-size:20px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+/* raised (superscript) sign */
+.ns{font-size:.6em;font-weight:800;vertical-align:.62em;line-height:0;margin-right:.04em}
+/* ---------- header ---------- */
+header{position:relative;z-index:2;display:flex;align-items:center;gap:18px;padding:14px 24px 6px;color:#fff;flex-wrap:wrap}
+header svg.peng{width:70px;height:78px;flex:none}
+.titles h1{margin:0;font-size:clamp(1.6rem,3vw,2.5rem);letter-spacing:.5px;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.titles p{margin:2px 0 0;color:#cfe9fa;font-size:1.05rem}
+.spacer{flex:1}
+/* ---------- tabs ---------- */
+.tabs{position:relative;z-index:2;display:flex;gap:8px;padding:6px 24px 0;flex-wrap:wrap}
+.tab{
+  border:0;cursor:pointer;border-radius:14px;padding:9px 22px;font-size:1.15rem;font-weight:800;
+  background:rgba(255,255,255,.08);color:#cfe9fa;border-bottom:4px solid transparent;transition:.15s;
+}
+.tab .tsym{display:inline-block;min-width:1.2em;color:var(--orange);font-size:1.25em;line-height:1}
+.tab:hover{background:rgba(255,255,255,.16)}
+.tab.on{background:rgba(255,255,255,.22);color:#fff;border-bottom-color:var(--orange)}
+/* ---------- controls ---------- */
+.bar{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 24px 14px}
+.levels{display:flex;gap:8px;flex-wrap:wrap}
+.lvl{
+  border:0;cursor:pointer;border-radius:14px;padding:10px 18px;font-size:1.1rem;font-weight:700;
+  background:rgba(255,255,255,.14);color:#fff;border-bottom:4px solid rgba(0,0,0,.25);transition:.15s;
+}
+.lvl small{display:block;font-weight:500;font-size:.8rem;opacity:.85}
+.lvl.on{background:var(--ice);color:var(--ink);border-bottom-color:var(--ice-shadow)}
+@media (hover:hover){.lvl:hover{transform:translateY(-2px)}}
+.btn{
+  border:0;cursor:pointer;border-radius:12px;padding:12px 18px;font-size:1.05rem;font-weight:700;
+  background:var(--orange);color:#1b1200;border-bottom:4px solid var(--orange-dk);transition:.15s;
+}
+@media (hover:hover){.btn:hover{transform:translateY(-2px)}}
+.btn.ghost{background:rgba(255,255,255,.14);color:#fff;border-bottom-color:rgba(0,0,0,.25)}
+.acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.count{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);color:#fff;border-radius:12px;padding:5px 8px;font-size:1.05rem;border-bottom:4px solid rgba(0,0,0,.25)}
+.count b{font-size:1.25rem;display:inline-block;min-width:1.3em;text-align:right}
+.cbtn{border:0;cursor:pointer;width:38px;height:38px;border-radius:10px;font-size:1.5rem;font-weight:800;line-height:1;background:var(--ice);color:var(--ink)}
+.cbtn:disabled{opacity:.35;cursor:default}
+/* ---------- question grid ---------- */
+main{position:relative;z-index:1;padding:0 16px 130px}
+.grid{display:grid;gap:26px 16px;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr))}
+.grid.compact{gap:24px 14px}
+.grid.compact .card{min-height:140px;padding:24px 12px 14px}
+.grid.compact .reveal{margin-top:8px}
+.grid.long .card{padding-top:50px}
+.card{grid-column:span 2}
+.card{
+  position:relative;cursor:pointer;user-select:none;
+  background:linear-gradient(180deg,#ffffff 0%,var(--ice) 60%,#e3f3fd 100%);
+  border-radius:22px 22px 18px 18px;padding:28px 14px 20px;
+  box-shadow:0 6px 0 var(--ice-shadow),0 14px 24px rgba(0,0,0,.25);
+  min-height:170px;display:flex;flex-direction:column;justify-content:center;
+  transition:transform .15s;
+}
+@media (hover:hover){.card:hover{transform:translateY(-3px)}}
+.card::before{ /* little iceberg peak */
+  content:"";position:absolute;top:-16px;left:28px;width:60px;height:22px;
+  background:#fff;clip-path:polygon(0 100%,35% 10%,55% 45%,75% 0,100% 100%);
+}
+.qnum{
+  position:absolute;top:10px;left:14px;background:var(--sea);color:#fff;
+  border-radius:50%;width:34px;height:34px;display:grid;place-items:center;font-weight:800;font-size:1rem;
+}
+.expr{
+  text-align:center;font-weight:700;font-size:clamp(1.7rem,3vw,3rem);
+  font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.5px;
+}
+.reveal{margin-top:14px;text-align:center;display:none}
+.card.shown .reveal{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+.work{color:var(--ink-soft);font-size:clamp(1.15rem,2vw,1.6rem);line-height:1.45;font-variant-numeric:tabular-nums}
+.rule{display:inline-block;margin-top:4px;background:#e6f2fb;color:var(--ink-soft);border-radius:10px;padding:2px 10px;font-size:1rem}
+.ans{
+  display:inline-flex;align-items:center;gap:10px;margin-top:10px;
+  font-size:clamp(1.9rem,3.4vw,3rem);font-weight:800;border-radius:16px;padding:6px 22px;
+}
+.ans.pos{background:var(--pos);color:var(--ink);box-shadow:inset 0 0 0 3px var(--ice-edge)}
+.ans.neg{background:var(--neg);color:#fff;box-shadow:inset 0 -10px 0 rgba(0,0,0,.18)}
+.ans.zero{background:#fff4e0;color:var(--ink);box-shadow:inset 0 0 0 3px #ffd08a}
+.ans .tag{font-size:.8rem;font-weight:600;opacity:.8;text-transform:uppercase;letter-spacing:1px}
+.hint{text-align:center;color:#cfe9fa;margin:18px 0 0;font-size:.95rem;line-height:1.6}
+/* ---------- number line (add & subtract) ---------- */
+#nlView{max-width:1400px;margin:0 auto}
+.nl-card{
+  position:relative;
+  background:linear-gradient(180deg,#ffffff 0%,var(--ice) 60%,#e3f3fd 100%);
+  border-radius:24px;padding:22px 20px 18px;
+  box-shadow:0 6px 0 var(--ice-shadow),0 14px 24px rgba(0,0,0,.25);
+}
+.nl-q{text-align:center;font-weight:800;font-size:clamp(2.4rem,5.5vw,4.6rem);font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.5px}
+.chip{display:inline-block;min-width:1.3em;padding:0 .3em;border-radius:16px;text-align:center}
+.chip.q{background:#e6f2fb;color:var(--ink-soft)}
+.chip.pos{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 4px var(--ice-edge)}
+.chip.neg{background:var(--neg);color:#fff;box-shadow:inset 0 -10px 0 rgba(0,0,0,.18)}
+.chip.zero{background:#fff4e0;color:var(--ink);box-shadow:inset 0 0 0 4px #ffd08a}
+.chip.pop{animation:pop .35s ease-out}
+.nl-status{text-align:center;font-size:clamp(1.1rem,1.9vw,1.45rem);color:var(--ink-soft);min-height:1.7em;margin-top:6px}
+.nl-status b{color:var(--ink)}
+.nl-stage{position:relative;height:240px;margin-top:4px}
+.nl-stage svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+.nl-stage text{font-family:"Segoe UI","Trebuchet MS",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.grow{stroke-dasharray:1;stroke-dashoffset:1;animation:grow .35s ease-out forwards}
+@keyframes grow{to{stroke-dashoffset:0}}
+.pgw{position:absolute;width:64px;height:84px;margin-left:-32px;transition:left var(--step,450ms) linear;z-index:2}
+.pgw.noanim{transition:none !important}
+.pgw .face,.pgw .lean,.pgw .bob{width:100%;height:100%;transform-origin:50% 100%}
+.pgw .face{transition:transform .5s ease-in-out}
+.pgw.left .face{transform:scaleX(-1)}
+.pgw .lean{transition:transform .3s ease-out}
+.pgw.back .lean{transform:rotate(-10deg)}
+.pgw svg{width:100%;height:100%;display:block;overflow:visible}
+.pgw .footA,.pgw .footB{transform-box:fill-box;transform-origin:center}
+.pgw.walk .bob{animation:waddle calc(var(--step,450ms) * 2) ease-in-out infinite}
+.pgw.walk .footA{animation:stepA calc(var(--step,450ms) * 2) ease-in-out infinite}
+.pgw.walk .footB{animation:stepB calc(var(--step,450ms) * 2) ease-in-out infinite}
+.pgw.hop .bob{animation:hop .6s ease-out}
+@keyframes waddle{0%,100%{transform:rotate(-6deg)}25%{transform:translateY(-4px)}50%{transform:rotate(6deg)}75%{transform:translateY(-4px)}}
+@keyframes stepA{0%,100%{transform:translateX(-4px)}50%{transform:translate(5px,-2px)}}
+@keyframes stepB{0%,100%{transform:translate(5px,-2px)}50%{transform:translateX(-4px)}}
+@keyframes hop{0%,100%{transform:none}40%{transform:translateY(-22px)}70%{transform:translateY(0) scaleY(.9)}}
+.say{
+  position:absolute;bottom:100%;left:50%;transform:translate(-50%,-4px);margin-bottom:4px;
+  background:#fff;color:var(--ink);border-radius:12px;padding:3px 12px;font-weight:800;font-size:1rem;white-space:nowrap;
+  box-shadow:0 3px 0 var(--ice-shadow),0 4px 10px rgba(0,0,0,.15);opacity:0;transition:opacity .2s;
+}
+.say::after{content:"";position:absolute;top:100%;left:50%;margin-left:-7px;border:7px solid transparent;border-top-color:#fff}
+.say.show{opacity:1}
+.nl-explain{margin:6px auto 0;max-width:980px;background:#e6f2fb;border-radius:14px;padding:10px 20px;font-size:clamp(1.05rem,1.7vw,1.35rem);line-height:1.55;color:var(--ink)}
+.nl-explain b{color:var(--sea)}
+.nl-custom{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:2px dashed var(--ice-edge);font-size:1.1rem}
+.nl-custom select{font-size:1.05rem;padding:6px 8px;border-radius:8px;border:2px solid var(--ice-edge);background:#fff;color:var(--ink)}
+.nl-custom .err{color:#b23b1e;font-size:.95rem;width:100%;text-align:center}
+body.calm .pgw.walk .bob,body.calm .pgw.walk .footA,body.calm .pgw.walk .footB{animation:none}
+/* ---------- settings ---------- */
+.overlay{position:fixed;inset:0;background:rgba(3,18,33,.65);display:none;z-index:10;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.panel{background:var(--ice);border-radius:20px;max-width:640px;width:100%;max-height:92vh;overflow:auto;padding:22px 26px;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.panel h2{margin:0 0 12px}
+.panel h3{margin:18px 0 8px;font-size:1.05rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:1px}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+.row label{font-size:1.05rem}
+.row.chk{flex-wrap:nowrap;align-items:flex-start}
+.row.chk label{flex:1;min-width:0}
+table.rng{border-collapse:collapse}
+table.rng td,table.rng th{padding:5px 10px;text-align:center}
+table.rng th{font-size:.95rem;color:var(--ink-soft)}
+input[type=number]{width:74px;font-size:1.05rem;padding:6px;border-radius:8px;border:2px solid var(--ice-edge);text-align:center}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--sea)}
+.note{font-size:.9rem;color:var(--ink-soft)}
+.panel .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.panel .btn.ghost{background:#dcebf6;color:var(--ink);border-bottom-color:#b8d3e7}
+/* ---------- touch devices ---------- */
+@media (hover:none) and (pointer:coarse){
+  .keys{display:none}
+  input[type=number],.nl-custom select{min-height:44px}
+  input[type=checkbox]{width:26px;height:26px;flex:none}
+}
+header svg.peng{cursor:pointer}
+/* ---------- phones, portrait ---------- */
+@media (max-width:700px){
+  header{flex-wrap:nowrap;gap:10px;padding:10px 12px 4px;padding-top:calc(10px + env(safe-area-inset-top))}
+  header svg.peng{width:42px;height:47px}
+  .titles{min-width:0}
+  .titles h1{font-size:1.3rem;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .titles p{font-size:.78rem;line-height:1.25}
+  .slab{display:none}
+  #btnSettings{width:46px;height:46px;padding:0;font-size:1.35rem;flex:none}
+  .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:8px 12px 0}
+  .tab{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;padding:6px 2px 5px;font-size:.68rem;line-height:1.15;border-radius:12px;min-height:56px}
+  .tab .tsym{min-width:0;font-size:1.35rem;white-space:nowrap}
+  .bar{padding:8px 12px 12px;gap:8px}
+  .bar .spacer{display:none}
+  .levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
+  .lvl{padding:8px 4px;font-size:1rem;border-radius:12px}
+  .lvl small{font-size:.68rem}
+  .lname{display:none}
+  .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;align-items:stretch}
+  .keys{display:none}
+  .btn{padding:11px 8px;font-size:1rem}
+  .count{justify-content:space-between;font-size:.95rem;padding:4px 6px}
+  .cbtn{width:40px;height:40px}
+  main{padding:0 12px calc(120px + env(safe-area-inset-bottom))}
+  .grid{grid-template-columns:1fr;gap:22px}
+  .grid .card{grid-column:auto !important;min-height:0;padding:22px 12px 16px}
+  .grid.long .card{padding-top:48px}
+  .nl-card{padding:16px 10px 14px;border-radius:20px}
+  .nl-q{font-size:2.2rem}
+  .nl-status{font-size:1rem;min-height:2.9em}
+  .nl-explain{padding:8px 12px;font-size:1rem}
+  .nl-custom{gap:8px;font-size:1rem}
+  .say{font-size:.85rem;padding:2px 9px}
+  .hint{font-size:.85rem}
+  .overlay{padding:8px}
+  .panel{padding:16px 14px;max-height:94vh}
+  .panel .actions .btn{flex:1 1 auto}
+  table.rng td,table.rng th{padding:4px 6px}
+  input[type=number],.nl-custom select{min-height:44px}
+  input[type=checkbox]{width:26px;height:26px;flex:none}
+}
+/* ---------- phones, landscape ---------- */
+@media (max-height:500px) and (min-width:701px){
+  header{padding:6px 16px 2px;gap:12px}
+  header svg.peng{width:38px;height:42px}
+  .titles h1{font-size:1.35rem}
+  .titles p{display:none}
+  #btnSettings{padding:8px 14px}
+  .tabs{padding:4px 16px 0;gap:6px}
+  .tab{padding:6px 12px;font-size:1rem}
+  .bar{padding:6px 16px 8px;gap:8px}
+  .lvl{padding:6px 12px;font-size:1rem}
+  .lvl small{font-size:.72rem}
+  .lname{display:none}
+  .btn{padding:8px 12px;font-size:.95rem}
+  .count{padding:3px 6px;font-size:.95rem}
+  .cbtn{width:34px;height:34px}
+  main{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}
+  .nl-card{padding:10px 14px 12px}
+  .nl-q{font-size:2.4rem}
+  .nl-status{font-size:1rem}
+  .btn,.tab,#btnSettings{min-height:44px}
+  .keys,#modeGroup small{display:none}
+  .lvl{min-height:44px}
+  .btn{padding:8px 10px;font-size:.92rem}
+  .say{font-size:.85rem;padding:2px 9px}
+  .nl-q{font-size:2.1rem}
+  input[type=number],.nl-custom select{min-height:44px}
+  input[type=checkbox]{width:26px;height:26px;flex:none}
+}
+</style>
+</head>
+<body>
+<div id="snow"></div>
+<svg id="sea" viewBox="0 0 1200 90" preserveAspectRatio="none" aria-hidden="true">
+  <polygon points="80,40 140,5 175,25 215,0 270,40" fill="#e9f6ff"/>
+  <polygon points="880,40 930,12 960,28 1010,2 1070,40" fill="#e9f6ff"/>
+  <path d="M0,40 Q50,30 100,40 T200,40 T300,40 T400,40 T500,40 T600,40 T700,40 T800,40 T900,40 T1000,40 T1100,40 T1200,40 V90 H0Z" fill="#0b3d66"/>
+  <path d="M0,62 L60,58 L130,63 L210,57 L300,62 L380,59 L470,63 L560,57 L640,61 L730,58 L820,63 L900,58 L990,62 L1080,57 L1150,61 L1200,59 V90 H0Z" fill="#dff1fb"/>
+  <path d="M0,70 L1200,70 V90 H0Z" fill="#c8e6f6"/>
+</svg>
+<div id="egg" aria-hidden="true"></div>
+
+<header>
+  <svg class="peng" id="pengArt" viewBox="0 0 70 78" aria-hidden="true">
+    <ellipse cx="35" cy="44" rx="24" ry="30" fill="#14202c"/>
+    <ellipse cx="35" cy="50" rx="16" ry="22" fill="#fff"/>
+    <circle cx="35" cy="22" r="17" fill="#14202c"/>
+    <ellipse cx="35" cy="26" rx="11" ry="9" fill="#fff"/>
+    <circle cx="30" cy="22" r="2.6" fill="#14202c"/><circle cx="40" cy="22" r="2.6" fill="#14202c"/>
+    <circle cx="30.8" cy="21.2" r=".9" fill="#fff"/><circle cx="40.8" cy="21.2" r=".9" fill="#fff"/>
+    <polygon points="31,27 39,27 35,33" fill="#ff9f1c"/>
+    <ellipse cx="11" cy="46" rx="5" ry="14" fill="#14202c" transform="rotate(18 11 46)"/>
+    <ellipse cx="59" cy="46" rx="5" ry="14" fill="#14202c" transform="rotate(-18 59 46)"/>
+    <ellipse cx="26" cy="74" rx="8" ry="3.5" fill="#ff9f1c"/><ellipse cx="44" cy="74" rx="8" ry="3.5" fill="#ff9f1c"/>
+  </svg>
+  <div class="titles">
+    <h1>Penguins &amp; Icebergs</h1>
+    <p id="subtitle">Multiplying directed numbers — keeping it cool below zero</p>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn ghost" id="btnSettings" title="Settings" aria-label="Settings">⚙<span class="slab"> Settings</span></button>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab" data-tab="add"><span class="tsym">+ −</span> <span class="tlab">Number line</span></button>
+  <button class="tab" data-tab="addset"><span class="tsym">+ −</span> <span class="tlab">Add &amp; Subtract</span></button>
+  <button class="tab" data-tab="mul"><span class="tsym">×</span> <span class="tlab">Multiply</span></button>
+  <button class="tab" data-tab="div"><span class="tsym">÷</span> <span class="tlab">Divide</span></button>
+  <button class="tab" data-tab="mix"><span class="tsym">× ÷</span> <span class="tlab">Mixed</span></button>
+</nav>
+
+<div class="bar">
+  <div class="levels" id="levelGroup">
+    <button class="lvl on" data-level="easy"></button>
+    <button class="lvl" data-level="medium"></button>
+    <button class="lvl" data-level="hard"></button>
+  </div>
+  <div class="levels hidden" id="modeGroup">
+    <button class="lvl" data-mode="mixed">Mixed<small>adding &amp; subtracting</small></button>
+    <button class="lvl" data-mode="add">Adding<small>A + B</small></button>
+    <button class="lvl" data-mode="sub">Subtracting<small>A − B</small></button>
+  </div>
+  <div class="spacer"></div>
+  <div class="acts" id="gridActions">
+    <div class="count" title="Number of questions in a set"><button class="cbtn" id="cntDown" aria-label="Fewer questions">−</button><span><b id="cntVal">5</b> questions</span><button class="cbtn" id="cntUp" aria-label="More questions">+</button></div>
+    <button class="btn" id="btnNew">❄ New questions</button>
+    <button class="btn ghost" id="btnReveal">Reveal all</button>
+    <button class="btn ghost" id="btnHide">Hide all</button>
+  </div>
+  <div class="acts hidden" id="nlActions">
+    <button class="btn" id="nlBtnNew">❄ New question</button>
+    <button class="btn" id="nlBtnReveal">▶ Reveal</button>
+    <button class="btn ghost" id="nlBtnReplay">↺ Replay</button>
+    <button class="btn ghost" id="nlBtnCustom">✎ Choose numbers</button>
+  </div>
+</div>
+
+<main>
+  <section id="gridView">
+    <div class="grid" id="grid"></div>
+    <p class="hint">Tap or click a question to reveal its answer<span class="keys"> · <b>Enter</b> reveals the next · <b>N</b> new questions · <b>R</b> reveal all · <b>H</b> hide all</span></p>
+  </section>
+
+  <section id="nlView" class="hidden">
+    <div class="nl-card">
+      <div class="nl-q" id="nlQ"></div>
+      <div class="nl-status" id="nlStatus"></div>
+      <div class="nl-stage" id="nlStage">
+        <svg id="nlSvg" aria-hidden="true"></svg>
+        <div class="pgw noanim" id="nlPg">
+          <div class="say" id="nlSay"></div>
+          <div class="face"><div class="lean"><div class="bob">
+            <svg viewBox="0 0 64 84" aria-hidden="true">
+              <ellipse class="footB" cx="29" cy="80" rx="9" ry="3.5" fill="#e07b00"/>
+              <path d="M13,64 L3,75 L19,71Z" fill="#14202c"/>
+              <ellipse cx="30" cy="50" rx="19" ry="27" fill="#14202c"/>
+              <ellipse cx="36" cy="54" rx="12" ry="21" fill="#fff"/>
+              <circle cx="34" cy="22" r="14" fill="#14202c"/>
+              <ellipse cx="39" cy="24" rx="7" ry="6" fill="#fff"/>
+              <circle cx="40" cy="20" r="2.6" fill="#14202c"/><circle cx="40.9" cy="19.2" r=".9" fill="#fff"/>
+              <polygon points="46,19 58,23 46,27" fill="#ff9f1c"/>
+              <ellipse cx="25" cy="50" rx="5.5" ry="15" fill="#0a141d" transform="rotate(14 25 50)"/>
+              <ellipse class="footA" cx="37" cy="80" rx="9" ry="3.5" fill="#ff9f1c"/>
+            </svg>
+          </div></div></div>
+        </div>
+      </div>
+      <div class="nl-explain hidden" id="nlExplain"></div>
+      <div class="nl-custom hidden" id="nlCustom">
+        <label>Start on <input type="number" id="cA" value="-3"></label>
+        <select id="cOp" aria-label="Add or subtract"><option value="+">+ add</option><option value="-">− subtract</option></select>
+        <label><input type="number" id="cB" value="-5" aria-label="Number to add or subtract"></label>
+        <button class="btn" id="cGo">Go</button>
+        <div class="err hidden" id="cErr">Please enter whole numbers between −50 and 50.</div>
+      </div>
+    </div>
+    <p class="hint"><span id="nlRules">Penguins face <b>right</b> to add and <b>left</b> to subtract · a positive number means walk <b>forwards</b>, a negative number means walk <b>backwards</b><br></span>
+      <span class="keys"><b>Enter</b> reveal · <b>N</b> new question · <b>R</b> replay · <b>H</b> back to the start</span></p>
+  </section>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <h2 id="setTitle">Settings</h2>
+
+    <h3>Display</h3>
+    <div class="row chk"><input type="checkbox" id="optRaised"><label for="optRaised">Show negative numbers with a raised sign, e.g. 3 × <span class="ns">−</span>4, instead of brackets</label></div>
+    <div class="row chk"><input type="checkbox" id="optPlus"><label for="optPlus">Show a + sign on positive numbers (raised too, if the option above is on)</label></div>
+    <div class="row chk"><input type="checkbox" id="optMotion"><label for="optMotion">Always show the snow and surprise penguins, even on computers set to reduce animations</label></div>
+    <div class="row chk"><input type="checkbox" id="optWork"><label for="optWork">Show working / explanation when an answer is revealed</label></div>
+
+    <h3>Add &amp; Subtract (number line and questions)</h3>
+    <div class="row chk"><input type="checkbox" id="optRules"><label for="optRules">Show the penguin rules under the number line</label></div>
+    <div class="row"><label>Number line runs from −N to N, where N = <input type="number" id="nlN" min="5" max="30"></label></div>
+    <div class="row"><label>Biggest number to add or subtract <input type="number" id="nlMax" min="1" max="30"></label></div>
+    <p class="note">These two settings are used for the Add &amp; Subtract questions as well. Questions are chosen so the answer stays on the number line. Numbers you choose yourself stretch the line if they need to.</p>
+
+    <h3>× and ÷ number ranges (size of number, sign chosen at random)</h3>
+    <table class="rng">
+      <tr><th></th><th>From</th><th>To</th></tr>
+      <tr><td><b>A</b></td><td><input type="number" id="rA0" min="0" max="999"></td><td><input type="number" id="rA1" min="0" max="999"></td></tr>
+      <tr><td><b>B</b></td><td><input type="number" id="rB0" min="0" max="999"></td><td><input type="number" id="rB1" min="0" max="999"></td></tr>
+      <tr><td><b>C</b></td><td><input type="number" id="rC0" min="0" max="999"></td><td><input type="number" id="rC1" min="0" max="999"></td></tr>
+      <tr><td><b>D</b></td><td><input type="number" id="rD0" min="0" max="999"></td><td><input type="number" id="rD1" min="0" max="999"></td></tr>
+    </table>
+    <p class="note">C is used from Medium upwards, D on Hard only. Setting “From” to 0 allows zero to appear.<br>
+      For ÷, A sets the size of the <i>answer</i> to A ÷ B (so it always divides exactly), C does the same for C ÷ D, and B and D are never 0.</p>
+
+    <div class="actions">
+      <button class="btn ghost" id="btnDefaults">Restore defaults</button>
+      <button class="btn ghost" id="btnCancel">Cancel</button>
+      <button class="btn" id="btnSave">Save &amp; new questions</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var MINUS = "\u2212", TIMES = " \u00d7 ", DIVIDE = " \u00f7 ";
+var STORE = "penguinsIcebergsSettings";
+var DEFAULTS = {
+  plus:false, raised:false, working:true,
+  ranges:{A:[1,10],B:[1,10],C:[1,10],D:[1,10]},
+  count:5,
+  nl:10, nlMax:8, rules:true, motion:true, addMode:"mixed", tab:"mul"
+};
+var S = load();
+var tab = S.tab;
+var levels = {mul:"easy", div:"easy", mix:"easy"};
+var SUB = {
+  mul:"Multiplying directed numbers — keeping it cool below zero",
+  div:"Dividing directed numbers — splitting the ice floe",
+  add:"Adding &amp; subtracting directed numbers — follow the penguin",
+  addset:"Adding &amp; subtracting directed numbers — out on the ice",
+  mix:"Multiplying &amp; dividing directed numbers — all mixed up"
+};
+
+function $(id){return document.getElementById(id);}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function load(){
+  var s = clone(DEFAULTS);
+  try{
+    var raw = localStorage.getItem(STORE);
+    if(raw){
+      var d = JSON.parse(raw);
+      if(typeof d.plus==="boolean") s.plus=d.plus;
+      if(typeof d.raised==="boolean") s.raised=d.raised;
+      if(typeof d.working==="boolean") s.working=d.working;
+      ["A","B","C","D"].forEach(function(k){ if(d.ranges&&Array.isArray(d.ranges[k])) s.ranges[k]=d.ranges[k]; });
+      if(typeof d.count==="number") s.count=Math.max(3,Math.min(10,d.count|0));
+      if(typeof d.rules==="boolean") s.rules=d.rules;
+      if(typeof d.motion==="boolean") s.motion=d.motion;
+      if(typeof d.nl==="number") s.nl=d.nl;
+      if(typeof d.nlMax==="number") s.nlMax=d.nlMax;
+      if(["mixed","add","sub"].indexOf(d.addMode)>=0) s.addMode=d.addMode;
+      if(["mul","div","add","addset","mix"].indexOf(d.tab)>=0) s.tab=d.tab;
+    }
+  }catch(e){}
+  return s;
+}
+function save(){ try{ localStorage.setItem(STORE, JSON.stringify(S)); }catch(e){} }
+
+function randInt(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+function signed(k){
+  var r=S.ranges[k], m=randInt(Math.min(r[0],r[1]), Math.max(r[0],r[1]));
+  return Math.random()<0.5 ? -m : m;
+}
+/* never zero - used for divisors */
+function signedNZ(k){
+  var r=S.ranges[k], lo=Math.max(1,Math.min(r[0],r[1])), hi=Math.max(lo,Math.max(r[0],r[1]));
+  var m=randInt(lo,hi);
+  return Math.random()<0.5 ? -m : m;
+}
+/* first = leading term of the expression: never bracketed */
+function raise(sign){ return '<span class="ns">'+sign+'</span>'; }
+function fmt(n, first){
+  if(n===0) return "0";
+  if(S.raised){
+    if(n<0) return raise(MINUS)+(-n);
+    return S.plus ? raise("+")+n : String(n);
+  }
+  if(n<0) return first ? MINUS+(-n) : "("+MINUS+(-n)+")";
+  if(S.plus) return first ? "+"+n : "(+"+n+")";
+  return String(n);
+}
+function plain(n){ return n<0 ? (S.raised ? raise(MINUS) : MINUS)+(-n) : String(n); }
+function opSym(op){ return op==="+" ? " + " : " "+MINUS+" "; }
+function signRule(a,b,isDiv){
+  if(isDiv && a===0) return "0 ÷ anything = 0";
+  if(!isDiv && (a===0||b===0)) return "anything × 0 = 0";
+  var s=function(x){return x<0?MINUS:"+";};
+  var r=(a<0)===(b<0)?"+":MINUS;
+  return s(a)+(isDiv?" ÷ ":" × ")+s(b)+" = "+r;
+}
+
+/* ================= × and ÷ question grid ================= */
+/* one "A × B" or "A ÷ B" part; division always comes out exactly */
+function part(kA,kB,isDiv){
+  var x,y,v;
+  if(isDiv){ y=signedNZ(kB); v=signed(kA); x=v*y; }
+  else     { x=signed(kA);  y=signed(kB); v=x*y; }
+  return {x:x,y:y,v:v,sym:isDiv?DIVIDE:TIMES};
+}
+/* kind: "mul" | "div" | "mix";  wantDiv picks the first operation when mixed */
+function makeQuestion(lv, kind, wantDiv){
+  var d1 = kind==="div" || (kind==="mix" && wantDiv), p=part("A","B",d1), q={};
+  q.A=p.x; q.B=p.y; q.P=p.v;
+  q.expr=fmt(q.A,true)+p.sym+fmt(q.B,false);
+  q.work=[]; q.rule=null;
+  if(lv==="easy"){
+    q.ans=q.P; q.rule=signRule(q.A,q.B,d1);
+    return q;
+  }
+  q.op=Math.random()<0.5?"+":"-";
+  var second;
+  if(lv==="medium"){
+    q.C=signed("C"); second=q.C;
+    q.expr+=opSym(q.op)+fmt(q.C,false);
+  }else{
+    var d2 = kind==="div" || (kind==="mix" && Math.random()<0.5), p2=part("C","D",d2);
+    q.C=p2.x; q.D=p2.y; second=p2.v;
+    q.expr+=opSym(q.op)+fmt(q.C,false)+p2.sym+fmt(q.D,false);
+  }
+  var eff = q.op==="+" ? second : -second;
+  q.ans=q.P+eff;
+  var l1="= "+plain(q.P)+opSym(q.op)+fmt(second,false);
+  var l2="= "+plain(q.P)+(eff<0?" "+MINUS+" "+(-eff):" + "+eff);
+  q.work.push(l1);
+  if(l2!==l1) q.work.push(l2);
+  return q;
+}
+/* one A + B or A − B question, answer kept on the number line */
+function genAdd(){
+  var N=S.nl, M=Math.max(1,Math.min(S.nlMax,N));
+  var op = S.addMode==="add" ? "+" : S.addMode==="sub" ? "-" : (Math.random()<0.5?"+":"-");
+  var B = randInt(1,M)*(Math.random()<0.5?-1:1);
+  var eff = op==="+" ? B : -B;
+  var A = randInt(Math.max(-N,-N-eff), Math.min(N,N-eff));
+  return {A:A,op:op,B:B,eff:eff,ans:A+eff};
+}
+function makeAddQuestion(){
+  var g=genAdd(), q={A:g.A,B:g.B,ans:g.ans,work:[],rule:null};
+  q.expr=fmt(g.A,true)+opSym(g.op)+fmt(g.B,false);
+  if(g.B<0){
+    q.work.push("= "+plain(g.A)+(g.eff>0?" + ":" "+MINUS+" ")+(-g.B));
+    q.rule = g.op==="+" ? "adding a negative → subtract" : "subtracting a negative → add";
+  }
+  return q;
+}
+
+function makeSet(){
+  var level=levels[tab];
+  var n=S.count, out=[], seen={}, tries=0;
+  var capPos=Math.floor(n*0.4), nPos=0;   /* at most 40% with no negative numbers */
+  while(out.length<n && tries<2000){
+    tries++;
+    var q = tab==="addset" ? makeAddQuestion() : makeQuestion(level, tab, out.length%2===1);
+    var allPos=[q.A,q.B,q.C,q.D].every(function(v){return v===undefined||v>=0;});
+    if(allPos && nPos>=capPos && tries<1500) continue;
+    if(seen[q.expr] && tries<1200) continue;
+    seen[q.expr]=1; out.push(q);
+    if(allPos) nPos++;
+  }
+  for(var i=out.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=out[i];out[i]=out[j];out[j]=t;}
+  return out;
+}
+
+var grid=$("grid");
+function render(){
+  var qs=makeSet();
+  var n=qs.length, wide=(levels[tab]==="hard");
+  var perRow = (n<=6||n===9) ? 3 : ((wide&&n<=8) ? 3 : 4);
+  grid.className="grid"+(n>6?" compact":"");
+  grid.style.setProperty("--cols",2*perRow);
+  grid.innerHTML="";
+  qs.forEach(function(q,i){
+    var c=document.createElement("div");
+    c.className="card";
+    var html='<div class="qnum">'+(i+1)+'</div><div class="expr">'+q.expr+'</div><div class="reveal">';
+    if(S.working){
+      html+='<div class="work">'+q.work.map(function(w){return '<div>'+w+'</div>';}).join("")+'</div>';
+      if(q.rule) html+='<div class="rule">'+q.rule+'</div><br>';
+    }
+    var cls=q.ans<0?"neg":(q.ans>0?"pos":"zero");
+    var tag=q.ans<0?"below zero":(q.ans>0?"above zero":"on the waterline");
+    html+='<div class="ans '+cls+'"><span>= '+plain(q.ans)+'</span> <span class="tag">'+tag+'</span></div></div>';
+    c.innerHTML=html;
+    c.addEventListener("click",function(){c.classList.toggle("shown");});
+    grid.appendChild(c);
+  });
+  /* centre a short last row */
+  var cards=grid.children, r=n%perRow;
+  for(var k=0;k<r;k++) cards[n-r+k].style.gridColumn=((perRow-r)+1+2*k)+" / span 2";
+  $("cntVal").textContent=n;
+  $("cntDown").disabled=(S.count<=3); $("cntUp").disabled=(S.count>=10);
+  fitText();
+}
+function fitText(){
+  var es=Array.prototype.slice.call(grid.querySelectorAll(".expr")), min=1e9, long=false;
+  grid.classList.remove("long");
+  es.forEach(function(e){
+    e.style.fontSize="";
+    var size=parseFloat(getComputedStyle(e).fontSize);
+    while(e.scrollWidth>e.clientWidth+1 && size>14){ size-=1; e.style.fontSize=size+"px"; }
+    if(size<min) min=size;
+  });
+  /* same size on every card; drop long questions below the number badge */
+  es.forEach(function(e){
+    e.style.fontSize=min+"px";
+    var r=document.createRange(); r.selectNodeContents(e);
+    if(r.getBoundingClientRect().width > e.clientWidth-92) long=true;
+  });
+  grid.classList.toggle("long",long);
+}
+function revealNext(){
+  var c=grid.querySelector(".card:not(.shown)");
+  if(c) c.classList.add("shown");
+}
+function setAll(on){
+  Array.prototype.forEach.call(grid.querySelectorAll(".card"),function(c){c.classList.toggle("shown",on);});
+}
+function updateLevelButtons(){
+  var s = tab==="div" ? "÷" : (tab==="mix" ? "×/÷" : "×"), names={easy:"Ice Floe",medium:"Iceberg",hard:"Glacier"},
+      forms={easy:"A "+s+" B",medium:"A "+s+" B ± C",hard:"A "+s+" B ± C "+s+" D"},
+      titles={easy:"Easy",medium:"Medium",hard:"Hard"};
+  Array.prototype.forEach.call(document.querySelectorAll("#levelGroup .lvl"),function(b){
+    var l=b.dataset.level;
+    b.innerHTML=titles[l]+'<small><span class="lname">'+names[l]+" · </span>"+forms[l]+"</small>";
+    b.classList.toggle("on", l===levels[tab]);
+  });
+}
+
+Array.prototype.forEach.call(document.querySelectorAll("#levelGroup .lvl"),function(b){
+  b.addEventListener("click",function(){
+    levels[tab]=b.dataset.level; updateLevelButtons(); render();
+  });
+});
+$("btnNew").onclick=render;
+function setCount(n){ S.count=Math.max(3,Math.min(10,n)); save(); render(); }
+$("cntDown").onclick=function(){ setCount(S.count-1); };
+$("cntUp").onclick=function(){ setCount(S.count+1); };
+$("btnReveal").onclick=function(){setAll(true);};
+$("btnHide").onclick=function(){setAll(false);};
+
+/* ================= + and − : the penguin on the number line ================= */
+var nlSvg=$("nlSvg"), stage=$("nlStage"), pgw=$("nlPg"), sayEl=$("nlSay");
+var NL={q:null,pos:0,N:10,token:0,running:false,done:false};
+var GEO={W:0,H:240,lineY:130,pad:44,ext:26,ph:84};
+function xOf(v){ return GEO.pad+(v+NL.N)/(2*NL.N)*(GEO.W-2*GEO.pad); }
+function lab(v){ return v<0 ? MINUS+(-v) : String(v); }
+
+function nlMakeQ(){
+  var q=null, last=NL.q;
+  for(var t=0;t<80;t++){
+    q=genAdd();
+    /* plain "positive + positive" is allowed, but less often */
+    if(q.op==="+" && q.A>=0 && q.B>0 && Math.random()<0.6) continue;
+    if(last && last.A===q.A && last.op===q.op && last.B===q.B) continue;
+    break;
+  }
+  return q;
+}
+function nlExpr(q){ return fmt(q.A,true)+opSym(q.op)+fmt(q.B,false); }
+function sayIt(t){ sayEl.textContent=t; sayEl.classList.toggle("show",!!t); }
+function status(h){ $("nlStatus").innerHTML=h; }
+
+function drawLine(animLast){
+  GEO.W=stage.clientWidth;
+  if(GEO.W<50||!NL.q) return;
+  var narrow=GEO.W<520, shortScr=window.innerHeight<=500, pw=(narrow||shortScr)?46:64;
+  GEO.pad=narrow?20:44; GEO.ext=narrow?12:26;
+  GEO.lineY=shortScr?92:(narrow?100:130); GEO.H=GEO.lineY+110; GEO.ph=Math.round(pw*84/64);
+  stage.style.height=GEO.H+"px";
+  pgw.style.width=pw+"px"; pgw.style.height=GEO.ph+"px"; pgw.style.marginLeft=(-pw/2)+"px";
+  var W=GEO.W, H=GEO.H, Y=GEO.lineY, N=NL.N, q=NL.q, s=[];
+  var sp=(W-2*GEO.pad)/(2*N);
+  var fs=Math.max(11,Math.min(21,sp*0.62));
+  var every = sp<11 ? 5 : (sp<21 ? 2 : 1);
+  nlSvg.setAttribute("viewBox","0 0 "+W+" "+H);
+  s.push('<defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10z" fill="#ff9f1c"/></marker></defs>');
+  /* ice shelf, with the below-zero half tinted */
+  var x0=GEO.pad-GEO.ext, x1=W-GEO.pad+GEO.ext, xz=xOf(0);
+  s.push('<rect x="'+x0+'" y="'+Y+'" width="'+(x1-x0)+'" height="14" rx="7" fill="#e9f6ff" stroke="#8cc4e4" stroke-width="2"/>');
+  s.push('<rect x="'+(x0+4)+'" y="'+(Y+2)+'" width="'+(xz-x0-4)+'" height="10" rx="5" fill="rgba(11,79,134,.18)"/>');
+  s.push('<path d="M'+(x0-6)+','+(Y+7)+' l13,-10 v20z" fill="#8cc4e4"/>');
+  s.push('<path d="M'+(x1+6)+','+(Y+7)+' l-13,-10 v20z" fill="#8cc4e4"/>');
+  /* rings behind the start and finish labels */
+  var ly=Y+52, ry=ly-fs*0.36, rr=Math.max(12,Math.min(fs*1.1,sp*0.5));
+  if(NL.done) s.push('<circle cx="'+xOf(q.ans)+'" cy="'+ry+'" r="'+(rr+2)+'" fill="#ffe2b8" stroke="#ff9f1c" stroke-width="3"/>');
+  var hideA = NL.done && q.A!==q.ans && Math.abs(q.A-q.ans)*sp<fs*1.7;   /* start squeezed against the answer */
+  if(!hideA) s.push('<circle cx="'+xOf(q.A)+'" cy="'+ry+'" r="'+rr+'" fill="none" stroke="#4a6b86" stroke-width="2" stroke-dasharray="4 3"/>');
+  /* ticks and labels */
+  for(var v=-N; v<=N; v++){
+    var x=xOf(v), major=(v%5===0), zero=(v===0);
+    s.push('<line x1="'+x+'" y1="'+(Y+14)+'" x2="'+x+'" y2="'+(Y+(major?30:23))+'" stroke="'+(zero?"#e07b00":"#4a6b86")+'" stroke-width="'+(zero?4:(major?2.5:1.5))+'"/>');
+    var isA=(v===q.A), isAns=(NL.done && v===q.ans), show;
+    if(isAns) show=true;
+    else if(isA) show=!hideA;
+    else show=(v%every===0) && (hideA || Math.abs(v-q.A)*sp>=fs*2.1) && !(NL.done && Math.abs(v-q.ans)*sp<fs*2.1);
+    if(show){
+      var col = zero ? "#e07b00" : (v<0 ? "#0b4f86" : "#0d2a45");
+      s.push('<text x="'+x+'" y="'+ly+'" text-anchor="middle" font-size="'+(zero?fs+2:fs)+'" font-weight="'+(zero?800:700)+'" fill="'+col+'">'+lab(v)+'</text>');
+    }
+  }
+  /* footprints on the ice, and numbered jumps underneath */
+  var st=NL.pos-q.A, n=Math.abs(st), d=st<0?-1:1, ay=Y+64, nfs=Math.max(10,Math.min(16,sp*0.6));
+  var tight=sp<18, sw=tight?2:3, dip=tight?16:26;
+  for(var i=0;i<n;i++){
+    var from=q.A+i*d, to=from+d, xa=xOf(from), xb=xOf(to), xm=(xa+xb)/2;
+    s.push('<ellipse cx="'+(xb-3)+'" cy="'+(Y+5)+'" rx="2.6" ry="1.8" fill="#8cc4e4"/><ellipse cx="'+(xb+3)+'" cy="'+(Y+9)+'" rx="2.6" ry="1.8" fill="#8cc4e4"/>');
+    s.push('<path d="M'+xa+','+ay+' Q'+xm+','+(ay+dip)+' '+xb+','+ay+'" pathLength="1" fill="none" stroke="#ff9f1c" stroke-width="'+sw+'" stroke-linecap="round"'+((!tight||i===n-1)?' marker-end="url(#ah)"':'')+(animLast&&i===n-1?' class="grow"':'')+'/>');
+    s.push('<text x="'+xm+'" y="'+(ay+dip+6+nfs*0.4)+'" text-anchor="middle" font-size="'+nfs+'" font-weight="800" fill="#e07b00">'+(i+1)+'</text>');
+  }
+  nlSvg.innerHTML=s.join("");
+}
+function placePg(anim){
+  pgw.classList.toggle("noanim",!anim);
+  pgw.style.left=xOf(NL.pos)+"px";
+  pgw.style.top=(GEO.lineY-GEO.ph+2)+"px";
+  if(!anim) void pgw.offsetWidth;
+}
+
+function nlSet(q){
+  NL.token++; NL.q=q; NL.pos=q.A; NL.done=false; NL.running=false;
+  NL.N=Math.min(50,Math.max(S.nl,Math.abs(q.A),Math.abs(q.ans)));
+  pgw.classList.remove("walk","back","hop");
+  pgw.classList.toggle("left",q.op==="-");
+  $("nlQ").innerHTML=nlExpr(q)+' <span>= <span class="chip q" id="nlChip">?</span></span>';
+  sayIt(q.op==="+" ? "adding →" : "← subtracting");
+  status(q.op==="+" ? "<b>Adding</b>, so the penguin faces <b>right</b> →" : "← <b>Subtracting</b>, so the penguin faces <b>left</b>");
+  $("nlExplain").classList.add("hidden");
+  drawLine(false); placePg(false); fitQ();
+}
+function fitQ(){
+  var e=$("nlQ"); e.style.fontSize="";
+  var size=parseFloat(getComputedStyle(e).fontSize);
+  while(e.scrollWidth>e.clientWidth+1 && size>18){ size-=1; e.style.fontSize=size+"px"; }
+}
+function nlNew(){ nlSet(nlMakeQ()); }
+function nlReset(){ if(NL.q) nlSet(NL.q); }
+function nlReplay(){
+  if(!NL.q) return;
+  nlSet(NL.q);
+  var tok=NL.token;
+  setTimeout(function(){ if(tok===NL.token) nlReveal(); },600);
+}
+function walkMsg(k,n){
+  var q=NL.q, pos=q.B>0;
+  return fmt(q.B,false)+" is "+(pos?"positive":"negative")+", so the penguin walks <b>"+(pos?"forwards":"backwards")+"</b> · step "+k+" of "+n;
+}
+function nlReveal(){
+  if(!NL.q||NL.running) return;
+  if(NL.done){ nlReplay(); return; }
+  var q=NL.q, n=Math.abs(q.B), dir=q.eff>0?1:-1, tok=NL.token, k=0;
+  if(n===0){ nlFinish(); return; }
+  NL.running=true;
+  var d=Math.round(Math.max(280,Math.min(600,6000/n)));
+  pgw.style.setProperty("--step",d+"ms");
+  pgw.classList.toggle("back",q.B<0);
+  sayIt(q.B>0 ? "forwards" : "backwards");
+  status(walkMsg(0,n).replace(/ · step 0 of \d+/,""));
+  function stepOnce(){
+    if(tok!==NL.token) return;
+    k++; NL.pos+=dir;
+    pgw.classList.add("walk"); placePg(true);
+    status(walkMsg(k,n));
+    setTimeout(function(){
+      if(tok!==NL.token) return;
+      drawLine(true);
+      if(k<n) stepOnce();
+      else setTimeout(function(){ if(tok===NL.token) nlFinish(); },200);
+    },d);
+  }
+  setTimeout(stepOnce,500);
+}
+function nlFinish(){
+  var q=NL.q;
+  NL.running=false; NL.done=true;
+  pgw.classList.remove("walk","back");
+  pgw.classList.add("hop");
+  setTimeout(function(){pgw.classList.remove("hop");},650);
+  sayIt("");
+  var chip=$("nlChip");
+  chip.className="chip pop "+(q.ans<0?"neg":(q.ans>0?"pos":"zero"));
+  chip.innerHTML=plain(q.ans); fitQ();
+  drawLine(false);
+  status("The penguin finishes on <b>"+plain(q.ans)+"</b>"+(q.ans<0?" — below zero":(q.ans>0?" — above zero":" — right on the waterline")));
+  if(S.working){
+    var face = q.op==="+" ? "<b>Add</b> → the penguin faces <b>right</b>." : "<b>Subtract</b> → the penguin faces <b>left</b>.";
+    var n=Math.abs(q.B), walk;
+    if(q.B===0) walk="Adding or subtracting 0 → the penguin doesn’t move.";
+    else walk=fmt(q.B,false)+" is "+(q.B>0?"positive":"negative")+" → it walks <b>"+(q.B>0?"forwards":"backwards")+"</b> "+n+" step"+(n===1?"":"s")+", which moves it to the <b>"+(q.eff>0?"right":"left")+"</b>.";
+    var line3;
+    if(q.B<0) line3="So "+nlExpr(q)+" is the same as "+plain(q.A)+(q.eff>0?" + ":" "+MINUS+" ")+n+" = <b>"+plain(q.ans)+"</b>";
+    else line3="So "+nlExpr(q)+" = <b>"+plain(q.ans)+"</b>";
+    $("nlExplain").innerHTML="<div>"+face+"</div><div>"+walk+"</div><div>"+line3+"</div>";
+    $("nlExplain").classList.remove("hidden");
+  }
+}
+
+Array.prototype.forEach.call(document.querySelectorAll("#modeGroup .lvl"),function(b){
+  b.addEventListener("click",function(){
+    S.addMode=b.dataset.mode; save(); updateModeButtons();
+    if(tab==="add") nlNew(); else render();
+  });
+});
+function updateModeButtons(){
+  Array.prototype.forEach.call(document.querySelectorAll("#modeGroup .lvl"),function(b){ b.classList.toggle("on",b.dataset.mode===S.addMode); });
+}
+$("nlBtnNew").onclick=nlNew;
+$("nlBtnReveal").onclick=nlReveal;
+$("nlBtnReplay").onclick=nlReplay;
+$("nlBtnCustom").onclick=function(){ $("nlCustom").classList.toggle("hidden"); };
+$("cGo").onclick=function(){
+  var A=parseInt($("cA").value,10), B=parseInt($("cB").value,10), op=$("cOp").value;
+  var bad = isNaN(A)||isNaN(B)||Math.abs(A)>50||Math.abs(B)>50;
+  var eff = op==="+" ? B : -B;
+  if(!bad && Math.abs(A+eff)>50) bad=true;
+  $("cErr").classList.toggle("hidden",!bad);
+  if(bad) return;
+  nlSet({A:A,op:op,B:B,eff:eff,ans:A+eff});
+};
+
+function applyRules(){ $("nlRules").classList.toggle("hidden",!S.rules); }
+applyRules();
+
+/* ================= tabs ================= */
+function showTab(t){
+  tab=t; S.tab=t; save();
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(b){ b.classList.toggle("on",b.dataset.tab===t); });
+  $("subtitle").innerHTML=SUB[t];
+  var isAdd = t==="add", isAddSet = t==="addset";
+  $("levelGroup").classList.toggle("hidden",isAdd||isAddSet);
+  $("gridActions").classList.toggle("hidden",isAdd);
+  $("gridView").classList.toggle("hidden",isAdd);
+  $("modeGroup").classList.toggle("hidden",!(isAdd||isAddSet));
+  $("nlActions").classList.toggle("hidden",!isAdd);
+  $("nlView").classList.toggle("hidden",!isAdd);
+  updateModeButtons();
+  if(isAdd){
+    updateModeButtons();
+    if(NL.q){ drawLine(false); placePg(false); fitQ(); } else nlNew();
+  }else{
+    NL.token++; NL.running=false;          /* stop any walk in progress */
+    if(NL.q && !NL.done) nlSet(NL.q);
+    updateLevelButtons(); render();
+  }
+}
+Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(b){
+  b.addEventListener("click",function(){ if(b.dataset.tab!==tab || true) showTab(b.dataset.tab); });
+});
+
+var lastW=window.innerWidth, lastShort=window.innerHeight<=500;
+window.addEventListener("resize",function(){
+  var w=window.innerWidth, sh=window.innerHeight<=500;
+  if(w===lastW && sh===lastShort) return;
+  lastW=w; lastShort=sh;
+  if(tab==="add"){ drawLine(false); placePg(false); fitQ(); } else fitText();
+});
+
+/* ================= settings ================= */
+var ov=$("overlay");
+function fillForm(s){
+  $("optPlus").checked=s.plus; $("optRaised").checked=s.raised; $("optWork").checked=s.working;
+  ["A","B","C","D"].forEach(function(k){ $("r"+k+"0").value=s.ranges[k][0]; $("r"+k+"1").value=s.ranges[k][1]; });
+  $("nlN").value=s.nl; $("nlMax").value=s.nlMax; $("optRules").checked=s.rules; $("optMotion").checked=s.motion;
+}
+function num(id,lo,hi,def){ var v=parseInt($(id).value,10); if(isNaN(v)) v=def; return Math.max(lo,Math.min(hi,v)); }
+$("btnSettings").onclick=function(){ fillForm(S); ov.classList.add("open"); };
+$("btnCancel").onclick=function(){ ov.classList.remove("open"); };
+$("btnDefaults").onclick=function(){ fillForm(DEFAULTS); };
+$("btnSave").onclick=function(){
+  S.plus=$("optPlus").checked; S.raised=$("optRaised").checked; S.working=$("optWork").checked;
+  ["A","B","C","D"].forEach(function(k){
+    var a=num("r"+k+"0",0,999,1), b=num("r"+k+"1",0,999,10);
+    if(a>b){var t=a;a=b;b=t;}
+    S.ranges[k]=[a,b];
+  });
+  S.rules=$("optRules").checked; applyRules();
+  S.motion=$("optMotion").checked; applyMotion();
+  S.nl=num("nlN",5,30,10); S.nlMax=Math.min(S.nl,num("nlMax",1,30,8));
+  save(); ov.classList.remove("open");
+  if(tab==="add") nlNew(); else render();
+};
+ov.addEventListener("click",function(e){ if(e.target===ov) ov.classList.remove("open"); });
+
+document.addEventListener("keydown",function(e){
+  if(ov.classList.contains("open")){ if(e.key==="Escape") ov.classList.remove("open"); return; }
+  var tg=e.target.tagName;
+  if(tg==="INPUT"||tg==="SELECT") return;
+  var k=e.key.toLowerCase();
+  if(k==="p"){ penguinNow(); return; }
+  if(tab==="add"){
+    if(k==="enter"||k===" "){ e.preventDefault(); nlReveal(); }
+    else if(k==="n") nlNew();
+    else if(k==="r") nlReplay();
+    else if(k==="h") nlReset();
+    return;
+  }
+  if(k==="enter"||k===" "){ e.preventDefault(); revealNext(); }
+  else if(k==="n") render();
+  else if(k==="r") setAll(true);
+  else if(k==="h") setAll(false);
+});
+
+/* ---------- snow ---------- */
+var snow=$("snow");
+for(var i=0;i<40;i++){
+  var f=document.createElement("div");
+  f.className="flake"; f.textContent="\u2744";
+  f.style.left=Math.random()*100+"vw";
+  f.style.fontSize=(8+Math.random()*12)+"px";
+  f.style.animationDuration=(8+Math.random()*12)+"s";
+  f.style.animationDelay=(-Math.random()*20)+"s";
+  snow.appendChild(f);
+}
+
+/* ---------- easter egg: the odd penguin ---------- */
+var egg=$("egg");
+var ART=$("pengArt").outerHTML.replace(' class="peng" id="pengArt"','');
+var busy=false, eggTimer=null;
+function rnd(a,b){return a+Math.random()*(b-a);}
+function makePg(){ var d=document.createElement("div"); d.className="pg"; d.innerHTML=ART; return d; }
+function after(anim,fn){ anim.onfinish=fn; }
+function waddle(pg,from,to,done){
+  var dist=Math.abs(to-from), dur=Math.max(600,dist/180*1000), steps=Math.max(2,Math.round(dur/170)), kf=[];
+  for(var i=0;i<=steps;i++){
+    var x=from+(to-from)*i/steps, r=(i===0||i===steps)?0:(i%2?7:-7), y=(i%2?-3:0);
+    kf.push({transform:"translate("+x+"px,"+y+"px) rotate("+r+"deg)"});
+  }
+  after(pg.animate(kf,{duration:dur,easing:"linear",fill:"forwards"}),done);
+}
+function makeHole(cx){
+  var h=document.createElement("div"); h.className="hole"; h.style.left=(cx-37)+"px"; egg.appendChild(h);
+  h.animate([{opacity:0,transform:"scaleX(.3)"},{opacity:1,transform:"scaleX(1)"}],{duration:500,fill:"forwards"});
+  return h;
+}
+function removeHole(h){ after(h.animate([{opacity:1},{opacity:0}],{duration:700,fill:"forwards"}),function(){h.remove();}); }
+function finish(){ busy=false; schedule(); }
+
+function skate(){
+  var W=window.innerWidth, ltr=Math.random()<0.5, a=ltr?-80:W+30, b=ltr?W+30:-80, pg=makePg();
+  egg.appendChild(pg);
+  var lean=ltr?1:-1, kf=[], N=10, spinAt=5;
+  for(var i=0;i<=N;i++){
+    var x=a+(b-a)*i/N, r=(i%2?14:4)*lean;
+    var spin=" rotateY("+(i>=spinAt?360:0)+"deg)";
+    kf.push({transform:"translateX("+x+"px)"+spin+" rotate("+r+"deg)",offset:i/N});
+  }
+  after(pg.animate(kf,{duration:rnd(6500,8500),easing:"linear",fill:"forwards"}),function(){pg.remove();finish();});
+}
+
+function dive(){
+  var W=window.innerWidth, cx=rnd(W*0.2,W*0.8), fromLeft=cx<W/2, start=fromLeft?-60:W+10;
+  var pg=makePg(); egg.appendChild(pg);
+  waddle(pg,start,cx-24,function(){
+    var hole=makeHole(cx+26*(fromLeft?1:-1));
+    after(pg.animate([{transform:"translateX("+(cx-24)+"px)"},{transform:"translateX("+(cx-24+26*(fromLeft?1:-1))+"px)"}],{duration:500,delay:400,fill:"forwards"}),function(){
+      var hx=cx+26*(fromLeft?1:-1);
+      pg.remove();
+      var wrap=document.createElement("div"); wrap.className="diver"; wrap.style.left=(hx-80)+"px";
+      var p2=makePg(); wrap.appendChild(p2); egg.appendChild(wrap);
+      after(p2.animate([
+        {transform:"translateY(0) rotate(0deg) scaleY(1)"},
+        {transform:"translateY(8px) rotate(0deg) scaleY(.85)",offset:.15},
+        {transform:"translateY(-55px) rotate(90deg) scaleY(1)",offset:.45},
+        {transform:"translateY(-40px) rotate(170deg) scaleY(1)",offset:.6},
+        {transform:"translateY(110px) rotate(180deg) scaleY(1)"}
+      ],{duration:1300,easing:"ease-in",fill:"forwards"}),function(){
+        wrap.remove(); splash(hx); setTimeout(function(){removeHole(hole);finish();},900);
+      });
+    });
+  });
+}
+function splash(x){
+  for(var i=0;i<9;i++){
+    var d=document.createElement("div"); d.className="drop"; d.style.left=(x-3)+"px"; d.style.bottom="26px"; egg.appendChild(d);
+    var dx=rnd(-45,45), dy=rnd(40,85);
+    (function(d){ after(d.animate([
+      {transform:"translate(0,0)",opacity:1},
+      {transform:"translate("+dx*0.6+"px,"+(-dy)+"px)",opacity:1,offset:.5},
+      {transform:"translate("+dx+"px,-10px)",opacity:0}
+    ],{duration:rnd(700,1000),easing:"ease-out",fill:"forwards"}),function(){d.remove();}); })(d);
+  }
+}
+
+function dance(){
+  var W=window.innerWidth, cx=rnd(W*0.2,W*0.8), fromLeft=Math.random()<0.5, start=fromLeft?-60:W+10, exit=fromLeft?W+10:-60;
+  var pg=makePg(); egg.appendChild(pg); var x=cx-24;
+  waddle(pg,start,x,function(){
+    notes(cx);
+    var T="translateX("+x+"px) ";
+    after(pg.animate([
+      {transform:T+"translateY(0px) rotateY(0deg) rotate(0deg) rotateX(0deg)"},
+      {transform:T+"translateY(-22px) rotateY(180deg) rotate(0deg) rotateX(0deg)",offset:.12},
+      {transform:T+"translateY(0px) rotateY(360deg) rotate(0deg) rotateX(0deg)",offset:.24},
+      {transform:T+"translateY(0px) rotateY(360deg) rotate(-12deg) rotateX(0deg)",offset:.32},
+      {transform:T+"translateY(0px) rotateY(360deg) rotate(12deg) rotateX(0deg)",offset:.40},
+      {transform:T+"translateY(0px) rotateY(360deg) rotate(-12deg) rotateX(0deg)",offset:.48},
+      {transform:T+"translateY(-30px) rotateY(540deg) rotate(0deg) rotateX(0deg)",offset:.62},
+      {transform:T+"translateY(0px) rotateY(720deg) rotate(0deg) rotateX(0deg)",offset:.76},
+      {transform:T+"translateY(0px) rotateY(720deg) rotate(0deg) rotateX(0deg)",offset:.82},
+      {transform:T+"translateY(4px) rotateY(720deg) rotate(0deg) rotateX(35deg)",offset:.9},
+      {transform:T+"translateY(0px) rotateY(720deg) rotate(0deg) rotateX(0deg)"}
+    ],{duration:3400,easing:"ease-in-out",fill:"forwards"}),function(){
+      waddle(pg,x,exit,function(){pg.remove();finish();});
+    });
+  });
+}
+function notes(x){
+  ["\u266A","\u266B","\u266A"].forEach(function(ch,i){
+    var n=document.createElement("div"); n.className="note"; n.textContent=ch;
+    n.style.left=(x+(i-1)*22)+"px"; n.style.bottom="80px"; n.style.opacity=0; egg.appendChild(n);
+    after(n.animate([{transform:"translateY(0)",opacity:0},{transform:"translateY(-20px)",opacity:1,offset:.3},{transform:"translateY(-60px)",opacity:0}],
+      {duration:1800,delay:300+i*700,easing:"ease-out",fill:"forwards"}),function(){n.remove();});
+  });
+}
+
+$("pengArt").addEventListener("click",function(){ penguinNow(); });
+var ACTS=[skate,dive,dance], lastAct=-1;
+var busySince=0;
+function penguinNow(){
+  if(!egg.animate) return;
+  if(busy && Date.now()-busySince<20000) return;   /* safety: never stay stuck */
+  busy=true; busySince=Date.now(); clearTimeout(eggTimer);
+  var i; do{ i=Math.floor(Math.random()*ACTS.length); }while(i===lastAct);
+  lastAct=i; ACTS[i]();
+}
+function reducedMotion(){ return !S.motion && !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+function applyMotion(){ document.body.classList.toggle("calm",reducedMotion()); schedule(); }
+function schedule(){
+  clearTimeout(eggTimer);
+  if(reducedMotion()) return;   /* no surprise penguins, but P still works */
+  eggTimer=setTimeout(function(){ if(document.hidden) schedule(); else penguinNow(); }, rnd(60,150)*1000);
+}
+applyMotion();
+
+showTab(tab);
+})();
+</script>
+</body>
+</html>

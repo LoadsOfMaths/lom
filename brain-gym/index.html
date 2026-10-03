@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5e3a1b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brain Gym">
+<title>Brain Gym</title>
+<style>
+:root{
+  --board:#22392a; --board2:#2d4a37; --chalk:#f4f1e6; --dim:rgba(244,241,230,.55); --faint:rgba(244,241,230,.18);
+  --yellow:#f8e27a; --pink:#f6a6c3; --blue:#a4d8f3; --green:#aee8a4; --orange:#f8b56b; --red:#ff8a80;
+  --wood:#7b4f27; --wood2:#5e3a1b;
+  --font:"Chalkboard SE","Chalkboard","Segoe Print","Bradley Hand","Comic Sans MS",cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-family:var(--font);color:var(--chalk);background:var(--wood2);overflow:hidden;user-select:none;-webkit-user-select:none}
+.frame{position:fixed;inset:0;padding:max(min(1.4vmin,14px),env(safe-area-inset-top)) max(min(1.4vmin,14px),env(safe-area-inset-right)) max(min(1.4vmin,14px),env(safe-area-inset-bottom)) max(min(1.4vmin,14px),env(safe-area-inset-left));background:linear-gradient(135deg,var(--wood),var(--wood2) 40%,var(--wood) 70%,var(--wood2))}
+.board{position:relative;width:100%;height:100%;border-radius:10px;overflow:hidden;
+  background:radial-gradient(ellipse at 20% 10%,rgba(255,255,255,.07),transparent 50%),radial-gradient(ellipse at 80% 90%,rgba(255,255,255,.05),transparent 55%),linear-gradient(160deg,var(--board2),var(--board));
+  box-shadow:inset 0 0 60px rgba(0,0,0,.55);display:flex;flex-direction:column}
+.board::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.08;
+  background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.35) 0 1px,transparent 1px 7px)}
+button{font-family:var(--font);cursor:pointer;color:var(--chalk);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+/* header */
+header{display:flex;align-items:center;gap:1.2vmin;padding:1.4vmin 2.2vmin .4vmin;z-index:2}
+.title{font-size:clamp(22px,5vmin,54px);color:var(--yellow);letter-spacing:.02em;text-shadow:0 0 6px rgba(248,226,122,.25);cursor:pointer;white-space:nowrap}
+#newBtn .sm{display:none}
+.title small{font-size:.45em;color:var(--pink);margin-left:.5em}
+.tagline{font-size:clamp(12px,2vmin,22px);color:var(--blue);font-style:italic;margin-top:-.2em;letter-spacing:.03em}
+.spacer{flex:1}
+.hbtn{background:transparent;border:2px solid var(--faint);border-radius:12px;padding:.5vmin 1.4vmin;font-size:clamp(14px,2.3vmin,24px);min-height:44px;min-width:44px;white-space:nowrap}
+.hbtn:hover{border-color:var(--chalk)}
+
+/* start screen */
+#welcome{flex:1;display:flex;flex-direction:column;align-items:center;gap:2.2vmin;padding:1vmin 3vmin 3vmin;z-index:1;min-height:0;overflow-y:auto}
+#welcome>:first-child{margin-top:auto}#welcome>:last-child{margin-bottom:auto}
+.intro{font-size:clamp(15px,2.6vmin,28px);color:var(--dim);text-align:center;max-width:70ch}
+.levels{display:flex;gap:2.4vmin;flex-wrap:wrap;justify-content:center}
+.lvl{width:clamp(180px,27vmin,320px);border:3px dashed var(--faint);border-radius:18px;background:rgba(0,0,0,.12);padding:1.4vmin 1.6vmin 2vmin;text-align:center;transition:transform .15s,border-color .15s}
+@media (hover:hover){.lvl:hover{transform:translateY(-3px)}}
+.lvl.sel{border-style:solid;border-color:var(--yellow);background:rgba(248,226,122,.08)}
+.lvl svg{width:78%;height:auto;display:block;margin:0 auto}
+.lvl h3{font-size:clamp(18px,3.4vmin,36px);color:var(--yellow);font-weight:normal}
+.lvl .d{font-size:clamp(13px,2vmin,20px);color:var(--pink)}
+.lvl p{font-size:clamp(12px,1.8vmin,18px);color:var(--dim);margin-top:.6vmin;line-height:1.3}
+.row{display:flex;align-items:center;gap:1.2vmin;flex-wrap:wrap;justify-content:center;font-size:clamp(15px,2.5vmin,26px)}
+.chip{background:transparent;border:2px solid var(--faint);border-radius:999px;min-width:48px;min-height:44px;padding:0 1.4vmin;font-size:inherit}
+.chip.sel{border-color:var(--yellow);color:var(--yellow);background:rgba(248,226,122,.1)}
+.go{background:var(--yellow);color:#233;border:none;border-radius:16px;padding:1.2vmin 5vmin;font-size:clamp(20px,3.8vmin,40px);box-shadow:0 4px 0 #b99e3a}
+.go:active{transform:translateY(2px);box-shadow:0 2px 0 #b99e3a}
+
+/* workout */
+#workout{flex:1;display:none;min-height:0;z-index:1}
+.main{flex:1;display:flex;min-height:0;gap:1vmin;padding:0 2vmin}
+.side{width:24%;min-width:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1vmin}
+.side svg{width:100%;max-height:52vh}
+.side .lvname{font-size:clamp(16px,3vmin,32px);color:var(--yellow);text-align:center}
+.side .lvname span{display:block;font-size:.6em;color:var(--pink)}
+.content{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;overflow-y:auto}
+.content>:first-child{margin-top:auto}.content>:last-child{margin-bottom:auto}
+.instr{font-size:clamp(14px,2.4vmin,26px);color:var(--dim);text-align:center;margin-bottom:1.6vmin}
+.grid{display:grid;gap:1.6vmin;align-content:center}
+.card{position:relative;border:3px solid var(--faint);border-radius:16px;padding:2.6vmin .8vmin 1.6vmin;text-align:center;min-height:min(30vh,34vw);display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.1);transition:border-color .25s,background .25s}
+.card .badge{position:absolute;top:.5vmin;left:.9vmin;font-size:clamp(11px,1.7vmin,18px);color:var(--dim)}
+.card .sym{font-size:clamp(24px,min(8.5vmin,5vw),96px);line-height:1.05;white-space:nowrap}
+.card .words{font-size:clamp(11px,min(2.2vmin,1.35vw),24px);color:var(--blue);margin-top:.6vmin;line-height:1.15}
+.card.pending{border-style:dashed;border-color:rgba(244,241,230,.12);background:transparent}
+.card.pending .sym,.card.pending .words{visibility:hidden}
+.card.pending::after{content:"?";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(22px,5vmin,56px);color:rgba(244,241,230,.13)}
+.card.current{border-color:var(--yellow);background:rgba(248,226,122,.07);box-shadow:0 0 18px rgba(248,226,122,.15)}
+.card.current .sym{color:var(--yellow)}
+.card.start{border-color:var(--green)} .card.start .sym{color:var(--green)}
+.card.final{border-color:var(--pink)} .card.final .sym{color:var(--pink)}
+.card.final.locked::after{content:"";}
+.card.pop .sym{animation:pop .45s ease-out}
+.hidewords .card .words{display:none}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+/* maths bits */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.62em;line-height:1;margin:0 .08em}
+.fr .fn{border-bottom:.08em solid currentColor;padding:0 .12em .06em}
+.fr .fd{padding:.06em .12em 0}
+.of{font-size:.6em}
+.ov{border-top:.07em solid currentColor;padding:0 .08em;margin-left:.02em}
+sup{font-size:.55em;vertical-align:.8em;line-height:0}
+sup.ix{font-size:.45em;vertical-align:1em;margin-right:-.3em}
+
+/* controls */
+.controls{display:flex;gap:1.2vmin;justify-content:center;align-items:center;padding:1.4vmin 2vmin 1.8vmin;flex-wrap:wrap}
+.cbtn{position:relative;overflow:hidden;background:rgba(0,0,0,.18);border:2px solid var(--faint);border-radius:14px;padding:1vmin 2.2vmin;min-height:48px;font-size:clamp(15px,2.5vmin,27px)}
+.cbtn:hover:not(:disabled){border-color:var(--chalk)}
+.cbtn:disabled{opacity:.3;cursor:default}
+.cbtn.primary{border-color:var(--yellow);color:var(--yellow)}
+.cbtn.reveal{background:var(--pink);color:#3a1627;border-color:var(--pink)}
+.cbtn .bar{position:absolute;left:0;bottom:0;height:5px;background:var(--yellow);width:0}
+
+/* working view */
+#working{position:absolute;inset:0;display:none;flex-direction:column;background:linear-gradient(160deg,var(--board2),var(--board));z-index:5}
+#working h2{font-weight:normal;color:var(--yellow);font-size:clamp(22px,4.4vmin,48px);text-align:center;padding-top:2vmin}
+.wlist{flex:1;display:grid;grid-auto-flow:column;align-content:center;justify-content:center;column-gap:8vmin;row-gap:1.2vmin;padding:1vmin 3vmin;min-height:0}
+.wline{font-size:clamp(18px,4.6vmin,50px);display:flex;align-items:center;gap:1.4vmin;white-space:nowrap;transition:opacity .3s}
+.wline .n{font-size:.5em;color:var(--dim);width:2.4em;text-align:right}
+.wline.hid{opacity:0}
+.wline.start{color:var(--green)}
+.wline.last{color:var(--pink)}
+.wline.fresh{animation:pop .4s ease-out}
+
+/* reveal overlay */
+#reveal{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(10,22,15,.94);z-index:8;cursor:pointer}
+#reveal svg{width:min(46vmin,420px);height:auto}
+#reveal .lbl{font-size:clamp(18px,3.6vmin,38px);color:var(--dim)}
+#reveal .big{font-size:clamp(70px,24vmin,260px);color:var(--yellow);line-height:1;text-shadow:0 0 30px rgba(248,226,122,.35);min-height:1em}
+#reveal .big.land{animation:land .6s cubic-bezier(.2,1.6,.4,1)}
+#reveal .hint{font-size:clamp(12px,1.8vmin,18px);color:var(--dim);margin-top:1vmin}
+@keyframes land{0%{transform:scale(2.2);opacity:.2}100%{transform:scale(1);opacity:1}}
+.spark{position:absolute;font-size:clamp(20px,4vmin,40px);pointer-events:none;animation:spark 1.4s ease-out forwards}
+@keyframes spark{0%{transform:translate(0,0) scale(.3);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(200deg);opacity:0}}
+
+/* modals */
+.modal{position:absolute;inset:0;background:rgba(8,18,12,.8);display:none;align-items:center;justify-content:center;z-index:10}
+.panel{background:linear-gradient(160deg,var(--board2),var(--board));border:3px solid var(--chalk);border-radius:20px;padding:2.6vmin 3.4vmin;max-width:min(760px,94vw);max-height:92vh;max-height:92dvh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.panel h2{font-weight:normal;color:var(--yellow);font-size:clamp(22px,4vmin,40px);margin-bottom:1.4vmin}
+.set{margin:1.6vmin 0}
+.set .lab{font-size:clamp(15px,2.4vmin,24px);margin-bottom:.8vmin}
+.set .row{justify-content:flex-start}
+.set .note{font-size:clamp(12px,1.8vmin,17px);color:var(--dim);margin-top:.6vmin}
+.panel .close{margin-top:1.6vmin}
+.keys{font-size:clamp(14px,2.2vmin,21px);line-height:1.8}
+.keys kbd{font-family:inherit;border:2px solid var(--faint);border-radius:6px;padding:0 .5em;color:var(--yellow)}
+
+/* brain animation */
+.brain-wrap{transform-origin:150px 150px}
+.anim .tm-legL{animation:legs .5s ease-in-out infinite alternate;transform-origin:135px 196px}
+.anim .tm-legR{animation:legs .5s ease-in-out infinite alternate-reverse;transform-origin:165px 196px}
+.anim .tm-armL{animation:swing .5s ease-in-out infinite alternate;transform-origin:72px 150px}
+.anim .tm-armR{animation:swing .5s ease-in-out infinite alternate-reverse;transform-origin:228px 150px}
+.anim .tm-belt{animation:belt .5s linear infinite}
+.anim .tm-body{animation:bob .25s ease-in-out infinite alternate}
+@keyframes legs{from{transform:rotate(-24deg)}to{transform:rotate(24deg)}}
+@keyframes swing{from{transform:rotate(28deg)}to{transform:rotate(-28deg)}}
+@keyframes belt{to{stroke-dashoffset:-28}}
+@keyframes bob{to{transform:translateY(-4px)}}
+.anim .fw-armL{animation:curlL 1.4s ease-in-out infinite;transform-origin:70px 150px}
+.anim .fw-armR{animation:curlR 1.4s ease-in-out infinite;transform-origin:230px 150px}
+@keyframes curlL{0%,50%,100%{transform:rotate(0)}25%{transform:rotate(72deg)}}
+@keyframes curlR{0%,50%,100%{transform:rotate(0)}75%{transform:rotate(-72deg)}}
+.anim .bp-bar{animation:press 1.6s ease-in-out infinite}
+.anim .bp-arm{animation:pressArm 1.6s ease-in-out infinite;transform-origin:0 122px;transform-box:view-box}
+.anim .bp-face{animation:strain 1.6s ease-in-out infinite}
+.anim .sweat{animation:sweat 1.6s ease-in infinite}
+@keyframes press{0%,100%{transform:translateY(16px)}45%,60%{transform:translateY(0)}}
+@keyframes pressArm{0%,100%{transform:scaleY(.8)}45%,60%{transform:scaleY(1)}}
+@keyframes strain{0%,100%{transform:translateY(0)}45%,60%{transform:translateY(2px)}}
+@keyframes sweat{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(40px);opacity:0}}
+.cheer .brain-wrap{animation:cheer .6s ease-in-out infinite alternate}
+@keyframes cheer{from{transform:translateY(0) rotate(-3deg)}to{transform:translateY(-10px) rotate(3deg)}}
+
+@media (max-aspect-ratio:1/1){
+  .main{flex-direction:column}
+  .side{width:100%;flex-direction:row;min-height:0}
+  .side svg{width:28vw;max-height:20vh}
+}
+
+/* ===== Phones: portrait ===== */
+@media (max-width:640px) and (orientation:portrait){
+  header{flex-wrap:wrap;gap:6px;padding:8px 10px 2px}
+  .titleblock{display:contents}
+  .title{font-size:26px}
+  .title small{display:none}
+  .tagline{order:9;flex-basis:100%;font-size:13px;margin-top:-2px}
+  .hbtn{padding:0 9px;font-size:16px;border-radius:10px;min-width:42px}
+  header{gap:5px}
+  #newBtn .lg{display:none} #newBtn .sm{display:inline}
+  /* start screen */
+  #welcome{gap:12px;padding:8px 12px 14px}
+  .intro{font-size:14px;line-height:1.3}
+  .levels{flex-direction:column;gap:10px;width:100%}
+  .lvl{width:100%;display:grid;grid-template-columns:84px 1fr;column-gap:12px;align-items:center;text-align:left;padding:8px 12px;border-radius:14px}
+  .lvl svg{width:84px;grid-row:1 / span 3}
+  .lvl h3{font-size:22px;align-self:end}
+  .lvl .d{font-size:14px}
+  .lvl p{font-size:12.5px;margin-top:0;align-self:start}
+  #welcome .row{font-size:17px;gap:6px}
+  #stepChips{gap:6px}
+  #stepChips .chip{min-width:42px;padding:0 6px}
+  .go{font-size:24px;padding:12px 0;width:100%}
+  /* workout */
+  .main{flex-direction:column;gap:6px;padding:0 10px}
+  .side{width:100%;min-width:0;flex-direction:row;justify-content:flex-start;gap:10px}
+  .side svg{width:74px;max-height:72px}
+  .side .lvname{font-size:20px;text-align:left}
+  .side .lvname span{font-size:.65em}
+  .content>:first-child{margin-top:0}.content>:last-child{margin-bottom:0}
+  .content{overflow:visible}
+  .instr{font-size:14px;margin-bottom:8px;text-align:left}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px;flex:1 1 0;min-height:0;overflow-y:auto;align-content:start;grid-auto-rows:minmax(84px,1fr);padding-bottom:2px}
+  .card{min-height:0;padding:20px 4px 8px;border-radius:12px;border-width:2px}
+  .card .badge{font-size:11px;top:3px;left:7px}
+  .card .sym{font-size:clamp(26px,9vw,54px)}
+  .card .words{font-size:clamp(11px,3.1vw,16px);margin-top:4px}
+  .card.pending::after{font-size:34px}
+  .controls{gap:8px;padding:10px 0 10px}
+  .cbtn{font-size:17px;padding:8px 14px;min-height:50px}
+  #nextBtn{flex:1 1 0;order:2} #backBtn{order:1} #pauseBtn{order:3}
+  #workBtn{order:4;flex-basis:100%}
+  /* working */
+  #working h2{font-size:26px;padding-top:12px}
+  .wlist{grid-auto-flow:row;grid-template-rows:none!important;align-content:start;justify-content:center;row-gap:10px;padding:12px 12px;overflow-y:auto}
+  .wline{font-size:clamp(20px,6.4vw,34px);gap:10px}
+  #working .controls{padding:10px}
+  #working .cbtn{font-size:15px;padding:8px 10px}
+  /* reveal + modals */
+  #reveal svg{width:56vw}
+  #reveal .lbl{font-size:22px}
+  #reveal .big{font-size:clamp(90px,34vw,200px)}
+  #reveal .hint{font-size:13px;margin-top:10px}
+  .panel{padding:16px 16px;border-radius:16px;border-width:2px;width:94vw}
+  .panel h2{font-size:26px;margin-bottom:8px}
+  .set{margin:12px 0}.set .lab{font-size:16px;margin-bottom:6px}
+  .set .row{font-size:15px;gap:6px}.set .note{font-size:12.5px}
+  .chip{padding:0 12px}
+  .keys{font-size:15px;line-height:1.7}
+  .panel .close{margin-top:12px}
+}
+
+@media (max-width:400px) and (orientation:portrait){
+  #newBtn .nw{display:none}
+  .title{font-size:23px}
+  .hbtn{min-width:40px;padding:0 6px}
+}
+
+@media (max-width:340px) and (orientation:portrait){
+  .title{font-size:20px}
+  .hbtn{min-width:36px;padding:0 4px;font-size:15px}
+  header{gap:4px;padding:8px 8px 2px}
+}
+/* tablets held upright */
+@media (min-width:641px) and (max-width:1100px) and (orientation:portrait){
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .card{min-height:17vh;min-height:17dvh}
+  .card .sym{font-size:clamp(34px,8vw,84px)}
+  .card .words{font-size:clamp(14px,2.2vw,22px)}
+  .side svg{width:22vw;max-height:16vh}
+}
+
+/* small / short portrait phones */
+@media (max-width:640px) and (orientation:portrait) and (max-height:700px){
+  .instr{display:none}
+  .side svg{width:52px;max-height:50px}
+  .side .lvname{font-size:17px}
+  .grid{grid-auto-rows:minmax(64px,1fr);gap:6px}
+  .card{padding:15px 3px 5px}
+  .card .sym{font-size:clamp(24px,8vw,40px)}
+  .card .words{font-size:11px;margin-top:2px}
+  .controls{padding:8px 0}
+  .cbtn{min-height:44px;font-size:16px}
+  #workBtn{flex-basis:auto;order:4}
+  #nextBtn{flex:1 1 auto}
+  .lvl{padding:5px 10px;grid-template-columns:64px 1fr}.lvl svg{width:64px}
+  .lvl h3{font-size:19px}.lvl p{font-size:11.5px}
+  #welcome{gap:8px}.intro{font-size:13px}
+  .wline{font-size:clamp(18px,5.8vw,26px)}.wlist{row-gap:5px}
+}
+
+/* ===== Phones: landscape (short screens) ===== */
+@media (max-height:520px) and (orientation:landscape){
+  header{padding:4px 10px 0;gap:6px}
+  .titleblock{display:flex;align-items:baseline;gap:12px;min-width:0}
+  .title{font-size:24px}
+  .tagline{font-size:12px;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .hbtn{padding:0 10px;font-size:15px;min-height:40px;min-width:40px;border-radius:10px}
+  #newBtn .lg{display:none} #newBtn .sm{display:inline}
+  /* start screen */
+  #welcome{flex-direction:row;flex-wrap:wrap;justify-content:center;align-content:safe center;gap:8px 14px;padding:4px 12px 10px}
+  #welcome>:first-child,#welcome>:last-child{margin-top:0;margin-bottom:0}
+  .intro{display:none}
+  .levels{flex-wrap:nowrap;width:100%;gap:8px}
+  .lvl{width:auto;flex:1 1 0;min-width:0;display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center;text-align:left;padding:6px 10px;border-radius:14px}
+  .lvl svg{width:64px;grid-row:1 / span 3}
+  .lvl h3{font-size:19px;align-self:end}
+  .lvl .d{font-size:13px}
+  .lvl p{font-size:11.5px;margin-top:0;line-height:1.2;align-self:start}
+  #welcome .row{font-size:16px;gap:6px}
+  #stepChips .chip{min-width:42px;min-height:42px;padding:0 6px}
+  .go{font-size:21px;padding:8px 26px;border-radius:12px}
+  /* workout */
+  .main{padding:0 8px;gap:8px}
+  .side{width:15%;min-width:92px;gap:2px}
+  .side svg{max-height:44vh}
+  .side .lvname{font-size:15px}
+  .instr{display:none}
+  .content .grid{margin-top:auto}
+  .grid{gap:6px}
+  .card{min-height:27vh;min-height:27dvh;padding:16px 3px 6px;border-radius:10px;border-width:2px}
+  .card .badge{font-size:10px;top:2px;left:6px}
+  .card .sym{font-size:clamp(22px,min(9vh,4.4vw),44px)}
+  .card .words{font-size:clamp(10px,1.45vw,13px);margin-top:3px}
+  .card.pending::after{font-size:28px}
+  .controls{gap:8px;padding:6px 0 6px}
+  .cbtn{font-size:15px;padding:4px 14px;min-height:42px;border-radius:10px}
+  /* working */
+  #working h2{font-size:20px;padding-top:4px}
+  .wlist{row-gap:3px;column-gap:10vw;padding:2px 12px;overflow-y:auto}
+  .wline{font-size:clamp(16px,5.6vh,26px);gap:8px}
+  #working .controls{padding:6px}
+  /* reveal + modals */
+  #reveal svg{width:auto;height:38vh}
+  #reveal .lbl{font-size:17px}
+  #reveal .big{font-size:34vh}
+  #reveal .hint{font-size:12px;margin-top:2px}
+  .panel{padding:10px 16px;border-radius:14px;border-width:2px;max-width:96vw}
+  .panel h2{font-size:21px;margin-bottom:4px}
+  .set{margin:7px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .set .lab{font-size:15px;margin:0;min-width:9.5em}
+  .set .row{font-size:14px;gap:5px}.set .note{font-size:12px;flex-basis:100%;margin-top:0}
+  .chip{min-height:38px;min-width:42px;padding:0 10px}
+  .keys{font-size:14px;line-height:1.6}
+  .panel{position:relative}
+  .panel .close{position:absolute;top:8px;right:14px;margin:0;font-size:17px;padding:5px 22px;border-radius:10px}
+  #helpModal .panel{padding-top:44px}#helpModal .panel h2{position:absolute;top:10px;left:16px}
+}
+</style>
+</head>
+<body>
+<div class="frame"><div class="board" id="board">
+  <header>
+    <div class="titleblock"><div class="title" id="homeBtn" title="Back to the start screen">Brain Gym<small id="hdrLevel"></small></div><div class="tagline" id="tagline">Working out every day</div></div>
+    <div class="spacer"></div>
+    <button class="hbtn" id="newBtn" title="New workout (N)" style="display:none"><span class="lg">New workout</span><span class="sm">↻<span class="nw"> New</span></span></button>
+    <button class="hbtn" id="setBtn" title="Settings (S)">⚙</button>
+    <button class="hbtn" id="helpBtn" title="Help (H)">?</button>
+    <button class="hbtn" id="fsBtn" title="Full screen (F)">⛶</button>
+  </header>
+
+  <section id="welcome">
+    <div class="intro">Write down the starting number, then follow each instruction using your <em>last</em> answer. Every answer is a whole number. Keep it all in your head if you can!</div>
+    <div class="levels" id="levelCards"></div>
+    <div class="row">Steps: <span id="stepChips" class="row"></span></div>
+    <button class="go" id="goBtn">Start workout!</button>
+  </section>
+
+  <section id="workout">
+    <div class="main" style="height:100%">
+      <div class="side"><div id="sideBrain"></div><div class="lvname" id="sideName"></div></div>
+      <div class="content">
+        <div class="instr" id="instr"></div>
+        <div class="grid" id="grid"></div>
+        <div class="controls">
+          <button class="cbtn" id="backBtn" title="Hide last step (←)">◀ Back</button>
+          <button class="cbtn primary" id="nextBtn" title="Next step (Space / →)"><span id="nextLbl">Next step ▶</span><span class="bar" id="timerBar"></span></button>
+          <button class="cbtn" id="pauseBtn" title="Pause the timer (P)" style="display:none">⏸</button>
+          <button class="cbtn" id="workBtn" title="Show the working (W)">Show working</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="working">
+    <h2>The working</h2>
+    <div class="wlist" id="wlist"></div>
+    <div class="controls">
+      <button class="cbtn" id="wBack">◀ Back to workout</button>
+      <button class="cbtn primary" id="wNext">Next line ▶</button>
+      <button class="cbtn" id="wAll">Show all</button>
+    </div>
+  </section>
+
+  <div id="reveal">
+    <div id="revealBrain"></div>
+    <div class="lbl">The final answer is…</div>
+    <div class="big" id="revealNum"></div>
+    <div class="hint">Tap, click or press Space to return</div>
+  </div>
+
+  <div class="modal" id="setModal"><div class="panel">
+    <h2>Settings</h2>
+    <div class="set"><div class="lab">Level</div><div class="row" id="setLevel"></div></div>
+    <div class="set"><div class="lab">Number of steps</div><div class="row" id="setSteps"></div></div>
+    <div class="set"><div class="lab">Show the steps</div><div class="row" id="setMode"></div></div>
+    <div class="set"><div class="lab">Auto-advance</div><div class="row" id="setTimer"></div>
+      <div class="note">Moves on to the next step automatically. The final reveal is always yours to click.</div></div>
+    <div class="set"><div class="lab">Words under the symbols</div><div class="row" id="setWords"></div></div>
+    <div class="set"><div class="lab">Brain animation</div><div class="row" id="setAnim"></div></div>
+    <button class="go close" id="setClose">Done</button>
+  </div></div>
+
+  <div class="modal" id="helpModal"><div class="panel">
+    <h2>How to use Brain Gym</h2>
+    <div class="keys">
+      Pick a level and the number of steps, then press <b>Start workout</b>.<br>
+      Students write down the starting number and follow each instruction as it appears.<br>
+      <b>Touch:</b> tap <b>Next step</b>, or swipe left for the next step and right to go back.<br>
+      <kbd>Space</kbd> / <kbd>→</kbd> next step, then the big reveal &nbsp; <kbd>←</kbd> back<br>
+      <kbd>W</kbd> the working, stage by stage &nbsp; <kbd>N</kbd> new workout &nbsp; <kbd>P</kbd> pause timer<br>
+      <kbd>S</kbd> settings &nbsp; <kbd>F</kbd> full screen &nbsp; <kbd>Esc</kbd> close
+    </div>
+    <button class="go close" id="helpClose">Got it</button>
+  </div></div>
+</div></div>
+
+<script>
+/* ===== Brain Gym engine: chain generation + formatting (pure logic) ===== */
+const BrainGym = (function () {
+  const DEN_WORD = { 2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['quarter', 'quarters'], 5: ['fifth', 'fifths'],
+    6: ['sixth', 'sixths'], 7: ['seventh', 'sevenths'], 8: ['eighth', 'eighths'], 9: ['ninth', 'ninths'],
+    10: ['tenth', 'tenths'], 12: ['twelfth', 'twelfths'] };
+  const NUM_WORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven'];
+  const gcd = (a, b) => { while (b) { [a, b] = [b, a % b]; } return a; };
+  const range = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
+  const DENS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12];
+  const unitFracs = DENS.map(q => [1, q]);
+  const properFracs = [];
+  for (const q of DENS) for (let p = 1; p < q; p++) if (gcd(p, q) === 1) properFracs.push([p, q]);
+
+  const LEVELS = {
+    easy: { key: 'easy', name: 'Treadmill', diff: 'Easy', cap: 120, soft: 100, softW: 0.08, start: [3, 20],
+      addMin: 1, addMax: 20, mul: [2, 3, 4, 5, 10], div: [2, 3, 4, 5, 10], fracs: [], powers: false,
+      weights: { add: 3, sub: 3, mul: 3, div: 3.5 },
+      blurb: '+ and −, × and ÷ by 2, 3, 4, 5 or 10. Numbers stay around 100.' },
+    medium: { key: 'medium', name: 'Free Weights', diff: 'Medium', cap: 500, soft: 500, softW: 1, start: [4, 40],
+      addMin: 2, addMax: 50, mul: range(2, 12), div: range(2, 12), fracs: unitFracs, powers: false,
+      weights: { add: 2.5, sub: 2.5, mul: 2.5, div: 2.5, frac: 3 },
+      blurb: 'Adds unit fractions (⅓ of, ¼ of…) and all times tables. Up to 500.' },
+    hard: { key: 'hard', name: 'Lift, Bro', diff: 'Hard', cap: 1000, soft: 1000, softW: 1, start: [5, 60],
+      addMin: 2, addMax: 100, mul: range(2, 12), div: range(2, 12), fracs: properFracs, powers: true,
+      weights: { add: 2, sub: 2, mul: 1.5, div: 1.5, frac: 3, sq: 2, cu: 1.5, sqrt: 5, cbrt: 5 },
+      blurb: 'Any proper fraction, squares, cubes, square and cube roots. Up to 1000.' }
+  };
+
+  const isSq = n => { const r = Math.round(Math.sqrt(n)); return r * r === n; };
+  const isCu = n => { const r = Math.round(Math.cbrt(n)); return r * r * r === n; };
+
+  // How promising a landing number is for the next operation
+  function usefulness(r, L) {
+    let s = 1;
+    if (L.powers) {
+      if (r >= 4 && isSq(r)) s += 4;
+      if (r >= 8 && isCu(r)) s += 4;
+      if (r <= 31) s += 0.5;
+    }
+    if (!L._ds) L._ds = [...new Set([...L.div.filter(d => d > 2), ...L.fracs.map(f => f[1]).filter(q => q > 2)])];
+    const ds = L._ds;
+    let c = 0;
+    for (const d of ds) if (r % d === 0 && r / d >= 2) c++;
+    s += Math.min(c, 4) * 0.6;
+    return s;
+  }
+  const softW = (r, L) => (r > L.soft ? L.softW : 1);
+
+  function options(v, type, L) {
+    const o = [];
+    switch (type) {
+      case 'add':
+        for (let k = L.addMin; k <= L.addMax; k++) { const r = v + k; if (r > L.cap) break; o.push({ type, k, from: v, to: r, w: usefulness(r, L) * softW(r, L) }); }
+        break;
+      case 'sub':
+        for (let k = L.addMin; k <= L.addMax; k++) { const r = v - k; if (r < 2) break; o.push({ type, k, from: v, to: r, w: usefulness(r, L) }); }
+        break;
+      case 'mul':
+        for (const m of L.mul) { const r = v * m; if (r <= L.cap) o.push({ type, k: m, from: v, to: r, w: softW(r, L) * (m === 10 && L.key !== 'easy' ? 0.5 : 1) }); }
+        break;
+      case 'div':
+        for (const d of L.div) if (v % d === 0 && v / d >= 2) o.push({ type, k: d, from: v, to: v / d, w: (d === 2 && L.key !== 'easy' ? 0.5 : 1) });
+        break;
+      case 'frac':
+        for (const [p, q] of L.fracs) {
+          if (v % q === 0) { const r = (v / q) * p; if (r >= 2) o.push({ type, p, q, from: v, to: r, w: (p === 1 && L.key === 'hard' ? 0.35 : 1) * (q === 2 ? 0.4 : 1) }); }
+        }
+        break;
+      case 'sq': if (v >= 2 && v * v <= L.cap) o.push({ type, from: v, to: v * v, w: 1 }); break;
+      case 'cu': if (v >= 2 && v ** 3 <= L.cap) o.push({ type, from: v, to: v ** 3, w: 1 }); break;
+      case 'sqrt': if (v >= 4 && isSq(v)) o.push({ type, from: v, to: Math.round(Math.sqrt(v)), w: 1 }); break;
+      case 'cbrt': if (v >= 8 && isCu(v)) o.push({ type, from: v, to: Math.round(Math.cbrt(v)), w: 1 }); break;
+    }
+    return o;
+  }
+
+  const FAMILY = { add: 'as', sub: 'as' }; // never add then subtract (they merge into one step)
+  const INVERSE = { add: 'sub', sub: 'add', mul: 'div', div: 'mul', sq: 'sqrt', sqrt: 'sq', cu: 'cbrt', cbrt: 'cu' };
+  function undoes(prev, s) {
+    if (!prev) return false;
+    // fraction / multiplication cancelling each other (x12 then 1/12 of)
+    if (prev.type === 'mul' && s.type === 'frac' && s.p === 1 && s.q === prev.k) return true;
+    if (prev.type === 'frac' && prev.p === 1 && s.type === 'mul' && s.k === prev.q) return true;
+    if (prev.type === 'mul' && s.type === 'frac' && prev.k % s.q === 0) return true; // x6 then 2/3 of: too tidy
+    if (prev.type === 'frac' && (s.type === 'mul' || s.type === 'div') && s.k === prev.q) return true;
+    if (INVERSE[prev.type] !== s.type) return false;
+    if (prev.type === 'add' || prev.type === 'sub' || prev.type === 'mul' || prev.type === 'div') return prev.k === s.k;
+    return true;
+  }
+  function pick(items, w, rng) {
+    let t = 0; for (const it of items) t += w(it);
+    let x = rng() * t;
+    for (const it of items) { x -= w(it); if (x <= 0) return it; }
+    return items[items.length - 1];
+  }
+  const randInt = (a, b, rng) => a + Math.floor(rng() * (b - a + 1));
+
+  function tryChain(L, steps, rng) {
+    const start = randInt(L.start[0], L.start[1], rng);
+    let v = start, prev = null; const out = []; const seen = new Set([start]);
+    for (let i = 0; i < steps; i++) {
+      const groups = [];
+      for (const type of Object.keys(L.weights)) {
+        if (prev && (prev.type === type || (FAMILY[prev.type] && FAMILY[prev.type] === FAMILY[type]))) continue;
+        const opts = options(v, type, L).filter(s => !undoes(prev, s) && !seen.has(s.to));
+        if (opts.length) groups.push({ type, opts });
+      }
+      if (!groups.length) return null;
+      const g = pick(groups, x => L.weights[x.type], rng);
+      const s = pick(g.opts, x => x.w, rng);
+      out.push(s); v = s.to; prev = s; seen.add(v);
+    }
+    return { level: L.key, start, steps: out, answer: v };
+  }
+
+  function check(c, L, steps) {
+    const t = new Set(c.steps.map(s => s.type));
+    const vals = [c.start, ...c.steps.map(s => s.to)];
+    const max = Math.max(...vals);
+    if (L.key === 'easy') {
+      const over = vals.filter(x => x > 100).length;
+      return t.has('mul') && t.has('div') && t.size >= (steps >= 6 ? 4 : 3) && over <= 1 && max >= 30;
+    }
+    if (L.key === 'medium') {
+      return c.steps.some(s => s.type === 'frac' && s.q >= 3) &&
+        c.steps.some(s => (s.type === 'mul' || s.type === 'div') && s.k >= 6) &&
+        t.size >= 4 && max >= 80;
+    }
+    // hard
+    const pw = t.has('sq') || t.has('cu');
+    const rt = t.has('sqrt') || t.has('cbrt');
+    return c.steps.some(s => s.type === 'frac' && s.p > 1) &&
+      (steps >= 6 ? (pw && rt) : (pw || rt)) &&
+      t.size >= (steps >= 7 ? 5 : 4) && max >= 150;
+  }
+
+  function generate(levelKey, steps, rng = Math.random) {
+    const L = LEVELS[levelKey];
+    let fallback = null;
+    for (let a = 0; a < 3000; a++) {
+      const c = tryChain(L, steps, rng);
+      if (!c) continue;
+      if (c.answer >= 3 && c.answer !== c.start && check(c, L, steps)) { c.attempts = a + 1; return c; }
+      if (!fallback) fallback = c;
+    }
+    if (fallback) { fallback.fallback = true; return fallback; }
+    return null;
+  }
+
+  // ---------- Formatting ----------
+  const MINUS = '−';
+  const fracHTML = (p, q) => `<span class="fr"><span class="fn">${p}</span><span class="fd">${q}</span></span>`;
+  function symbol(s) {
+    switch (s.type) {
+      case 'add': return `+ ${s.k}`;
+      case 'sub': return `${MINUS} ${s.k}`;
+      case 'mul': return `× ${s.k}`;
+      case 'div': return `÷ ${s.k}`;
+      case 'frac': return `${fracHTML(s.p, s.q)} <span class="of">of</span>`;
+      case 'sq': return `( )<sup>2</sup>`;
+      case 'cu': return `( )<sup>3</sup>`;
+      case 'sqrt': return `√`;
+      case 'cbrt': return `∛`;
+    }
+  }
+  function words(s) {
+    switch (s.type) {
+      case 'add': return `Add ${s.k}`;
+      case 'sub': return `Subtract ${s.k}`;
+      case 'mul': return s.k === 2 ? 'Double it' : `Multiply by ${s.k}`;
+      case 'div': return s.k === 2 ? 'Halve it' : `Divide by ${s.k}`;
+      case 'frac': return `Find ${NUM_WORD[s.p]} ${DEN_WORD[s.q][s.p === 1 ? 0 : 1]} of it`;
+      case 'sq': return 'Square it';
+      case 'cu': return 'Cube it';
+      case 'sqrt': return 'Find the square root';
+      case 'cbrt': return 'Find the cube root';
+    }
+  }
+  function working(s) {
+    const a = s.from, b = s.to;
+    switch (s.type) {
+      case 'add': return `${a} + ${s.k} = ${b}`;
+      case 'sub': return `${a} ${MINUS} ${s.k} = ${b}`;
+      case 'mul': return `${a} × ${s.k} = ${b}`;
+      case 'div': return `${a} ÷ ${s.k} = ${b}`;
+      case 'frac': return `${fracHTML(s.p, s.q)} of ${a} = ${b}`;
+      case 'sq': return `${a}<sup>2</sup> = ${b}`;
+      case 'cu': return `${a}<sup>3</sup> = ${b}`;
+      case 'sqrt': return `√<span class="ov">${a}</span> = ${b}`;
+      case 'cbrt': return `<sup class="ix">3</sup>√<span class="ov">${a}</span> = ${b}`;
+    }
+  }
+  // plain-text version for testing
+  function apply(v, s) {
+    switch (s.type) {
+      case 'add': return v + s.k; case 'sub': return v - s.k; case 'mul': return v * s.k; case 'div': return v / s.k;
+      case 'frac': return v * s.p / s.q; case 'sq': return v * v; case 'cu': return v * v * v;
+      case 'sqrt': return Math.sqrt(v); case 'cbrt': return Math.cbrt(v);
+    }
+  }
+  return { LEVELS, generate, symbol, words, working, apply };
+})();
+if (typeof module !== 'undefined') module.exports = BrainGym;
+
+</script>
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const LV = BrainGym.LEVELS;
+const DEF = { level:'easy', steps:6, mode:'one', timer:0, words:true, anim:true };
+let S = Object.assign({}, DEF);
+try { const s = JSON.parse(localStorage.getItem('brainGymSettings')||'null'); if (s) S = Object.assign(S, s); } catch(e){}
+const save = () => { try { localStorage.setItem('brainGymSettings', JSON.stringify(S)); } catch(e){} };
+
+/* ---------- The brain ---------- */
+const LOBES=[[98,128,36],[118,96,38],[160,86,40],[198,104,36],[208,140,32],[180,168,34],[128,168,34],[96,154,28],[152,130,52]];
+let uid=0;
+function brain(level, face){
+  const id='bc'+(uid++);
+  const circ = (st) => LOBES.map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}"${st}/>`).join('');
+  const strain = level==='hard';
+  const brows = strain ? '<path d="M119 112 l20 8 M183 112 l-20 8" stroke="#3a1a2a" stroke-width="5" stroke-linecap="round"/>'
+                       : '<path d="M121 114 q9 -6 18 0 M163 114 q9 -6 18 0" stroke="#3a1a2a" stroke-width="4.5" fill="none" stroke-linecap="round"/>';
+  const mouth = face==='cheer' ? '<path d="M130 150 Q151 182 172 150 Z" fill="#5a1f37"/><path d="M142 164 q9 8 18 0" fill="#ff7b9c"/>'
+              : strain ? '<rect x="134" y="152" width="34" height="14" rx="6" fill="#fff" stroke="#3a1a2a" stroke-width="3"/><path d="M134 159 h34 M145 152 v14 M157 152 v14" stroke="#3a1a2a" stroke-width="2"/>'
+              : '<path d="M136 153 Q151 170 166 153 Z" fill="#5a1f37"/>';
+  const faceG = `<g class="${strain?'bp-face':''}">
+    <ellipse cx="118" cy="150" rx="9" ry="6" fill="#ff7aa8" opacity=".55"/><ellipse cx="184" cy="150" rx="9" ry="6" fill="#ff7aa8" opacity=".55"/>
+    <ellipse cx="133" cy="133" rx="10" ry="12" fill="#fff" stroke="#3a1a2a" stroke-width="3"/><ellipse cx="169" cy="133" rx="10" ry="12" fill="#fff" stroke="#3a1a2a" stroke-width="3"/>
+    <circle cx="135" cy="135" r="5" fill="#2a1420"/><circle cx="167" cy="135" r="5" fill="#2a1420"/>
+    <circle cx="137" cy="132" r="1.6" fill="#fff"/><circle cx="169" cy="132" r="1.6" fill="#fff"/>
+    ${brows}${mouth}</g>`;
+  const head = `<defs><clipPath id="${id}">${circ('')}</clipPath></defs>
+    <g stroke="#7a2a4f" stroke-width="7" fill="#f4a3c0">${circ('')}</g>
+    <g fill="#f4a3c0">${circ('')}</g>
+    <g stroke="#d7719a" stroke-width="4" fill="none" stroke-linecap="round">
+      <path d="M150 48 q-8 16 2 28 q8 10 -2 20"/><path d="M104 98 q10 -10 22 -2"/><path d="M180 66 q12 6 12 18"/>
+      <path d="M204 150 q-12 10 -24 2"/><path d="M92 146 q-6 -10 2 -18"/><path d="M160 182 q-10 -8 -22 0"/><path d="M210 118 q8 4 6 14"/>
+    </g>
+    <g clip-path="url(#${id})"><path d="M50 104 Q150 76 250 104 L250 122 Q150 94 50 122 Z" fill="#e63946"/><path d="M50 112 Q150 84 250 112" stroke="#fff" stroke-width="3" fill="none"/></g>
+    <path d="M230 108 l20 -8 l-4 14 z M232 114 l18 8 l-12 6 z" fill="#e63946"/>
+    ${faceG}`;
+  const hand = (x,y)=>`<circle cx="${x}" cy="${y}" r="9" fill="#f4a3c0" stroke="#7a2a4f" stroke-width="4"/>`;
+  const shoe = (x,y,f)=>`<ellipse cx="${x}" cy="${y}" rx="12" ry="6" fill="#e63946" stroke="#3a1a2a" stroke-width="3" transform="translate(${f*4} 0)"/>`;
+  const limb = 'stroke="#7a2a4f" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  let back='', front='';
+  if(level==='easy'){ // treadmill
+    back = `<path d="M252 252 L262 150" stroke="#9aa4ad" stroke-width="8" stroke-linecap="round"/>
+      <rect x="236" y="134" width="46" height="24" rx="6" fill="#586470" stroke="#2c343b" stroke-width="3"/>
+      <rect x="242" y="139" width="34" height="13" rx="3" fill="#9fe39a"/>
+      <g class="tm-legL"><path d="M135 196 L130 238" ${limb}/>${shoe(132,242,-1)}</g>
+      <g class="tm-legR"><path d="M165 196 L170 238" ${limb}/>${shoe(170,242,1)}</g>`;
+    front = `<rect x="46" y="246" width="214" height="20" rx="10" fill="#4a535b" stroke="#22282d" stroke-width="3"/>
+      <path class="tm-belt" d="M58 250 H250" stroke="#8a949c" stroke-width="3" stroke-dasharray="14 14"/>
+      <circle cx="58" cy="256" r="6" fill="#22282d"/><circle cx="248" cy="256" r="6" fill="#22282d"/>
+      <path d="M70 270 v10 M236 270 v10" stroke="#22282d" stroke-width="6" stroke-linecap="round"/>
+      <g class="tm-armL"><path d="M72 150 L54 184" ${limb}/>${hand(54,186)}</g>
+      <g class="tm-armR"><path d="M228 150 L246 184" ${limb}/>${hand(246,186)}</g>`;
+    return `<svg viewBox="0 0 300 290" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="brain-wrap">${back}<g class="tm-body">${head}</g>${front}</g></svg>`;
+  }
+  const legs = `<path d="M132 196 L122 240 M168 196 L178 240" ${limb}/>${shoe(118,244,-1)}${shoe(182,244,1)}<path d="M40 252 H260" stroke="rgba(244,241,230,.35)" stroke-width="3" stroke-linecap="round"/>`;
+  if(level==='medium'){ // dumbbells
+    const db = (x,y)=>`<g><path d="M${x-18} ${y} H${x+18}" stroke="#555" stroke-width="6"/><rect x="${x-26}" y="${y-13}" width="11" height="26" rx="3" fill="#3b3f44" stroke="#15181b" stroke-width="2.5"/><rect x="${x+15}" y="${y-13}" width="11" height="26" rx="3" fill="#3b3f44" stroke="#15181b" stroke-width="2.5"/></g>`;
+    front = `<g class="fw-armL"><path d="M70 150 L52 200" ${limb}/>${db(50,204)}${hand(52,202)}</g>
+      <g class="fw-armR"><path d="M230 150 L248 200" ${limb}/>${db(250,204)}${hand(248,202)}</g>`;
+    return `<svg viewBox="0 0 300 290" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="brain-wrap">${legs}${head}${front}</g></svg>`;
+  }
+  // hard: barbell overhead
+  const plates = (x,dir)=>`<rect x="${dir<0?x-16:x}" y="10" width="16" height="64" rx="4" fill="#3b3f44" stroke="#15181b" stroke-width="3"/><rect x="${dir<0?x-28:x+16}" y="20" width="12" height="44" rx="3" fill="#2a2d31" stroke="#15181b" stroke-width="3"/>`;
+  front = `<g class="bp-arm"><path d="M74 122 L66 42 M226 122 L234 42" ${limb}/></g>
+    <g class="bp-bar"><path d="M20 42 H280" stroke="#9aa4ad" stroke-width="7" stroke-linecap="round"/>${plates(46,-1)}${plates(254,1)}${hand(66,42)}${hand(234,42)}</g>
+    <path class="sweat" d="M222 150 q6 10 0 14 q-6 -4 0 -14z" fill="#a4d8f3"/><path class="sweat" style="animation-delay:.7s" d="M82 158 q6 10 0 14 q-6 -4 0 -14z" fill="#a4d8f3"/>`;
+  return `<svg viewBox="0 0 300 290" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="brain-wrap">${legs}${head}${front}</g></svg>`;
+}
+
+/* ---------- Welcome ---------- */
+function chips(el, list, cur, fn){
+  el.innerHTML='';
+  list.forEach(([v,l])=>{const b=document.createElement('button');b.className='chip'+(v===cur?' sel':'');b.innerHTML=l;b.onclick=()=>fn(v);el.appendChild(b);});
+}
+function renderWelcome(){
+  const lc=$('levelCards'); lc.innerHTML='';
+  for(const k of ['easy','medium','hard']){
+    const L=LV[k]; const d=document.createElement('button');
+    d.className='lvl'+(S.level===k?' sel':'')+(S.anim&&S.level===k?' anim':'');
+    d.innerHTML=`${brain(k)}<h3>${L.name}</h3><div class="d">${L.diff}</div><p>${L.blurb}</p>`;
+    d.onclick=()=>{S.level=k;save();renderWelcome();};
+    lc.appendChild(d);
+  }
+  chips($('stepChips'),[5,6,7,8,9,10].map(n=>[n,n]),S.steps,v=>{S.steps=v;save();renderWelcome();});
+  $('hdrLevel').textContent='';
+}
+
+/* ---------- Workout state ---------- */
+let W=null, shown=0, revealed=false, wShown=0, view='welcome', timerId=null, timerStart=0, paused=false;
+
+function setView(v){
+  view=v;
+  $('welcome').style.display = v==='welcome'?'flex':'none';
+  $('workout').style.display = (v==='workout'||v==='working')?'flex':'none';
+  $('working').style.display = v==='working'?'flex':'none';
+  $('newBtn').style.display = v==='welcome'?'none':'';
+}
+function startWorkout(){
+  W = BrainGym.generate(S.level, S.steps);
+  shown = S.mode==='all' ? W.steps.length : 0;
+  revealed=false; wShown=0;
+  const L=LV[S.level];
+  $('sideBrain').innerHTML=brain(S.level);
+  $('sideName').innerHTML=`${L.name}<span>${L.diff} · ${S.steps} steps</span>`;
+  $('hdrLevel').textContent=`${L.name}`;
+  $('instr').innerHTML=`Write down <b style="color:var(--green)">${W.start}</b>, then follow each instruction using your last answer.`;
+  buildGrid(); setView('workout'); update(true); restartTimer();
+}
+function buildGrid(){
+  const g=$('grid'); const n=W.steps.length, total=n+2;
+  const cols=Math.ceil(total/2); g.style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;
+  let h=`<div class="card start"><div class="badge">Start</div><div class="sym">${W.start}</div><div class="words">Write it down!</div></div>`;
+  W.steps.forEach((s,i)=>{h+=`<div class="card pending" data-i="${i}"><div class="badge">${i+1}</div><div class="sym">${BrainGym.symbol(s)}</div><div class="words">${BrainGym.words(s)}</div></div>`;});
+  h+=`<div class="card final" id="finalCard"><div class="badge">Finish</div><div class="sym" id="finalSym">?</div><div class="words">Final answer</div></div>`;
+  g.innerHTML=h;
+}
+function update(noAnim){
+  const cards=[...document.querySelectorAll('#grid .card[data-i]')];
+  cards.forEach((c,i)=>{
+    const was=c.classList.contains('pending');
+    c.classList.toggle('pending',i>=shown);
+    c.classList.toggle('current',i===shown-1 && !revealed && S.mode==='one');
+    if(was && i<shown && !noAnim){c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');}
+  });
+  if(!noAnim){const cur=revealed?$('finalCard'):cards[shown-1]; const g=$('grid');
+    if(cur&&g.scrollHeight>g.clientHeight+1){try{cur.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){}}}
+  $('finalSym').textContent = revealed ? W.answer : '?';
+  const done = shown>=W.steps.length;
+  $('nextLbl').textContent = done ? (revealed ? 'Reveal again ★' : 'Reveal! ★') : 'Next step ▶';
+  $('nextBtn').classList.toggle('reveal',done);
+  $('nextBtn').classList.toggle('primary',!done);
+  $('backBtn').disabled = shown===0 || S.mode==='all';
+  $('workBtn').disabled = !done;
+  $('board').classList.toggle('hidewords',!S.words);
+  const sb=$('sideBrain'); sb.classList.toggle('anim',S.anim); sb.classList.toggle('cheer',revealed);
+  $('pauseBtn').style.display = (S.timer && !done) ? '' : 'none';
+  $('pauseBtn').textContent = paused ? '▶' : '⏸';
+}
+function next(){
+  if(!W) return;
+  if(shown<W.steps.length){shown++;update();restartTimer();}
+  else doReveal();
+}
+function back(){ if(W && shown>0 && S.mode!=='all'){shown--;revealed=false;update();restartTimer();} }
+
+/* timer */
+function stopTimer(){ if(timerId){cancelAnimationFrame(timerId);timerId=null;} $('timerBar').style.width='0'; }
+function restartTimer(){
+  stopTimer();
+  if(!S.timer||!W||shown>=W.steps.length||view!=='workout'||paused) return;
+  timerStart=performance.now();
+  const tick=t=>{
+    const f=(t-timerStart)/(S.timer*1000);
+    if(f>=1){timerId=null;$('timerBar').style.width='0';next();return;}
+    $('timerBar').style.width=(f*100)+'%'; timerId=requestAnimationFrame(tick);
+  };
+  timerId=requestAnimationFrame(tick);
+}
+
+/* reveal */
+function doReveal(){
+  revealed=true; update(); stopTimer();
+  const r=$('reveal'); r.style.display='flex';
+  $('revealBrain').innerHTML=brain(S.level,'cheer'); $('revealBrain').className='anim cheer';
+  const big=$('revealNum'); big.classList.remove('land');
+  const cap=LV[S.level].cap; let t0=performance.now();
+  const spin=t=>{
+    if(r.style.display==='none') return;
+    if(t-t0<1300){ big.textContent=1+Math.floor(Math.random()*Math.min(cap,Math.max(20,W.answer*2))); requestAnimationFrame(spin); }
+    else { big.textContent=W.answer; void big.offsetWidth; big.classList.add('land'); sparks(); }
+  };
+  requestAnimationFrame(spin);
+}
+function sparks(){
+  const r=$('reveal'), cols=['var(--yellow)','var(--pink)','var(--blue)','var(--green)','var(--orange)'];
+  for(let i=0;i<26;i++){
+    const s=document.createElement('div'); s.className='spark'; s.textContent=['★','✦','✶','•'][i%4];
+    s.style.left='50%'; s.style.top='58%'; s.style.color=cols[i%5];
+    const a=Math.random()*Math.PI*2, d=18+Math.random()*30;
+    s.style.setProperty('--dx',Math.cos(a)*d+'vmin'); s.style.setProperty('--dy',Math.sin(a)*d+'vmin');
+    s.style.animationDelay=(Math.random()*.2)+'s';
+    r.appendChild(s); setTimeout(()=>s.remove(),1800);
+  }
+}
+function closeReveal(){ $('reveal').style.display='none'; }
+
+/* working */
+function openWorking(){
+  if(!W||shown<W.steps.length) return;
+  stopTimer(); setView('working');
+  const n=W.steps.length; const rows=Math.ceil((n+1)/2);
+  const wl=$('wlist'); wl.style.gridTemplateRows=`repeat(${(n+1)>6?rows:n+1},auto)`;
+  let h=`<div class="wline start" data-w="0"><span class="n">Start</span><span>${W.start}</span></div>`;
+  W.steps.forEach((s,i)=>{h+=`<div class="wline${i===n-1?' last':''}" data-w="${i+1}"><span class="n">${i+1}</span><span>${BrainGym.working(s)}</span></div>`;});
+  wl.innerHTML=h; renderWorking(false);
+}
+function renderWorking(anim){
+  document.querySelectorAll('#wlist .wline').forEach(l=>{
+    const i=+l.dataset.w; const hid=i>0 && i>wShown;
+    if(!hid && l.classList.contains('hid') && anim){l.classList.add('fresh');}
+    l.classList.toggle('hid',hid);
+  });
+  $('wNext').disabled = wShown>=W.steps.length; $('wAll').disabled = wShown>=W.steps.length;
+}
+function wNext(){ if(wShown<W.steps.length){wShown++;renderWorking(true);} }
+
+/* settings */
+function renderSettings(){
+  chips($('setLevel'),['easy','medium','hard'].map(k=>[k,`${LV[k].name} <small>(${LV[k].diff})</small>`]),S.level,v=>{S.level=v;save();renderSettings();S._dirty=true;});
+  chips($('setSteps'),[5,6,7,8,9,10].map(n=>[n,n]),S.steps,v=>{S.steps=v;save();renderSettings();S._dirty=true;});
+  chips($('setMode'),[['one','One at a time'],['all','All at once']],S.mode,v=>{S.mode=v;save();renderSettings();S._dirty=true;});
+  chips($('setTimer'),[[0,'Off'],[5,'5 s'],[10,'10 s'],[15,'15 s'],[20,'20 s'],[30,'30 s']],S.timer,v=>{S.timer=v;save();renderSettings();});
+  chips($('setWords'),[[true,'On'],[false,'Off']],S.words,v=>{S.words=v;save();renderSettings();});
+  chips($('setAnim'),[[true,'On'],[false,'Off']],S.anim,v=>{S.anim=v;save();renderSettings();});
+}
+function openModal(id){ stopTimer(); if(id==='setModal'){S._dirty=false;renderSettings();} $(id).style.display='flex'; }
+function closeModal(id){
+  $(id).style.display='none';
+  if(id==='setModal'){
+    const dirty=S._dirty; delete S._dirty; save();
+    if(view==='welcome') renderWelcome();
+    else if(dirty) startWorkout();
+    else { update(true); restartTimer(); }
+  } else if(view==='workout') restartTimer();
+}
+const anyModal=()=>['setModal','helpModal'].find(id=>$(id).style.display==='flex');
+
+/* wiring */
+$('goBtn').onclick=startWorkout;
+$('newBtn').onclick=startWorkout;
+$('homeBtn').onclick=()=>{stopTimer();closeReveal();setView('welcome');renderWelcome();};
+$('nextBtn').onclick=next; $('backBtn').onclick=back;
+$('pauseBtn').onclick=()=>{paused=!paused;update(true);paused?stopTimer():restartTimer();};
+$('workBtn').onclick=openWorking;
+$('wBack').onclick=()=>{setView('workout');};
+$('wNext').onclick=wNext; $('wAll').onclick=()=>{wShown=W.steps.length;renderWorking(true);};
+$('reveal').onclick=closeReveal;
+$('setBtn').onclick=()=>openModal('setModal'); $('setClose').onclick=()=>closeModal('setModal');
+$('helpBtn').onclick=()=>openModal('helpModal'); $('helpClose').onclick=()=>closeModal('helpModal');
+$('fsBtn').onclick=toggleFS;
+if(!document.fullscreenEnabled) $('fsBtn').style.display='none';
+/* swipe: left = next step / next line, right = back (never triggers the reveal) */
+(function(){
+  let sx=0,sy=0,st=0,ok=false;
+  const el=$('board');
+  el.addEventListener('touchstart',e=>{ok=e.touches.length===1;if(!ok)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();},{passive:true});
+  el.addEventListener('touchend',e=>{
+    if(!ok||!W||anyModal()||$('reveal').style.display==='flex') return;
+    const c=e.changedTouches[0],dx=c.clientX-sx,dy=c.clientY-sy;
+    if(Date.now()-st>700||Math.abs(dx)<60||Math.abs(dx)<2.2*Math.abs(dy)) return;
+    if(view==='workout'){ if(dx<0){ if(shown<W.steps.length) next(); } else back(); }
+    else if(view==='working'){ if(dx<0) wNext(); }
+  },{passive:true});
+})();
+function toggleFS(){ try{ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }catch(e){} }
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  const k=e.key, m=anyModal();
+  if(k==='Escape'){ if(m) closeModal(m); else if($('reveal').style.display==='flex') closeReveal(); else if(view==='working') setView('workout'); return; }
+  if(m) return;
+  if($('reveal').style.display==='flex'){ if(k===' '||k==='Enter'||k==='ArrowRight'){e.preventDefault();closeReveal();} return; }
+  if(k==='f'||k==='F'){toggleFS();return;}
+  if(k==='s'||k==='S'){openModal('setModal');return;}
+  if(k==='h'||k==='H'||k==='?'){openModal('helpModal');return;}
+  if(view==='welcome'){ if(k===' '||k==='Enter'){e.preventDefault();startWorkout();} return; }
+  if(k==='n'||k==='N'){startWorkout();return;}
+  if(view==='working'){
+    if(k===' '||k==='ArrowRight'||k==='Enter'){e.preventDefault();wNext();}
+    else if(k==='a'||k==='A'){wShown=W.steps.length;renderWorking(true);}
+    else if(k==='w'||k==='W'||k==='ArrowLeft'){setView('workout');}
+    return;
+  }
+  if(k===' '||k==='ArrowRight'||k==='Enter'){e.preventDefault();next();}
+  else if(k==='ArrowLeft'){back();}
+  else if(k==='w'||k==='W'){openWorking();}
+  else if(k==='p'||k==='P'){ if(S.timer) $('pauseBtn').click(); }
+});
+/* tagline: weighted random pick on launch */
+const TAGLINES=[
+  [4,'Working out every day'],[4,'No pain, no brain'],[4,'Show your working out'],
+  [2,'Where every rep is a calculation'],[2,'Feel the burn (in your head)'],
+  [1,'Working Out: Exercise Your Brain'],[1,'Get Your Brain Working Out'],[1,'Where Working Out Means More Than Exercise'],
+  [1,'Work It Out – Body and Brain'],[1,'Time to Work Out Your Maths'],[1,'Give Your Brain a Workout'],
+  [1,'Work Out the Maths. Work Out Your Brain.'],[1,'No Pain, No Gain – Just Work It Out!'],
+  [1,'Get Fit. Get Thinking. Work It Out.'],[1,'A Different Kind of Workout – Work Out the Maths!']];
+(function(){let tot=0;TAGLINES.forEach(x=>tot+=x[0]);let r=Math.random()*tot;
+  for(const [w,s] of TAGLINES){r-=w;if(r<0){$('tagline').textContent=s;break;}}})();
+renderWelcome(); setView('welcome');
+window.__bg={get W(){return W;},get shown(){return shown;}};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#6b4426">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Potato">
+<title>Potato — What comes next?</title>
+<style>
+:root{
+  --board:#23392d; --board2:#2c4638; --frame:#6b4426; --frame2:#8a5a33;
+  --chalk:#f3efe4; --chalk-dim:rgba(243,239,228,.55); --chalk-faint:rgba(243,239,228,.14);
+  --yellow:#f6de74; --pink:#f3a3b5; --blue:#9ed2ee; --green:#a9e3a0; --orange:#f7b267;
+  --spud:#c9965b; --spud-dark:#7a4b22; --spud-spot:#9d6a37;
+  --hand:"Chalkboard SE","Chalkboard","Segoe Print","Bradley Hand","Comic Sans MS",cursive;
+  --plain:"Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{position:fixed;inset:0;overscroll-behavior:none}
+body{
+  background:var(--frame);
+  background-image:repeating-linear-gradient(92deg,rgba(0,0,0,.08) 0 3px,transparent 3px 11px);
+  color:var(--chalk);font-family:var(--hand);overflow:hidden;user-select:none;-webkit-user-select:none;
+}
+#board{
+  --inset:14px;position:absolute;border-radius:10px;
+  top:max(var(--inset),env(safe-area-inset-top));right:max(var(--inset),env(safe-area-inset-right));
+  bottom:max(var(--inset),env(safe-area-inset-bottom));left:max(var(--inset),env(safe-area-inset-left));
+  background:radial-gradient(ellipse at 30% 20%,var(--board2),var(--board) 70%);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.55),0 0 0 3px var(--frame2),0 6px 18px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#board::before{ /* chalk dust smudges */
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:
+    radial-gradient(ellipse 30% 12% at 70% 80%,rgba(255,255,255,.05),transparent 70%),
+    radial-gradient(ellipse 25% 10% at 20% 60%,rgba(255,255,255,.04),transparent 70%),
+    radial-gradient(ellipse 40% 8% at 50% 15%,rgba(255,255,255,.035),transparent 70%);
+}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;padding:18px 26px}
+.screen.on{display:flex}
+
+/* buttons */
+button{font-family:var(--hand);color:var(--chalk);cursor:pointer;border:none;background:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.no-fs .fsBtn{display:none}
+.chalk-btn{
+  font-size:clamp(1rem,1.7vw,1.5rem);padding:.45em 1.1em;border-radius:12px;
+  border:2.5px solid var(--chalk-dim);background:rgba(255,255,255,.04);
+  transition:transform .12s,background .15s,border-color .15s;
+}
+@media (hover:hover){.chalk-btn:hover{background:rgba(255,255,255,.1);border-color:var(--chalk)}}
+.chalk-btn:active{transform:scale(.96)}
+.chalk-btn.primary{border-color:var(--yellow);color:var(--yellow)}
+@media (hover:hover){.chalk-btn.primary:hover{background:rgba(246,222,116,.12)}}
+.chalk-btn[disabled]{opacity:.3;pointer-events:none}
+.icon-btn{font-size:clamp(1.2rem,2vw,1.7rem);width:2.2em;height:2.2em;border-radius:50%;border:2px solid var(--chalk-faint);display:inline-flex;align-items:center;justify-content:center}
+@media (hover:hover){.icon-btn:hover{border-color:var(--chalk-dim);background:rgba(255,255,255,.06)}}
+.icon-btn svg{width:55%;height:55%;stroke:var(--chalk);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.seg{display:inline-flex;border:2.5px solid var(--chalk-dim);border-radius:12px;overflow:hidden}
+.seg button{font-size:clamp(1rem,1.6vw,1.4rem);padding:.4em 1em;border-right:2px solid var(--chalk-faint)}
+.seg button:last-child{border-right:none}
+.seg button.sel{background:var(--chalk);color:var(--board);}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:3.2rem;position:relative;z-index:2}
+.topbar .mid{font-size:clamp(1.3rem,2.4vw,2.2rem);text-align:center;flex:1}
+.topbar .side{display:flex;gap:10px;align-items:center;min-width:9rem}
+.topbar .side.r{justify-content:flex-end}
+.lvl-badge{font-size:clamp(.9rem,1.4vw,1.25rem);color:var(--orange);white-space:nowrap}
+.lvl-badge .spuds{letter-spacing:-.15em}
+
+/* home */
+#home{align-items:center;justify-content:safe center;overflow-y:auto;text-align:center;gap:clamp(12px,2.4vh,28px)}
+#home .corner{position:absolute;top:18px;right:22px;display:flex;gap:10px}
+.title-wrap{display:flex;align-items:center;gap:clamp(10px,2vw,30px)}
+.title-wrap svg{width:clamp(90px,13vw,190px);height:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4));animation:bob 3.5s ease-in-out infinite}
+h1{font-size:clamp(3.5rem,11vw,9.5rem);letter-spacing:.06em;line-height:1;color:var(--chalk);text-shadow:0 0 1px var(--chalk),2px 3px 0 rgba(0,0,0,.25)}
+.subtitle{font-size:clamp(1.1rem,2.2vw,2rem);color:var(--blue);margin-top:-.2em}
+.row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
+.row .lab{font-size:clamp(1rem,1.7vw,1.5rem);color:var(--chalk-dim);min-width:6.5em;text-align:right}
+.levels{display:flex;gap:clamp(8px,1.2vw,16px);flex-wrap:wrap;justify-content:center}
+.level{
+  min-width:clamp(110px,12vw,170px);padding:.5em .8em .45em;border-radius:14px;border:2.5px solid var(--chalk-faint);
+  display:flex;flex-direction:column;align-items:center;gap:.2em;font-size:clamp(1rem,1.7vw,1.45rem);
+  transition:border-color .15s,background .15s,transform .12s
+}
+@media (hover:hover){.level:hover{border-color:var(--chalk-dim)}}
+.level.sel{border-color:var(--orange);background:rgba(247,178,103,.1);color:var(--orange)}
+.level .spuds{display:flex;gap:2px;height:1.3em}
+.level .spuds svg{height:100%;width:auto}
+#startBtn{font-size:clamp(1.5rem,3vw,2.6rem);padding:.35em 2.2em;margin-top:.3em}
+.hint{font-size:clamp(.8rem,1.1vw,1rem);color:var(--chalk-dim);font-family:var(--plain)}
+
+/* question */
+#play .stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,4vh,44px);position:relative}
+.qlabel{font-size:clamp(1.1rem,2vw,1.8rem);color:var(--chalk-dim)}
+.seq{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:.15em;max-width:none;font-size:var(--fs,7rem);line-height:1.1;white-space:nowrap}
+.seq .n{padding:0 .02em;font-variant-numeric:tabular-nums;animation:chalkIn .45s ease-out both}
+.seq .comma{color:var(--chalk-dim);margin:0 .22em 0 .03em}
+.seq.wrap{flex-wrap:wrap;max-width:94%;row-gap:.1em;column-gap:.1em}
+.seq.wrap > *{flex-shrink:0}
+.lvl-sub{display:none}
+#play .stage > .qlabel,#play .stage > .seq,#play .stage > .explain{flex-shrink:0}
+.seq .slot{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:1.6em;height:1.25em;margin-left:.1em;animation:chalkIn .45s ease-out both}
+.seq .slot .spud{height:1.25em;width:auto;cursor:pointer;transition:transform .2s;filter:drop-shadow(0 .05em .08em rgba(0,0,0,.45))}
+@media (hover:hover){.seq .slot .spud:hover{transform:rotate(-6deg) scale(1.05)}}
+.seq .slot.wiggle .spud{animation:wiggle .6s ease-in-out 2}
+.seq .slot .ans{color:var(--yellow);padding:0 .1em;animation:pop .45s cubic-bezier(.2,1.6,.4,1) both;text-shadow:0 0 .12em rgba(246,222,116,.35)}
+.seq .slot .ring{position:absolute;inset:-.08em -.12em;border:.05em solid var(--yellow);border-radius:50% 45% 55% 48%;opacity:.85;animation:ring .5s ease-out both;pointer-events:none}
+.puzzle-tag{color:var(--orange);font-size:1.15em}
+.explain{min-height:4.2em;text-align:center;display:flex;flex-direction:column;gap:.35em;align-items:center}
+.explain .rule{font-size:clamp(1.3rem,2.8vw,2.6rem);color:var(--pink);animation:chalkIn .4s ease-out both}
+.explain .work{font-size:clamp(1.1rem,2.2vw,2rem);color:var(--blue);animation:chalkIn .4s .12s ease-out both}
+.dots{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:90%;align-self:center}
+.dot{width:clamp(22px,2.4vw,32px);height:clamp(22px,2.4vw,32px);border-radius:50%;border:2px solid var(--chalk-faint);font-size:clamp(.7rem,1vw,.9rem);font-family:var(--plain);color:var(--chalk-dim);display:flex;align-items:center;justify-content:center}
+.dot.cur{border-color:var(--chalk);color:var(--chalk)}
+.dot.done{background:rgba(246,222,116,.25);border-color:var(--yellow);color:var(--yellow)}
+.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:8px}
+.controls .centre{display:flex;gap:12px}
+.controls .centre.empty{display:none}
+.timer{position:absolute;left:0;right:0;top:0;height:6px;background:var(--chalk-faint);border-radius:0;overflow:hidden;display:none}
+.timer.on{display:block}
+.timer i{display:block;height:100%;width:100%;background:var(--green);transform-origin:left;transition:background .3s}
+.timer.low i{background:var(--pink)}
+.toast{position:absolute;bottom:4%;left:50%;transform:translateX(-50%);font-family:var(--plain);font-size:clamp(.85rem,1.2vw,1.05rem);color:var(--board);background:var(--orange);padding:.5em 1em;border-radius:10px;opacity:0;transition:opacity .4s;pointer-events:none;width:max-content;max-width:92%;text-align:center}
+.toast.on{opacity:.95}
+.timeup{position:absolute;top:10%;font-size:clamp(1.4rem,3vw,2.6rem);color:var(--pink);opacity:0;transition:opacity .3s}
+.timeup.on{opacity:1}
+
+/* pens down */
+#pens{align-items:center;justify-content:center;text-align:center;gap:clamp(14px,3vh,34px)}
+#pens h2{font-size:clamp(3rem,8vw,7rem);color:var(--yellow)}
+#pens p{font-size:clamp(1.2rem,2.3vw,2rem);color:var(--chalk-dim)}
+#pens svg{width:clamp(80px,10vw,150px);animation:bob 3s ease-in-out infinite}
+
+/* list */
+#list .scroll{flex:1;overflow:auto;margin:10px 0;padding-right:6px}
+#list table{width:100%;border-collapse:collapse;font-size:clamp(1rem,1.7vw,1.5rem)}
+#list td{padding:.35em .5em;border-bottom:1.5px dashed var(--chalk-faint);vertical-align:middle}
+#list td.q{color:var(--chalk-dim);width:3em;text-align:right}
+#list td.s{white-space:nowrap}
+#list td.a{color:var(--yellow);font-size:1.15em;white-space:nowrap}
+#list td.r{color:var(--pink);font-size:.8em}
+#list td.r small{display:block;color:var(--blue);font-size:.85em}
+#list.cols table{columns:2}
+
+/* modal */
+.modal{position:absolute;inset:0;background:rgba(10,20,14,.72);display:none;align-items:center;justify-content:center;z-index:20}
+.modal.on{display:flex}
+.card{
+  background:var(--board);border:3px solid var(--frame2);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.6);
+  width:min(880px,94%);max-height:90%;overflow:auto;padding:22px 28px;
+}
+.card h2{font-size:clamp(1.6rem,2.8vw,2.4rem);margin-bottom:.4em;display:flex;justify-content:space-between;align-items:center}
+.card h3{font-size:clamp(1.05rem,1.6vw,1.35rem);color:var(--orange);margin:1em 0 .45em}
+.types{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.tick{display:flex;gap:.6em;align-items:flex-start;padding:.45em .6em;border-radius:10px;border:2px solid var(--chalk-faint);cursor:pointer;font-size:clamp(.95rem,1.4vw,1.2rem)}
+@media (hover:hover){.tick:hover{border-color:var(--chalk-dim)}}
+.tick .box{flex:none;width:1.2em;height:1.2em;border:2px solid var(--chalk-dim);border-radius:5px;display:flex;align-items:center;justify-content:center;margin-top:.1em}
+.tick.on .box{background:var(--green);border-color:var(--green)}
+.tick.on .box::after{content:"";width:.35em;height:.65em;border:solid var(--board);border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.tick small{display:block;color:var(--chalk-dim);font-family:var(--plain);font-size:.8em;margin-top:.1em}
+.set-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:.3em 0}
+.set-row .lab{min-width:9em;color:var(--chalk-dim);font-size:clamp(1rem,1.4vw,1.2rem)}
+.card .note{font-family:var(--plain);font-size:.85rem;color:var(--chalk-dim);margin-top:.3em}
+.card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.2em;gap:10px;flex-wrap:wrap}
+.warn{color:var(--pink);font-family:var(--plain);font-size:.95rem;min-height:1.2em}
+.help-grid{display:grid;grid-template-columns:auto 1fr;gap:.35em 1.2em;font-size:clamp(1rem,1.5vw,1.25rem)}
+.help-grid kbd{font-family:var(--plain);font-size:.8em;border:1.5px solid var(--chalk-dim);border-radius:6px;padding:.1em .45em;white-space:nowrap}
+
+@keyframes chalkIn{from{opacity:0;filter:blur(3px);transform:translateY(.08em)}to{opacity:1;filter:none;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.3) rotate(-12deg)}100%{opacity:1;transform:none}}
+@keyframes ring{from{opacity:0;transform:scale(1.4)}to{opacity:.85;transform:none}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+
+
+/* ----- phones and small tablets: portrait ----- */
+@media (max-width:600px){
+  #board{--inset:6px}
+  .screen{padding:12px 14px}
+  .row .lab{min-width:0;text-align:center;width:100%}
+  #home .corner{top:12px;right:12px;gap:8px}
+  #home{padding-top:66px}
+  .title-wrap svg{width:22vw}
+  h1{font-size:15vw}
+  .subtitle{font-size:1.25rem}
+  .levels{display:grid;grid-template-columns:1fr 1fr;width:min(100%,340px)}
+  .level{min-width:0;font-size:1.15rem}
+  .seg button{padding:.45em .8em;font-size:1.05rem}
+  #startBtn{font-size:1.7rem}
+  .topbar{gap:6px;min-height:2.8rem}
+  .topbar .side{min-width:0;flex:0 0 2.7rem}
+  .topbar .mid{font-size:1.3rem;white-space:nowrap;line-height:1.15}
+  .lvl-badge{display:none}
+  .lvl-sub{display:block;font-size:.62em;color:var(--orange)}
+  .icon-btn{font-size:1.2rem}
+  #play .stage{gap:14px}
+  .explain .rule{font-size:1.25rem}
+  .explain .work{font-size:1.05rem}
+  .dots{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;width:100%;max-width:400px}
+  .dot{width:auto;height:auto;aspect-ratio:1;font-size:.8rem}
+  .controls{flex-wrap:wrap;gap:8px}
+  .controls > .chalk-btn{flex:1 1 0;padding:.55em .4em;font-size:1.1rem;white-space:nowrap}
+  .controls .centre{order:-1;flex:0 0 100%;gap:8px}
+  .controls .centre .chalk-btn{flex:1 1 0;padding:.55em .4em;font-size:1.1rem}
+  #pens .row{flex-direction:column;width:100%}
+  #pens .row .chalk-btn{width:100%;max-width:340px;font-size:1.15rem;padding:.6em}
+  #list table,#list tbody{display:block}
+  #list tr{display:grid;grid-template-columns:2em 1fr auto;column-gap:.5em;align-items:baseline;padding:.45em 0;border-bottom:1.5px dashed var(--chalk-faint)}
+  #list td{border:none;padding:0}
+  #list td.q{width:auto}
+  #list td.s{white-space:normal}
+  #list td.r{grid-column:2 / -1;padding-top:.15em}
+  .modal{align-items:stretch}
+  .card{width:100%;max-height:none;border-radius:10px;padding:14px 16px}
+  .card h2{position:sticky;top:-14px;margin:-14px 0 .2em;padding:10px 0 6px;background:var(--board);z-index:1}
+  .types{grid-template-columns:1fr}
+  .set-row{gap:6px 14px}
+  .set-row .lab{min-width:0;width:100%}
+  .help-grid{font-size:1rem}
+}
+@media (max-width:360px){
+  .seg button{padding:.45em .6em;font-size:1rem}
+}
+
+/* ----- phones: landscape (short screens) ----- */
+@media (max-height:520px) and (orientation:landscape){
+  #board{--inset:6px}
+  .screen{padding:8px 14px}
+  #home{gap:7px;padding-right:62px;padding-left:62px}
+  #home .corner{flex-direction:column;top:8px;right:10px;gap:6px}
+  .icon-btn{font-size:1.1rem}
+  .title-wrap svg{width:min(13vw,24vh)}
+  h1{font-size:min(11vw,21vh)}
+  .subtitle{font-size:1.05rem}
+  .row{gap:10px}
+  .row .lab{min-width:0;width:auto;font-size:1rem}
+  .seg button{font-size:1rem;padding:.3em .9em}
+  .levels{display:flex;flex-wrap:nowrap;width:auto;gap:8px}
+  .level{min-width:0;flex-direction:row;gap:.5em;padding:.3em .7em;font-size:1rem;white-space:nowrap}
+  .level .spuds{height:1em}
+  #startBtn{font-size:1.35rem;padding:.25em 1.8em;margin-top:0}
+  .hint{font-size:.75rem}
+  .topbar{min-height:2.5rem}
+  .topbar .side{min-width:6rem;flex:0 0 auto}
+  .topbar .mid{font-size:1.2rem}
+  .lvl-badge{display:inline;font-size:.9rem}
+  .lvl-sub{display:none}
+  #play .stage{gap:6px}
+  .qlabel{font-size:1rem}
+  .explain{min-height:2.7em;gap:.1em}
+  .explain .rule{font-size:1.15rem}
+  .explain .work{font-size:1rem}
+  .dots{display:flex;flex-wrap:nowrap;gap:5px;width:auto;max-width:100%}
+  .dot{width:24px;height:24px;aspect-ratio:auto;font-size:.7rem}
+  .controls{flex-wrap:nowrap;padding-top:5px}
+  .controls .chalk-btn,.controls .centre .chalk-btn{flex:0 0 auto;font-size:1rem;padding:.35em .9em}
+  .controls .centre{order:0;flex:0 0 auto}
+  #pens{gap:8px}
+  #pens svg{width:15vh}
+  #pens h2{font-size:min(8vw,19vh)}
+  #pens p{font-size:1.05rem}
+  #pens .row{flex-direction:row;width:auto}
+  #pens .row .chalk-btn{width:auto;font-size:1rem;padding:.4em .9em}
+  #list .scroll{margin:4px 0}
+  #list table{display:table}
+  #list tbody{display:table-row-group}
+  #list tr{display:table-row;padding:0;border:none}
+  #list td{padding:.3em .5em;border-bottom:1.5px dashed var(--chalk-faint)}
+  .modal{align-items:center}
+  .card{width:min(880px,94%);max-height:96%;padding:12px 18px}
+  .card h2{position:sticky;top:-12px;margin:-12px 0 .2em;padding:8px 0 4px;background:var(--board);z-index:1;font-size:1.4rem}
+  .types{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .set-row .lab{min-width:9em;width:auto}
+}
+</style>
+</head>
+<body>
+<div id="board">
+
+  <!-- HOME -->
+  <section class="screen on" id="home">
+    <div class="corner">
+      <button class="icon-btn" id="helpBtn" title="Help (H)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2.9-1.2 1.8v.6"/><circle cx="12" cy="17.3" r=".4" fill="currentColor"/></svg></button>
+      <button class="icon-btn" id="settingsBtn" title="Settings (S)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button class="icon-btn fsBtn" title="Full screen (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+    <div class="title-wrap">
+      <span id="titleSpud"></span>
+      <div><h1>Potato</h1><div class="subtitle">What comes next?</div></div>
+    </div>
+    <div class="row"><span class="lab">Questions</span>
+      <div class="seg" id="countSeg"><button data-v="10">10</button><button data-v="20">20</button></div>
+    </div>
+    <div class="row"><span class="lab">Difficulty</span><div class="levels" id="levels"></div></div>
+    <button class="chalk-btn primary" id="startBtn">Start</button>
+    <div class="hint" id="homeHint"></div>
+  </section>
+
+  <!-- PLAY (questions and answers share this screen) -->
+  <section class="screen" id="play">
+    <div class="timer" id="timer"><i></i></div>
+    <div class="topbar">
+      <div class="side"><button class="icon-btn" id="homeBtn" title="Home (Esc)"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.8V20h13V9.8"/></svg></button></div>
+      <div class="mid" id="playTitle">Question 1 of 10</div>
+      <div class="side r"><span class="lvl-badge" id="lvlBadge"></span><button class="icon-btn fsBtn" title="Full screen (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+    </div>
+    <div class="stage">
+      <div class="timeup" id="timeup">Time's up!</div>
+      <div class="toast" id="toast">Not enough different rules with these settings, so a few repeat.</div>
+      <div class="qlabel" id="qlabel">What comes next?</div>
+      <div class="seq" id="seq"></div>
+      <div class="explain" id="explain"></div>
+    </div>
+    <div class="dots" id="dots"></div>
+    <div class="controls">
+      <button class="chalk-btn" id="prevBtn">&#9664; Previous</button>
+      <div class="centre">
+        <button class="chalk-btn primary" id="revealBtn">Reveal</button>
+        <button class="chalk-btn" id="listBtn">All answers</button>
+      </div>
+      <button class="chalk-btn" id="nextBtn">Next &#9654;</button>
+    </div>
+  </section>
+
+  <!-- PENS DOWN -->
+  <section class="screen" id="pens">
+    <span id="pensSpud"></span>
+    <h2>Pens down!</h2>
+    <p>Swap with your neighbour, or mark your own.</p>
+    <div class="row">
+      <button class="chalk-btn" id="pensBack">&#9664; Back to the questions</button>
+      <button class="chalk-btn primary" id="goAnswers">Go through the answers</button>
+      <button class="chalk-btn" id="pensList">All answers</button>
+    </div>
+  </section>
+
+  <!-- ANSWER LIST -->
+  <section class="screen" id="list">
+    <div class="topbar">
+      <div class="side"><button class="icon-btn" id="listHome" title="Home (Esc)"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.8V20h13V9.8"/></svg></button></div>
+      <div class="mid">Answers</div>
+      <div class="side r"><span class="lvl-badge" id="lvlBadge2"></span><button class="icon-btn fsBtn" title="Full screen (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+    </div>
+    <div class="scroll"><table id="listTable"></table></div>
+    <div class="controls">
+      <button class="chalk-btn" id="listBack">&#9664; Back</button>
+      <div class="centre"><button class="chalk-btn" id="listRules">Show rules</button></div>
+      <button class="chalk-btn primary" id="newSet">New set &#8635;</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <div class="modal" id="settings">
+    <div class="card">
+      <h2>Settings <button class="icon-btn" data-close title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+      <h3>Sequence types</h3>
+      <div class="types" id="typeTicks"></div>
+      <div class="warn" id="typeWarn"></div>
+      <h3>Game</h3>
+      <div class="set-row"><span class="lab">Numbers shown</span><div class="seg" id="lenSeg"><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button><button data-v="mixed">Mixed</button></div></div>
+      <div class="note">If more than one rule could fit, Potato shows an extra number or two so there is only one right answer.</div>
+      <div class="set-row"><span class="lab">Direction</span><div class="seg" id="dirSeg"><button data-v="up">Going up</button><button data-v="down">Going down</button><button data-v="both">Both</button></div></div>
+      <div class="set-row"><span class="lab">Answers</span><div class="seg" id="ansSeg"><button data-v="end">At the end</button><button data-v="each">After each question</button></div></div>
+      <div class="set-row"><span class="lab">Timer per question</span><div class="seg" id="timerSeg"><button data-v="0">Off</button><button data-v="15">15s</button><button data-v="30">30s</button><button data-v="45">45s</button><button data-v="60">60s</button></div></div>
+      <div class="set-row"><span class="lab">Different rule every question</span><div class="seg" id="uniqSeg"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+      <div class="note">When on, no two questions in a set share a rule: only one lot of triangular numbers, and never multiples of 7 going up and then going down.</div>
+      <div class="set-row"><span class="lab">Puzzle finale</span><div class="seg" id="puzzleSeg"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+      <div class="note">At Roasties and Oven Baked, the last question is a puzzle, such as letters in ONE, TWO, THREE&hellip; or look-and-say.</div>
+      <div class="set-row"><span class="lab">Show the working</span><div class="seg" id="workSeg"><button data-v="1">Yes</button><button data-v="0">No</button></div></div>
+      <div class="foot"><span class="note">Settings are remembered on this computer.</span><button class="chalk-btn primary" data-close>Done</button></div>
+    </div>
+  </div>
+
+  <!-- HELP -->
+  <div class="modal" id="help">
+    <div class="card">
+      <h2>How to play <button class="icon-btn" data-close title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+      <p style="font-size:clamp(1rem,1.5vw,1.3rem);line-height:1.5;margin-bottom:.8em">Each question shows the start of a sequence. The potato is hiding the next number &mdash; work out the rule and write down what comes next. Tap the potato (or press <b>Enter</b>) to reveal it.</p>
+      <div class="help-grid">
+        <kbd>&rarr; / Space</kbd><span>Next question</span>
+        <kbd>&larr;</kbd><span>Previous question</span>
+        <kbd>Enter / R</kbd><span>Reveal the answer</span>
+        <kbd>A</kbd><span>All answers</span>
+        <kbd>F</kbd><span>Full screen</span>
+        <kbd>S</kbd><span>Settings (home screen)</span>
+        <kbd>Esc</kbd><span>Close / home</span>
+        <kbd>Swipe</kbd><span>Next / previous question (touch screens)</span>
+      </div>
+      <h3>Difficulty</h3>
+      <p style="font-size:clamp(.95rem,1.4vw,1.2rem);line-height:1.5">Switch on <i>Different rule every question</i> in Settings if you don't want two lots of triangular numbers, or multiples of 7 going up and then going down, in the same set. Mash starts sequences near the beginning (2, 4, 6, 8&hellip;). Each level up starts further along &mdash; by Oven Baked you'll see things like 41, 43, 47, 53&hellip;, bigger multiples, and quadratics with second differences of 1 to 6. Roasties and Oven Baked include negative numbers in add/subtract sequences, and finish with a puzzle question (switch this off in Settings).</p>
+      <div class="foot"><span></span><button class="chalk-btn primary" data-close>Got it</button></div>
+    </div>
+  </div>
+
+  <!-- CONFIRM -->
+  <div class="modal" id="confirm">
+    <div class="card" style="width:min(520px,92%);text-align:center">
+      <h2 style="justify-content:center">Leave this set?</h2>
+      <p style="font-size:1.2rem;color:var(--chalk-dim)">The questions will be lost.</p>
+      <div class="foot" style="justify-content:center"><button class="chalk-btn" data-close>Stay</button><button class="chalk-btn primary" id="confirmYes">Leave</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Potato — sequence generator logic (pure, no DOM). Works in Node and the browser. */
+(function (root) {
+  'use strict';
+
+  const PRIMES = (() => {
+    const N = 5000, s = new Uint8Array(N + 1), p = [];
+    for (let i = 2; i <= N; i++) {
+      if (!s[i]) { p.push(i); for (let j = i * i; j <= N; j += i) s[j] = 1; }
+    }
+    return p;
+  })();
+  const FIB = [1, 1];
+  while (FIB.length < 30) FIB.push(FIB[FIB.length - 1] + FIB[FIB.length - 2]);
+
+  let rng = Math.random;
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const range = (n, f) => Array.from({ length: n }, (_, i) => f(i));
+
+  const LEVELS = [
+    { id: 1, name: 'Mash' },
+    { id: 2, name: 'Chips' },
+    { id: 3, name: 'Roasties' },
+    { id: 4, name: 'Oven Baked' }
+  ];
+
+  const TYPES = [
+    { id: 'tables',     name: 'Multiples (times tables)',   example: '6, 12, 18, 24',  minLen: 3 },
+    { id: 'arithmetic', name: 'Arithmetic (add / subtract)', example: '5, 9, 13, 17',   minLen: 3 },
+    { id: 'fibonacci',  name: 'Fibonacci-type',              example: '2, 5, 7, 12',    minLen: 3 },
+    { id: 'primes',     name: 'Prime numbers',               example: '11, 13, 17, 19', minLen: 3 },
+    { id: 'squares',    name: 'Square numbers',              example: '16, 25, 36, 49', minLen: 3 },
+    { id: 'cubes',      name: 'Cube numbers',                example: '1, 8, 27, 64',   minLen: 3 },
+    { id: 'triangular', name: 'Triangular numbers',          example: '6, 10, 15, 21',  minLen: 3 },
+    { id: 'quadratic',  name: 'Quadratic sequences',         example: '4, 7, 12, 19',   minLen: 4 }
+  ];
+  const TYPE_BY_ID = Object.fromEntries(TYPES.map(t => [t.id, t]));
+
+  // Each generator returns { asc: [len+1 terms, ascending], info } or null.
+  const GEN = {
+    tables(L, n) {
+      const m = [null, pick([2, 3, 4, 5, 10]), ri(2, 10), ri(2, 12), pick([6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 25])][L];
+      const k = [null, ri(1, 2), ri(1, 5), ri(3, 10), ri(6, 20)][L];
+      return { asc: range(n + 1, i => m * (k + i)), info: { m } };
+    },
+    arithmetic(L, n) {
+      const d = [null, ri(2, 5), ri(2, 9), ri(3, 15), ri(6, 35)][L];
+      const s = [null, ri(1, 15), ri(1, 40), ri(-40, 100), ri(-60, 200)][L];
+      if (((s % d) + d) % d === 0) return null; // that's a times table
+      return { asc: range(n + 1, i => s + d * i), info: { d } };
+    },
+    fibonacci(L, n) {
+      if (L === 1 || (L === 2 && rng() < 0.5)) {
+        const i = L === 1 ? ri(0, 3) : ri(3, 9);
+        return { asc: FIB.slice(i, i + n + 1), info: {} };
+      }
+      let a, b, skip;
+      if (L === 2) { a = ri(1, 5); b = ri(a + 1, a + 6); skip = 0; }
+      else if (L === 3) { a = ri(1, 10); b = ri(a + 1, 16); skip = ri(0, 2); }
+      else { a = ri(2, 20); b = ri(a + 1, 30); skip = ri(1, 4); }
+      if (b === 2 * a && skip === 0) return null; // 4, 8, 12… looks arithmetic at first
+      const t = [a, b];
+      while (t.length < skip + n + 1) t.push(t[t.length - 1] + t[t.length - 2]);
+      return { asc: t.slice(skip, skip + n + 1), info: {} };
+    },
+    primes(L, n) {
+      const i = [null, ri(0, 3), ri(0, 8), ri(4, 15), ri(10, 40)][L];
+      return { asc: PRIMES.slice(i, i + n + 1), info: {} };
+    },
+    squares(L, n) {
+      const s = [null, ri(1, 4), ri(1, 8), ri(4, 13), ri(9, 25)][L];
+      return { asc: range(n + 1, i => (s + i) ** 2), info: { s } };
+    },
+    cubes(L, n) {
+      const s = [null, ri(1, 2), ri(1, 4), ri(2, 7), ri(5, 12)][L];
+      return { asc: range(n + 1, i => (s + i) ** 3), info: { s } };
+    },
+    triangular(L, n) {
+      const s = [null, ri(1, 3), ri(1, 6), ri(4, 11), ri(8, 22)][L];
+      return { asc: range(n + 1, i => (s + i) * (s + i + 1) / 2), info: { s } };
+    },
+    quadratic(L, n) {
+      let a, b, c, s;
+      if (L === 1) { a = 1; b = ri(0, 3); c = ri(-2, 6); s = 1; }
+      else if (L === 2) { a = 1; b = ri(-4, 6); c = ri(-5, 12); s = ri(1, 3); }
+      else if (L === 3) { a = pick([1, 2]); b = ri(-8, 8); c = ri(-10, 20); s = ri(1, 5); }
+      else { a = pick([0.5, 1, 1.5, 2, 2.5, 3]); b = ri(-20, 20) / 2; c = ri(-20, 40); s = ri(3, 10); }
+      if (a === 1 && b === 0 && c === 0) return null;        // plain squares
+      if (a === 0.5 && b === 0.5 && c === 0) return null;    // plain triangular
+      const asc = range(n + 1, i => { const x = s + i; return a * x * x + b * x + c; });
+      if (!asc.every(Number.isInteger)) return null;
+      const isSq = v => v >= 0 && Number.isInteger(Math.sqrt(v));
+      const isTri = v => v >= 0 && Number.isInteger((Math.sqrt(8 * v + 1) - 1) / 2);
+      if (asc.every(isSq) || asc.every(isTri)) return null;  // disguised squares / triangular
+      return { asc, info: { a, b, c } };
+    }
+  };
+
+  const diffs = t => t.slice(1).map((v, i) => v - t[i]);
+  const isArithmetic = t => { const d = diffs(t); return d.every(x => x === d[0]); };
+  const fmt = v => (v < 0 ? '\u2212' + Math.abs(v) : String(v));
+  const sgn = v => (v < 0 ? '\u2212' + Math.abs(v) : '+' + v);
+  const sup = { 2: '\u00B2', 3: '\u00B3' };
+
+  function valid(type, L, asc, shown) {
+    const lo = type === 'arithmetic' && L >= 3 ? -99 : 0;
+    if (!asc.every(v => v >= lo && v <= 20000)) return false;
+    for (let i = 1; i < asc.length; i++) {
+      if (asc[i] < asc[i - 1]) return false;
+      if (asc[i] === asc[i - 1] && !(type === 'fibonacci' && asc[i] === 1)) return false;
+    }
+    if (type !== 'tables' && type !== 'arithmetic' && isArithmetic(shown)) return false;
+    return true;
+  }
+
+  function explain(type, g, desc, shown, ans) {
+    const last = shown[shown.length - 1];
+    const prev = shown[shown.length - 2];
+    const all = shown.concat(ans);
+    switch (type) {
+      case 'tables': {
+        const m = g.info.m;
+        return {
+          rule: `Multiples of ${m}` + (desc ? ', going down' : ''),
+          working: desc ? `${fmt(last)} \u2212 ${m} = ${fmt(ans)}` : `${fmt(last)} + ${m} = ${fmt(ans)}`
+        };
+      }
+      case 'arithmetic': {
+        const d = g.info.d;
+        return desc
+          ? { rule: `Subtract ${d} each time`, working: `${fmt(last)} \u2212 ${d} = ${fmt(ans)}` }
+          : { rule: `Add ${d} each time`, working: `${fmt(last)} + ${d} = ${fmt(ans)}` };
+      }
+      case 'fibonacci':
+        return desc
+          ? { rule: 'Fibonacci-type, running backwards', working: `${fmt(prev)} \u2212 ${fmt(last)} = ${fmt(ans)}` }
+          : { rule: 'Add the previous two terms', working: `${fmt(prev)} + ${fmt(last)} = ${fmt(ans)}` };
+      case 'primes':
+        return {
+          rule: 'Prime numbers' + (desc ? ', going down' : ''),
+          working: desc ? `The prime before ${last} is ${ans}` : `The next prime after ${last} is ${ans}`
+        };
+      case 'squares':
+      case 'cubes': {
+        const p = type === 'squares' ? 2 : 3;
+        const roots = all.map(v => Math.round(Math.pow(v, 1 / p)));
+        const parts = roots.slice(0, -1).map(r => r + sup[p]).join(', ');
+        return {
+          rule: (type === 'squares' ? 'Square' : 'Cube') + ' numbers' + (desc ? ', going down' : ''),
+          working: `${parts} \u2192 ${roots[roots.length - 1]}${sup[p]} = ${ans}`
+        };
+      }
+      case 'triangular':
+      case 'quadratic': {
+        const d1 = diffs(shown);
+        const nd = ans - last;
+        const d2 = d1[1] - d1[0];
+        const head = type === 'triangular'
+          ? 'Triangular numbers' + (desc ? ', going down' : '')
+          : `Quadratic sequence (second difference ${sgn(d2)})`;
+        return {
+          rule: head,
+          working: `Differences ${d1.map(sgn).join(', ')} \u2192 next ${sgn(nd)}: ${fmt(last)} ${nd < 0 ? '\u2212' : '+'} ${Math.abs(nd)} = ${fmt(ans)}`
+        };
+      }
+    }
+  }
+
+  const PRIME_IDX = new Map(PRIMES.map((p, i) => [p, i]));
+  // Every "next term" a sharp student could justify from the terms shown.
+  function candidates(t) {
+    const out = new Set(), n = t.length, last = t[n - 1];
+    const d = diffs(t);
+    if (d.every(x => x === d[0])) out.add(last + d[0]);                       // arithmetic / tables
+    const d2 = diffs(d);
+    if (d2.length >= 1 && d2.every(x => x === d2[0])) out.add(last + d[d.length - 1] + d2[0]); // quadratic (incl. squares, triangular)
+    if (n >= 3 && t.every((v, i) => i < 2 || v === t[i - 1] + t[i - 2])) out.add(t[n - 1] + t[n - 2]); // Fibonacci
+    if (n >= 3 && t.every((v, i) => i < 2 || v === t[i - 2] - t[i - 1])) out.add(t[n - 2] - t[n - 1]); // Fibonacci backwards
+    if (t.every(v => v > 0)) {                                                 // geometric (×r or ÷r)
+      const r = t[1] / t[0], q = t[0] / t[1];
+      if (Number.isInteger(r) && r > 1 && t.every((v, i) => !i || v === t[i - 1] * r)) out.add(last * r);
+      if (Number.isInteger(q) && q > 1 && t.every((v, i) => !i || v * q === t[i - 1]) && Number.isInteger(last / q)) out.add(last / q);
+    }
+    if (t.every(v => PRIME_IDX.has(v))) {                                       // consecutive primes
+      const ix = t.map(v => PRIME_IDX.get(v)), st = ix[1] - ix[0];
+      if (Math.abs(st) === 1 && ix.every((v, i) => !i || v - ix[i - 1] === st) && PRIMES[ix[n - 1] + st] !== undefined) out.add(PRIMES[ix[n - 1] + st]);
+    }
+    for (const p of [2, 3]) {                                                  // consecutive squares / cubes
+      if (t.every(v => v >= 0)) {
+        const r = t.map(v => Math.round(Math.pow(v, 1 / p)));
+        if (r.every((x, i) => x ** p === t[i])) {
+          const st = r[1] - r[0];
+          if (Math.abs(st) === 1 && r.every((x, i) => !i || x - r[i - 1] === st) && r[n - 1] + st >= 0) out.add((r[n - 1] + st) ** p);
+        }
+      }
+    }
+    return out;
+  }
+  // Two questions share a rule if one is (a shift / reversal of) the other's rule:
+  // same step (multiples of 7 and "add 7" count as one), same special sequence,
+  // or the same quadratic shifted along. Direction is ignored.
+  const ONE_PER_SET = new Set(['fibonacci', 'primes', 'squares', 'cubes', 'triangular']);
+  function ruleKey(type, info) {
+    if (type === 'tables') return 'step:' + info.m;
+    if (type === 'arithmetic') return 'step:' + info.d;
+    if (type === 'quadratic') {
+      // f(x) = ax² + bx + c. Shifting x by k keeps a, adds 2ak to b: pick the k that puts b in [0, 2a).
+      const { a, b, c } = info, k = -Math.floor(b / (2 * a));
+      return `quad:${a}:${b + 2 * a * k}:${a * k * k + b * k + c}`;
+    }
+    return type;
+  }
+  const isUnique = (shown, ans) => { const c = candidates(shown); return c.has(ans) && c.size === 1; };
+
+  function makeQuestion(type, level, len, desc) {
+    const T = TYPE_BY_ID[type];
+    const n0 = Math.max(len, T.minLen);
+    for (let t = 0; t < 400; t++) {
+      const g = GEN[type](level, n0 + 2);            // two spare terms in case we need to show more
+      if (!g) continue;
+      // Show n0 terms; if more than one rule fits, show another term (up to two extra).
+      for (let n = n0; n <= n0 + 2; n++) {
+        const win = g.asc.slice(0, n + 1);
+        const seq = desc ? win.slice().reverse() : win;
+        const shown = seq.slice(0, n), answer = seq[n];
+        if (!valid(type, level, win, shown)) break;
+        if (!isUnique(shown, answer)) continue;
+        return Object.assign({ type, typeName: T.name, level, desc, shown, answer, extended: n - n0, key: ruleKey(type, g.info) }, explain(type, g, desc, shown, answer));
+      }
+    }
+    return null;
+  }
+
+  /* ---------- puzzle finales (Roasties & Oven Baked) ---------- */
+  const WORDS = {
+    numbers: ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE'],
+    days: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
+    months: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
+    shapes: ['TRIANGLE', 'SQUARE', 'PENTAGON', 'HEXAGON', 'HEPTAGON', 'OCTAGON', 'NONAGON', 'DECAGON'],
+    planets: ['MERCURY', 'VENUS', 'EARTH', 'MARS', 'JUPITER', 'SATURN', 'URANUS', 'NEPTUNE']
+  };
+  const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const NUMWORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const lookSay = s => s.replace(/(\d)\1*/g, m => m.length + m[0]);
+  const readAloud = s => s.match(/(\d)\1*/g).map(m => `${NUMWORD[m.length]} ${m[0]}${m.length > 1 ? 's' : ''}`).join(', ');
+
+  function letters(key, n) {
+    const w = WORDS[key].slice(0, n + 1);
+    return {
+      shown: w.slice(0, n).map(x => x.length), answer: w[n].length,
+      rule: `Letters in ${w.slice(0, 3).join(', ')}, …`,
+      working: `${w.slice(0, n).map(x => x + ' ' + x.length).join(', ')} → ${w[n]} has ${w[n].length}`
+    };
+  }
+  const PUZZLES = [
+    { id: 'lettersNumbers', min: 3, make: L => letters('numbers', L === 3 ? 6 : ri(6, 8)) },
+    { id: 'lettersDays', min: 3, make: () => letters('days', 6) },
+    { id: 'monthDays', min: 3, make: () => ({
+        shown: MONTH_DAYS.slice(0, 6), answer: 31,
+        rule: 'Days in each month (not a leap year!)',
+        working: 'Jan 31, Feb 28, Mar 31, Apr 30, May 31, Jun 30 → July has 31' }) },
+    { id: 'vowels', min: 3, make: () => ({
+        shown: [1, 5, 9, 15], answer: 21,
+        rule: 'Positions of the vowels in the alphabet',
+        working: 'A 1, E 5, I 9, O 15 → U is the 21st letter' }) },
+    { id: 'doubling', min: 3, make: () => { const e = ri(0, 3), t = range(7, i => 2 ** (e + i));
+        return { shown: t.slice(0, 6), answer: t[6], rule: 'Doubling (powers of 2)', working: `${t[5]} × 2 = ${t[6]}` }; } },
+    { id: 'lookSay', min: 3, make: L => {
+        const seed = L === 3 ? '1' : pick(['1', '12', '2', '3', '13']);
+        const n = seed === '1' ? 5 : 4, t = [seed];
+        while (t.length < n + 1) t.push(lookSay(t[t.length - 1]));
+        return { shown: t.slice(0, n).map(Number), answer: Number(t[n]),
+          rule: 'Look and say: read the last term out loud',
+          working: `${t[n - 1]} is “${readAloud(t[n - 1])}” → ${t[n]}` }; } },
+    { id: 'lettersShapes', min: 4, make: () => letters('shapes', 6) },
+    { id: 'lettersMonths', min: 4, make: () => letters('months', 6) },
+    { id: 'lettersPlanets', min: 4, make: () => letters('planets', 6) },
+    { id: 'pi', min: 4, make: () => ({
+        shown: [3, 1, 4, 1, 5, 9, 2], answer: 6,
+        rule: 'The digits of π', working: 'π = 3.14159265…' }) },
+    { id: 'reversedSquares', min: 4, make: () => ({
+        shown: [1, 4, 9, 61, 52, 63], answer: 94,
+        rule: 'Square numbers written backwards',
+        working: '1, 4, 9, 16, 25, 36 → 49 backwards is 94' }) },
+    { id: 'powers11', min: 4, make: () => ({
+        shown: [1, 11, 121, 1331], answer: 14641,
+        rule: "Powers of 11 (rows of Pascal's triangle!)", working: '1331 × 11 = 14641' }) },
+    { id: 'factorials', min: 4, make: () => ({
+        shown: [1, 2, 6, 24, 120], answer: 720,
+        rule: 'Multiply by 2, then 3, then 4, … (factorials)', working: '120 × 6 = 720' }) }
+  ];
+  function makePuzzle(level) {
+    const pool = PUZZLES.filter(p => p.min <= level);
+    const p = pick(pool);
+    return Object.assign({ type: 'puzzle', puzzle: p.id, key: 'puzzle:' + p.id, typeName: 'Puzzle', level, desc: false }, p.make(level));
+  }
+
+  // opts: { count, level, types: [ids], len: 4|5|6|'mixed', dir: 'up'|'down'|'both', puzzle, uniqueRules }
+  function makeSet(opts) {
+    const types = (opts.types && opts.types.length ? opts.types : TYPES.map(t => t.id)).slice();
+    const want = opts.count - (opts.puzzle && opts.level >= 3 ? 1 : 0);
+    // Deal types round-robin, but the one-per-set types appear at most once.
+    const uniq = !!opts.uniqueRules;
+    const left = Object.fromEntries(types.map(t => [t, uniq && ONE_PER_SET.has(t) ? 1 : Infinity]));
+    let deal = [];
+    while (deal.length < want) {
+      const round = shuffle(types.filter(t => left[t] > 0));
+      if (!round.length) break;
+      for (const t of round) { if (deal.length < want) { deal.push(t); left[t]--; } }
+    }
+    let relaxed = deal.length < want;
+    while (deal.length < want) deal.push(pick(types));   // not enough distinct rules: allow repeats
+    // avoid the same type twice in a row where possible
+    for (let i = 1; i < deal.length; i++) {
+      if (deal[i] === deal[i - 1]) {
+        const j = deal.findIndex((v, k) => k > i && v !== deal[i] && deal[k - 1] !== v && (k + 1 >= deal.length || deal[k + 1] !== deal[i]));
+        if (j > 0) [deal[i], deal[j]] = [deal[j], deal[i]];
+      }
+    }
+    const usedKeys = new Set(), usedSeqs = new Set(), out = [];
+    const attempt = (type, allowRepeat, borrow) => {
+      for (let t = 0; t < 60; t++) {
+        const len = opts.len === 'mixed' ? ri(4, 6) : +opts.len;
+        const desc = opts.dir === 'down' ? true : opts.dir === 'up' ? false : rng() < 0.4;
+        const lvl = borrow ? Math.min(4, opts.level + 1 + Math.floor(t / 30)) : opts.level;
+        const q = makeQuestion(type, lvl, len, desc);
+        if (!q || usedSeqs.has(q.shown.join(','))) continue;
+        if (uniq && !allowRepeat && usedKeys.has(q.key)) continue;
+        return q;
+      }
+      return null;
+    };
+    const others = type => shuffle(types.filter(x => x !== type && !(uniq && ONE_PER_SET.has(x) && out.some(o => o.type === x))));
+    for (const type of deal) {
+      // 1) this type, this level  2) another type, this level  3) borrow from the level above  4) allow a repeated rule
+      let q = attempt(type, false, false);
+      if (!q) for (const t of others(type)) if ((q = attempt(t, false, false))) break;
+      if (!q && opts.level < 4) { q = attempt(type, false, true); if (!q) for (const t of others(type)) if ((q = attempt(t, false, true))) break; }
+      if (!q) { q = attempt(type, true, false) || attempt(type, true, true); relaxed = true; }
+      if (!q) continue;
+      usedKeys.add(q.key); usedSeqs.add(q.shown.join(','));
+      out.push(q);
+    }
+    if (opts.puzzle && opts.level >= 3) out.push(makePuzzle(opts.level));
+    out.relaxed = relaxed;
+    return out;
+  }
+
+  // Can the chosen types give `count` questions without repeating a rule? (rough, for the Settings warning)
+  function repeatsLikely(types, count) {
+    return !types.some(t => !ONE_PER_SET.has(t)) && types.length < count;
+  }
+
+  const api = { LEVELS, TYPES, PUZZLES, makeQuestion, makePuzzle, makeSet, candidates, repeatsLikely, fmt, isArithmetic, setRng: f => { rng = f; } };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.PotatoLogic = api;
+})(this);
+
+</script>
+<script>
+(function(){
+'use strict';
+const P = window.PotatoLogic;
+const $ = id => document.getElementById(id);
+const VERSION = '1.4';
+
+/* ---------- potato artwork ---------- */
+function spudSVG(opts){
+  opts = opts || {};
+  const face = opts.face ? `
+    <ellipse cx="47" cy="44" rx="4" ry="5.5" fill="#2b1a0c"/><ellipse cx="72" cy="42" rx="4" ry="5.5" fill="#2b1a0c"/>
+    <circle cx="48.3" cy="42" r="1.4" fill="#fff"/><circle cx="73.3" cy="40" r="1.4" fill="#fff"/>
+    <path d="M50 60 Q60 69 72 58" stroke="#2b1a0c" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="40" cy="55" rx="5" ry="3" fill="#e08a6a" opacity=".55"/><ellipse cx="81" cy="52" rx="5" ry="3" fill="#e08a6a" opacity=".55"/>` : '';
+  const q = opts.q ? `<text x="61" y="67" text-anchor="middle" font-family="Chalkboard SE,Segoe Print,Comic Sans MS,cursive" font-size="44" font-weight="bold" fill="#f3efe4" stroke="#5b3514" stroke-width="1.5">?</text>` : '';
+  return `<svg class="${opts.cls||''}" viewBox="0 0 122 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M14 57C6 33 30 10 62 9c33-1 55 17 52 42-3 30-28 42-56 41-26-1-38-13-44-35z" fill="#c9965b" stroke="#6e4520" stroke-width="3.5"/>
+    <path d="M28 30c10-12 30-16 48-13" stroke="#e7c08f" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/>
+    <ellipse cx="30" cy="66" rx="3.2" ry="2.2" fill="#9d6a37"/><ellipse cx="94" cy="70" rx="2.8" ry="2" fill="#9d6a37"/>
+    <ellipse cx="99" cy="33" rx="2.6" ry="1.8" fill="#9d6a37"/><ellipse cx="58" cy="82" rx="3" ry="2" fill="#9d6a37"/>
+    <ellipse cx="22" cy="45" rx="2.2" ry="1.6" fill="#9d6a37"/>${face}${q}</svg>`;
+}
+$('titleSpud').innerHTML = spudSVG({face:true});
+$('pensSpud').innerHTML = spudSVG({face:true});
+
+/* ---------- settings ---------- */
+const KEY = 'potato-settings-v1';
+const DEFAULTS = { count:10, level:2, types:P.TYPES.map(t=>t.id), len:'mixed', dir:'both', answers:'end', timer:0, working:1, puzzle:1, uniqueRules:0 };
+let S = Object.assign({}, DEFAULTS);
+try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved) S = Object.assign(S, saved); } catch(e){}
+S.types = S.types.filter(id => P.TYPES.some(t=>t.id===id));
+if (S.len !== 'mixed' && (S.len < 4 || S.len > 6)) S.len = 'mixed';
+if (!S.types.length) S.types = DEFAULTS.types.slice();
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+function bindSeg(id, key, parse){
+  const el = $(id);
+  const sync = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('sel', String(S[key]) === b.dataset.v));
+  el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S[key] = parse ? parse(b.dataset.v) : b.dataset.v; save(); sync(); refreshHome(); });
+  sync();
+}
+bindSeg('countSeg','count',Number);
+bindSeg('lenSeg','len',v => v==='mixed'?v:Number(v));
+bindSeg('dirSeg','dir');
+bindSeg('ansSeg','answers');
+bindSeg('timerSeg','timer',Number);
+bindSeg('workSeg','working',Number);
+bindSeg('puzzleSeg','puzzle',Number);
+bindSeg('uniqSeg','uniqueRules',Number);
+
+const levelsEl = $('levels');
+P.LEVELS.forEach(L => {
+  const b = document.createElement('button');
+  b.className = 'level'; b.dataset.v = L.id;
+  b.innerHTML = `<span>${L.name}</span><span class="spuds">${spudSVG().repeat(L.id)}</span>`;
+  b.onclick = () => { S.level = L.id; save(); refreshHome(); };
+  levelsEl.appendChild(b);
+});
+
+const ticks = $('typeTicks');
+P.TYPES.forEach(T => {
+  const d = document.createElement('div');
+  d.className = 'tick'; d.dataset.id = T.id;
+  d.innerHTML = `<span class="box"></span><span>${T.name}<small>${T.example}, &hellip;</small></span>`;
+  d.onclick = () => {
+    const on = S.types.includes(T.id);
+    if (on && S.types.length === 1) { $('typeWarn').textContent = 'Keep at least one sequence type switched on.'; return; }
+    S.types = on ? S.types.filter(x=>x!==T.id) : P.TYPES.map(t=>t.id).filter(x => x===T.id || S.types.includes(x));
+    $('typeWarn').textContent = ''; save(); syncTicks(); refreshHome();
+  };
+  ticks.appendChild(d);
+});
+function syncTicks(){
+  ticks.querySelectorAll('.tick').forEach(t => t.classList.toggle('on', S.types.includes(t.dataset.id)));
+  if (S.uniqueRules && P.repeatsLikely(S.types, S.count)) $('typeWarn').textContent = `Each of these types has only one rule, so ${S.count} questions will need some repeats. Add times tables, arithmetic or quadratics for more variety.`;
+  else if ($('typeWarn').textContent.startsWith('Each')) $('typeWarn').textContent = '';
+}
+syncTicks();
+
+function levelName(){ return P.LEVELS[S.level-1].name; }
+function refreshHome(){
+  syncTicks();
+  levelsEl.querySelectorAll('.level').forEach(b => b.classList.toggle('sel', +b.dataset.v === S.level));
+  const n = S.types.length, all = P.TYPES.length;
+  const lens = S.len === 'mixed' ? '4–6 numbers' : S.len + ' numbers';
+  const dir = {up:'going up', down:'going down', both:'up and down'}[S.dir];
+  $('homeHint').textContent = `${n === all ? 'All' : n + ' of ' + all} sequence types · ${lens} · ${dir} · answers ${S.answers==='end'?'at the end':'after each question'}${S.timer?` · ${S.timer}s timer`:''}${S.puzzle && S.level>=3?' · puzzle finale':''}${S.uniqueRules?' · no repeated rules':''}`;
+}
+refreshHome();
+
+/* ---------- modals ---------- */
+function openModal(id){ $(id).classList.add('on'); }
+function closeModals(){ document.querySelectorAll('.modal.on').forEach(m => m.classList.remove('on')); }
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.classList.remove('on'); });
+});
+$('settingsBtn').onclick = () => openModal('settings');
+$('helpBtn').onclick = () => openModal('help');
+
+/* ---------- fullscreen ---------- */
+function toggleFS(){
+  const d = document;
+  if (!d.fullscreenElement && !d.webkitFullscreenElement) (d.documentElement.requestFullscreen || d.documentElement.webkitRequestFullscreen).call(d.documentElement).catch?.(()=>{});
+  else (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+}
+document.querySelectorAll('.fsBtn').forEach(b => b.onclick = toggleFS);
+if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) document.body.classList.add('no-fs');
+let fitT = null;
+const refit = () => { clearTimeout(fitT); fitT = setTimeout(() => { if (screen === 'play') fitSeq(); }, 60); };
+window.addEventListener('resize', refit);
+window.addEventListener('orientationchange', refit);
+
+/* ---------- game state ---------- */
+let screen = 'home';
+let set = [], idx = 0, phase = 'questions', revealed = new Set(), showRules = true;
+let timerId = null, timerEnd = 0;
+
+function show(name){
+  screen = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === name));
+  if (name !== 'play') stopTimer();
+}
+function startGame(){
+  set = P.makeSet({ count:S.count, level:S.level, types:S.types, len:S.len, dir:S.dir, puzzle:!!S.puzzle, uniqueRules:!!S.uniqueRules });
+  idx = 0; phase = 'questions'; revealed = new Set();
+  $('lvlBadge').textContent = $('lvlBadge2').textContent = levelName();
+  show('play'); render();
+  const toast = $('toast'); toast.classList.toggle('on', !!set.relaxed);
+  clearTimeout(startGame._t); if (set.relaxed) startGame._t = setTimeout(() => toast.classList.remove('on'), 5000);
+}
+$('startBtn').onclick = startGame;
+
+const eachMode = () => S.answers === 'each';
+const canReveal = () => phase === 'answers' || eachMode();
+
+function render(){
+  const q = set[idx];
+  const n = set.length;
+  $('playTitle').innerHTML = (phase === 'answers' ? 'Answer ' : 'Question ') + (idx+1) + ' of ' + n + `<span class="lvl-sub">${levelName()}</span>`;
+  $('qlabel').innerHTML = q.type === 'puzzle' ? '<span class="puzzle-tag">Puzzle question!</span> What comes next?' : 'What comes next?';
+  const seq = $('seq');
+  let h = '';
+  q.shown.forEach((v,i) => {
+    h += `<span class="n" style="animation-delay:${i*0.09}s">${P.fmt(v)}<span class="comma">,</span></span>`;
+  });
+  h += `<span class="slot" id="slot" style="animation-delay:${q.shown.length*0.09}s"></span>`;
+  seq.innerHTML = h;
+  drawSlot(false);
+  // dots
+  const dots = $('dots'); dots.innerHTML = '';
+  set.forEach((_,i) => {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === idx ? ' cur' : '') + (revealed.has(i) ? ' done' : '');
+    d.textContent = set[i].type === 'puzzle' ? '\u2605' : i+1; d.onclick = () => go(i);
+    dots.appendChild(d);
+  });
+  $('prevBtn').disabled = idx === 0;
+  $('revealBtn').style.display = canReveal() ? '' : 'none';
+  $('revealBtn').disabled = revealed.has(idx);
+  $('listBtn').style.display = phase === 'answers' ? '' : 'none';
+  $('revealBtn').parentElement.classList.toggle('empty', !canReveal());
+  $('nextBtn').innerHTML = idx === n-1 ? (phase === 'answers' ? 'Finish &#9654;' : 'Pens down &#9654;') : 'Next &#9654;';
+  fitSeq();
+  if (phase === 'questions' && S.timer && !revealed.has(idx)) startTimer(); else stopTimer();
+}
+function drawSlot(anim){
+  const q = set[idx], slot = $('slot'), ex = $('explain');
+  if (revealed.has(idx)) {
+    slot.innerHTML = `<span class="ans"${anim?'':' style="animation:none"'}>${P.fmt(q.answer)}</span><span class="ring"${anim?'':' style="animation:none"'}></span>`;
+    ex.innerHTML = `<div class="rule">${q.rule}</div>` + (S.working ? `<div class="work">${q.working}</div>` : '');
+  } else {
+    slot.innerHTML = spudSVG({q:true, cls:'spud'});
+    slot.querySelector('.spud').onclick = () => { if (canReveal()) reveal(); else { slot.classList.remove('wiggle'); void slot.offsetWidth; slot.classList.add('wiggle'); } };
+    ex.innerHTML = '';
+  }
+  fitSeq();
+}
+function fitSeq(){
+  const seq = $('seq'); if (!seq || screen !== 'play') return;
+  const stage = seq.parentElement;
+  const W = stage.clientWidth * 0.92;
+  const setFs = v => seq.style.setProperty('--fs', v + 'px');
+  // (scrollHeight misses overflow in a centred column, so compare the first and last blocks with the stage itself)
+  const tooTall = () => { const s = stage.getBoundingClientRect(); return $('qlabel').getBoundingClientRect().top < s.top - 1.5 || $('explain').getBoundingClientRect().bottom > s.bottom + 1.5; };
+  // 1) one line, as on the whiteboard
+  seq.classList.remove('wrap');
+  let fs = Math.min(window.innerWidth / 9, window.innerHeight / 5.2, 150), guard = 0;
+  setFs(fs);
+  while ((seq.getBoundingClientRect().width > W || tooTall()) && fs > 14 && guard++ < 90) { fs *= 0.94; setFs(fs); }
+  if (fs >= 40) return;
+  // 2) small screen: let the sequence run onto two or three lines so the numbers stay big
+  const oneLine = fs;
+  seq.classList.add('wrap');
+  let f2 = Math.min(window.innerWidth / 5.5, window.innerHeight / 7, 110); guard = 0;
+  setFs(f2);
+  const tooWide = () => Array.from(seq.children).some(c => c.getBoundingClientRect().width > W);
+  while ((tooWide() || tooTall()) && f2 > 14 && guard++ < 90) { f2 *= 0.94; setFs(f2); }
+  if (f2 < oneLine * 1.2) { seq.classList.remove('wrap'); setFs(oneLine); }
+}
+function reveal(){
+  if (revealed.has(idx)) return;
+  revealed.add(idx); stopTimer();
+  drawSlot(true);
+  $('revealBtn').disabled = true;
+  const dot = $('dots').children[idx]; if (dot) dot.classList.add('done');
+}
+function go(i){ if (i < 0 || i >= set.length) return; idx = i; render(); }
+function next(){
+  if (idx < set.length - 1) { go(idx+1); return; }
+  if (phase === 'questions') show('pens');
+  else openList();
+}
+function prev(){ go(idx-1); }
+$('nextBtn').onclick = next;
+$('prevBtn').onclick = prev;
+$('revealBtn').onclick = reveal;
+$('listBtn').onclick = openList;
+
+$('pensBack').onclick = () => { show('play'); go(set.length-1); };
+$('goAnswers').onclick = () => { phase = 'answers'; revealed = new Set(); idx = 0; show('play'); render(); };
+$('pensList').onclick = openList;
+
+/* ---------- swipe (touch screens) ---------- */
+(function(){
+  const stage = document.querySelector('#play .stage');
+  let sx = 0, sy = 0, st = 0, on = false;
+  stage.addEventListener('touchstart', e => { on = e.touches.length === 1; if (on) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); } }, { passive:true });
+  stage.addEventListener('touchend', e => {
+    if (!on) return; on = false;
+    const c = e.changedTouches[0], dx = c.clientX - sx, dy = c.clientY - sy;
+    if (Math.abs(dx) > 55 && Math.abs(dy) < 60 && Math.abs(dx) > 1.5 * Math.abs(dy) && Date.now() - st < 800) { if (dx < 0) next(); else prev(); }
+  }, { passive:true });
+})();
+
+/* ---------- list ---------- */
+let listFrom = 'play';
+function openList(){
+  listFrom = screen === 'pens' ? 'pens' : 'play';
+  const t = $('listTable');
+  t.innerHTML = set.map((q,i) => `<tr><td class="q">${i+1}.</td><td class="s">${q.shown.map(P.fmt).join(', ')}, &hellip;</td><td class="a">${P.fmt(q.answer)}</td><td class="r"${showRules?'':' style="display:none"'}>${q.rule}${S.working?`<small>${q.working}</small>`:''}</td></tr>`).join('');
+  $('listRules').textContent = showRules ? 'Hide rules' : 'Show rules';
+  show('list');
+}
+$('listRules').onclick = () => { showRules = !showRules; openList(); };
+$('listBack').onclick = () => { if (listFrom === 'pens') show('pens'); else { show('play'); render(); } };
+$('newSet').onclick = startGame;
+
+/* ---------- timer ---------- */
+function startTimer(){
+  stopTimer();
+  const bar = $('timer'), fill = bar.firstElementChild;
+  bar.classList.add('on'); bar.classList.remove('low'); $('timeup').classList.remove('on');
+  timerEnd = performance.now() + S.timer * 1000;
+  const tick = () => {
+    const left = timerEnd - performance.now();
+    const f = Math.max(0, left / (S.timer * 1000));
+    fill.style.transform = `scaleX(${f})`;
+    bar.classList.toggle('low', f < 0.25);
+    if (left <= 0) { $('timeup').classList.add('on'); const s = $('slot'); if (s) { s.classList.remove('wiggle'); void s.offsetWidth; s.classList.add('wiggle'); } timerId = null; return; }
+    timerId = requestAnimationFrame(tick);
+  };
+  timerId = requestAnimationFrame(tick);
+}
+function stopTimer(){
+  if (timerId) cancelAnimationFrame(timerId); timerId = null;
+  $('timer').classList.remove('on'); $('timeup').classList.remove('on');
+}
+
+/* ---------- home / confirm ---------- */
+function askHome(){ if (screen === 'home') return; openModal('confirm'); }
+$('homeBtn').onclick = askHome;
+$('listHome').onclick = askHome;
+$('confirmYes').onclick = () => { closeModals(); show('home'); refreshHome(); };
+
+/* ---------- keyboard ---------- */
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (document.querySelector('.modal.on')) {
+    if (k === 'Escape') closeModals();
+    else if (k === 'Enter' && $('confirm').classList.contains('on')) $('confirmYes').click();
+    return;
+  }
+  if (k === 'f' || k === 'F') { toggleFS(); return; }
+  if (screen === 'home') {
+    if (k === 'Enter' || k === ' ') { e.preventDefault(); startGame(); }
+    else if (k === 's' || k === 'S') openModal('settings');
+    else if (k === 'h' || k === 'H' || k === '?') openModal('help');
+    else if (k >= '1' && k <= '4') { S.level = +k; save(); refreshHome(); }
+    return;
+  }
+  if (k === 'Escape') { askHome(); return; }
+  if (screen === 'play') {
+    if (k === 'ArrowRight' || k === ' ' || k === 'PageDown') { e.preventDefault(); next(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp') { e.preventDefault(); prev(); }
+    else if ((k === 'Enter' || k === 'r' || k === 'R') && canReveal()) { e.preventDefault(); reveal(); }
+    else if ((k === 'a' || k === 'A') && phase === 'answers') openList();
+  } else if (screen === 'pens') {
+    if (k === 'ArrowRight' || k === ' ' || k === 'Enter') { e.preventDefault(); $('goAnswers').click(); }
+    else if (k === 'ArrowLeft') $('pensBack').click();
+    else if (k === 'a' || k === 'A') openList();
+  } else if (screen === 'list') {
+    if (k === 'ArrowLeft' || k === 'Backspace') $('listBack').click();
+  }
+});
+
+// test hook
+window.__potato = { get set(){ return set; }, get idx(){ return idx; }, get phase(){ return phase; }, get screen(){ return screen; }, S, VERSION };
+})();
+</script>
+</body>
+</html>

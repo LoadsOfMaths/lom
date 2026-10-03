@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TRIO</title>
+<meta name="theme-color" content="#e9f0ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TRIO">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 180 180%22 width=%22180%22 height=%22180%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23eaf1ee%22/%3E%3Cstop offset=%221%22 stop-color=%22%23d7dfee%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%22180%22 height=%22180%22 fill=%22url%28%23g%29%22/%3E%3Ccircle cx=%2260%22 cy=%2264%22 r=%2227%22 fill=%22%233f5ea8%22/%3E%3Cpath transform=%22translate%28122 64%29 scale%28.62%29%22 d=%22M0 -46C37 -24 37 24 0 46C-37 24 -37 -24 0 -46Z%22 fill=%22%23cf8a1b%22/%3E%3Cpath transform=%22translate%2891 126%29 scale%28.78%29%22 d=%22M0 -38 L38 30 L-38 30Z%22 fill=%22%23bd4f79%22 stroke=%22%23bd4f79%22 stroke-width=%2212%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{
+  --ink:#2c3e4b;--muted:#5e717f;--accent:#4f7a92;--accent-soft:#dbe8ee;--on-accent:#fff;
+  --sage:#5f9a7c;--gold:#d6a03a;--rose:#b8645d;
+  --bg1:#e9f0ee;--bg2:#e3e9f1;--bg3:#f0eae4;
+  --panel:rgba(255,255,255,.62);--panel-border:rgba(60,85,100,.16);--dlg:#fbfaf6;
+  --card:#fdfbf6;--card2:#f6f2e8;--card-edge:rgba(50,70,85,.16);
+  --shadow:0 8px 24px rgba(40,65,85,.12);--bar:rgba(238,243,245,.92);
+}
+[data-theme=dusk]{
+  --ink:#e8ecf1;--muted:#a6b4c1;--accent:#8fb6cc;--accent-soft:#2c4052;--on-accent:#10202b;
+  --sage:#82c0a0;--gold:#e5b655;--rose:#d98a82;
+  --bg1:#16202b;--bg2:#1d2939;--bg3:#272634;
+  --panel:rgba(255,255,255,.07);--panel-border:rgba(255,255,255,.14);--dlg:#233140;
+  --card:#f3efe4;--card2:#ebe6d8;--card-edge:rgba(0,0,0,.25);
+  --shadow:0 10px 28px rgba(0,0,0,.4);--bar:rgba(26,38,52,.94);
+}
+html{font-size:clamp(16px,.7vw + 11px,24px)}
+body{margin:0;height:100vh;height:100dvh;overflow:hidden;color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:linear-gradient(160deg,var(--bg1),var(--bg2) 55%,var(--bg3));transition:background .6s,color .4s}
+.ambient{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.ambient i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:drift 48s ease-in-out infinite alternate}
+.ambient i:nth-child(1){width:46vmax;height:46vmax;left:-12vmax;top:-14vmax;background:#bcd8cf}
+.ambient i:nth-child(2){width:40vmax;height:40vmax;right:-10vmax;bottom:-12vmax;background:#c9cfe8;animation-duration:62s}
+.ambient i:nth-child(3){width:30vmax;height:30vmax;left:40vw;top:30vh;background:#f0dcc6;opacity:.35;animation-duration:75s}
+[data-theme=dusk] .ambient i{opacity:.22}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(6vmax,4vmax) scale(1.12)}}
+#app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;height:100dvh}
+header{display:flex;align-items:center;gap:.5rem;padding:.55rem .9rem;padding-top:calc(.55rem + env(safe-area-inset-top))}
+.brand{display:flex;align-items:center;gap:.6rem;margin-right:auto;font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-weight:400;font-size:1.35rem;letter-spacing:.22em}
+.brand svg{width:2.4rem;height:1.5rem}
+.btn{border:1px solid var(--panel-border);background:var(--panel);color:var(--ink);font:inherit;padding:.6rem 1.3rem;min-height:2.7rem;border-radius:999px;cursor:pointer;backdrop-filter:blur(6px);transition:background .3s,transform .3s,box-shadow .3s}
+@media(hover:hover){.btn:hover{background:var(--accent-soft)}.btn.primary:hover{filter:brightness(1.07)}.opt:hover{background:var(--accent-soft)}.sw:hover{transform:scale(1.06)}.tile:hover{background:var(--accent-soft);transform:translateY(-3px);box-shadow:var(--shadow)}}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.btn:disabled{opacity:.45;cursor:default}
+.ibtn{width:2.7rem;height:2.7rem;padding:0;display:grid;place-items:center;font-family:Georgia,serif;font-size:1.2rem}
+.ibtn svg{width:1.3rem;height:1.3rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn:focus-visible,.opt:focus-visible,.card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.moon,.sun{display:none}
+[data-theme=day] .moon{display:block}[data-theme=dusk] .sun{display:block}
+.snd-off{display:none}.muted .snd-off{display:block}.muted .snd-on{display:none}
+main{flex:1;min-height:0;position:relative}
+.screen{position:absolute;inset:0}
+.panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:1.6rem;padding:clamp(1rem,3vw,2rem);backdrop-filter:blur(10px);box-shadow:var(--shadow)}
+#setup{overflow:auto;display:flex;padding:.6rem 1rem 1rem}
+#setup .panel{margin:auto;width:min(62rem,100%)}
+.hello{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-weight:400;font-size:clamp(1.8rem,4vw,2.8rem);text-align:center;margin:0;letter-spacing:.03em}
+.lede{text-align:center;color:var(--muted);margin:.5rem auto 0;max-width:40rem;line-height:1.5}
+.group{margin-top:1.1rem}
+.glabel{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem}
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.6rem}
+.opt{display:flex;flex-direction:column;gap:.15rem;text-align:left;padding:.65rem 1rem;border-radius:1rem;border:1.5px solid var(--panel-border);background:transparent;color:inherit;font:inherit;cursor:pointer;transition:background .3s,border-color .3s}
+.opt b{font-weight:600}.opt small{color:var(--muted);font-size:.78rem;line-height:1.3}
+.opt[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent) inset}
+.gnote{text-transform:none;letter-spacing:.02em;margin-left:.6rem;font-size:.8rem;opacity:.85}
+.picker{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.sw{position:relative;width:2.8rem;height:2.8rem;border-radius:50%;border:0;padding:0;cursor:pointer;background:var(--c);box-shadow:0 0 0 1.5px var(--panel-border);transition:box-shadow .3s,transform .3s}
+.sw svg{position:absolute;inset:0;margin:auto;width:55%;height:55%;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .3s}
+.sw[aria-pressed=true]{box-shadow:0 0 0 3px var(--dlg),0 0 0 5.5px var(--accent)}
+.sw[aria-pressed=true] svg{opacity:1}
+.shp{width:3.4rem;height:3.4rem;padding:.4rem;border-radius:1rem;border:1.5px solid var(--panel-border);background:var(--card);color:#8497a5;cursor:pointer;transition:box-shadow .3s,color .3s,border-color .3s}
+.shp svg{display:block;width:100%;height:100%}
+.shp[aria-pressed=true]{color:#3b556a;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),0 0 0 4.5px var(--accent)}
+.sw:focus-visible,.shp:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+.preview{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:.2rem;--cw:5.6rem;--ch:3.5rem}
+.preview .card{box-shadow:0 4px 12px rgba(40,65,85,.12)}
+.begin{display:block;margin:1.4rem auto 0;font-size:1.1rem;padding:.8rem 2.6rem}
+#boardWrap{position:absolute;inset:0;padding:.4rem .8rem}
+#board{width:100%;height:100%;display:grid;justify-content:center;align-content:center;gap:var(--gap,12px)}
+.card{position:relative;display:block;width:var(--cw);height:var(--ch);padding:0;border-radius:calc(var(--cw)*.1);
+  background:linear-gradient(180deg,var(--card),var(--card2));border:1.5px solid var(--card-edge);box-shadow:var(--shadow);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .4s,opacity .5s}
+div.card{cursor:default}
+.card svg{width:100%;height:100%;display:block}
+@media(hover:hover){button.card:hover{transform:translateY(-3px)}}
+.card.sel{transform:translateY(-7px);box-shadow:0 0 0 3px var(--accent),0 16px 30px rgba(40,65,85,.22)}
+.card.hint{transform:translateY(-6px);box-shadow:0 0 0 4px var(--gold),0 0 26px 7px rgba(214,160,58,.5)}
+.card.hint:not(.enter){animation:breathe 3.6s ease-in-out infinite}
+.card.hint.sel{box-shadow:0 0 0 3px var(--accent),0 0 0 7px var(--gold),0 0 26px 7px rgba(214,160,58,.4)}
+.card.good{box-shadow:0 0 0 3px var(--sage),0 0 28px 4px rgba(95,154,124,.45);transform:translateY(-4px)}
+.card.miss{box-shadow:0 0 0 3px var(--rose);opacity:.8}
+.card.dim{opacity:.4}
+.card.leaving{opacity:0;transform:translateY(-14px) scale(.94)}
+.card.enter{animation:settle .8s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:calc(var(--i,0)*50ms)}
+@keyframes settle{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 4px var(--gold),0 0 14px 3px rgba(214,160,58,.35)}50%{box-shadow:0 0 0 5px var(--gold),0 0 34px 10px rgba(214,160,58,.6)}}
+#tWrap{position:absolute;inset:0;padding:.3rem .8rem;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.tlabel{color:var(--muted);font-size:.95rem;letter-spacing:.04em;margin:.5rem 0 .55rem;text-align:center}
+.trow{display:grid;justify-content:center;gap:var(--gap,12px)}
+.slot{width:var(--cw);height:var(--ch);border:2px dashed var(--panel-border);border-radius:calc(var(--cw)*.1);display:grid;place-items:center;font-family:Georgia,serif;font-size:calc(var(--cw)*.3);color:var(--muted)}
+.slot .card{width:100%;height:100%}
+footer{padding:.3rem 1rem calc(.7rem + env(safe-area-inset-bottom));text-align:center}
+.msg{min-height:3.1rem;display:flex;flex-direction:column;justify-content:center;padding:0 .5rem}
+.msg-main{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-size:1.2rem}
+.msg-sub{color:var(--muted);font-size:.9rem;line-height:1.35}
+.msg.good .msg-main{color:var(--sage)}.msg.soft .msg-main{color:var(--rose)}
+.btns{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:.4rem}
+.stats{color:var(--muted);font-size:.82rem;margin-top:.5rem;letter-spacing:.03em}
+.pulse{animation:glow 1.6s ease-in-out 3}
+@keyframes glow{50%{box-shadow:0 0 0 4px var(--gold),0 0 20px 4px rgba(214,160,58,.5)}}
+.overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(20,35,45,.38);backdrop-filter:blur(4px);z-index:20;padding:1rem}
+.dialog{background:var(--dlg);max-width:36rem;width:100%;max-height:92vh;overflow:auto;text-align:center}
+.dialog h2{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-weight:400;font-size:1.7rem;margin:.2rem 0 .6rem}
+.dialog p{color:var(--muted);line-height:1.5;margin:.4rem 0}
+.dialog .ex{display:flex;gap:.6rem;justify-content:center;margin:1rem 0 .6rem;--cw:min(28vw,9rem);--ch:calc(var(--cw)/1.6)}
+.dialog .btns{margin-top:1.1rem}
+
+#home{overflow:auto;display:flex;padding:.6rem 1rem 1rem}
+#home .panel{margin:auto;width:min(60rem,100%)}
+body.home .brand{visibility:hidden}
+.hello.big{font-size:clamp(2.8rem,8vw,5rem);letter-spacing:.3em;padding-left:.3em;font-weight:300}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem;margin-top:1.8rem}
+.tile{display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;padding:1.3rem 1rem 1.4rem;border-radius:1.5rem;border:1.5px solid var(--panel-border);background:var(--panel);color:inherit;font:inherit;cursor:pointer;transition:background .3s,transform .4s,box-shadow .4s}
+.tile:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.tile b{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-weight:400;font-size:1.7rem;letter-spacing:.06em}
+.tile span{color:var(--muted);line-height:1.4;font-size:.95rem;max-width:16rem}
+.emblem{display:flex;gap:.45rem;justify-content:center;align-items:center;min-height:3rem;margin-bottom:.4rem;--cw:4.2rem;--ch:2.6rem}
+.emblem .card{box-shadow:0 3px 8px rgba(40,65,85,.14)}
+.emblem .slot{font-size:1.2rem}
+.eb{width:2.7rem;height:2.7rem;border-radius:.8rem;background:var(--card);border:1.5px solid var(--card-edge);display:grid;place-items:center;font-family:Georgia,serif;font-size:1.25rem;color:#4d6577}
+.eb i{display:block;width:1.5rem;height:1.5rem;border-radius:50%}
+.eb svg{width:78%;height:78%}
+#explore{overflow:auto}
+#xWrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;padding:.3rem .9rem calc(.8rem + env(safe-area-inset-bottom))}
+.xslots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;width:min(68rem,100%)}
+.xslot{display:flex;flex-direction:column;align-items:center;gap:.6rem;padding:.8rem;border-radius:1.3rem;background:var(--panel);border:1px solid var(--panel-border)}
+.xcard{width:100%;display:flex;justify-content:center}
+.xcard .card{--cw:15rem;width:min(100%,15rem);height:auto;aspect-ratio:1.6}
+.xctrls{display:flex;flex-direction:column;gap:.4rem;width:100%}
+.xrow{display:flex;align-items:center;justify-content:center;gap:.5rem}
+.xlab{width:4.4rem;text-align:right;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sw.sm{width:2.4rem;height:2.4rem}
+.shp.sm,.xb{width:2.6rem;height:2.6rem;padding:.3rem;border-radius:.8rem}
+.xb{border:1.5px solid var(--panel-border);background:var(--card);color:#8497a5;cursor:pointer;display:grid;place-items:center;font:inherit;font-family:Georgia,serif;font-size:1.15rem;transition:box-shadow .3s,color .3s,border-color .3s}
+.xb svg{display:block;width:100%;height:100%}
+.xb[aria-pressed=true]{color:#3b556a;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),0 0 0 4.5px var(--accent)}
+.xb:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.xverdict{width:min(60rem,100%);text-align:center}
+.chips{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:.5rem}
+.chip{padding:.3rem .85rem;border-radius:999px;border:1px solid var(--panel-border);font-size:.85rem;background:var(--panel);transition:color .3s,border-color .3s}
+.chip.ok{border-color:var(--sage);color:var(--sage)}
+.chip.bad{border-color:var(--rose);color:var(--rose)}
+.xacts{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center}
+@media(max-aspect-ratio:1/1){
+  .xslots{grid-template-columns:1fr;gap:.55rem}
+  .xslot{flex-direction:row;padding:.5rem;gap:.6rem}
+  .xcard{width:37%;flex:none}
+  .xctrls{flex:1;gap:.3rem}
+  .xlab{display:none}
+  .xrow{gap:.35rem}
+  .sw.sm{width:2.6rem;height:2.6rem}
+  .shp.sm,.xb{width:2.6rem;height:2.6rem;padding:.3rem}
+}
+
+/* ---------- mobile and touch ---------- */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{touch-action:manipulation;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+.card,.btn,.tile,.opt,.sw,.shp,.xb{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+#setup,#home,#explore{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#app{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+.sw,.shp,.xb,.ibtn{flex:none}
+.begin{position:sticky;bottom:.5rem;z-index:2;box-shadow:0 8px 22px rgba(40,65,85,.25)}
+.xbottom{display:flex;flex-direction:column;align-items:center;gap:.7rem;width:100%}
+@media(max-width:700px),(max-height:520px){
+  .ambient i{animation:none;filter:blur(46px)}
+  .btn{backdrop-filter:none}
+}
+@media(max-width:600px){
+  .ibtn{width:2.75rem;height:2.75rem}
+  header{gap:.25rem;padding:.4rem .6rem;padding-top:calc(.4rem + env(safe-area-inset-top))}
+  .brand{font-size:1.1rem;white-space:nowrap;gap:.4rem;letter-spacing:.18em}
+  .brand svg{width:1.8rem}
+  #fsBtn{display:none}
+  .msg{min-height:3.4rem}
+  .msg-main{font-size:1.1rem}
+  .msg-sub{font-size:.88rem}
+  footer{padding:.2rem .8rem calc(.5rem + env(safe-area-inset-bottom))}
+  .btns{margin-top:.3rem}
+  .stats{font-size:.84rem;margin-top:.35rem}
+  .glabel{font-size:.8rem}
+  .opt small{font-size:.85rem}
+  .gnote{display:block;margin:.25rem 0 0;font-size:.84rem}
+  .panel{border-radius:1.3rem}
+  #setup,#home{padding:.3rem .6rem .6rem}
+  .tlabel{font-size:.95rem}
+}
+@media(max-width:350px){.brand span{display:none}}
+@media(max-width:700px) and (max-aspect-ratio:1/1){
+  .xbottom{position:sticky;bottom:0;z-index:3;margin:0 -.9rem;width:calc(100% + 1.8rem);padding:.55rem .6rem calc(.6rem + env(safe-area-inset-bottom));gap:.45rem;background:var(--bar);backdrop-filter:blur(14px);border-top:1px solid var(--panel-border)}
+  .chips{gap:.35rem;margin-top:.35rem}
+  .chip{font-size:.8rem;padding:.2rem .6rem}
+  .xacts{gap:.4rem;flex-wrap:nowrap}
+  .xacts .btn{padding:.45rem .7rem;font-size:.92rem;min-height:2.6rem;white-space:nowrap}
+  .xverdict .msg{min-height:0}
+  .xverdict .msg:not(.keep) .msg-sub{display:none}
+}
+@media(orientation:landscape) and (max-height:520px){
+  header{padding:.25rem .6rem;gap:.3rem}
+  .ibtn{width:2.6rem;height:2.6rem}
+  .brand{font-size:1.05rem}
+  .brand svg{width:1.7rem}
+  body.game #app{display:grid;grid-template-columns:minmax(0,1fr) clamp(12rem,26vw,16.5rem);grid-template-rows:auto minmax(0,1fr)}
+  body.game header{grid-column:1/-1}
+  body.game main{grid-column:1;grid-row:2}
+  body.game footer{grid-column:2;grid-row:2;display:flex;flex-direction:column;justify-content:center;padding:.3rem .8rem .6rem;overflow:auto}
+  body.game .msg{min-height:0;padding:0}
+  body.game .msg-main{font-size:1.1rem}
+  body.game .msg-sub{font-size:.88rem}
+  body.game .btns{flex-direction:column;align-items:stretch;gap:.5rem;margin-top:.7rem}
+  body.game .stats{margin-top:.7rem}
+  .tlabel{margin:.15rem 0 .25rem;font-size:.88rem}
+  #home .panel{padding:.8rem 1rem}
+  .hello.big{font-size:2.4rem;letter-spacing:.25em}
+  .lede{margin-top:.2rem}
+  .tiles{margin-top:.8rem;gap:.6rem}
+  .tile{padding:.6rem .6rem .7rem;gap:.25rem}
+  .tile b{font-size:1.35rem}
+  .tile span{font-size:.85rem}
+  .emblem{--cw:3.2rem;--ch:2rem;min-height:2.2rem;margin-bottom:0}
+  .eb{width:2.2rem;height:2.2rem;font-size:1rem}
+  #xWrap{display:grid;grid-template-columns:minmax(0,1fr) 12.5rem;align-content:center;align-items:center;column-gap:.8rem;padding:.2rem .7rem .4rem}
+  .xslots{gap:.5rem;width:100%}
+  .xslot{padding:.5rem;gap:.35rem}
+  .xcard .card{--cw:8rem;width:8rem}
+  .xctrls{gap:.3rem}
+  .xrow{gap:.3rem}
+  .xlab{display:none}
+  .sw.sm{width:2.5rem;height:2.5rem}
+  .shp.sm,.xb{width:2.5rem;height:2.5rem;padding:.3rem}
+  .xbottom{gap:.5rem}
+  .xverdict .msg{min-height:0}
+  .xverdict .msg:not(.keep) .msg-sub{display:none}
+  .xverdict .msg-main{font-size:1.05rem}
+  .chips{margin-top:.35rem;gap:.3rem}
+  .chip{font-size:.78rem;padding:.15rem .55rem}
+  .xacts{flex-direction:column;align-items:stretch;gap:.4rem;width:100%}
+  .xacts .btn{min-height:2.5rem;padding:.4rem .8rem}
+}
+@media(pointer:coarse){
+  .sw.sm{min-width:2.5rem;min-height:2.5rem}
+  .shp.sm,.xb{min-width:2.5rem;min-height:2.5rem}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01s!important}.card.enter{animation:none!important}}
+</style>
+</head>
+<body data-theme="day">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="pdefs"></defs></svg>
+<div class="ambient"><i></i><i></i><i></i></div>
+<div id="app">
+<header>
+  <div class="brand"><svg viewBox="0 0 80 50" id="logo" aria-hidden="true"></svg><span>TRIO</span></div>
+  <button class="btn ibtn" id="menuBtn" aria-label="Back to settings" hidden><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg></button>
+  <button class="btn ibtn" id="helpBtn" aria-label="How it works">?</button>
+  <button class="btn ibtn" id="soundBtn" aria-label="Sound on or off"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="snd-on" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="snd-off" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+  <button class="btn ibtn" id="themeBtn" aria-label="Day or dusk colours"><svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg></button>
+  <button class="btn ibtn" id="fsBtn" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</header>
+<main id="main">
+  <section id="home" class="screen"><div class="panel">
+    <h1 class="hello big">TRIO</h1>
+    <p class="lede">Spot the pattern. Find the three.</p>
+    <div class="tiles" id="tiles"></div>
+  </div></section>
+  <section id="setup" class="screen" hidden><div class="panel">
+    <h1 class="hello" id="sTitle"></h1>
+    <p class="lede" id="sLede"></p>
+    <div id="groups"></div>
+    <button class="btn primary begin" id="beginBtn">Begin</button>
+  </div></section>
+  <section id="play" class="screen" hidden><div id="boardWrap"><div id="board"></div></div></section>
+  <section id="explore" class="screen" hidden><div id="xWrap"></div></section>
+  <section id="train" class="screen" hidden><div id="tWrap">
+    <div class="tlabel">These two cards&hellip;</div><div class="trow" id="tTop"></div>
+    <div class="tlabel">&hellip;need which third card to complete the trio?</div><div class="trow" id="tOpts"></div>
+  </div></section>
+</main>
+<footer id="foot" hidden>
+  <div class="msg" id="msg" aria-live="polite"><div class="msg-main"></div><div class="msg-sub"></div></div>
+  <div class="btns" id="playBtns" hidden><button class="btn" id="showBtn">Show a trio</button><button class="btn" id="noSetBtn" hidden>No trio here</button></div>
+  <div class="btns" id="trainBtns" hidden><button class="btn" id="tHintBtn">Hint</button><button class="btn" id="nextBtn">Next cards</button></div>
+  <div class="stats" id="stats"></div>
+</footer>
+</div>
+<div class="overlay" id="overlay" hidden><div class="panel dialog" role="dialog" aria-modal="true"><h2 id="dTitle"></h2><div id="dBody"></div><div class="btns" id="dBtns"></div></div></div>
+<noscript>TRIO needs JavaScript.</noscript>
+<script>
+(() => {
+'use strict';
+/*LOGIC-START*/
+const COLOURS=['#3f5ea8','#cf8a1b','#bd4f79'];
+const COLOUR_NAMES=['indigo','ochre','rose'];
+const SHAPE_NAMES=['circle','leaf','mountain'];
+const SHAPE_PLURAL=['circles','leaves','mountains'];
+const SHADE_NAMES=['solid','lined','open'];
+const FEATURES=['Colour','Shape','Number','Shading'];
+const CFG={
+  9:{easy:{n:7,min:3,max:99},medium:{n:6,min:2,max:3},hard:{n:4,min:0,max:1}},
+  27:{easy:{n:9,min:4,max:99},medium:{n:8,min:2,max:3},hard:{n:8,min:0,max:1}},
+  81:{easy:{n:12,min:4,max:99},medium:{n:12,min:2,max:3},hard:{n:12,min:0,max:1}}
+};
+const DIMS={9:2,27:3,81:4};
+const ST={activity:'play',deck:81,level:'easy',mode:'whole',theme:'day',sound:false,colours:[0,1,2],shapes:[0,1,2]};
+let D=null,P=null;
+
+function makeDeck(dims){
+  const M=Math.pow(3,dims),digits=[];
+  for(let i=0;i<M;i++){const d=[];let x=i;for(let k=0;k<dims;k++){d.push(x%3);x=(x-x%3)/3;}digits.push(d);}
+  const third=new Uint8Array(M*M);
+  for(let a=0;a<M;a++)for(let b=0;b<M;b++){
+    let t=0,mul=1;
+    for(let k=0;k<dims;k++){t+=((6-digits[a][k]-digits[b][k])%3)*mul;mul*=3;}
+    third[a*M+b]=t;
+  }
+  return{dims,M,digits,third,posMap:new Int16Array(M).fill(-1)};
+}
+function setDeck(dims){D=makeDeck(dims);P=new Uint8Array(D.M).fill(1);}
+const rnd=n=>Math.floor(Math.random()*n);
+function sample(arr,k){
+  const a=arr.slice(),out=[];
+  for(let i=0;i<k&&i<a.length;i++){const j=i+rnd(a.length-i);[a[i],a[j]]=[a[j],a[i]];out.push(a[i]);}
+  return out;
+}
+function isSet(a,b,c){return a!==b&&b!==c&&a!==c&&D.third[a*D.M+b]===c;}
+function setsIn(list){
+  const{third,M,posMap}=D,res=[];
+  for(let i=0;i<list.length;i++)posMap[list[i]]=i;
+  for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){
+    const k=posMap[third[list[i]*M+list[j]]];
+    if(k>j)res.push([i,j,k]);
+  }
+  for(let i=0;i<list.length;i++)posMap[list[i]]=-1;
+  return res;
+}
+function countSets(list){
+  const{third,M,posMap}=D;let n=0;
+  for(let i=0;i<list.length;i++)posMap[list[i]]=i;
+  for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){
+    if(posMap[third[list[i]*M+list[j]]]>j)n++;
+  }
+  for(let i=0;i<list.length;i++)posMap[list[i]]=-1;
+  return n;
+}
+function poolList(){const l=[];for(let i=0;i<D.M;i++)if(P[i])l.push(i);return l;}
+function poolHasSet(){
+  const l=poolList(),{third,M}=D;
+  for(let i=0;i<l.length;i++)for(let j=i+1;j<l.length;j++)if(P[third[l[i]*M+l[j]]])return true;
+  return false;
+}
+function seededFill(keep,cand,need,allSets,all){
+  const t=allSets[rnd(allSets.length)],keepSet=new Set(keep);
+  const add=t.map(p=>all[p]).filter(c=>!keepSet.has(c));
+  if(add.length>need)return null;
+  const addSet=new Set(add);
+  return add.concat(sample(cand.filter(c=>!addSet.has(c)),need-add.length));
+}
+function tryPick(keep,cand,n,level,cfg){
+  const need=Math.min(n,keep.length+cand.length)-keep.length;
+  if(need<=0)return{fill:[],count:countSets(keep),dist:0};
+  if(cand.length<=need){const f=cand.slice();return{fill:f,count:countSets(keep.concat(f)),dist:0};}
+  const hard=level==='hard';
+  let plo=cfg.min,phi=cfg.max,slo=cfg.min,shi=cfg.max;
+  if(hard){const z=Math.random()<0.4;plo=phi=z?0:1;slo=0;shi=1;}
+  const all=keep.concat(cand);
+  const wantSeed=plo>=1;
+  const allSets=wantSeed?setsIn(all):[];
+  let best=null,bestD=1e9,second=null;
+  for(let t=0;t<1500;t++){
+    let fill=null;
+    if(wantSeed&&allSets.length&&(t&1)===0)fill=seededFill(keep,cand,need,allSets,all);
+    if(!fill)fill=sample(cand,need);
+    const c=countSets(keep.concat(fill));
+    if(c>=plo&&c<=phi)return{fill,count:c,dist:0};
+    if(!second&&c>=slo&&c<=shi)second={fill,count:c,dist:0};
+    const d=c<slo?slo-c:c>shi?c-shi:0;
+    if(d<bestD){bestD=d;best={fill,count:c,dist:d};}
+  }
+  return second||best;
+}
+/* old: board array with null where cards were removed (or empty array for a fresh deal).
+   Returns {board, rebuild}. rebuild=true means positions changed and the board must be redrawn. */
+function pickBoard(old,level){
+  const cfg=CFG[ST.deck][level||ST.level],pl=poolList();
+  const n=Math.min(cfg.n,pl.length);
+  const keep=old.filter(x=>x!==null&&x!==undefined);
+  const keepSet=new Set(keep);
+  const cand=pl.filter(c=>!keepSet.has(c));
+  let r1=tryPick(keep,cand,n,level||ST.level,cfg);
+  if(r1.dist>0&&keep.length>0){
+    const r2=tryPick([],pl,n,level||ST.level,cfg);
+    if(r2.dist<r1.dist)return{board:r2.fill,rebuild:true};
+  }
+  if(!old.length)return{board:r1.fill,rebuild:true};
+  const nb=old.slice(),vac=[];
+  nb.forEach((x,i)=>{if(x===null||x===undefined)vac.push(i);});
+  r1.fill.forEach((c,k)=>{nb[vac[k]]=c;});
+  const compact=nb.filter(x=>x!==null&&x!==undefined);
+  return{board:compact,rebuild:compact.length!==nb.length};
+}
+function explain(a,b,c){
+  const out=[];
+  for(let k=0;k<D.dims;k++){
+    const x=D.digits[a][k],y=D.digits[b][k],z=D.digits[c][k];
+    out.push({name:FEATURES[k],kind:(x===y&&y===z)?'same':(x!==y&&y!==z&&x!==z)?'diff':'bad'});
+  }
+  return out;
+}
+function describeSet(cards){
+  const ex=explain(cards[0],cards[1],cards[2]),same=ex.filter(e=>e.kind==='same').map(e=>e.name),diff=ex.filter(e=>e.kind==='diff').map(e=>e.name),parts=[];
+  if(same.length)parts.push('Same: '+same.join(', '));
+  if(diff.length)parts.push('Different: '+diff.join(', '));
+  return parts.join(' \u00b7 ');
+}
+function describeMiss(cards){
+  const bad=explain(cards[0],cards[1],cards[2]).filter(e=>e.kind==='bad').map(e=>e.name);
+  return bad.length?bad.join(', ')+': two match, one differs':'';
+}
+function makeTrial(level){
+  const M=D.M,a=rnd(M);let b;do{b=rnd(M);}while(b===a);
+  const c=D.third[a*M+b];
+  const dist=i=>{let h=0;for(let k=0;k<D.dims;k++)if(D.digits[i][k]!==D.digits[c][k])h++;return h;};
+  const others=[];for(let i=0;i<M;i++)if(i!==a&&i!==b&&i!==c)others.push(i);
+  let dis;
+  if(level==='easy')dis=sample(others,3);
+  else{
+    const maxD=level==='hard'?1:2;
+    const sorted=sample(others,others.length).sort((x,y)=>dist(x)-dist(y));
+    const near=sorted.filter(i=>dist(i)<=maxD);
+    dis=near.length>=3?sample(near,3):sorted.slice(0,3);
+  }
+  return{a,b,c,opts:sample(dis.concat([c]),4)};
+}
+/*LOGIC-END*/
+const $=(s,el=document)=>el.querySelector(s);
+const S={screen:'home',board:[],cells:[],sel:[],busy:false,found:0,noSets:0,hintI:-1,wrongT:null};
+let T=null;
+const timers=new Set();
+function later(fn,ms){const id=setTimeout(()=>{timers.delete(id);fn();},ms);timers.add(id);return id;}
+function clearTimers(){timers.forEach(clearTimeout);timers.clear();}
+const KEY='trio.v1';
+function loadST(){
+  try{const o=JSON.parse(localStorage.getItem(KEY)||'{}');
+    if(['play','train','explore'].includes(o.activity))ST.activity=o.activity;
+    if(['easy','medium','hard'].includes(o.level))ST.level=o.level;
+    if(['whole','continuous'].includes(o.mode))ST.mode=o.mode;
+    if(['day','dusk'].includes(o.theme))ST.theme=o.theme;
+    if(validPick(o.colours,PAL.length))ST.colours=o.colours.slice();
+    if(validPick(o.shapes,SHAPES.length))ST.shapes=o.shapes.slice();
+    ST.sound=!!o.sound;}catch(e){}
+}
+function validPick(a,max){return Array.isArray(a)&&a.length===3&&a.every(x=>Number.isInteger(x)&&x>=0&&x<max)&&new Set(a).size===3;}
+function saveST(){try{const o=Object.assign({},ST);delete o.deck;localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+
+/* ---------- drawing ---------- */
+function roundedPoly(pts,r){
+  const n=pts.length;let d='';
+  for(let i=0;i<n;i++){
+    const p0=pts[(i+n-1)%n],p1=pts[i],p2=pts[(i+1)%n];
+    const v1=[p0[0]-p1[0],p0[1]-p1[1]],v2=[p2[0]-p1[0],p2[1]-p1[1]];
+    const l1=Math.hypot(v1[0],v1[1]),l2=Math.hypot(v2[0],v2[1]);
+    const a=[p1[0]+v1[0]/l1*r,p1[1]+v1[1]/l1*r],b=[p1[0]+v2[0]/l2*r,p1[1]+v2[1]/l2*r];
+    d+=(i?'L':'M')+a[0].toFixed(1)+' '+a[1].toFixed(1)+'Q'+p1[0]+' '+p1[1]+' '+b[0].toFixed(1)+' '+b[1].toFixed(1);
+  }
+  return d+'Z';
+}
+const PAL=[
+  {name:'indigo',hex:'#3f5ea8'},{name:'ochre',hex:'#cf8a1b'},{name:'rose',hex:'#bd4f79'},{name:'teal',hex:'#2a9190'},
+  {name:'violet',hex:'#7b52a8'},{name:'terracotta',hex:'#c9573a'},{name:'moss',hex:'#6f9a3a'},{name:'charcoal',hex:'#46525e'}];
+const starPts=[];for(let i=0;i<10;i++){const a=(-90+36*i)*Math.PI/180,r=i%2?18:39;starPts.push([+(r*Math.cos(a)).toFixed(1),+(r*Math.sin(a)+2).toFixed(1)]);}
+const SHAPES=[
+  {name:'circle',plural:'circles',d:'M-34 0a34 34 0 1 0 68 0a34 34 0 1 0-68 0Z'},
+  {name:'leaf',plural:'leaves',d:'M0 -46C37 -24 37 24 0 46C-37 24 -37 -24 0 -46Z'},
+  {name:'mountain',plural:'mountains',d:roundedPoly([[0,-38],[38,30],[-38,30]],13)},
+  {name:'diamond',plural:'diamonds',d:roundedPoly([[0,-46],[34,0],[0,46],[-34,0]],10)},
+  {name:'square',plural:'squares',d:roundedPoly([[-31,-31],[31,-31],[31,31],[-31,31]],12)},
+  {name:'hexagon',plural:'hexagons',d:roundedPoly([[0,-41],[36,-20],[36,20],[0,41],[-36,20],[-36,-20]],9)},
+  {name:'drop',plural:'drops',d:'M0 -46C10 -28 32 -8 32 14A32 32 0 0 1 -32 14C-32 -8 -10 -28 0 -46Z'},
+  {name:'star',plural:'stars',d:roundedPoly(starPts,4)}];
+const SHAPE_D=['','',''];
+function applyChoices(){
+  for(let k=0;k<3;k++){
+    const c=PAL[ST.colours[k]],sh=SHAPES[ST.shapes[k]];
+    COLOURS[k]=c.hex;COLOUR_NAMES[k]=c.name;
+    SHAPE_D[k]=sh.d;SHAPE_NAMES[k]=sh.name;SHAPE_PLURAL[k]=sh.plural;
+  }
+}
+function symbol(shape,colour,shade,tx,ty,s){
+  const col=COLOURS[colour];
+  const fill=shade===0?col:shade===1?`url(#ln${colour})`:'none';
+  const fo='';
+  return `<g transform="translate(${tx} ${ty}) scale(${s})"><path d="${SHAPE_D[shape]}" fill="${fill}"${fo} stroke="${col}" stroke-width="6" stroke-linejoin="round"/></g>`;
+}
+function cardSVG(idx){
+  const d=D.digits[idx],dims=D.dims;
+  const count=dims>=3?d[2]+1:1,shade=dims>=4?d[3]:0,s=dims>=3?.55:.95;
+  const xs=count===1?[80]:count===2?[54,106]:[30,80,130];
+  return `<svg viewBox="0 0 160 100" aria-hidden="true" focusable="false">${xs.map(x=>symbol(d[1],d[0],shade,x,50,s)).join('')}</svg>`;
+}
+function describe(idx){
+  const d=D.digits[idx],dims=D.dims,count=dims>=3?d[2]+1:1;
+  const shade=dims>=4?SHADE_NAMES[d[3]]+' ':'';
+  return `${['one','two','three'][count-1]} ${COLOUR_NAMES[d[0]]} ${shade}${count===1?SHAPE_NAMES[d[1]]:SHAPE_PLURAL[d[1]]}`;
+}
+function makeCard(idx,tag){
+  const c=document.createElement(tag||'button');
+  c.className='card';
+  if(c.tagName==='BUTTON'){c.type='button';c.setAttribute('aria-label',describe(idx));}
+  else{c.setAttribute('role','img');c.setAttribute('aria-label',describe(idx));}
+  c.innerHTML=cardSVG(idx);
+  return c;
+}
+const NEUTRAL_PATTERN='<pattern id="lnN" patternUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="15"><rect x="0" y="4" width="100" height="7.2" fill="#6b7f8e"/></pattern>';
+function initDefs(){
+  $('#pdefs').innerHTML=COLOURS.map((c,i)=>`<pattern id="ln${i}" patternUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="15"><rect x="0" y="4" width="100" height="7.2" fill="${c}"/></pattern>`).join('')+NEUTRAL_PATTERN;
+  $('#logo').innerHTML=symbol(0,0,0,14,26,.42)+symbol(1,1,1,40,26,.42)+symbol(2,2,2,66,26,.42);
+}
+
+/* ---------- helpers ---------- */
+function say(main,sub,tone){
+  const m=$('#msg');m.className='msg '+(tone||'');
+  $('.msg-main',m).textContent=main||'';$('.msg-sub',m).textContent=sub||'';
+}
+let AC=null;
+function chime(freqs){
+  if(!ST.sound)return;
+  try{
+    AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    const t0=AC.currentTime;
+    freqs.forEach((f,i)=>{
+      const o=AC.createOscillator(),g=AC.createGain(),t=t0+i*.17;
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.1,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+1.6);
+      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+1.7);
+    });
+  }catch(e){}
+}
+function openDialog(title,bodyNode,actions){
+  $('#dTitle').textContent=title;
+  const b=$('#dBody');b.innerHTML='';
+  if(typeof bodyNode==='string'){const p=document.createElement('p');p.textContent=bodyNode;b.appendChild(p);}
+  else if(bodyNode)b.appendChild(bodyNode);
+  const bt=$('#dBtns');bt.innerHTML='';
+  actions.forEach(a=>{
+    const x=document.createElement('button');x.className='btn'+(a.primary?' primary':'');x.textContent=a.label;
+    x.addEventListener('click',()=>{closeDialog();if(a.fn)a.fn();});bt.appendChild(x);
+  });
+  $('#overlay').hidden=false;
+  const f=bt.querySelector('button');if(f)f.focus();
+}
+function closeDialog(){$('#overlay').hidden=true;}
+function showHelp(){
+  const wrap=document.createElement('div');
+  const p=document.createElement('p');
+  p.textContent='Every card has a colour, a shape, a number and a shading (smaller packs leave some out). Three cards form a trio when, for every feature, they are all the same or all different. Two the same and one different never works.';
+  wrap.appendChild(p);
+  if(!D)setDeck(DIMS[ST.deck]);
+  const M=D.M,a=rnd(M);let b;do{b=rnd(M);}while(b===a);
+  const c=D.third[a*M+b],ex=document.createElement('div');ex.className='ex';
+  [a,b,c].forEach(i=>ex.appendChild(makeCard(i,'div')));
+  wrap.appendChild(ex);
+  const q=document.createElement('p');q.textContent='An example: '+describeSet([a,b,c]);
+  wrap.appendChild(q);
+  openDialog('How it works',wrap,[{label:'Close',primary:true}]);
+}
+
+/* ---------- layout ---------- */
+function fitGrid(W,H,n,gap,aspect,maxCw){
+  let best=null;
+  for(let cols=1;cols<=n;cols++){
+    const rows=Math.ceil(n/cols);
+    const cw=Math.min((W-(cols-1)*gap)/cols,((H-(rows-1)*gap)/rows)*aspect,maxCw);
+    if(cw<=0)continue;
+    const asp=Math.abs(Math.log((cols*cw)/(rows*cw/aspect))-Math.log(W/H));
+    const score=cw*(n%cols===0?1:.86);
+    if(!best||score>best.score+1||(Math.abs(score-best.score)<=1&&asp<best.asp))best={cols,rows,cw,asp,score};
+  }
+  if(!best)best={cols:1,rows:n,cw:60,asp:0};
+  best.ch=best.cw/aspect;return best;
+}
+function gridFor(W,H,n,gap,cols,maxCw,aspect){
+  const rows=Math.ceil(n/cols);
+  const cw=Math.min((W-(cols-1)*gap)/cols,((H-(rows-1)*gap)/rows)*aspect,maxCw);
+  return{cols,rows,cw,ch:cw/aspect};
+}
+/* Preferred shapes: 12 cards sit as 3 rows of 4 (4 rows of 3 in portrait), 9 as 3x3, and so on.
+   The preferred shape is used unless it would make the cards much smaller than the best alternative. */
+function chooseGrid(W,H,n,gap){
+  const portrait=W<H,asp=portrait?1.3:1.6;
+  const best=fitGrid(W,H,n,gap,asp,440);
+  const pref=(portrait?{12:3,9:3,8:2,7:2,6:2,4:2}:{12:4,9:3,8:4,7:4,6:3,4:2})[n];
+  let r=best;
+  if(pref){const p=gridFor(W,H,n,gap,pref,440,asp);if(p.cw>=best.cw*.7)r=p;}
+  if(portrait){ /* tall screens: let cards grow taller (up to nearly square) to use the room */
+    const maxCh=(H-(r.rows-1)*gap)/r.rows;
+    r=Object.assign({},r,{ch:Math.max(r.cw/1.3,Math.min(r.cw/1.1,maxCh))});
+  }
+  return r;
+}
+function layoutPlay(){
+  const w=$('#boardWrap'),bd=$('#board'),n=S.board.length;
+  if(!n||w.clientWidth===0)return;
+  const W=w.clientWidth-26,H=w.clientHeight-30;
+  const gap=Math.max(8,Math.min(22,Math.min(W,H)*.03));
+  const f=chooseGrid(W,H,n,gap);
+  bd.style.setProperty('--cw',f.cw+'px');bd.style.setProperty('--ch',f.ch+'px');bd.style.setProperty('--gap',gap+'px');
+  bd.style.gridTemplateColumns=`repeat(${f.cols},${f.cw}px)`;
+}
+function layoutTrain(){
+  const w=$('#tWrap');if(!w||w.clientWidth===0)return;
+  const labels=[...w.querySelectorAll('.tlabel')].reduce((s,e)=>s+e.offsetHeight+22,0);
+  const W=w.clientWidth-26,H=w.clientHeight-labels-8;
+  const gap=Math.max(8,Math.min(22,Math.min(W,H)*.03));
+  const opt=(maxCols,rows)=>Math.min((W-(maxCols-1)*gap)/maxCols,((H-(rows-1)*gap)/rows)*1.6,380);
+  const A=opt(4,2),B=opt(3,3);
+  const cols=A>=B?4:2,cw=Math.max(50,Math.max(A,B));
+  w.style.setProperty('--cw',cw+'px');w.style.setProperty('--ch',cw/1.6+'px');w.style.setProperty('--gap',gap+'px');
+  $('#tTop').style.gridTemplateColumns=`repeat(3,${cw}px)`;
+  $('#tOpts').style.gridTemplateColumns=`repeat(${cols},${cw}px)`;
+}
+function layout(){if(S.screen==='play')layoutPlay();else if(S.screen==='train')layoutTrain();}
+
+/* ---------- start and settings screens ---------- */
+const ACT={
+  play:{title:'Play',lede:'Find three cards that satisfy the pattern.',begin:'Begin',groups:['deck','level','mode']},
+  train:{title:'Train',lede:'Practise identifying the relationships between cards.',begin:'Begin',groups:['deck','level']},
+  explore:{title:'Explore',lede:'Experiment with colour, shape, number and shading.',begin:'Start exploring',groups:[]}
+};
+const OPTS={
+  deck:{label:'Size of pack',items:[
+    {v:81,l:'81 cards',s:'The full pack: colour, shape, number and shading'},
+    {v:27,l:'27 cards',s:'Colour, shape and number'},
+    {v:9,l:'9 cards',s:'Colour and shape'}]},
+  level:{label:'Level',items:[
+    {v:'easy',l:'Easy',s:{play:'Several trios are hiding on the board',train:'The wrong answers look quite different'}},
+    {v:'medium',l:'Medium',s:{play:'A couple of trios on the board',train:'Some of the wrong answers are close'}},
+    {v:'hard',l:'Hard',s:{play:'One trio, or perhaps none at all',train:'Every wrong answer is a near miss'}}]},
+  mode:{label:'How to play',items:[
+    {v:'whole',l:'Work through the pack',s:'Found cards are put aside until no trio remains'},
+    {v:'continuous',l:'Keep going',s:'Found cards are shuffled back in, so play never ends'}]}
+};
+function emblem(key){
+  const card=k=>`<div class="card" aria-hidden="true">${miniSVG(k)}</div>`;
+  if(key==='play')return card(0)+card(1)+card(2);
+  if(key==='train')return card(0)+card(1)+'<div class="slot">?</div>';
+  const lined='<svg viewBox="-50 -50 100 100"><circle r="32" fill="url(#lnN)" stroke="#6b7f8e" stroke-width="6"/></svg>';
+  const shape=`<svg viewBox="-50 -50 100 100"><path d="${SHAPE_D[1]}" fill="none" stroke="#6b7f8e" stroke-width="6" stroke-linejoin="round"/></svg>`;
+  return `<span class="eb"><i style="background:${COLOURS[0]}"></i></span><span class="eb">${shape}</span><span class="eb">3</span><span class="eb">${lined}</span>`;
+}
+function renderHome(){
+  const t=$('#tiles');t.innerHTML='';
+  ['play','train','explore'].forEach(key=>{
+    const a=ACT[key],b=document.createElement('button');
+    b.type='button';b.className='tile';
+    b.innerHTML=`<div class="emblem" aria-hidden="true">${emblem(key)}</div><b>${a.title}</b><span>${a.lede}</span>`;
+    b.addEventListener('click',()=>{ST.activity=key;saveST();toSetup();});
+    t.appendChild(b);
+  });
+}
+const CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg>';
+function swapIn(arr,i){if(arr.includes(i))return false;arr.shift();arr.push(i);return true;}
+function choicesChanged(){applyChoices();initDefs();saveST();renderSetup();}
+function miniSVG(k){
+  const count=k+1,xs=count===1?[80]:count===2?[54,106]:[30,80,130],s=count===1?.8:.55;
+  return `<svg viewBox="0 0 160 100" aria-hidden="true">${xs.map(x=>symbol(k,k,k,x,50,s)).join('')}</svg>`;
+}
+function renderSetup(){
+  const a=ACT[ST.activity]||ACT.play;
+  $('#sTitle').textContent=a.title;$('#sLede').textContent=a.lede;$('#beginBtn').textContent=a.begin;
+  const g=$('#groups');
+  const ae=document.activeElement,fk=ae&&ae.dataset?ae.dataset.fk:null;
+  g.innerHTML='';
+  a.groups.forEach(key=>{
+    const grp=document.createElement('div');grp.className='group';
+    grp.innerHTML=`<div class="glabel">${OPTS[key].label}</div>`;
+    const seg=document.createElement('div');seg.className='seg';
+    OPTS[key].items.forEach(it=>{
+      const b=document.createElement('button');b.type='button';b.className='opt';b.dataset.fk=key+':'+it.v;
+      b.setAttribute('aria-pressed',String(ST[key]===it.v));
+      const sub=typeof it.s==='string'?it.s:it.s[ST.activity];
+      b.innerHTML=`<b>${it.l}</b><small>${sub}</small>`;
+      b.addEventListener('click',()=>{ST[key]=it.v;saveST();renderSetup();});
+      seg.appendChild(b);
+    });
+    grp.appendChild(seg);g.appendChild(grp);
+  });
+  const note='Choose three. Tapping a new one replaces your oldest choice.';
+  const cg=document.createElement('div');cg.className='group';
+  cg.innerHTML=`<div class="glabel">Colours<span class="gnote">${note}</span></div>`;
+  const cp=document.createElement('div');cp.className='picker';
+  PAL.forEach((c,i)=>{
+    const b=document.createElement('button');b.type='button';b.className='sw';b.style.setProperty('--c',c.hex);
+    b.title=c.name;b.setAttribute('aria-label',c.name);b.setAttribute('aria-pressed',String(ST.colours.includes(i)));
+    b.dataset.fk='c:'+i;b.innerHTML=CHECK;
+    b.addEventListener('click',()=>{if(swapIn(ST.colours,i))choicesChanged();});
+    cp.appendChild(b);
+  });
+  cg.appendChild(cp);g.appendChild(cg);
+  const sg=document.createElement('div');sg.className='group';
+  sg.innerHTML=`<div class="glabel">Shapes<span class="gnote">${note}</span></div>`;
+  const sp=document.createElement('div');sp.className='picker';
+  SHAPES.forEach((sh,i)=>{
+    const b=document.createElement('button');b.type='button';b.className='shp';
+    b.title=sh.name;b.setAttribute('aria-label',sh.name);b.setAttribute('aria-pressed',String(ST.shapes.includes(i)));
+    b.dataset.fk='s:'+i;
+    b.innerHTML=`<svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="${sh.d}" fill="currentColor" fill-opacity=".2" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>`;
+    b.addEventListener('click',()=>{if(swapIn(ST.shapes,i))choicesChanged();});
+    sp.appendChild(b);
+  });
+  sg.appendChild(sp);g.appendChild(sg);
+  const pg=document.createElement('div');pg.className='group';
+  pg.innerHTML='<div class="glabel">Your cards</div>';
+  const pv=document.createElement('div');pv.className='preview';
+  for(let k=0;k<3;k++){const c=document.createElement('div');c.className='card';c.setAttribute('aria-hidden','true');c.innerHTML=miniSVG(k);pv.appendChild(c);}
+  pg.appendChild(pv);g.appendChild(pg);
+  if(fk){const t=g.querySelector('[data-fk="'+fk+'"]');if(t)t.focus({preventScroll:true});}
+}
+function show(name){
+  ['home','setup','play','train','explore'].forEach(id=>{$('#'+id).hidden=id!==name;});
+  $('#foot').hidden=!(name==='play'||name==='train');
+  $('#menuBtn').hidden=name==='home';
+  $('#menuBtn').setAttribute('aria-label',name==='setup'?'Back to start':'Back to settings');
+  $('#playBtns').hidden=name!=='play';$('#trainBtns').hidden=name!=='train';
+  document.body.classList.toggle('home',name==='home');
+  document.body.classList.toggle('game',name==='play'||name==='train');
+  S.screen=name;requestAnimationFrame(layout);
+}
+function goHome(){clearTimers();closeDialog();S.busy=false;renderHome();show('home');}
+function toSetup(){clearTimers();closeDialog();S.busy=false;show('setup');renderSetup();$('#setup').scrollTop=0;}
+/* ---------- play ---------- */
+const LEVEL_HINT={easy:'Several are hiding on this board.',medium:'A couple are hiding on this board.',hard:'There may be one trio here, or none at all.'};
+function newPlay(){
+  clearTimers();closeDialog();
+  setDeck(DIMS[ST.deck]);
+  S.sel=[];S.busy=false;S.found=0;S.noSets=0;S.hintI=-1;S.wrongT=null;
+  S.board=pickBoard([]).board;
+  show('play');renderBoard();updateUI();
+  say('Find three cards that satisfy the pattern.',LEVEL_HINT[ST.level]);
+}
+function bindCard(b,pos){b.dataset.pos=pos;b.addEventListener('click',()=>onTap(pos));}
+function renderBoard(){
+  const bd=$('#board');bd.innerHTML='';S.cells=[];
+  S.board.forEach((idx,i)=>{
+    const b=makeCard(idx);b.classList.add('enter');b.style.setProperty('--i',i);
+    bindCard(b,i);bd.appendChild(b);S.cells.push(b);
+  });
+  layoutPlay();
+}
+function replaceCard(i,idx,k){
+  const nb=makeCard(idx);nb.classList.add('enter');nb.style.setProperty('--i',k);
+  bindCard(nb,i);S.cells[i].replaceWith(nb);S.cells[i]=nb;
+}
+function paint(){
+  S.cells.forEach((c,i)=>{
+    c.classList.toggle('sel',S.sel.includes(i)&&!c.classList.contains('miss')&&!c.classList.contains('good'));
+    c.setAttribute('aria-pressed',String(S.sel.includes(i)));
+  });
+}
+function clearHint(){S.hintI=-1;S.cells.forEach(c=>c.classList.remove('hint'));}
+function clearWrong(){
+  if(S.wrongT){clearTimeout(S.wrongT);timers.delete(S.wrongT);S.wrongT=null;
+    S.cells.forEach(c=>c.classList.remove('miss'));S.sel=[];paint();}
+}
+function updateUI(){
+  S.setCount=setsIn(S.board).length;
+  $('#noSetBtn').hidden=!(ST.level==='hard'||S.setCount===0);
+  let t=`Trios found ${S.found}`;
+  if(ST.mode==='whole')t+=` · ${poolList().length} cards left`;
+  if(S.noSets)t+=` · ${S.noSets} empty board${S.noSets===1?'':'s'}`;
+  $('#stats').textContent=t;
+}
+function onTap(pos){
+  if(S.busy)return;
+  clearWrong();
+  const i=S.sel.indexOf(pos);
+  if(i>=0)S.sel.splice(i,1);else S.sel.push(pos);
+  paint();
+  if(S.sel.length===3)evaluate();
+}
+function evaluate(){
+  const sel=S.sel.slice(),cards=sel.map(p=>S.board[p]);
+  if(isSet(cards[0],cards[1],cards[2]))foundSet(sel,cards);
+  else{
+    sel.forEach(p=>{S.cells[p].classList.remove('sel');S.cells[p].classList.add('miss');});
+    say('Not a trio.',describeMiss(cards),'soft');
+    S.wrongT=later(()=>{S.wrongT=null;S.cells.forEach(c=>c.classList.remove('miss'));S.sel=[];paint();},2400);
+  }
+}
+function foundSet(sel,cards){
+  S.busy=true;clearHint();
+  sel.forEach(p=>{S.cells[p].classList.remove('sel');S.cells[p].classList.add('good');});
+  S.found++;
+  if(ST.mode==='whole')cards.forEach(c=>{P[c]=0;});
+  chime([523.25,659.25,783.99]);
+  say('A trio. Well found.',describeSet(cards),'good');
+  later(()=>sel.forEach(p=>S.cells[p].classList.add('leaving')),800);
+  later(()=>{
+    const old=S.board.slice();sel.forEach(p=>{old[p]=null;});
+    S.sel=[];
+    applyBoard(pickBoard(old),sel);
+    S.busy=false;updateUI();
+    if(ST.mode==='whole'&&!poolHasSet())later(showComplete,900);
+  },1350);
+}
+function applyBoard(res,vacated){
+  S.board=res.board;
+  if(res.rebuild)renderBoard();
+  else vacated.forEach((p,k)=>replaceCard(p,S.board[p],k));
+  paint();layoutPlay();
+}
+function showComplete(){
+  const left=poolList().length;
+  chime([523.25,659.25,783.99,1046.5]);
+  openDialog('The deck is complete',
+    `You found ${S.found} ${S.found===1?'trio':'trios'}. `+(left?`${left} card${left===1?'':'s'} remain, with no trio among them.`:'Every card has been found.'),
+    [{label:'Play again',primary:true,fn:newPlay},{label:'Change settings',fn:toSetup}]);
+}
+function showSet(){
+  if(S.busy)return;
+  clearWrong();S.sel=[];paint();
+  const sets=setsIn(S.board);
+  if(!sets.length){
+    clearHint();
+    say('No trio hides on this board.','If you agree, press “No trio here” to deal fresh cards.');
+    const nb=$('#noSetBtn');nb.hidden=false;nb.classList.remove('pulse');void nb.offsetWidth;nb.classList.add('pulse');
+    return;
+  }
+  S.hintI=(S.hintI+1)%sets.length;
+  S.cells.forEach(c=>c.classList.remove('hint','enter'));
+  sets[S.hintI].forEach(p=>S.cells[p].classList.add('hint'));
+  say('Here is a trio.',sets.length>1?`There are ${sets.length} on this board. Press again to see another.`:'It is the only one on this board.');
+}
+function claimNoSet(){
+  if(S.busy)return;
+  clearWrong();S.sel=[];paint();
+  if(setsIn(S.board).length){
+    say('There is a trio on this board.','Look again, or press “Show a trio”.','soft');return;
+  }
+  S.busy=true;S.noSets++;clearHint();
+  say('Quite right.','No trio hides on this board. Fresh cards are on their way.','good');
+  chime([587.33,783.99]);
+  later(()=>S.cells.forEach(c=>c.classList.add('leaving')),900);
+  later(()=>{
+    const r=pickBoard([]);S.board=r.board;renderBoard();
+    S.busy=false;updateUI();
+    if(ST.mode==='whole'&&!poolHasSet())later(showComplete,700);
+  },1500);
+}
+
+/* ---------- train ---------- */
+function newTrain(){
+  clearTimers();closeDialog();
+  setDeck(DIMS[ST.deck]);
+  T={done:0};show('train');nextTrial();
+}
+function nextTrial(){
+  const done=T.done,t=makeTrial(ST.level);
+  T=Object.assign(t,{done,answered:false,hint:0});
+  const top=$('#tTop');top.innerHTML='';
+  [T.a,T.b].forEach((i,k)=>{const c=makeCard(i,'div');c.classList.add('enter');c.style.setProperty('--i',k);top.appendChild(c);});
+  const slot=document.createElement('div');slot.className='slot';slot.id='slot';slot.textContent='?';top.appendChild(slot);
+  const o=$('#tOpts');o.innerHTML='';
+  T.opts.forEach((idx,k)=>{
+    const b=makeCard(idx);b.dataset.idx=idx;b.classList.add('enter');b.style.setProperty('--i',k+3);
+    b.addEventListener('click',()=>pick(idx,b));o.appendChild(b);
+  });
+  $('#nextBtn').classList.remove('primary');$('#tHintBtn').disabled=false;
+  say('Which card completes the trio?','Look at each feature in turn.');
+  $('#stats').textContent=`Completed: ${T.done}`;
+  layoutTrain();
+}
+function pick(idx,btn){
+  if(T.answered)return;
+  const cards=[T.a,T.b,idx];
+  if(idx===T.c){
+    T.answered=true;T.done++;
+    const slot=$('#slot');slot.textContent='';slot.appendChild(makeCard(idx,'div'));slot.firstChild.classList.add('enter');
+    [...$('#tOpts').children].forEach(c=>{c.classList.remove('hint');if(c===btn){c.classList.add('good');}else c.classList.add('dim');c.disabled=true;});
+    chime([523.25,659.25,783.99]);
+    say('Yes. That completes the trio.',describeSet(cards),'good');
+    $('#nextBtn').classList.add('primary');$('#tHintBtn').disabled=true;
+    $('#stats').textContent=`Completed: ${T.done}`;
+  }else{
+    btn.classList.add('miss','dim');btn.disabled=true;
+    say('Not quite.',describeMiss(cards)+' — try another.','soft');
+  }
+}
+function trainHint(){
+  if(T.answered)return;
+  T.hint++;
+  if(T.hint===1)say('Take each feature in turn.','If the two cards match on it, the third must match too. If they differ, the third must be different from both.');
+  else{
+    [...$('#tOpts').children].forEach(c=>{if(+c.dataset.idx===T.c){c.classList.remove('enter');c.classList.add('hint');}});
+    say('This one completes the trio.','Check why: '+describeSet([T.a,T.b,T.c]));
+  }
+}
+
+/* ---------- explore ---------- */
+const X={cards:[[0,0,0,0],[1,1,1,0],[2,2,2,0]],btns:[],cardBoxes:[]};
+const NUM_WORDS=['one','two','three'];
+const xIdx=v=>v[0]+3*v[1]+9*v[2]+27*v[3];
+const xFrom=i=>[i%3,Math.floor(i/3)%3,Math.floor(i/9)%3,Math.floor(i/27)%3];
+function shadeIcon(v){
+  const fill=v===0?'#6b7f8e':v===1?'url(#lnN)':'none';
+  return `<svg viewBox="-50 -50 100 100" aria-hidden="true"><circle r="32" fill="${fill}" stroke="#6b7f8e" stroke-width="6"/></svg>`;
+}
+function featureButton(f,v){
+  const b=document.createElement('button');b.type='button';
+  let label;
+  if(f===0){b.className='sw sm';b.style.setProperty('--c',COLOURS[v]);b.innerHTML=CHECK;label=COLOUR_NAMES[v];}
+  else if(f===1){
+    b.className='shp sm';label=SHAPE_NAMES[v];
+    b.innerHTML=`<svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="${SHAPE_D[v]}" fill="currentColor" fill-opacity=".2" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>`;
+  }
+  else if(f===2){b.className='xb';b.textContent=String(v+1);label=NUM_WORDS[v];}
+  else{b.className='xb';b.innerHTML=shadeIcon(v);label=SHADE_NAMES[v];}
+  b.title=label;b.setAttribute('aria-label',label);
+  return b;
+}
+function buildExplore(){
+  const w=$('#xWrap');w.innerHTML='';X.btns=[];X.cardBoxes=[];
+  const slots=document.createElement('div');slots.className='xslots';
+  for(let s=0;s<3;s++){
+    const el=document.createElement('div');el.className='xslot';
+    const cb=document.createElement('div');cb.className='xcard';el.appendChild(cb);X.cardBoxes.push(cb);
+    const ctr=document.createElement('div');ctr.className='xctrls';
+    X.btns.push([]);
+    for(let f=0;f<4;f++){
+      const row=document.createElement('div');row.className='xrow';row.setAttribute('role','group');
+      row.setAttribute('aria-label',`${FEATURES[f]} of card ${s+1}`);
+      const lab=document.createElement('span');lab.className='xlab';lab.textContent=FEATURES[f];row.appendChild(lab);
+      X.btns[s].push([]);
+      for(let v=0;v<3;v++){
+        const b=featureButton(f,v);
+        b.addEventListener('click',()=>{X.cards[s][f]=v;renderExplore();});
+        X.btns[s][f].push(b);row.appendChild(b);
+      }
+      ctr.appendChild(row);
+    }
+    el.appendChild(ctr);slots.appendChild(el);
+  }
+  w.appendChild(slots);
+  const vd=document.createElement('div');vd.className='xverdict';
+  vd.innerHTML='<div class="msg" id="xmsg" aria-live="polite"><div class="msg-main"></div><div class="msg-sub"></div></div><div class="chips" id="xchips"></div>';
+  const bot=document.createElement('div');bot.className='xbottom';bot.appendChild(vd);
+  const acts=document.createElement('div');acts.className='xacts';
+  [['Complete the trio',xComplete],['Random trio',xRandomTrio],['Mix up',xMix]].forEach(([t,fn])=>{
+    const b=document.createElement('button');b.className='btn';b.type='button';b.textContent=t;b.addEventListener('click',fn);acts.appendChild(b);
+  });
+  bot.appendChild(acts);w.appendChild(bot);
+}
+function xSay(main,sub,tone,keep){
+  const m=$('#xmsg');m.className='msg '+(tone||'')+(keep?' keep':'');$('.msg-main',m).textContent=main;$('.msg-sub',m).textContent=sub||'';
+}
+function renderExplore(){
+  const idx=X.cards.map(xIdx);
+  const feats=[0,1,2,3].map(f=>{
+    const a=X.cards[0][f],b=X.cards[1][f],c=X.cards[2][f];
+    return{name:FEATURES[f],kind:(a===b&&b===c)?'same':(a!==b&&b!==c&&a!==c)?'diff':'bad'};
+  });
+  const dup=new Set(idx).size<3,ok=!dup&&feats.every(e=>e.kind!=='bad');
+  for(let s=0;s<3;s++){
+    const card=makeCard(idx[s],'div');if(ok)card.classList.add('good');
+    X.cardBoxes[s].innerHTML='';X.cardBoxes[s].appendChild(card);
+    for(let f=0;f<4;f++)for(let v=0;v<3;v++)X.btns[s][f][v].setAttribute('aria-pressed',String(X.cards[s][f]===v));
+  }
+  const word=k=>k==='same'?'all the same':k==='diff'?'all different':'two match, one differs';
+  $('#xchips').innerHTML=feats.map(e=>`<span class="chip ${e.kind==='bad'?'bad':'ok'}">${e.kind==='bad'?'✗':'✓'} ${e.name}: ${word(e.kind)}</span>`).join('');
+  if(ok)xSay('These three cards form a trio.','Every feature is either all the same or all different.','good');
+  else if(dup)xSay('Two of these cards are identical.','Every card in the pack is different, so change one of them.','soft',true);
+  else xSay('Not yet a trio.','Look at: '+feats.filter(e=>e.kind==='bad').map(e=>e.name).join(', ')+'. Try “Complete the trio” to see what the third card needs.','soft');
+}
+function xComplete(){
+  const a=xIdx(X.cards[0]),b=xIdx(X.cards[1]);
+  if(a===b){xSay('Make the first two cards different.','Then the third card can be found for you.','soft',true);return;}
+  X.cards[2]=xFrom(D.third[a*D.M+b]);renderExplore();chime([523.25,659.25,783.99]);
+}
+function xRandomTrio(){
+  const a=rnd(81);let b;do{b=rnd(81);}while(b===a);
+  X.cards=[xFrom(a),xFrom(b),xFrom(D.third[a*D.M+b])];renderExplore();
+}
+function xMix(){X.cards=sample([...Array(81).keys()],3).map(xFrom);renderExplore();}
+function newExplore(){
+  clearTimers();closeDialog();S.busy=false;
+  setDeck(4);buildExplore();show('explore');renderExplore();
+}
+
+/* ---------- start-up ---------- */
+function applyTheme(){
+  document.body.dataset.theme=ST.theme;
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=ST.theme==='day'?'#e9f0ee':'#16202b';
+  $('#soundBtn').classList.toggle('muted',!ST.sound);
+}
+function init(){
+  loadST();applyChoices();initDefs();applyTheme();renderHome();show('home');
+  $('#beginBtn').addEventListener('click',()=>{saveST();({play:newPlay,train:newTrain,explore:newExplore})[ST.activity]();});
+  $('#menuBtn').addEventListener('click',()=>{if(S.screen==='setup')goHome();else toSetup();});
+  $('#helpBtn').addEventListener('click',showHelp);
+  $('#themeBtn').addEventListener('click',()=>{ST.theme=ST.theme==='day'?'dusk':'day';saveST();applyTheme();});
+  $('#soundBtn').addEventListener('click',()=>{ST.sound=!ST.sound;saveST();applyTheme();chime([659.25]);});
+  const fs=$('#fsBtn');
+  if(!document.fullscreenEnabled)fs.hidden=true;
+  fs.addEventListener('click',()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}catch(e){}});
+  $('#showBtn').addEventListener('click',showSet);
+  $('#noSetBtn').addEventListener('click',claimNoSet);
+  $('#tHintBtn').addEventListener('click',trainHint);
+  $('#nextBtn').addEventListener('click',nextTrial);
+  $('#overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeDialog();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDialog();});
+  window.addEventListener('resize',layout);
+  if(window.ResizeObserver)new ResizeObserver(layout).observe($('#main'));
+}
+init();
+})();
+</script>
+</body>
+</html>

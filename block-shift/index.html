@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Block Shift – LoadsOfMaths</title>
+<style>
+:root{
+  /* Wood grain, painted-wear speckle: all inline SVG so the page stays self-contained */
+  --grainH:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.22' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.04 2.6 0 0 0 -0.95'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3C/svg%3E");
+  --grainV:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.22 0.008' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.04 2.6 0 0 0 -0.95'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3C/svg%3E");
+  --grainTableDark:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.16' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.07 0 0 0 0 0.04 0 0 0 0 0.02 2.4 0 0 0 -0.95'/%3E%3C/filter%3E%3Crect width='520' height='520' filter='url(%23f)'/%3E%3C/svg%3E");
+  --grainTableLight:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005 0.12' numOctaves='3' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.62 0 0 0 0 0.42 0 0 0 0 0.24 2.2 0 0 0 -1.2'/%3E%3C/filter%3E%3Crect width='520' height='520' filter='url(%23f)'/%3E%3C/svg%3E");
+  --speck:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -5 0 0 0 4.9'/%3E%3C/filter%3E%3Crect width='90' height='90' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  font-family:"Rockwell","Clarendon","Bookman Old Style",Georgia,"Times New Roman",serif;
+  color:#eadfc2;
+  -webkit-user-select:none;user-select:none;
+  background:
+    radial-gradient(ellipse at 50% 42%,rgba(255,215,150,.10),transparent 62%),
+    radial-gradient(ellipse at 50% 50%,transparent 52%,rgba(0,0,0,.6)),
+    repeating-linear-gradient(90deg,transparent 0 238px,rgba(0,0,0,.38) 238px 240px,rgba(255,220,170,.05) 240px 241px),
+    var(--grainTableLight) 0 0/520px 520px,
+    var(--grainTableDark) 0 0/520px 520px,
+    linear-gradient(90deg,#3d2a1b,#4a3220 30%,#36251a 55%,#45301f 80%,#35241a);
+}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;padding:8px 16px 0}
+h1{margin:0;font-size:clamp(18px,3.4vw,32px);letter-spacing:.2em;text-transform:uppercase;color:#ecdcae;text-shadow:0 2px 0 rgba(0,0,0,.65)}
+.goal{font-size:clamp(11px,1.8vw,15px);color:#c3ad7e;letter-spacing:.04em}
+#stats{display:flex;align-items:baseline;gap:6px 16px;flex-wrap:wrap;font-size:clamp(13px,2.2vw,19px);color:#d8c79b}
+#stats b{font-size:1.5em;color:#f3e6bd;font-weight:700;margin-left:.2em}
+#stage{flex:1 1 0;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#board{position:relative;touch-action:none}
+.frameBox{position:absolute;border-radius:12px;
+  background:var(--grainH) 0 0/300px 300px,linear-gradient(135deg,#70502f,#4b321f);
+  box-shadow:0 8px 18px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,220,170,.28),inset 0 -2px 0 rgba(0,0,0,.45)}
+.tray{position:absolute;border-radius:5px;
+  background-color:#2a1b10;
+  box-shadow:inset 0 4px 12px rgba(0,0,0,.85),inset 0 0 0 1px rgba(0,0,0,.65),0 1px 0 rgba(255,220,170,.18)}
+.blk{position:absolute;will-change:transform,opacity}
+.blk.tile{z-index:3;cursor:grab}
+.blk.tile:active{cursor:grabbing}
+.blk.ghost{z-index:1;pointer-events:none}
+.face{position:absolute;inset:0;border-radius:9%;isolation:isolate;
+  transform:rotate(var(--rot,0deg));
+  border:1px solid rgba(0,0,0,.42);
+  background:linear-gradient(150deg,rgba(255,255,255,.17),rgba(255,255,255,0) 42%,rgba(0,0,0,.22)),var(--paint);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.3),inset 0 -3px 0 rgba(0,0,0,.26),
+    inset 2px 0 1px rgba(255,255,255,.07),inset -2px 0 1px rgba(0,0,0,.18),
+    0 calc(var(--tile)*.045) 0 var(--side),
+    0 calc(var(--tile)*.085) calc(var(--tile)*.11) rgba(0,0,0,.6)}
+.ghost .face{filter:saturate(.75)}
+.face::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:0;
+  background:var(--g) var(--gp)/260px 260px;mix-blend-mode:multiply;opacity:.5}
+.face::after{content:"";position:absolute;inset:0;border-radius:inherit;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(circle at 0 0,rgb(196 150 96/var(--w1)),transparent 26%),
+    radial-gradient(circle at 100% 0,rgb(196 150 96/var(--w2)),transparent 24%),
+    radial-gradient(circle at 0 100%,rgb(196 150 96/var(--w3)),transparent 24%),
+    radial-gradient(circle at 100% 100%,rgb(196 150 96/var(--w4)),transparent 26%),
+    radial-gradient(ellipse 75% 65% at var(--fx) var(--fy),rgb(255 240 205/var(--fa)),transparent 72%)}
+.g0{--g:var(--grainH)}.g1{--g:var(--grainV)}
+.frame{position:absolute;inset:9%;border:1.5px solid rgb(240 228 195/.22);border-radius:6%;z-index:2;pointer-events:none}
+.num{position:absolute;inset:0;z-index:3;display:block;
+  color:var(--ink);font-weight:700;letter-spacing:-.02em;line-height:0;
+  text-shadow:0 1px 0 rgba(0,0,0,.35),0 0 1px rgba(0,0,0,.5);
+  -webkit-mask:var(--speck) var(--mp)/90px 90px;mask:var(--speck) var(--mp)/90px 90px}
+/* The digit sits on a zero-height line at the block's centre; --dy (measured from the
+   real font in JS) then nudges it so the glyphs themselves, not the font's line box, are centred. */
+.dg{position:absolute;left:0;right:0;top:50%;text-align:center;line-height:0;white-space:nowrap;
+  transform:translateY(calc(var(--dy,0) * 1em))}
+.c0{--paint:#8a3a31;--side:#511e19;--ink:#eadfc6}
+.c1{--paint:#3b566c;--side:#213446;--ink:#e6dec5}
+.c2{--paint:#94702a;--side:#5f4616;--ink:#f1e6c6}
+.c3{--paint:#6a4562;--side:#412a3b;--ink:#eadfc9}
+.c4{--paint:#386a6e;--side:#214346;--ink:#e6e0c8}
+.plain{--paint:#a07a4c;--side:#68481f;--ink:#34200e}
+.face.plain .frame{border-color:rgba(50,30,12,.28)}
+.won .tile .face{animation:settle .75s ease both;animation-delay:calc(var(--i)*40ms)}
+@keyframes settle{0%{transform:translateY(0) rotate(var(--rot))}35%{transform:translateY(-9%) rotate(var(--rot))}100%{transform:translateY(0) rotate(var(--rot))}}
+.arrow{position:absolute;z-index:4;border:0;padding:0;border-radius:8px;cursor:pointer;display:grid;place-items:center;
+  color:#d9bf86;background:linear-gradient(#4d3721,#33231a);
+  box-shadow:inset 0 1px 0 rgba(255,225,170,.25),0 2px 0 #1b110a,0 3px 6px rgba(0,0,0,.5)}
+.arrow:hover{color:#fff1c8;background:linear-gradient(#5e432a,#402c1d)}
+.arrow:active{transform:translateY(1px)}
+.arrow.pulse{color:#fff3cf;background:linear-gradient(#c9a24a,#8f6b22);box-shadow:0 0 0 3px rgba(233,196,106,.55),0 0 18px rgba(233,196,106,.7)}
+.arrow:focus-visible{outline:2px solid #e9c46a;outline-offset:2px}
+.arrow svg{width:72%;height:72%;max-width:28px;max-height:28px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+footer{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 20px;padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
+.grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
+.grp>label{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#b9a273;margin-right:2px}
+.btn{font:inherit;font-size:clamp(13px,2.5vw,17px);color:#eadfc2;cursor:pointer;
+  background:linear-gradient(#5b4129,#3b291b);border:1px solid #1e130a;border-radius:8px;padding:.45em .8em;min-height:40px;min-width:40px;
+  box-shadow:inset 0 1px 0 rgba(255,225,170,.22),0 2px 0 #1b110a}
+.btn:active{transform:translateY(1px)}
+.btn.on{background:linear-gradient(#cba64e,#9a7424);color:#2a1a08;font-weight:700}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible{outline:2px solid #e9c46a;outline-offset:2px}
+.btn.pri{border-color:#c9a24a}
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(12,7,3,.55);padding:16px}
+.overlay.lite{background:rgba(12,7,3,.3)}
+.overlay[hidden]{display:none}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;text-align:left;flex-wrap:wrap}
+.setrow>label{font-size:15px;letter-spacing:.06em;color:#ecdcb4;flex:1 1 140px}
+.setrow small{display:block;font-size:12px;color:#c3ad7e;letter-spacing:0}
+#sizes{display:inline-flex;gap:6px}
+/* controls that only make sense in some modes */
+.only-free{display:none}
+[data-mode="free"] .only-free{display:inline-block}
+[data-mode="free"] .hide-free{display:none}
+.plaque{max-width:380px;width:100%;text-align:center;padding:22px 22px 18px;border-radius:14px;
+  background:var(--grainH) 0 0/300px 300px,linear-gradient(135deg,#74532f,#4a3120);
+  border:2px solid #1e130a;box-shadow:0 14px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,220,170,.3)}
+.plaque h2{margin:0 0 6px;font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3e3b0;text-shadow:0 2px 0 rgba(0,0,0,.6)}
+.plaque p{margin:4px 0;font-size:17px;color:#ecdcb4}
+.plaque .row{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+@media (max-width:560px){
+  header{padding:6px 10px 0}
+  .goal{display:none}
+  footer{gap:6px 12px}
+}
+/* Phone held sideways: board on the left, title and controls in a column on the right */
+@media (orientation:landscape) and (max-height:520px){
+  #app{display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:auto minmax(0,1fr)}
+  header{grid-column:2;grid-row:1;flex-direction:column;align-items:flex-start;gap:0;padding:6px 10px 0}
+  .goal{display:none}
+  #stage{grid-column:1;grid-row:1 / span 2}
+  footer{grid-column:2;grid-row:2;overflow-y:auto;justify-content:flex-start;align-content:flex-start;gap:6px 10px;
+    padding:6px 10px calc(8px + env(safe-area-inset-bottom))}
+  .grp{justify-content:flex-start}
+  .btn{min-height:36px;padding:.3em .6em;font-size:13px}
+  h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Block Shift</h1>
+    <div class="goal" id="goal"></div>
+    <div id="stats"><span class="hide-free">Slides<b id="mv">0</b></span><span id="hint"></span><span id="best" class="hide-free"></span></div>
+  </header>
+  <main id="stage"><div id="board" aria-label="Block puzzle board"></div></main>
+  <footer id="controls">
+    <div class="grp"><label>Level</label><span id="levels"></span><button class="btn" id="bFree" title="Explore every slide with no target">Free Play</button></div>
+    <div class="grp">
+      <button class="btn hide-free" id="bRandom" title="Thoroughly scrambled blocks (always solvable)">Random order</button>
+      <button class="btn pri hide-free" id="bNew">New puzzle</button>
+      <button class="btn hide-free" id="bShow" title="Watch the puzzle being solved from its starting position">Show me</button>
+      <button class="btn hide-free" id="bUndo">Undo</button>
+      <button class="btn hide-free" id="bRestart">Restart</button>
+      <button class="btn pri only-free" id="bReset" title="Put the blocks back in order">Reset</button>
+      <button class="btn" id="bSettings">Settings</button>
+    </div>
+  </footer>
+</div>
+<div id="settings" class="overlay lite" hidden>
+  <div class="plaque" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="setrow"><label>Grid size</label><span id="sizes"></span></div>
+    <div class="setrow"><label>Colours<small>Colour each block by the row it belongs in</small></label><button class="btn" id="bColour">Colours</button></div>
+    <div class="row"><button class="btn pri" id="sDone">Done</button></div>
+  </div>
+</div>
+<div id="win" class="overlay" hidden>
+  <div class="plaque" role="dialog" aria-live="polite">
+    <h2 id="winTitle">Order restored!</h2>
+    <p id="winText"></p>
+    <p id="winSub"></p>
+    <div class="row">
+      <button class="btn pri" id="wAgain">Play again</button>
+      <button class="btn" id="wLook">Admire it</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s);};
+var board=$('#board');
+
+/* ---- Levels: number of single-step slides used to scramble the board.
+        Edit min/max here to retune difficulty. ---- */
+var LEVELS=[
+  {name:'Easy',   min:1,  max:3},
+  {name:'Medium', min:4,  max:6},
+  {name:'Hard',   min:7,  max:10},
+  {name:'Expert', min:12, max:16},
+  {name:'Master', min:20, max:30}
+];
+var GHOST=0.3, DUR=230;
+var curDur=DUR;      /* slide time; shortened for long demonstrations */
+var demoTimer=null;
+
+var S={n:4,level:0,mode:'level',colour:true,grid:[],start:[],hist:[],solution:[],bound:null,busy:false,won:false,demo:false,demoUsed:false};
+var G={cell:60,gut:30,tile:56,W:300};
+var T=[],GL=[],GR=[],GT=[],GB=[];
+
+/* ---- persistence (settings only; fails quietly if storage is blocked) ---- */
+function loadSettings(){
+  try{
+    var o=JSON.parse(localStorage.getItem('blockshift')||'null');
+    if(o){
+      if(o.n>=2&&o.n<=5)S.n=o.n;
+      if(o.level>=0&&o.level<LEVELS.length)S.level=o.level;
+      if(o.mode==='random'||o.mode==='level'||o.mode==='free')S.mode=o.mode;
+      if(typeof o.colour==='boolean')S.colour=o.colour;
+    }
+  }catch(e){}
+}
+function saveSettings(){
+  try{localStorage.setItem('blockshift',JSON.stringify({n:S.n,level:S.level,mode:S.mode,colour:S.colour}));}catch(e){}
+}
+function bestKey(){return 'blockshift-best-'+S.n+'-'+(S.mode==='random'?'random':S.level);}
+function getBest(){try{var v=localStorage.getItem(bestKey());return v?+v:null;}catch(e){return null;}}
+function setBest(v){try{localStorage.setItem(bestKey(),String(v));}catch(e){}}
+
+/* ---- puzzle logic ---- */
+function rand(k){return Math.floor(Math.random()*k);}
+function solvedGrid(){var a=[],N=S.n*S.n;for(var i=1;i<=N;i++)a.push(i);return a;}
+function isSolved(g){for(var i=0;i<g.length;i++)if(g[i]!==i+1)return false;return true;}
+/* dir +1: row moves right / column moves down; -1: left / up (cyclic) */
+function shifted(g,type,idx,dir){
+  var n=S.n,o=g.slice();
+  for(var i=0;i<n;i++){
+    var from=(i-dir+n)%n;
+    if(type==='r')o[idx*n+i]=g[idx*n+from];else o[i*n+idx]=g[from*n+idx];
+  }
+  return o;
+}
+/* A scramble is a list of single-cell slides made from the solved board, so the
+   way back is known: reverse the list and flip each direction. */
+function walk(k){
+  var n=S.n;
+  for(var tries=0;tries<100;tries++){
+    var g=solvedGrid(),prev=null,moves=[];
+    for(var m=0;m<k;m++){
+      var t,idx,key;
+      do{t=Math.random()<0.5?'r':'c';idx=rand(n);key=t+idx;}while(key===prev);
+      var d=Math.random()<0.5?1:-1;
+      g=shifted(g,t,idx,d);
+      moves.push({type:t,idx:idx,dir:d});
+      prev=key;
+    }
+    if(!isSolved(g))return {grid:g,moves:moves};
+  }
+  var one=[{type:'r',idx:0,dir:1}];
+  return {grid:shifted(solvedGrid(),'r',0,1),moves:one};
+}
+function inverse(moves){
+  return moves.slice().reverse().map(function(m){return {type:m.type,idx:m.idx,dir:-m.dir};});
+}
+/* Consecutive moves on rows (or on columns) commute, so each run can be tidied:
+   add up the net shift on every line and take the shorter way round. */
+function simplifyOnce(seq){
+  var n=S.n,out=[],i=0;
+  while(i<seq.length){
+    var t=seq[i].type,net={},j=i;
+    while(j<seq.length&&seq[j].type===t){net[seq[j].idx]=(net[seq[j].idx]||0)+seq[j].dir;j++;}
+    for(var idx=0;idx<n;idx++){
+      if(net[idx]===undefined)continue;
+      var r=((net[idx]%n)+n)%n;
+      if(r>n/2)r-=n;
+      var d=r<0?-1:1;
+      for(var s=0;s<Math.abs(r);s++)out.push({type:t,idx:idx,dir:d});
+    }
+    i=j;
+  }
+  return out;
+}
+function simplify(seq){
+  var cur=seq;
+  for(var k=0;k<12;k++){
+    var nx=simplifyOnce(cur);
+    if(nx.length===cur.length)return nx;
+    cur=nx;
+  }
+  return cur;
+}
+
+/* ---- rendering ---- */
+function geometry(){
+  var st=$('#stage'),n=S.n;
+  var aw=st.clientWidth-8,ah=st.clientHeight-8;
+  var m=Math.max(120,Math.min(aw,ah));
+  var coarse=!!(window.matchMedia&&matchMedia('(pointer: coarse)').matches);   /* touch screens get bigger arrow plates */
+  var gut=Math.max(coarse?34:24,Math.min(56,m/(n+3.1)*0.55));
+  var cell=Math.min((aw-2*gut)/(n+2),(ah-2*gut)/(n+2),170);
+  cell=Math.max(24,Math.floor(cell));
+  G={cell:cell,gut:gut,tile:Math.round(cell*0.93),W:Math.round((n+2)*cell+2*gut)};
+}
+function px(c){return G.gut+(c+1)*G.cell;}
+/* Fonts differ in where their digits sit inside the line box, so measure the real
+   glyphs once: how far the visual middle of 0-9 lies above/below the zero-height line. */
+function digitOffset(){
+  try{
+    var ctx=document.createElement('canvas').getContext('2d');
+    ctx.font='700 200px '+getComputedStyle(document.body).fontFamily;
+    var m=ctx.measureText('0123456789');
+    if(m.actualBoundingBoxAscent===undefined||m.fontBoundingBoxAscent===undefined)return 0;
+    var mid=(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2;      /* glyph centre above baseline */
+    var base=(m.fontBoundingBoxAscent-m.fontBoundingBoxDescent)/2;         /* baseline below a zero-height line */
+    var dy=(mid-base)/200;
+    return isFinite(dy)?dy:0;
+  }catch(e){return 0;}
+}
+function rnd(v,k){var x=Math.sin(v*127.1+k*311.7+S.n*57.3)*43758.5453;return x-Math.floor(x);}
+
+function mkBlock(v,kind,col,row,r,c,i){
+  var d=document.createElement('div');
+  var off=(G.cell-G.tile)/2;
+  d.className='blk '+kind;
+  d.style.cssText='width:'+G.tile+'px;height:'+G.tile+'px;left:'+(px(col)+off)+'px;top:'+(px(row)+off)+'px;opacity:'+(kind==='tile'?1:GHOST)+';';
+  var R=function(k){return rnd(v,k);};
+  var wear=function(k){return R(k)<0.3?0:(0.12+R(k+9)*0.5).toFixed(2);};
+  var cc=S.colour?'c'+(Math.floor((v-1)/S.n)%5):'plain';
+  /* one stencil size for every block in a puzzle, sized so the widest number fits */
+  var fs=Math.round(G.tile*(String(S.n*S.n).length===1?0.6:0.46));
+  d.innerHTML='<div class="face '+cc+' g'+(v%2)+'" style="'+
+    '--gp:'+Math.floor(R(1)*260)+'px '+Math.floor(R(2)*260)+'px;'+
+    '--w1:'+wear(3)+';--w2:'+wear(4)+';--w3:'+wear(5)+';--w4:'+wear(6)+';'+
+    '--fx:'+Math.floor(R(7)*100)+'%;--fy:'+Math.floor(R(8)*100)+'%;--fa:'+(0.04+R(10)*0.1).toFixed(2)+';'+
+    '--mp:'+Math.floor(R(11)*90)+'px '+Math.floor(R(12)*90)+'px;'+
+    '--rot:'+((R(13)-0.5)*1.4).toFixed(2)+'deg;--i:'+(i||0)+'">'+
+    '<i class="frame"></i><b class="num" style="font-size:'+fs+'px"><span class="dg">'+v+'</span></b></div>';
+  if(kind==='tile'){d.dataset.r=r;d.dataset.c=c;}
+  return d;
+}
+
+var CHEV={right:0,down:90,left:180,up:270};
+function mkArrow(x,y,w,h,dirName,label,type,idx,dir){
+  var b=document.createElement('button');
+  b.className='arrow';b.type='button';
+  b.setAttribute('aria-label',label);b.title=label;
+  b.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px;';
+  b.innerHTML='<svg viewBox="0 0 24 24" style="transform:rotate('+CHEV[dirName]+'deg)"><path d="M9 5l7 7-7 7"/></svg>';
+  b.addEventListener('click',function(){
+    if(S.busy||S.won||S.demo)return;
+    doMove(type,idx,dir);
+  });
+  board.appendChild(b);
+}
+
+function render(){
+  geometry();
+  var n=S.n,cell=G.cell,gut=G.gut;
+  board.innerHTML='';
+  board.style.width=board.style.height=G.W+'px';
+  board.style.setProperty('--tile',G.tile+'px');
+  board.style.setProperty('--dy',digitOffset().toFixed(4));
+  board.classList.toggle('won',S.won);
+
+  var fb=document.createElement('div');fb.className='frameBox';
+  fb.style.cssText='left:'+(px(0)-9)+'px;top:'+(px(0)-9)+'px;width:'+(n*cell+18)+'px;height:'+(n*cell+18)+'px;';
+  board.appendChild(fb);
+  var tr=document.createElement('div');tr.className='tray';
+  tr.style.cssText='left:'+px(0)+'px;top:'+px(0)+'px;width:'+(n*cell)+'px;height:'+(n*cell)+'px;'+
+    'background-image:linear-gradient(90deg,rgba(255,230,180,.07) 1px,transparent 1px),linear-gradient(rgba(255,230,180,.07) 1px,transparent 1px);background-size:'+cell+'px '+cell+'px;';
+  board.appendChild(tr);
+
+  var g=S.grid,r,c;
+  GL=[];GR=[];GT=[];GB=[];T=[];
+  for(r=0;r<n;r++){
+    GL.push(mkBlock(g[r*n+n-1],'ghost',-1,r));
+    GR.push(mkBlock(g[r*n],'ghost',n,r));
+  }
+  for(c=0;c<n;c++){
+    GT.push(mkBlock(g[(n-1)*n+c],'ghost',c,-1));
+    GB.push(mkBlock(g[c],'ghost',c,n));
+  }
+  var all=[].concat(GL,GR,GT,GB);
+  all.forEach(function(e){board.appendChild(e);});
+  for(r=0;r<n;r++){
+    T.push([]);
+    for(c=0;c<n;c++){
+      var e=mkBlock(g[r*n+c],'tile',c,r,r,c,r*n+c);
+      T[r].push(e);board.appendChild(e);
+    }
+  }
+  /* push arrows sit in the gutters and point in the direction of travel */
+  var ah=Math.round(cell*0.78),aw=Math.round(cell*0.78);
+  for(r=0;r<n;r++){
+    var y=px(r)+(cell-ah)/2;
+    mkArrow(0,y,gut,ah,'right','Push row '+(r+1)+' right','r',r,1);
+    mkArrow(G.W-gut,y,gut,ah,'left','Push row '+(r+1)+' left','r',r,-1);
+  }
+  for(c=0;c<n;c++){
+    var x=px(c)+(cell-aw)/2;
+    mkArrow(x,0,aw,gut,'down','Push column '+(c+1)+' down','c',c,1);
+    mkArrow(x,G.W-gut,aw,gut,'up','Push column '+(c+1)+' up','c',c,-1);
+  }
+}
+
+function rowLine(r){return [GL[r]].concat(T[r],[GR[r]]);}
+function colLine(c){var a=[GT[c]];for(var r=0;r<S.n;r++)a.push(T[r][c]);a.push(GB[c]);return a;}
+
+/* p = 0..1 progress of a one-cell push; used both for dragging and animation */
+function setProgress(els,axis,dir,p,anim){
+  var n=S.n,cell=G.cell;
+  els.forEach(function(el){
+    el.style.transition=anim?('transform '+curDur+'ms cubic-bezier(.25,.8,.3,1), opacity '+curDur+'ms'):'none';
+  });
+  if(anim)void board.offsetWidth;
+  els.forEach(function(el,i){
+    var k=i-1,k2=k+dir;
+    var o=(k<0||k>n-1)?GHOST:1;
+    var o2=(k2<-1||k2>n)?0:((k2<0||k2>n-1)?GHOST:1);
+    var t=dir*p*cell;
+    el.style.transform=axis==='x'?'translate('+t+'px,0)':'translate(0,'+t+'px)';
+    el.style.opacity=o+(o2-o)*p;
+  });
+}
+
+function doMove(type,idx,dir,undo){
+  S.busy=true;
+  var els=type==='r'?rowLine(idx):colLine(idx);
+  setProgress(els,type==='r'?'x':'y',dir,1,true);
+  setTimeout(function(){
+    S.grid=shifted(S.grid,type,idx,dir);
+    if(undo)S.hist.pop();else S.hist.push({type:type,idx:idx,dir:dir});
+    S.busy=false;
+    render();stats();syncControls();
+    if(!undo&&S.mode!=='free'&&isSolved(S.grid))win();
+  },curDur+25);
+}
+
+/* ---- dragging / swiping blocks ---- */
+var drag=null;
+function dragLine(d){return d.axis==='x'?rowLine(d.r):colLine(d.c);}
+board.addEventListener('pointerdown',function(e){
+  if(S.busy||S.won||S.demo)return;
+  var t=e.target.closest?e.target.closest('.blk.tile'):null;
+  if(!t)return;
+  drag={x:e.clientX,y:e.clientY,r:+t.dataset.r,c:+t.dataset.c,axis:null,dir:1,p:0,id:e.pointerId};
+  try{board.setPointerCapture(e.pointerId);}catch(_){}
+});
+board.addEventListener('pointermove',function(e){
+  if(!drag||e.pointerId!==drag.id)return;
+  var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(!drag.axis){
+    if(Math.hypot(dx,dy)<7)return;
+    drag.axis=Math.abs(dx)>=Math.abs(dy)?'x':'y';
+  }
+  var o=drag.axis==='x'?dx:dy;
+  drag.dir=o>=0?1:-1;
+  drag.p=Math.min(1,Math.abs(o)/G.cell);
+  setProgress(dragLine(drag),drag.axis,drag.dir,drag.p,false);
+});
+function endDrag(e){
+  if(!drag||e.pointerId!==drag.id)return;
+  var d=drag;drag=null;
+  if(!d.axis)return;
+  if(d.p>0.3){
+    doMove(d.axis==='x'?'r':'c',d.axis==='x'?d.r:d.c,d.dir);
+  }else{
+    S.busy=true;
+    setProgress(dragLine(d),d.axis,d.dir,0,true);
+    setTimeout(function(){S.busy=false;},DUR);
+  }
+}
+board.addEventListener('pointerup',endDrag);
+board.addEventListener('pointercancel',endDrag);
+
+/* ---- game flow ---- */
+function endDemo(){
+  clearTimeout(demoTimer);
+  S.demo=false;curDur=DUR;
+}
+function newPuzzle(){
+  endDemo();
+  S.won=false;S.hist=[];S.busy=false;S.demoUsed=false;
+  hideWin();
+  if(S.mode==='free'){
+    /* Free Play: start in order, no target, nothing to win - just explore */
+    S.grid=solvedGrid();S.solution=[];S.bound=null;
+  }else if(S.mode==='random'){
+    /* a long random walk from the solved board: thoroughly mixed, and the way back is known */
+    var w=walk(30+5*S.n);
+    S.grid=w.grid;S.solution=simplify(inverse(w.moves));S.bound=null;
+  }else{
+    var L=LEVELS[S.level],k=L.min+rand(L.max-L.min+1);
+    var sc=walk(k);
+    S.grid=sc.grid;S.solution=simplify(inverse(sc.moves));S.bound=k;
+  }
+  S.start=S.grid.slice();
+  saveSettings();
+  render();stats();syncControls();
+}
+function restart(){
+  if(S.busy)return;
+  endDemo();
+  S.grid=S.start.slice();S.hist=[];S.won=false;
+  hideWin();render();stats();syncControls();
+}
+function undo(){
+  if(S.busy||S.won||S.demo||!S.hist.length)return;
+  var m=S.hist[S.hist.length-1];
+  doMove(m.type,m.idx,-m.dir,true);
+}
+
+/* ---- "Show me": replay the known solution from the starting position ---- */
+function arrowFor(m){
+  var word=m.type==='r'?(m.dir>0?'right':'left'):(m.dir>0?'down':'up');
+  return board.querySelector('[aria-label="Push '+(m.type==='r'?'row':'column')+' '+(m.idx+1)+' '+word+'"]');
+}
+function showMe(){
+  if(S.demo){
+    /* Stop: go back to the starting position */
+    endDemo();
+    S.grid=S.start.slice();S.hist=[];S.won=false;
+    render();stats();syncControls();
+    return;
+  }
+  if(S.busy)return;
+  hideWin();
+  S.demo=true;S.demoUsed=true;S.won=false;
+  S.grid=S.start.slice();S.hist=[];
+  var steps=S.solution.slice(),i=0,fast=steps.length>12;
+  curDur=fast?150:DUR;
+  render();stats();syncControls();
+  $('#hint').textContent='Demonstration: '+steps.length+(steps.length===1?' slide':' slides');
+  demoTimer=setTimeout(next,800);
+  function next(){
+    if(!S.demo)return;
+    if(i>=steps.length){finishDemo(steps.length);return;}
+    var m=steps[i++];
+    $('#hint').textContent='Demonstration: slide '+i+' of '+steps.length;
+    var a=arrowFor(m);
+    if(a&&!fast)a.classList.add('pulse');
+    demoTimer=setTimeout(function(){
+      if(!S.demo)return;
+      var els=m.type==='r'?rowLine(m.idx):colLine(m.idx);
+      setProgress(els,m.type==='r'?'x':'y',m.dir,1,true);
+      demoTimer=setTimeout(function(){
+        if(!S.demo)return;
+        S.grid=shifted(S.grid,m.type,m.idx,m.dir);
+        render();
+        demoTimer=setTimeout(next,fast?80:300);
+      },curDur+25);
+    },fast?0:420);
+  }
+}
+function finishDemo(count){
+  S.demo=false;curDur=DUR;
+  board.classList.add('won');
+  syncControls();
+  $('#hint').textContent='Demonstration complete';
+  setTimeout(function(){
+    openCard('That’s how it’s done!',
+      'Solved in '+count+(count===1?' slide.':' slides.'),
+      'Now try it yourself from the start – you’ll still earn the win.',
+      ['Try it myself',restart],['New puzzle',newPuzzle]);
+  },900);
+}
+function openCard(title,text,sub,b1,b2){
+  $('#winTitle').textContent=title;
+  $('#winText').textContent=text;
+  $('#winSub').textContent=sub||'';
+  var a=$('#wAgain'),b=$('#wLook');
+  a.textContent=b1[0];a.onclick=b1[1];
+  b.textContent=b2[0];b.onclick=b2[1];
+  $('#win').hidden=false;
+}
+function win(){
+  S.won=true;
+  board.classList.add('won');
+  var mv=S.hist.length,b=getBest();
+  /* personal bests only count solves made without watching the demonstration */
+  if(!S.demoUsed&&(b===null||mv<b))setBest(mv);
+  stats();syncControls();
+  setTimeout(function(){
+    var s=mv===1?'slide':'slides';
+    var sub='';
+    if(S.demoUsed)sub='Well done – now you know the trick!';
+    else if(S.bound!==null)sub=mv<=S.bound?'Within the target of '+S.bound+'. Well done!':'The target was '+S.bound+' or fewer. Can you beat it?';
+    openCard('Order restored!','Solved in '+mv+' '+s+'.',sub,['Play again',newPuzzle],['Admire it',hideWin]);
+  },950);
+}
+function hideWin(){$('#win').hidden=true;}
+
+function stats(){
+  var n=S.n;
+  if(S.mode==='free'){
+    $('#goal').textContent='Free play: push any row or column and watch how the blocks wrap round. Reset puts them back in order.';
+    $('#hint').textContent='Free play';
+    $('#best').textContent='';
+    return;
+  }
+  $('#goal').textContent='Goal: 1 to '+(n*n)+', row by row, left to right. Drag a block or use the arrows.';
+  $('#mv').textContent=S.hist.length;
+  $('#hint').textContent=S.bound!==null?('Target: '+S.bound+(S.bound===1?' slide':' slides')+' or fewer'):'Random order';
+  var b=getBest();
+  $('#best').textContent=b!==null?('Best: '+b):'';
+}
+
+/* ---- controls ---- */
+function buildControls(){
+  var sz=$('#sizes'),lv=$('#levels');
+  [2,3,4,5].forEach(function(n){
+    var b=document.createElement('button');b.className='btn';b.textContent=n+'×'+n;b.dataset.n=n;
+    b.setAttribute('aria-label',n+' by '+n+' grid');
+    b.onclick=function(){if(S.busy)return;S.n=n;newPuzzle();};
+    sz.appendChild(b);
+  });
+  LEVELS.forEach(function(L,i){
+    var b=document.createElement('button');b.className='btn';b.textContent=L.name;b.dataset.l=i;
+    b.title=L.min+(L.max>L.min?'–'+L.max:'')+' slides';
+    b.onclick=function(){if(S.busy)return;S.level=i;S.mode='level';newPuzzle();};
+    lv.appendChild(b);
+  });
+  $('#bRandom').onclick=function(){if(S.busy)return;S.mode='random';newPuzzle();};
+  $('#bNew').onclick=function(){if(S.busy)return;newPuzzle();};
+  $('#bUndo').onclick=undo;
+  $('#bShow').onclick=showMe;
+  $('#bRestart').onclick=restart;
+  $('#bReset').onclick=restart;
+  $('#bFree').onclick=function(){if(S.busy)return;S.mode='free';newPuzzle();};
+  var st=$('#settings');
+  function openSettings(){st.hidden=false;}
+  function closeSettings(){st.hidden=true;}
+  $('#bSettings').onclick=openSettings;
+  $('#sDone').onclick=closeSettings;
+  st.addEventListener('click',function(e){if(e.target===st)closeSettings();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSettings();});
+  $('#bColour').onclick=function(){S.colour=!S.colour;saveSettings();if(!S.busy)render();syncControls();};
+  $('#wAgain').onclick=newPuzzle;
+  $('#wLook').onclick=hideWin;
+}
+function syncControls(){
+  $('#app').dataset.mode=S.mode;
+  $('#bFree').classList.toggle('on',S.mode==='free');
+  $('#bReset').disabled=(function(){for(var q=0;q<S.grid.length;q++)if(S.grid[q]!==S.start[q])return false;return true;})();
+  Array.prototype.forEach.call($('#sizes').children,function(b){b.classList.toggle('on',+b.dataset.n===S.n);});
+  Array.prototype.forEach.call($('#levels').children,function(b){b.classList.toggle('on',S.mode==='level'&&+b.dataset.l===S.level);});
+  $('#bRandom').classList.toggle('on',S.mode==='random');
+  $('#bUndo').disabled=S.won||S.demo||!S.hist.length;
+  var changed=false;
+  for(var q=0;q<S.grid.length;q++)if(S.grid[q]!==S.start[q]){changed=true;break;}
+  $('#bRestart').disabled=!S.hist.length&&!S.won&&!changed&&!S.demo;
+  $('#bShow').textContent=S.demo?'Stop':'Show me';
+  $('#bShow').classList.toggle('on',S.demo);
+  $('#bColour').textContent='Colours: '+(S.colour?'On':'Off');
+  $('#bColour').classList.toggle('on',S.colour);
+}
+
+/* ---- start ---- */
+loadSettings();
+buildControls();
+newPuzzle();
+var rt=null;
+function relayout(){clearTimeout(rt);rt=setTimeout(function(){if(!S.busy&&!S.demo&&!drag)render();},60);}
+if(window.ResizeObserver)new ResizeObserver(relayout).observe($('#stage'));
+window.addEventListener('resize',relayout);
+window.addEventListener('orientationchange',relayout);
+/* second pass once fonts/layout have settled */
+requestAnimationFrame(function(){render();});
+})();
+</script>
+</body>
+</html>
