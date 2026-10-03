@@ -10,6 +10,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Block Shift | `block-shift/` |
 | Bouncer | `bouncer/` |
 | Brain Gym | `brain-gym/` |
+| Count Protracula's Coffin Quiz | `coffin-quiz/` |
 | Dice Games | `dice-games/` |
 | Erno | `erno/` |
 | Fraction Fight Night | `fraction-fight-night/` |

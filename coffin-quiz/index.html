@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Count Protracula's Coffin Quiz</title>
+<style>
+:root{--n1:#1b0a3a;--n2:#4b2287;--or:#ff8a1f;--lime:#9be34a;--blood:#d6182f;--cream:#fff4d6}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:"Chalkboard SE","Comic Sans MS","Trebuchet MS",system-ui,sans-serif;color:var(--cream);background:linear-gradient(180deg,var(--n1),var(--n2) 70%,#6a2f8f);background-attachment:fixed;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer}
+.hidden{display:none!important}
+sup{font-size:.6em;line-height:0}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 .1em}
+.fr span:first-child{border-bottom:.09em solid currentColor;padding:0 .15em}
+
+/* background */
+#bg,#bats{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+#bg{z-index:0}#bats{z-index:60}
+.moon{position:absolute;top:4vh;right:6vw;width:clamp(60px,9vw,120px);height:clamp(60px,9vw,120px);border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff8c9,#ffe27a);box-shadow:0 0 60px rgba(255,236,140,.55)}
+.moon::after{content:"";position:absolute;left:22%;top:32%;width:14%;height:14%;border-radius:50%;background:rgba(210,170,60,.35);box-shadow:30px 22px 0 4px rgba(210,170,60,.3),8px 40px 0 -2px rgba(210,170,60,.3)}
+.web{position:absolute;top:0;width:clamp(110px,18vw,240px);opacity:.55}
+.web.l{left:0}.web.r{right:0;transform:scaleX(-1)}
+.stones{position:absolute;left:0;right:0;bottom:0;width:100%;height:clamp(70px,14vh,150px)}
+.amb{position:absolute;width:clamp(30px,4vw,56px);animation:amb linear infinite}
+@keyframes amb{from{left:-8vw}to{left:108vw}}
+.amb svg,.bat svg{width:100%;display:block}
+.flap{transform-origin:center;animation:flap .35s ease-in-out infinite alternate}
+@keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.55)}}
+.fly-bat{position:absolute;left:-10vw;width:clamp(36px,5vw,70px);animation:flyb 4s linear forwards}
+@keyframes flyb{0%{left:-10vw;transform:translateY(0)}25%{transform:translateY(-6vh)}50%{transform:translateY(3vh)}75%{transform:translateY(-5vh)}100%{left:110vw;transform:translateY(0)}}
+.fly{position:fixed;font-size:2rem;z-index:55;pointer-events:none}
+
+/* screens */
+.screen{position:relative;z-index:2;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:clamp(10px,2vw,24px);gap:clamp(8px,1.6vh,18px)}
+h1{margin:0;text-align:center;font-size:clamp(1.8rem,5vw,3.6rem);line-height:1.05;color:var(--or);text-shadow:3px 3px 0 #2a0b4f,-1px -1px 0 #2a0b4f,0 0 24px rgba(255,138,31,.5)}
+.sub{margin:0;text-align:center;font-size:clamp(1rem,2vw,1.5rem);color:var(--lime)}
+.bubble{position:relative;background:#fff;color:#2a0b4f;border-radius:26px;padding:clamp(12px,1.8vw,24px) clamp(16px,2.4vw,32px);box-shadow:0 6px 0 rgba(0,0,0,.25);max-width:100%}
+.bubble.left::before{content:"";position:absolute;left:-18px;top:34px;border:14px solid transparent;border-right-color:#fff;border-left:0}
+.bubble.top::before{content:"";position:absolute;left:50%;bottom:-16px;margin-left:-14px;border:14px solid transparent;border-top-color:#fff;border-bottom:0}
+
+/* count */
+.count{width:clamp(110px,17vw,230px);height:auto;overflow:visible;flex:none}
+.count .all{transform-origin:110px 290px;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) rotate(1.5deg)}}
+.count .arm{transform-box:view-box}
+.count .arm.l{transform-origin:75px 150px}.count .arm.r{transform-origin:145px 150px}
+.count.dance .all{animation:dance .6s ease-in-out infinite}
+.count.dance .arm.l{animation:armL .6s ease-in-out infinite}
+.count.dance .arm.r{animation:armR .6s ease-in-out infinite}
+@keyframes dance{0%{transform:rotate(-8deg) translateY(0)}25%{transform:rotate(0) translateY(-16px)}50%{transform:rotate(8deg) translateY(0)}75%{transform:rotate(0) translateY(-16px)}100%{transform:rotate(-8deg) translateY(0)}}
+@keyframes armL{0%,100%{transform:rotate(-55deg)}50%{transform:rotate(35deg)}}
+@keyframes armR{0%,100%{transform:rotate(55deg)}50%{transform:rotate(-35deg)}}
+.count.shake .all{animation:cshake .5s}
+@keyframes cshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px) rotate(-3deg)}40%{transform:translateX(10px) rotate(3deg)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+.count.hop .all{animation:hop .7s ease-out}
+@keyframes hop{30%{transform:translateY(-30px) scale(1.04)}60%{transform:translateY(0)}80%{transform:translateY(-8px)}}
+
+/* start */
+#start .row{display:flex;gap:clamp(10px,3vw,40px);align-items:flex-start;justify-content:center;flex-wrap:wrap;width:100%;max-width:1100px}
+#jokeBox{cursor:pointer;font-size:clamp(1.2rem,2.6vw,2rem);min-width:min(520px,90vw);text-align:center;margin-top:20px}
+#jokeBox small{display:block;font-size:.5em;color:#8a6ab3;margin-top:6px}
+.panel{background:rgba(20,6,45,.78);border:3px solid #7c4cc4;border-radius:22px;padding:clamp(12px,2vw,24px);width:min(560px,94vw);display:flex;flex-direction:column;gap:12px}
+.panel label{font-size:clamp(1rem,1.8vw,1.3rem);color:var(--lime)}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{flex:1;min-width:56px;font-size:clamp(1.1rem,2vw,1.6rem);padding:8px 12px;border-radius:14px;border:3px solid #7c4cc4;background:#2a0b4f;color:var(--cream)}
+.seg button.on{background:var(--or);color:#2a0b4f;border-color:#ffd08a}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.names input{font-family:inherit;font-size:1.1rem;padding:8px 10px;border-radius:12px;border:3px solid #7c4cc4;background:#fff;color:#2a0b4f;min-width:0}
+.how{font-size:clamp(.9rem,1.5vw,1.1rem);margin:0;color:#e5d6ff;line-height:1.35}
+.big{font-size:clamp(1.3rem,3vw,2.2rem);padding:12px 30px;border-radius:50px;border:4px solid #ffd08a;background:var(--or);color:#2a0b4f;font-weight:bold;box-shadow:0 6px 0 #a5520a;transition:transform .1s}
+.big:active{transform:translateY(4px);box-shadow:0 2px 0 #a5520a}
+.big.red{background:var(--blood);color:#fff;border-color:#ff9aa6;box-shadow:0 6px 0 #7d0b1a}
+.foot{margin-top:auto;font-size:.8rem;color:#b9a1e0;text-align:center;padding-top:10px}
+.foot a{color:#d9c4ff}
+
+/* game */
+#board{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+.team{background:rgba(20,6,45,.78);border:3px solid #5a3490;border-radius:18px;padding:6px 12px;min-width:min(230px,44vw);flex:1;max-width:340px;transition:.3s}
+.team.active{border-color:var(--or);box-shadow:0 0 22px rgba(255,138,31,.7);transform:scale(1.03)}
+.team .nm{font-size:clamp(.95rem,1.7vw,1.35rem);display:flex;justify-content:space-between;gap:6px}
+.team .nm b{color:var(--or);white-space:nowrap}
+.bag{height:clamp(16px,2.4vh,24px);border-radius:14px;border:3px solid #ff9aa6;background:#3a0a1d;overflow:hidden;margin-top:4px}
+.bag i{display:block;height:100%;width:0;background:linear-gradient(180deg,#ff5468,var(--blood));transition:width .8s}
+#stage{display:flex;align-items:center;justify-content:center;gap:clamp(10px,2vw,30px);width:100%;max-width:1200px;position:relative}
+#qBubble{flex:1;min-width:0}
+#tag{font-size:clamp(.85rem,1.5vw,1.2rem);color:#a5520a;margin-bottom:4px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#tag .risk{background:var(--blood);color:#fff;border-radius:10px;padding:0 10px;animation:pulse .8s infinite alternate}
+@keyframes pulse{to{transform:scale(1.07)}}
+#qtext{font-size:clamp(1.3rem,3.2vw,2.6rem);line-height:1.2;font-weight:bold}
+#say{font-size:clamp(1rem,2vw,1.6rem);color:#b3122c;margin-top:8px;min-height:1.3em}
+#say.pop{animation:popin .35s}
+@keyframes popin{from{transform:scale(.7);opacity:0}}
+#song{position:absolute;left:0;top:-6px;background:var(--lime);color:#2a0b4f;border-radius:30px;padding:6px 16px;font-size:clamp(.9rem,1.8vw,1.4rem);font-weight:bold;animation:wob .5s infinite alternate;z-index:5;max-width:60%}
+@keyframes wob{from{transform:rotate(-4deg)}to{transform:rotate(4deg) translateY(-4px)}}
+#coffins{display:flex;gap:clamp(8px,2vw,30px);justify-content:center;align-items:flex-end;width:100%;margin-top:clamp(20px,4vh,50px)}
+.coffin{position:relative;width:clamp(120px,20vw,250px);aspect-ratio:.66;flex:none}
+.coffin>*{position:absolute}
+.poly{clip-path:polygon(30% 0,70% 0,100% 25%,78% 100%,22% 100%,0 25%)}
+.c-inside{inset:0;background:#12051f}
+.c-inside::after{content:"";position:absolute;inset:7%;background:linear-gradient(#3b1b63,#240d45);clip-path:polygon(30% 0,70% 0,100% 25%,78% 100%,22% 100%,0 25%)}
+.c-skel{left:12%;right:12%;bottom:6%;visibility:hidden;transform:translateY(40%);z-index:2;transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+.coffin.open .c-skel{visibility:visible;transform:translateY(-34%)}
+.c-skel svg{width:100%;display:block;overflow:visible}
+.c-lid{inset:0;border:0;padding:0;z-index:3;transform-origin:50% 0;transition:transform .55s cubic-bezier(.3,1.4,.5,1);color:#fff;background:var(--wood,#9a5f31);display:flex;align-items:center;justify-content:center;text-align:center}
+.c-lid::before{content:"";position:absolute;inset:6%;background:rgba(0,0,0,.22);clip-path:polygon(30% 0,70% 0,100% 25%,78% 100%,22% 100%,0 25%)}
+.c-lid::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.28),transparent 45%)}
+.c-lid .ans{position:relative;z-index:1;font-size:clamp(1.05rem,2.3vw,2.1rem);font-weight:bold;max-width:62%;line-height:1.1;text-shadow:2px 2px 0 rgba(0,0,0,.4);overflow-wrap:anywhere}
+.c-lid .lt{position:absolute;z-index:1;top:7%;left:50%;transform:translateX(-50%);width:clamp(24px,3vw,38px);height:clamp(24px,3vw,38px);border-radius:50%;background:var(--cream);color:#2a0b4f;font-size:clamp(.9rem,1.8vw,1.4rem);display:flex;align-items:center;justify-content:center}
+.coffin:not(.open):not(.dead):hover .c-lid{filter:brightness(1.2);transform:translateY(-6px)}
+.coffin.open .c-lid{transform:scaleY(.09)}
+.coffin.slam .c-lid{transition:transform .12s ease-in}
+.coffin.slam{animation:slam .35s .12s}
+@keyframes slam{30%{transform:translateY(8px)}60%{transform:translateY(-3px)}}
+.coffin.dead{filter:grayscale(.85) brightness(.55)}
+.coffin.dead .c-lid{cursor:default}
+.coffin.reveal .c-inside{box-shadow:0 0 0 6px var(--lime)}
+.c-bub{left:50%;bottom:78%;transform:translateX(-50%);z-index:6;background:#fff;color:#2a0b4f;border-radius:16px;padding:6px 12px;width:max-content;max-width:min(260px,70vw);font-size:clamp(.85rem,1.6vw,1.25rem);text-align:center;box-shadow:0 4px 0 rgba(0,0,0,.3);display:none}
+.c-bub::after{content:"";position:absolute;left:50%;bottom:-10px;margin-left:-10px;border:10px solid transparent;border-top-color:#fff;border-bottom:0}
+.coffin.open .c-bub.show{display:block;animation:popin .3s}
+#bottom{display:flex;gap:clamp(10px,3vw,40px);align-items:center;justify-content:center;flex-wrap:wrap;margin-top:clamp(6px,2vh,24px);width:100%;position:relative;z-index:3}
+#potBox{background:rgba(20,6,45,.85);border:3px solid var(--or);border-radius:40px;padding:6px 22px;font-size:clamp(1.1rem,2.4vw,1.9rem)}
+#potIcon{display:inline-block}
+#potBox.shake{animation:cshake .5s}
+#worth{font-size:clamp(.9rem,1.7vw,1.3rem);color:var(--lime)}
+.quit{position:fixed;right:8px;bottom:8px;z-index:70;font-size:.8rem;background:rgba(20,6,45,.7);color:#d9c4ff;border:1px solid #7c4cc4;border-radius:10px;padding:4px 10px}
+
+/* modal */
+#modal{position:fixed;inset:0;z-index:80;background:rgba(10,2,25,.78);display:flex;align-items:center;justify-content:center;padding:14px}
+#modal .box{background:#2a0b4f;border:5px solid var(--or);border-radius:28px;padding:clamp(14px,3vw,34px);width:min(760px,96vw);text-align:center;animation:popin .4s}
+#modal h2{margin:0 0 8px;font-size:clamp(1.6rem,4vw,3rem);color:var(--or)}
+#modal p{font-size:clamp(1rem,2.2vw,1.6rem);margin:8px 0}
+#modal .btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+#modal .win{color:var(--lime);font-weight:bold}
+
+/* win */
+#win .big{margin:6px}
+.rain{position:fixed;top:-60px;font-size:2.2rem;z-index:3;pointer-events:none;animation:rain linear forwards}
+@keyframes rain{to{transform:translateY(110vh) rotate(360deg)}}
+
+@media (max-width:760px){
+  #stage{flex-direction:column;align-items:stretch}
+  #stage .count{align-self:center;width:34vw}
+  .bubble.left::before{display:none}
+  #qBubble.bubble{padding:10px 14px}
+  #coffins{display:grid;grid-template-columns:repeat(2,1fr);justify-items:center;gap:clamp(30px,6vh,56px) 8px;margin-top:70px}
+  .coffin{width:min(40vw,190px)}
+  .c-bub{bottom:84%}
+  #song{position:static;align-self:center;max-width:100%}
+}
+@media (prefers-reduced-motion:reduce){.amb,.flap,.count .all{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="bg">
+  <div class="moon"></div>
+  <svg class="web l" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="1"><path d="M0 0 L120 0 M0 0 L110 40 M0 0 L85 85 M0 0 L40 110 M0 0 L0 120"/><path d="M30 0 Q28 28 0 30 M60 0 Q52 52 0 60 M90 0 Q76 76 0 90 M118 0 Q100 100 0 118"/></svg>
+  <svg class="web r" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="1"><path d="M0 0 L120 0 M0 0 L110 40 M0 0 L85 85 M0 0 L40 110 M0 0 L0 120"/><path d="M30 0 Q28 28 0 30 M60 0 Q52 52 0 60 M90 0 Q76 76 0 90 M118 0 Q100 100 0 118"/></svg>
+  <div class="amb" style="top:12vh;animation-duration:26s"></div>
+  <div class="amb" style="top:26vh;animation-duration:38s;animation-delay:-14s"></div>
+  <div class="amb" style="top:8vh;animation-duration:31s;animation-delay:-24s"></div>
+  <svg class="stones" viewBox="0 0 1200 140" preserveAspectRatio="xMidYMax slice">
+    <rect y="112" width="1200" height="28" fill="#2d6a3a"/>
+    <g fill="#b9b2d6" stroke="#6f5fa3" stroke-width="3">
+      <path d="M60 125 V60 Q60 28 95 28 Q130 28 130 60 V125Z" transform="rotate(-4 95 125)"/>
+      <path d="M260 125 V70 Q260 40 290 40 Q320 40 320 70 V125Z" transform="rotate(3 290 125)"/>
+      <path d="M470 125 V55 Q470 22 505 22 Q540 22 540 55 V125Z"/>
+      <path d="M700 125 V72 Q700 44 728 44 Q756 44 756 72 V125Z" transform="rotate(-3 728 125)"/>
+      <path d="M910 125 V58 Q910 26 945 26 Q980 26 980 58 V125Z" transform="rotate(4 945 125)"/>
+      <path d="M1090 125 V72 Q1090 44 1118 44 Q1146 44 1146 72 V125Z"/>
+    </g>
+    <g fill="#6f5fa3" font-family="sans-serif" font-weight="bold" font-size="20" text-anchor="middle">
+      <text x="95" y="75" transform="rotate(-4 95 125)">R.I.P.</text><text x="290" y="85" transform="rotate(3 290 125)">R.I.P.</text><text x="505" y="70">R.I.P.</text><text x="728" y="85" transform="rotate(-3 728 125)">R.I.P.</text><text x="945" y="72" transform="rotate(4 945 125)">R.I.P.</text>
+    </g>
+    <g font-size="30" text-anchor="middle"><text x="190" y="136">🎃</text><text x="620" y="136">🎃</text><text x="835" y="136">🎃</text></g>
+  </svg>
+</div>
+<div id="bats"></div>
+
+<!-- START -->
+<section id="start" class="screen">
+  <h1>Count Protracula's<br>Coffin Quiz</h1>
+  <p class="sub">Maths with a bite!</p>
+  <div class="row">
+    <div id="startCount"></div>
+    <div>
+      <div id="jokeBox" class="bubble left"><span id="joke"></span><small>(tap for another)</small></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div><label>Who's playing?</label>
+      <div class="seg" id="segPlayers"><button data-v="1">Just me</button><button data-v="2">2 teams</button><button data-v="3">3 teams</button><button data-v="4">4 teams</button></div></div>
+    <div class="names" id="names"></div>
+    <div><label>Fill the Blood Bank with…</label>
+      <div class="seg" id="segTarget"><button data-v="20">20 🎃</button><button data-v="30">30 🎃</button><button data-v="50">50 🎃</button></div></div>
+    <p class="how">Open the coffin with the right answer to win pumpkins. Wrong coffins hold grumpy skeletons and cost you pumpkins. After a few right answers, the Count offers a Bargain: <b>bank</b> your pumpkins safely in his Blood Bank, or <b>risk</b> them for double. First to fill the Blood Bank wins!</p>
+  </div>
+  <button class="big" id="playBtn">Open the Crypt!</button>
+  <div class="foot">LoadsOfMaths · Question styles inspired by <a href="https://diagnosticquestions.com" target="_blank" rel="noopener">diagnosticquestions.com</a> – all questions here are original.</div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="screen hidden">
+  <div id="board"></div>
+  <div id="stage">
+    <div id="song" class="hidden">♪ I'm loving angles instead ♪</div>
+    <div id="gameCount"></div>
+    <div id="qBubble" class="bubble left">
+      <div id="tag"></div>
+      <div id="qtext"></div>
+      <div id="say"></div>
+    </div>
+  </div>
+  <div id="coffins"></div>
+  <div id="bottom">
+    <div id="potBox"><span id="potIcon">🎃</span> <b id="potN">0</b> on the table <span id="worth"></span></div>
+    <button class="big" id="nextBtn">Next question</button>
+  </div>
+  <button class="quit" id="quitBtn">Back to menu</button>
+</section>
+
+<!-- WIN -->
+<section id="win" class="screen hidden" style="justify-content:center;text-align:center">
+  <h1 id="winH">The Blood Bank is full!</h1>
+  <p class="sub" id="winSub"></p>
+  <div id="winCount"></div>
+  <div class="bubble top" id="winSay" style="font-size:clamp(1.2rem,2.6vw,2rem)">Curses! You have drained my Blood Bank!</div>
+  <div style="margin-top:10px"><button class="big" id="againBtn">Play again</button><button class="big red" id="menuBtn">Menu</button></div>
+</section>
+
+<div id="modal" class="hidden"><div class="box">
+  <h2>The Bargain!</h2>
+  <p id="mText"></p>
+  <p class="win" id="mWin"></p>
+  <div class="btns"><button class="big" id="bankBtn"></button><button class="big red" id="riskBtn">Risk it!</button></div>
+</div></div>
+
+<script>
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const fmt=s=>String(s).replace(/\{([^|}]+)\|([^}]+)\}/g,'<span class="fr"><span>$1</span><span>$2</span></span>').replace(/\^\{([^}]+)\}/g,'<sup>$1</sup>');
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------- content ---------- */
+const JOKES=["Anyone for coffin?","How do you like your coffin? Black?","Coffin or cream?","One lump or two… in your coffin?","Fancy a cup of coffin?","Coffin time!","Wake up and smell the coffin!","I like my coffin strong!","Decaf? No thanks — I like my coffin deadly!","Coffin keeps me going!","I can't function without my morning coffin!","Just a little coffin before we go haunting.","Would you like coffin with that?","Trick or treat? I'll have coffin!","Keep calm and drink coffin.","Coffin: the drink of the undead.","It's a grave mistake to run out of coffin.","No coffin? This is a grave situation.","I'm dying for a coffin.","Death before decaf!","Espresso yourself… before you expire.","Have a killer cup of coffin.","A brew to die for!","This coffin is to die for!","Rise and shine… if you can!"];
+const SKEL=["Get out of it!","Can't a skeleton get a decent rest any more?","Oi! I'm trying to sleep here!","Do you MIND? I'm resting my bones!","Knock first, next time!","Go and haunt someone else!","I've got a bone to pick with you!","Shut the lid on your way out!","It's the middle of my nap!","Ever heard of privacy?!"];
+const RIGHT=["Curses! Correct again!","Drat and double drat!","Blood and thunder, you got it!","Hmph! Lucky guess, I'm sure.","Impressive. I'm almost cross.","Well, bite me! Correct!","Mwah! Annoyingly accurate!"];
+const GLOAT=["Mwah-ha-ha! My bats have your pumpkins!","Flap flap flap! Pumpkins gone!","Oh dear. Oh dear me. How delicious!"];
+
+function Q(q,c,w1,w2,w3,angle){return{q,angle:!!angle,opts:[{t:c,ok:true},{t:w1[0],n:w1[1]},{t:w2[0],n:w2[1]},{t:w3[0],n:w3[1]}]}}
+const BANK=[
+Q("Which of these is the largest number?","0.5",["0.405","More digits does not mean bigger, my dear! 0.405 is barely more than 0.4."],["0.45","So close! But 0.5 is 0.50, and fifty hundredths beat forty-five."],["0.4","Four tenths is the smallest of the bunch!"]),
+Q("Round 0.0476 to 1 significant figure.","0.05",["0.04","You chopped it off! Look at the next digit: the 7 tips it up."],["0.048","That is 2 significant figures, not 1."],["0.5","The zeros hold the place value. You must not lose them!"]),
+Q("Work out 2 + 3 × 4^{2}","50",["80","You added first! Powers, then multiplying, THEN adding."],["196","You did 2 + 3 × 4 = 14 and then squared the lot. Only the 4 is squared!"],["400","Left to right is not BIDMAS! The squaring comes first."]),
+Q("{1|3} + {1|4} =","{7|12}",["{2|7}","You added the tops and the bottoms! Fractions need a common denominator first."],["{1|12}","That is {1|3} × {1|4}. We are adding, my friend."],["{2|12}","You added the tops but multiplied the bottoms. A strange mix!"]),
+Q("What is {2|5} of 60?","24",["150","You divided by {2|5}. 'Of' means multiply!"],["12","That is just one fifth. You forgot to multiply by 2."],["30","That is half. You used the 2 on the top and ignored the 5."]),
+Q("A £80 coat has its price increased by 15%. What is the new price?","£92",["£95","You added 15 pounds, not 15 per cent!"],["£68","That is a decrease! Oh, the horror."],["£12","That is only the increase, not the new price."]),
+Q("What is 5% of 360?","18",["72","That is 20%, or one fifth. 5% is one twentieth."],["1.8","Decimal point drift! Check the size of your answer."],["180","That is 50%, which is half."]),
+Q("Which of these is a prime number?","59",["51","51 = 3 × 17. Add the digits to get 6: divisible by 3!"],["57","57 = 3 × 19. Divisible by 3, you sneaky thing!"],["91","91 = 7 × 13. Looks prime, isn't it?"]),
+Q("What is the highest common factor of 12 and 18?","6",["36","That is the lowest common multiple. HCF is the biggest number that divides both."],["3","3 is a common factor, but not the highest!"],["216","You multiplied them! That is far too big to divide into either."]),
+Q("Write 0.00045 in standard form.","4.5 × 10^{−4}",["4.5 × 10^{−3}","One place out! Count how far the decimal point moves."],["4.5 × 10^{4}","A positive power makes it big. This number is tiny!"],["45 × 10^{−5}","Right size, but standard form needs a number between 1 and 10."]),
+Q("−3 − (−5) =","2",["−8","Subtracting a negative means adding!"],["−2","You went the wrong way. Subtracting a negative is adding a positive."],["8","You added 3 and 5 but ignored the sign on the 3."]),
+Q("2^{3} × 2^{4} =","2^{7}",["4^{7}","The base stays the same when you multiply powers of the same number."],["2^{12}","You multiplied the powers. Add them instead!"],["2^{1}","You subtracted the powers. That is for dividing!"]),
+Q("Between which two whole numbers does √50 lie?","7 and 8",["6 and 7","√49 is exactly 7, so √50 is just a bit more than 7."],["5 and 6","That would be √25 to √36."],["24 and 26","You halved 50! A square root is not the same as halving."]),
+Q("Estimate 38 × 21","800",["600","You rounded both numbers down. 38 is nearer 40 than 30!"],["80","Place value! 40 × 2 is not the same as 40 × 20."],["8000","Too many zeros! Check the size of your answer."]),
+Q("{1|2} ÷ {1|4} =","2",["{1|8}","You multiplied! Dividing asks how many quarters fit into a half."],["{1|4}","That is {1|2} − {1|4}. Wrong operation entirely!"],["{1|2}","Dividing by a fraction smaller than 1 makes the answer BIGGER."]),
+Q("0.3 × 0.2 =","0.06",["0.6","Count the decimal places in the question: there are two, so the answer needs two."],["0.5","You added them! This is multiplication."],["0.006","Too many decimal places. Count them: 1 + 1 = 2."]),
+Q("Round 4.96 to 1 decimal place.","5.0",["4.9","You chopped it off! The 6 means round up."],["5.1","Rounding up once is enough: it goes to 5.0."],["4.0","The 9 became a 0 and nothing carried over!"]),
+Q("Simplify 2a × 3b","6ab",["5ab","You added the numbers. It is multiplication!"],["23ab","The digits do not stick together. Multiply 2 × 3 properly."],["6a + 6b","Multiplying does not give a sum. Just 6ab."]),
+Q("Expand 3(x + 4)","3x + 12",["3x + 4","The 3 multiplies EVERYTHING inside the bracket!"],["x + 12","The 3 multiplies the x as well!"],["3x + 7","You added the 3 to the 4 instead of multiplying."]),
+Q("Expand (x + 3)^{2}","x^{2} + 6x + 9",["x^{2} + 9","Squaring a bracket is not squaring each term. Write it out twice!"],["x^{2} + 6","Where did the 9 go?"],["x^{2} + 3x + 9","Two lots of 3x make 6x."]),
+Q("Solve 2x + 5 = 17","x = 6",["x = 11","You added 5 instead of taking it away."],["x = 12","You forgot to divide by 2."],["x = 3.5","You halved the 17 but not the 5! Take away 5 first."]),
+Q("Solve 3(x − 2) = 15","x = 7",["x = 3","You divided to get 5, then took away 2. But x − 2 = 5 means x = 7!"],["x = 5","You divided by 3 but forgot about the −2."],["x = {17|3}","You multiplied the 3 by x only, not the −2!"]),
+Q("x = −3. What is the value of x^{2}?","9",["−9","A negative times a negative is positive!"],["−6","You doubled it. Squaring means times itself."],["6","Squaring is not doubling."]),
+Q("Find the nth term of 5, 8, 11, 14, …","3n + 2",["n + 3","The sequence goes up by 3, so there must be a 3n."],["3n + 5","Check n = 1: 3 + 5 = 8, not 5!"],["5n + 3","You swapped the first term and the difference."]),
+Q("I think of a number, double it and add 3. The answer is 17. What was my number?","7",["10","You added the 3 instead of undoing it!"],["14","You took away 3 but forgot to halve."],["8.5","You halved the 17 but ignored the 3."]),
+Q("Find the gradient of the line through (0, 1) and (2, 5).","2",["4","That is the rise, but you need rise ÷ run."],["{1|2}","Run over rise? Upside down, I'm afraid."],["6","You added the rise and the run."]),
+Q("What is the midpoint of (2, 6) and (8, 2)?","(5, 4)",["(10, 8)","You added but forgot to halve."],["(3, −2)","You halved the differences instead of finding the middle."],["(4, 5)","Your x and y have swapped places."]),
+Q("Two angles in a triangle are 50° and 60°. What is the third angle?","70°",["110°","That is 50° + 60°. You must subtract from 180°."],["130°","You did 180° − 50° and forgot the 60°."],["120°","You did 180° − 60° and forgot the 50°."],true),
+Q("Three angles on a straight line are x, 2x and 3x. Find x.","30°",["60°","Count the x's: 1 + 2 + 3 = 6 of them, not 3."],["45°","That is 180 ÷ 4. Count the x's again!"],["90°","You halved 180°. There are six x's altogether."],true),
+Q("How many sides has a regular polygon with exterior angles of 30°?","12",["6","That is 180 ÷ 30. Exterior angles total 360°."],["150","That is the interior angle, not the number of sides."],["330","That is 360 − 30. You need 360 ÷ 30."],true),
+Q("What is the interior angle of a regular pentagon?","108°",["72°","That is the exterior angle."],["540°","That is the sum of all five interior angles."],["120°","That is the interior angle of a hexagon."],true),
+Q("Angles around a point are 120°, 150° and x. Find x.","90°",["270°","That is 120° + 150°. Angles around a point total 360°."],["60°","You used 180° (a straight line). Around a point it is 360°."],["30°","You used 180° (a straight line). Around a point it is 360°."],true),
+Q("Two parallel lines are crossed by a third line. One of a pair of alternate angles is 65°. What is the other?","65°",["115°","That is what you get with co-interior angles, which add to 180°."],["25°","That is 90° − 65°. Alternate angles are equal (look for the Z)."],["295°","That is 360° − 65°. Not what alternate angles do."],true),
+Q("An isosceles triangle has a top angle of 40°. What is each base angle?","70°",["140°","That is the total of the two base angles. Share it out!"],["40°","The base angles are equal to each other, not to the top one."],["80°","You doubled the 40°."],true),
+Q("A triangle has base 8 cm and height 5 cm. What is its area?","20 cm²",["40 cm²","That is a rectangle. A triangle is half of that!"],["13 cm²","You added! Area needs multiplying."],["80 cm²","Too big: you multiplied 8 × 5 × 2."]),
+Q("What is the area of a circle with radius 5 cm?","25π cm²",["10π cm²","That is the circumference (2πr). Area is πr²."],["100π cm²","You squared the diameter."],["50π cm²","You doubled the radius squared."]),
+Q("A rectangle is 7 cm by 3 cm. What is its perimeter?","20 cm",["21 cm","That is the area."],["13 cm","You only added one 7 and one 3."],["10 cm","You found half the perimeter."]),
+Q("What is the volume of a cuboid measuring 4 cm by 3 cm by 2 cm?","24 cm³",["52 cm³","That is the surface area."],["9 cm³","You added instead of multiplying."],["12 cm³","You only used two of the lengths."]),
+Q("A right-angled triangle has short sides 6 cm and 8 cm. How long is the longest side?","10 cm",["14 cm","You added the two sides. Pythagoras: square, add, square root."],["100 cm","You forgot the square root."],["48 cm","You multiplied the short sides."]),
+Q("A right-angled triangle has longest side 13 cm and one short side 5 cm. How long is the other short side?","12 cm",["18 cm","You added! For a short side, subtract the squares."],["8 cm","You took 5 off 13 without squaring."],["144 cm","That is 12 squared. You forgot the square root."]),
+Q("Share £60 in the ratio 2 : 3. What is the larger share?","£36",["£30","You split it in half, but the ratio is not 1 : 1."],["£24","That is the smaller share."],["£20","You divided by 3 only."]),
+Q("Simplify the ratio 12 : 18","2 : 3",["4 : 6","You divided by 3 only. Can you go further?"],["6 : 9","You divided by 2 only. Can you go further?"],["3 : 2","Order matters! Keep it the same way round."]),
+Q("The ratio of boys to girls is 3 : 5. There are 24 boys. How many girls are there?","40",["26","You added the difference (2) to 24."],["64","That is the total, boys plus girls."],["15","You treated 24 as the total of 8 parts."]),
+Q("A car travels 90 miles in 1.5 hours. What is its average speed?","60 mph",["135 mph","You multiplied instead of dividing."],["45 mph","You divided 90 by 2, but the time is 1.5."],["91.5 mph","You added the numbers!"]),
+Q("A bag has 3 red counters and 5 blue counters. One is picked at random. What is the probability it is red?","{3|8}",["{3|5}","That compares red to blue. Probability needs the total on the bottom."],["{5|8}","That is the probability of blue!"],["{1|2}","Two colours does not mean 50 : 50. Count the counters!"]),
+Q("What is the mean of 3, 5, 5, 9 and 13?","7",["5","That is the median (and the mode)."],["10","That is the range."],["35","That is the total. You forgot to divide by 5."]),
+Q("Find the median of 7, 2, 9, 4, 1","4",["9","You did not put them in order first!"],["4.6","That is the mean."],["5","Halfway between smallest and biggest is the mid-range, not the median."]),
+Q("The probability of rain is 0.35. What is the probability that it does NOT rain?","0.65",["0.35","That is the probability of rain itself."],["0.75","Subtraction slip! 1 − 0.35 is not 0.75."],["1.35","You added instead of subtracting. A probability cannot exceed 1!"]),
+Q("A fair coin is flipped twice. What is the probability of two heads?","{1|4}",["{1|3}","The outcomes 0, 1 and 2 heads are not equally likely."],["{1|2}","That is the chance of a head on a single flip."],["{1|8}","That would be three coins."]),
+Q("What is 07:45 plus 2 hours 30 minutes?","10:15",["10:75","There are only 60 minutes in an hour!"],["10:45","That is 3 hours. Half an hour is 30 minutes, not 60."],["09:45","You added 2 hours but forgot the 30 minutes."])
+];
+
+/* ---------- art ---------- */
+const BAT='<svg viewBox="0 0 60 30"><g class="flap"><path d="M30 8C26 2 18 0 2 4C8 8 10 14 14 18C18 12 22 14 26 20L30 14L34 20C38 14 42 12 46 18C50 14 52 8 58 4C42 0 34 2 30 8Z" fill="#241038"/><path d="M27 9L25 2L30 7L35 2L33 9Z" fill="#241038"/><circle cx="28" cy="11" r="1.6" fill="#ffe27a"/><circle cx="32" cy="11" r="1.6" fill="#ffe27a"/></g></svg>';
+function countSVG(){return `<svg class="count" viewBox="0 0 220 300"><g class="all">
+<path d="M28 292Q18 170 70 120L150 120Q202 170 192 292Z" fill="#2a0f3f"/>
+<path d="M50 292Q45 190 80 140L140 140Q175 190 170 292Z" fill="#b3122c"/>
+<path d="M75 140L145 140L155 292L65 292Z" fill="#1a1030"/>
+<path d="M96 140L124 140L120 235L100 235Z" fill="#f5eaff"/>
+<path d="M52 88L100 150L68 162Z" fill="#1a1030"/><path d="M58 98L92 148L72 156Z" fill="#b3122c"/>
+<path d="M168 88L120 150L152 162Z" fill="#1a1030"/><path d="M162 98L128 148L148 156Z" fill="#b3122c"/>
+<path d="M100 152L110 158L100 166Z M120 152L110 158L120 166Z" fill="#d6182f"/><circle cx="110" cy="158" r="4" fill="#a00e22"/>
+<g class="arm l"><path d="M78 152Q46 188 50 216" stroke="#1a1030" stroke-width="18" stroke-linecap="round" fill="none"/><circle cx="50" cy="220" r="11" fill="#e9e2ff"/></g>
+<g class="arm r"><path d="M142 152Q174 188 170 216" stroke="#1a1030" stroke-width="18" stroke-linecap="round" fill="none"/><circle cx="170" cy="220" r="11" fill="#e9e2ff"/></g>
+<path d="M68 72L48 50L74 56Z M152 72L172 50L146 56Z" fill="#e9e2ff"/>
+<ellipse cx="110" cy="78" rx="45" ry="52" fill="#e9e2ff"/>
+<path d="M64 66Q66 18 110 20Q154 18 156 66Q142 46 110 62Q78 46 64 66Z" fill="#14081f"/>
+<path d="M80 62Q91 52 103 61M117 61Q129 52 140 62" stroke="#14081f" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+<ellipse cx="92" cy="76" rx="11" ry="13" fill="#fff"/><ellipse cx="128" cy="76" rx="11" ry="13" fill="#fff"/>
+<circle cx="94" cy="78" r="6.5" fill="#d6182f"/><circle cx="126" cy="78" r="6.5" fill="#d6182f"/>
+<circle cx="94" cy="78" r="2.8" fill="#14081f"/><circle cx="126" cy="78" r="2.8" fill="#14081f"/>
+<circle cx="74" cy="98" r="7" fill="#ffb3d0" opacity=".75"/><circle cx="146" cy="98" r="7" fill="#ffb3d0" opacity=".75"/>
+<path d="M110 82L105 94L115 94Z" fill="#cfc4f0"/>
+<path d="M88 102Q110 130 132 102Z" fill="#6b0b1f"/>
+<path d="M95 104L100 117L106 105Z M114 105L120 117L125 104Z" fill="#fff"/>
+</g></svg>`}
+function skelSVG(mood){
+  const happy=mood==='happy';
+  const brows=happy?'<path d="M30 19Q38 13 46 19M54 19Q62 13 70 19" stroke="#3a2a4a" stroke-width="3" fill="none" stroke-linecap="round"/>':'<path d="M30 14L46 24M70 14L54 24" stroke="#3a2a4a" stroke-width="4" stroke-linecap="round"/>';
+  const mouth=happy?'<path d="M37 50Q50 62 63 50" stroke="#3a2a4a" stroke-width="3" fill="none" stroke-linecap="round"/>':'<path d="M37 55Q50 46 63 55" stroke="#3a2a4a" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  const arms=happy?'<path d="M32 78Q10 62 6 40M68 78Q90 62 94 40" stroke="#fffbea" stroke-width="6" stroke-linecap="round" fill="none"/><circle cx="6" cy="38" r="6" fill="#fffbea"/><circle cx="94" cy="38" r="6" fill="#fffbea"/>':'<path d="M32 78Q8 70 12 48M68 78Q92 70 88 48" stroke="#fffbea" stroke-width="6" stroke-linecap="round" fill="none"/><circle cx="12" cy="45" r="7" fill="#fffbea" stroke="#3a2a4a" stroke-width="2"/><circle cx="88" cy="45" r="7" fill="#fffbea" stroke="#3a2a4a" stroke-width="2"/>';
+  return `<svg viewBox="0 0 100 130">${arms}
+<rect x="30" y="68" width="40" height="52" rx="14" fill="#fffbea" stroke="#3a2a4a" stroke-width="2.5"/>
+<path d="M34 80H66M33 92H67M34 104H66" stroke="#3a2a4a" stroke-width="2.5" stroke-linecap="round"/><path d="M50 68V120" stroke="#3a2a4a" stroke-width="2.5"/>
+<path d="M34 46h32v12q0 7-7 7H41q-7 0-7-7z" fill="#fffbea" stroke="#3a2a4a" stroke-width="2.5"/>
+<ellipse cx="50" cy="30" rx="25" ry="23" fill="#fffbea" stroke="#3a2a4a" stroke-width="2.5"/>
+<ellipse cx="40" cy="31" rx="7.5" ry="8.5" fill="#241038"/><ellipse cx="60" cy="31" rx="7.5" ry="8.5" fill="#241038"/>
+<circle cx="42" cy="29" r="2.4" fill="#fff"/><circle cx="62" cy="29" r="2.4" fill="#fff"/>
+<path d="M50 38L46 46H54Z" fill="#241038"/>${brows}
+<path d="M40 56V64M46 56V64M54 56V64M60 56V64" stroke="#3a2a4a" stroke-width="2"/>${mouth}
+${happy?'<circle cx="28" cy="44" r="4" fill="#ffb3d0" opacity=".8"/><circle cx="72" cy="44" r="4" fill="#ffb3d0" opacity=".8"/>':''}</svg>`}
+
+/* ---------- state ---------- */
+const S={players:1,target:30,names:['Team 1','Team 2','Team 3','Team 4'],teams:[],cur:0,pot:0,run:0,thresh:2,risk:false,deck:[],q:null,opts:[],value:3,busy:true,wrong:0,ended:false};
+const small=matchMedia('(max-width:760px), (pointer:coarse)').matches;
+S.players=small?1:2;
+
+/* ---------- start screen ---------- */
+function newJoke(){let j;do{j=pick(JOKES)}while(j===$('#joke').textContent);$('#joke').textContent=j;$('#startCount .count').classList.remove('hop');void $('#startCount .count').offsetWidth;$('#startCount .count').classList.add('hop')}
+function renderNames(){const el=$('#names');el.innerHTML='';if(S.players<2){el.classList.add('hidden');return}el.classList.remove('hidden');for(let i=0;i<S.players;i++){const inp=document.createElement('input');inp.value=S.names[i];inp.maxLength=16;inp.oninput=()=>{S.names[i]=inp.value||('Team '+(i+1))};el.appendChild(inp)}}
+function seg(id,key,after){document.querySelectorAll(id+' button').forEach(b=>{b.classList.toggle('on',+b.dataset.v===S[key]);b.onclick=()=>{S[key]=+b.dataset.v;seg(id,key,after);after&&after()}})}
+$('#startCount').innerHTML=countSVG();$('#gameCount').innerHTML=countSVG();$('#winCount').innerHTML=countSVG();
+$('#joke').textContent=pick(JOKES);
+$('#jokeBox').onclick=newJoke;
+seg('#segPlayers','players',renderNames);seg('#segTarget','target');renderNames();
+(()=>{const bg=$('#bg');document.querySelectorAll('.amb').forEach(a=>a.innerHTML=BAT)})();
+
+/* ---------- effects ---------- */
+function cc(sel,cls,ms){const c=document.querySelector(sel+' .count');c.classList.remove(cls);void c.getBoundingClientRect();c.classList.add(cls);if(ms)setTimeout(()=>c.classList.remove(cls),ms)}
+function batBurst(n){for(let i=0;i<n;i++){const b=document.createElement('div');b.className='fly-bat';b.innerHTML=BAT;b.style.top=(8+Math.random()*60)+'vh';b.style.animationDuration=(3+Math.random()*2)+'s';b.style.animationDelay=(i*.25)+'s';$('#bats').appendChild(b);setTimeout(()=>b.remove(),7500)}}
+function flyPumpkins(fromEl,n){const to=$('#potIcon').getBoundingClientRect(),fr=fromEl.getBoundingClientRect();const x0=fr.left+fr.width/2-16,y0=fr.top+fr.height/3;for(let i=0;i<n;i++){const s=document.createElement('div');s.className='fly';s.textContent='🎃';s.style.left=x0+'px';s.style.top=y0+'px';document.body.appendChild(s);const dx=to.left+to.width/2-16-x0,dy=to.top-y0;s.animate([{transform:'translate(0,0) scale(.6)',opacity:1},{transform:`translate(${dx*.25}px,${dy*.25-70}px) scale(1.4)`,offset:.35},{transform:`translate(${dx}px,${dy}px) scale(.8)`,opacity:.9}],{duration:900+i*150,delay:i*120,easing:'ease-in-out',fill:'backwards'}).onfinish=()=>s.remove()}}
+function say(t,color){const el=$('#say');el.innerHTML=t;el.style.color=color||'';el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop')}
+
+/* ---------- game ---------- */
+function startGame(){
+  S.teams=[];const n=S.players;
+  for(let i=0;i<n;i++)S.teams.push({name:n===1?'You':(S.names[i]||'Team '+(i+1)),bank:0});
+  S.cur=0;S.pot=0;S.run=0;S.thresh=Math.random()<.5?2:3;S.risk=false;S.deck=shuffle(BANK);S.ended=false;
+  $('#start').classList.add('hidden');$('#win').classList.add('hidden');$('#game').classList.remove('hidden');
+  window.scrollTo(0,0);renderBoard();nextQuestion(true);
+}
+function renderBoard(){
+  const b=$('#board');b.innerHTML='';
+  S.teams.forEach((t,i)=>{const d=document.createElement('div');d.className='team'+(i===S.cur?' active':'');
+    d.innerHTML=`<div class="nm"><span></span><b>${t.bank} / ${S.target} 🎃</b></div><div class="bag"><i style="width:${Math.min(100,t.bank/S.target*100)}%"></i></div>`;
+    d.querySelector('span').textContent='🩸 '+t.name;b.appendChild(d)});
+  $('#potN').textContent=S.pot;
+}
+function nextQuestion(first){
+  if(!S.deck.length)S.deck=shuffle(BANK);
+  S.q=S.deck.pop();S.opts=shuffle(S.q.opts);S.value=S.risk?6:3;S.wrong=0;S.busy=false;
+  const t=S.teams[S.cur];
+  $('#tag').innerHTML=`<span>${S.players>1?'Over to <b></b>!':'Your question'}</span>`+(S.risk?'<span class="risk">DOUBLE OR NOTHING – one go only!</span>':'');
+  if(S.players>1)$('#tag b').textContent=t.name;
+  $('#qtext').innerHTML=fmt(S.q.q);say('');
+  $('#worth').textContent='· this question is worth '+S.value+' 🎃';
+  $('#nextBtn').classList.add('hidden');
+  const c=$('#coffins');c.innerHTML='';
+  const cols=['#c2661f','#7a45b8','#2f9a62','#d1476a'];
+  S.opts.forEach((o,i)=>{
+    const d=document.createElement('div');d.className='coffin';d.style.setProperty('--wood',cols[i]);
+    d.innerHTML=`<div class="c-inside poly"></div><div class="c-skel"></div><div class="c-bub"></div><button class="c-lid poly" aria-label="Coffin ${'ABCD'[i]}"><span class="lt">${'ABCD'[i]}</span><span class="ans">${fmt(o.t)}</span></button>`;
+    d.querySelector('.c-lid').onclick=()=>pick_(i);c.appendChild(d)});
+  renderBoard();
+  if(S.q.angle){$('#song').classList.remove('hidden');cc('#gameCount','dance');setTimeout(()=>{$('#song').classList.add('hidden');document.querySelector('#gameCount .count').classList.remove('dance')},4800)}
+  else{$('#song').classList.add('hidden');document.querySelector('#gameCount .count').classList.remove('dance');cc('#gameCount','hop',800)}
+}
+async function pick_(i){
+  if(S.busy||S.ended)return;
+  const el=$('#coffins').children[i];if(el.classList.contains('open')||el.classList.contains('dead'))return;
+  S.busy=true;const o=S.opts[i];
+  if(o.ok){
+    el.querySelector('.c-skel').innerHTML=skelSVG('happy')+'';
+    el.classList.add('open');
+    S.pot+=S.value;S.run++;
+    flyPumpkins(el,Math.min(S.value,6));batBurst(3);
+    setTimeout(()=>{$('#potN').textContent=S.pot;$('#potBox').classList.remove('shake');void $('#potBox').offsetWidth},500);
+    cc('#gameCount','shake',600);say(pick(RIGHT),'#2a8a3a');
+    await wait(1700);
+    if(S.risk||S.run>=S.thresh)offer();else{$('#nextBtn').textContent='Next question';$('#nextBtn').classList.remove('hidden');S.busy=false}
+  }else{
+    const sk=el.querySelector('.c-skel');sk.innerHTML=skelSVG('grumpy');
+    const bub=el.querySelector('.c-bub');bub.textContent=pick(SKEL);bub.classList.add('show');
+    el.classList.add('open');
+    if(S.risk){ // bust
+      say(fmt(o.n),'#b3122c');
+      await wait(2000);
+      el.classList.add('slam');el.classList.remove('open');bub.classList.remove('show');el.classList.add('dead');
+      await wait(500);
+      bust();return;
+    }
+    S.wrong++;S.value=Math.max(1,S.value-1);
+    $('#worth').textContent='· this question is now worth '+S.value+' 🎃';
+    say(fmt(o.n),'#b3122c');
+    await wait(2300);
+    el.classList.add('slam');el.classList.remove('open');bub.classList.remove('show');
+    await wait(400);el.classList.add('dead');S.busy=false;
+  }
+}
+function offer(){
+  const will=S.teams[S.cur].bank+S.pot>=S.target;
+  $('#mText').innerHTML=`You have <b>${S.pot} 🎃</b> on the table. Bank them in my Blood Bank, or risk them on one more question worth <b>double</b>? One wrong coffin and my bats take the lot!`;
+  $('#mWin').textContent=will?'Banking now fills the Blood Bank and wins the game!':'';
+  $('#bankBtn').textContent='Bank it ('+S.pot+' 🎃)';
+  $('#modal').classList.remove('hidden');
+}
+function endTurn(){ // pass play on
+  S.pot=0;S.run=0;S.risk=false;S.thresh=Math.random()<.5?2:3;
+  if(S.players>1)S.cur=(S.cur+1)%S.players;
+}
+$('#bankBtn').onclick=async()=>{
+  $('#modal').classList.add('hidden');
+  const t=S.teams[S.cur];t.bank+=S.pot;
+  if(t.bank>=S.target){S.pot=0;renderBoard();return win(t)}
+  say('Safe in the Blood Bank! Glug glug glug.','#2a8a3a');cc('#gameCount','hop',800);
+  endTurn();renderBoard();
+  $('#nextBtn').textContent=S.players>1?'Next team':'Next question';$('#nextBtn').classList.remove('hidden');S.busy=false;
+};
+$('#riskBtn').onclick=()=>{$('#modal').classList.add('hidden');S.risk=true;S.run=0;nextQuestion()};
+function bust(){
+  const lost=S.pot;batBurst(6);$('#potBox').classList.add('shake');
+  [...$('#coffins').children].forEach((c,i)=>{if(S.opts[i].ok){c.querySelector('.c-skel').innerHTML=skelSVG('happy');c.classList.remove('dead');c.classList.add('open','reveal')}});
+  say(`${pick(GLOAT)} (${lost} 🎃 gone!) The right answer was ${fmt(S.opts.find(o=>o.ok).t)}.`,'#b3122c');
+  cc('#gameCount','hop',800);
+  endTurn();setTimeout(renderBoard,300);
+  $('#nextBtn').textContent=S.players>1?'Next team':'Next question';$('#nextBtn').classList.remove('hidden');S.busy=false;
+}
+$('#nextBtn').onclick=()=>{if(!S.busy||!$('#nextBtn').classList.contains('hidden')){S.busy=true;nextQuestion()}};
+
+function win(t){
+  S.ended=true;$('#game').classList.add('hidden');$('#win').classList.remove('hidden');
+  $('#winSub').textContent=S.players>1?t.name+' wins!':'You win!';
+  cc('#winCount','dance');window.scrollTo(0,0);
+  for(let i=0;i<36;i++){const r=document.createElement('div');r.className='rain';r.textContent=i%5===0?'🦇':'🎃';r.style.left=Math.random()*100+'vw';r.style.animationDuration=(3+Math.random()*3)+'s';r.style.animationDelay=(Math.random()*2.5)+'s';document.body.appendChild(r);setTimeout(()=>r.remove(),9000)}
+}
+$('#playBtn').onclick=startGame;
+$('#againBtn').onclick=startGame;
+$('#menuBtn').onclick=()=>{$('#win').classList.add('hidden');$('#start').classList.remove('hidden');newJoke()};
+$('#quitBtn').onclick=()=>{if(confirm('Back to the menu? This game will be lost.')){S.ended=true;$('#modal').classList.add('hidden');$('#game').classList.add('hidden');$('#start').classList.remove('hidden');newJoke()}};
+document.addEventListener('keydown',e=>{
+  if($('#game').classList.contains('hidden')||!$('#modal').classList.contains('hidden'))return;
+  const k=e.key.toLowerCase();let i='1234'.indexOf(k);if(i<0)i='abcd'.indexOf(k);
+  if(i>=0&&(e.target.tagName!=='INPUT'))pick_(i);
+  else if((k==='enter'||k===' ')&&!$('#nextBtn').classList.contains('hidden')){e.preventDefault();$('#nextBtn').click()}
+});
+</script>
+</body>
+</html>
