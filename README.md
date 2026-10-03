@@ -13,6 +13,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Erno | `erno/` |
 | Fraction Fight Night | `fraction-fight-night/` |
 | Higher or Lower | `higher-or-lower/` |
+| Jelly Bean Disco | `jelly-bean-disco/` |
 | Loads of Frames | `loads-of-frames/` |
 | Lucky Duck | `lucky-duck/` |
 | Number Forensics | `number-forensics/` |
