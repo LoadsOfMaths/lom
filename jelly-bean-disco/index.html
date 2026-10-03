@@ -137,6 +137,7 @@ button{font:inherit;color:#fff;border:0;cursor:pointer}
   <div class="card">
     <h1>Jelly Bean Disco</h1>
     <p class="tag">Pop the jelly bean with the right answer and clear the dance floor!</p>
+    <p class="note" id="phoneHint" hidden>No sound on your phone? Switch off silent mode (on an iPhone, the side switch should not show red).</p>
     <h3>Tables to practise</h3>
     <div class="chips" id="chips"></div>
     <div class="presets" id="presets" style="margin-top:8px"></div>
@@ -410,6 +411,8 @@ $('#bSet').onclick=openSetup;
 $('#bMusic').onclick=e=>{musicOn=!musicOn;e.target.classList.toggle('off',!musicOn)};
 $('#bFx').onclick=e=>{fxOn=!fxOn;e.target.classList.toggle('off',!fxOn)};
 $('#vol').oninput=e=>{vol=e.target.value/100;if(master)master.gain.value=vol};
+const isPhone=/iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent)||(matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<600);
+if(isPhone)$('#phoneHint').hidden=false;
 buildSetup();
 })();
 </script>
