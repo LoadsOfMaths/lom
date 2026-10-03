@@ -13,6 +13,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Dice Games | `dice-games/` |
 | Erno | `erno/` |
 | Fraction Fight Night | `fraction-fight-night/` |
+| Heads or Tails | `heads-or-tails/` |
 | Higher or Lower | `higher-or-lower/` |
 | Jelly Bean Disco | `jelly-bean-disco/` |
 | Loads of Frames | `loads-of-frames/` |
