@@ -247,7 +247,8 @@ const STEP=60/120/4;let nextT=0,step=0;
 const level=()=>partyMode?3:(()=>{const p=beans.length?1-left/beans.length:0;return p<.3?0:p<.65?1:2})();
 function sched(){
   if(!ac)return;
-  while(nextT<ac.currentTime+.12){
+  if(nextT<ac.currentTime-.05){const missed=Math.ceil((ac.currentTime-nextT)/STEP);step=(step+missed)%64;nextT+=missed*STEP}
+  while(nextT<ac.currentTime+.15){
     if(musicOn&&running)playStep(step,nextT);
     nextT+=STEP;step=(step+1)%64;
   }
@@ -260,7 +261,7 @@ function playStep(s,t){
   if((i%2===1)&&lv>=1)noise(t,.04,.08,'highpass',9000,B);
   if(i%2===0&&i!==14){tone({type:'sawtooth',f:(i%4===2)?r*2:r,t,dur:.15,vol:.42,lp:700,bus:B})}
   if(lv>=1&&(i===3||i===6||i===11)){CH[bar].forEach(sm=>tone({type:'sawtooth',f:hz(r*2,sm),t,dur:.16,vol:.07,lp:2200,bus:B}))}
-  if(lv>=2&&i%2===1){tone({type:'triangle',f:hz(r*4,CH[bar][(i>>1)%4]),t,dur:.12,vol:.12,bus:B})}
+  if(lv>=2&&i%2===0){tone({type:'triangle',f:hz(r*4,CH[bar][(i>>1)%4]),t,a:.012,dur:.15,vol:.12,bus:B})}
   if(lv>=3&&i%4===0){tone({type:'square',f:hz(r*4,CH[bar][(i>>2)%4]+12),t,dur:.2,vol:.05,lp:3000,bus:B})}
 }
 const fx=fn=>{if(ac&&fxOn)fn()};
