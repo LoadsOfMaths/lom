@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Recite Pi</title>
+<style>
+:root{
+  --or:#f47b3f;--or2:#c9561c;--bl:#3f73b8;--bl2:#2b5289;--gr:#4a5560;--gr2:#8a949d;
+  --cream:#fbf3e3;--paper:#fffdf7;--ink:#2f3942;--red:#d8322a;--grn:#1c8a4c;--crust:#e9b25c;
+  --head:"Super Bouncer","Baloo 2","Fredoka","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
+  --body:"Anak Orang","Nunito","Trebuchet MS","Segoe UI",Arial,sans-serif;
+  --mono:"Courier New",Consolas,"Lucida Console",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--body);color:var(--ink);touch-action:manipulation;-webkit-text-size-adjust:100%;
+  background:
+    linear-gradient(rgba(74,85,96,.13) 2px,transparent 2px) 0 0/100% 68px,
+    linear-gradient(90deg,rgba(74,85,96,.13) 2px,transparent 2px) 0 0/136px 100%,
+    var(--cream);
+}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+h1,h2,h3{font-family:var(--head)}
+.mono{font-family:var(--mono);font-weight:700}
+.dim{color:var(--gr2)}
+.small{font-size:.85em}
+
+/* awning */
+.awning{position:sticky;top:0;z-index:4;height:clamp(20px,3.2vh,34px);
+  background:repeating-linear-gradient(90deg,var(--or) 0 40px,#fff 40px 80px);box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.awning::after{content:"";position:absolute;left:0;right:0;top:100%;height:20px;
+  background:
+    radial-gradient(circle at 20px 0,var(--or) 19px,transparent 20px) 0 0/80px 20px repeat-x,
+    radial-gradient(circle at 20px 0,#fff 19px,transparent 20px) 40px 0/80px 20px repeat-x;
+  filter:drop-shadow(0 3px 2px rgba(0,0,0,.22))}
+
+.shop{min-height:calc(100dvh - 34px);display:flex;flex-direction:column;
+  padding:28px clamp(10px,2vw,30px) clamp(10px,2vh,22px);gap:clamp(8px,1.6vh,18px)}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:clamp(50px,5.4vw,84px);height:auto;flex:none;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25))}
+h1{margin:0;font-size:clamp(28px,4vw,60px);line-height:1;color:var(--bl2)}
+.tag{margin:.15em 0 0;color:var(--or2);font-size:clamp(14px,1.5vw,22px);font-weight:700}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+.btn{color:#fff;background:var(--bl);border:none;border-radius:999px;padding:.45em 1em;
+  font-size:clamp(14px,1.35vw,20px);font-weight:700;box-shadow:0 3px 0 var(--bl2)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--bl2)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.primary{background:var(--or);box-shadow:0 3px 0 var(--or2)}
+.btn.ghost{background:#fff;color:var(--bl2);box-shadow:0 0 0 2px var(--bl) inset}
+.btn.danger{background:#fff;color:var(--red);box-shadow:0 0 0 2px var(--red) inset}
+body.reciting nav{visibility:hidden}
+
+/* till roll */
+.tapezone{position:relative}
+.till{position:relative;margin-right:34px}
+.till::after{content:"";position:absolute;right:-34px;top:-8px;bottom:-8px;width:44px;border-radius:10px;
+  background:linear-gradient(90deg,#39424b,var(--gr) 45%,#6a7680);box-shadow:0 4px 8px rgba(0,0,0,.3)}
+.tape-wrap{background:var(--paper);border-radius:4px 0 0 4px;box-shadow:0 4px 10px rgba(0,0,0,.22);padding:12px 0 6px;
+  border-top:1px solid #eee3cc;border-bottom:1px solid #e2d6bb}
+.tape{white-space:nowrap;overflow:hidden;padding:0 22px 22px 22px;
+  font-family:var(--mono);font-weight:700;color:var(--ink);font-size:clamp(34px,6.2vw,88px);line-height:1.15}
+.tape.scrolled{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 70px);mask-image:linear-gradient(90deg,transparent 0,#000 70px)}
+.tape .placeholder{color:#d9cfb8}
+.tape .d{display:inline-block;position:relative;animation:inkIn .18s ease-out}
+.tape .lead{color:#b9b09a;animation:none}
+.tape .gap{margin-left:.28em}
+.tape .tick::after{content:attr(data-n);position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  font-family:var(--body);font-weight:700;font-size:14px;color:var(--gr2);margin-top:1px}
+.tape .wrong{color:var(--red);text-decoration:line-through;animation:shake .45s}
+.tape .should{color:var(--grn);font-size:.5em;vertical-align:.9em;margin-left:.1em}
+.tape .caret{display:inline-block;width:.55em;height:.95em;vertical-align:-.1em;margin-left:.06em;
+  border-bottom:5px solid var(--or);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+@keyframes inkIn{from{transform:translateX(10px);opacity:0}to{transform:none;opacity:1}}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+.stats{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;margin-top:12px;
+  font-size:clamp(15px,1.6vw,24px);font-weight:700}
+.stats.off{visibility:hidden}
+.stats .big{font-size:clamp(32px,4vw,60px);color:var(--or2);font-family:var(--mono)}
+#curAward{color:var(--bl);margin-left:.4em}
+#nextAward b{color:var(--bl)}
+
+.pop{position:absolute;left:50%;top:calc(100% + 34px);transform:translate(-50%,-50%) scale(0);
+  background:var(--or);color:#fff;padding:.3em .9em;border-radius:18px;border:4px solid #fff;font-family:var(--head);
+  font-size:clamp(24px,3.4vw,52px);box-shadow:0 8px 24px rgba(0,0,0,.35);pointer-events:none;z-index:5;opacity:0;white-space:nowrap}
+.pop.show{animation:popIn 1.9s ease forwards}
+@keyframes popIn{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg);opacity:0}
+  18%{transform:translate(-50%,-50%) scale(1.12) rotate(3deg);opacity:1}28%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}
+  80%{opacity:1}100%{transform:translate(-50%,-90%) scale(.9) rotate(-2deg);opacity:0}}
+
+/* home */
+#idle{flex:1;min-height:0;display:grid;grid-template-columns:minmax(230px,1fr) 2.3fr;gap:clamp(12px,2vw,30px)}
+body.reciting #idle{display:none}
+.startpanel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.bigpie{width:clamp(110px,13vw,200px);height:auto}
+.steam path{animation:steam 2.6s ease-in-out infinite}
+.steam path:nth-child(2){animation-delay:.5s}.steam path:nth-child(3){animation-delay:1s}
+@keyframes steam{0%,100%{opacity:.15;transform:translateY(4px)}50%{opacity:.75;transform:translateY(-4px)}}
+.start{font-family:var(--head);font-size:clamp(26px,3.4vw,54px);padding:.4em 1em;border-radius:22px;border:none;
+  background:var(--or);color:#fff;box-shadow:0 7px 0 var(--or2),0 12px 20px rgba(0,0,0,.25);transition:transform .1s}
+.start:active{transform:translateY(5px);box-shadow:0 2px 0 var(--or2),0 5px 10px rgba(0,0,0,.25)}
+.record{font-size:clamp(15px,1.4vw,21px);color:var(--gr);font-weight:700}
+#btnPractice{display:none}
+body.personal #btnPractice{display:inline-block}
+
+.panel{background:var(--paper);border:4px solid var(--bl);border-radius:18px;padding:10px 16px 14px;
+  display:flex;flex-direction:column;min-height:0;box-shadow:0 6px 14px rgba(0,0,0,.18)}
+.panel h2{margin:0 0 6px;color:var(--bl2);text-align:center;font-size:clamp(22px,2.4vw,38px)}
+#pbPanel{display:none}
+body.personal #pbPanel{display:flex}
+body.personal #hofPanel{display:none}
+
+#hofList{list-style:none;margin:0;padding:0 4px 0 0;overflow:auto;flex:1;display:grid;column-gap:30px;align-content:start}
+#hofList.two{grid-template-columns:1fr 1fr;grid-auto-flow:column}
+#hofList li{display:grid;grid-template-columns:2.1em minmax(0,1fr) auto 3em;align-items:center;gap:8px;
+  padding:3px 4px;border-bottom:1px dashed rgba(74,85,96,.25);font-size:clamp(15px,1.45vw,22px);font-weight:700}
+#hofList.dates li{grid-template-columns:2.1em minmax(0,1fr) auto 3em 5.6em}
+#hofList li.empty{display:block;text-align:center;color:var(--gr2);border:none;padding-top:2em}
+.rk{width:1.7em;height:1.7em;border-radius:50%;display:grid;place-items:center;font-size:.8em;border:2px solid #c9d0d6;color:var(--gr)}
+li.m1 .rk{background:#e8c547;color:#3a2e00;border-color:#e8c547}
+li.m2 .rk{background:#cfd6dc;color:#2a2f33;border-color:#cfd6dc}
+li.m3 .rk{background:#c98a52;color:#2e1a08;border-color:#c98a52}
+.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aw{font-size:.68em;color:var(--bl);white-space:nowrap}
+.sc{text-align:right;color:var(--or2);font-family:var(--mono);font-weight:700}
+.dt{font-size:.68em;color:var(--gr2);text-align:right}
+li.hl{animation:glow 1.2s ease-in-out 4}
+@keyframes glow{50%{background:rgba(244,123,63,.3)}}
+
+/* personal best */
+#pbBody{overflow:auto;flex:1;font-size:clamp(15px,1.4vw,21px)}
+.pbtop{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,28px);flex-wrap:wrap;text-align:left}
+.pbnum{font-family:var(--mono);font-weight:700;font-size:clamp(64px,9vw,130px);line-height:.95;color:var(--or2)}
+.pbsub{font-weight:700}
+.bar{height:16px;border-radius:999px;background:#e6ebef;overflow:hidden;margin:6px 0 2px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--or),var(--or2));border-radius:999px}
+.pbh{font-family:var(--head);color:var(--bl2);margin:14px 0 6px;font-size:1.05em}
+.ladder{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:6px}
+.chip{display:flex;align-items:center;gap:8px;border:2px solid #d5dbe0;border-radius:12px;padding:3px 8px;color:var(--gr2);font-size:.82em;font-weight:700;background:#fff}
+.chip b{font-family:var(--mono);min-width:2.6em;text-align:right}
+.chip.got{border-color:var(--or);background:#fff3e2;color:var(--ink)}
+.chip.got b{color:var(--or2)}
+.chip.got::after{content:"✓";margin-left:auto;color:var(--grn)}
+.tries{display:flex;gap:6px;flex-wrap:wrap}
+.try{font-family:var(--mono);font-weight:700;background:#eef3f8;border-radius:10px;padding:2px 10px;color:var(--bl2)}
+.try.best{background:var(--or);color:#fff}
+.hot{color:var(--red)}
+
+/* till keypad */
+.keypad{position:fixed;left:50%;bottom:0;z-index:20;width:min(560px,96vw);
+  transform:translate(-50%,110%);visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.3,1.15),visibility .38s;
+  background:linear-gradient(#5a6672,var(--gr));border:4px solid #39424b;border-bottom:none;border-radius:24px 24px 0 0;
+  padding:14px 14px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -8px 26px rgba(0,0,0,.4)}
+body.reciting .keypad{transform:translate(-50%,0);visibility:visible}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.k{font-family:var(--mono);font-weight:700;font-size:clamp(26px,5vh,48px);height:clamp(48px,9.5vh,88px);border-radius:16px;
+  border:none;background:var(--paper);color:var(--bl2);box-shadow:0 5px 0 #c9bfa6;
+  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:background .08s,transform .08s}
+.k.flash{background:var(--or);color:#fff;transform:translateY(3px);box-shadow:0 2px 0 var(--or2)}
+.k.wide{grid-column:span 2}
+.k.done{grid-column:1/-1;font-family:var(--body);font-size:clamp(15px,2.6vh,22px);height:auto;padding:.5em;
+  background:transparent;color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.6) inset}
+
+/* modals */
+.modal{position:fixed;inset:0;background:rgba(30,40,50,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:12px}
+.modal.open{display:flex}
+.card{background:var(--paper);border:5px solid var(--bl);border-radius:18px;width:min(900px,100%);max-height:92dvh;overflow:auto;
+  padding:20px clamp(14px,2.4vw,26px) 24px;box-shadow:0 20px 50px rgba(0,0,0,.45);position:relative;font-size:clamp(15px,1.3vw,19px)}
+.card h2{color:var(--bl2);margin:0 0 10px;font-size:clamp(22px,2.4vw,34px);padding-right:30px}
+.card h3{color:var(--or2);margin:16px 0 8px}
+.card section{border-top:2px dashed #dfe4e8;padding-top:2px;margin-top:12px}
+.x{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--gr);font-size:34px;line-height:1}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:10px 0}
+label{display:flex;flex-direction:column;gap:4px;font-weight:700}
+label.chk{flex-direction:row;align-items:center;gap:8px;margin:7px 0;cursor:pointer;font-weight:400}
+input[type=text],input[type=number],input[type=date]{font:inherit;color:var(--ink);background:#fff;border:2px solid #b9c3cc;border-radius:10px;padding:.35em .6em}
+input:focus{outline:none;border-color:var(--or)}
+input.init{width:3.2em;text-align:center;text-transform:uppercase}
+input[type=number]{width:6em}
+input[type=checkbox],input[type=radio]{width:20px;height:20px;accent-color:var(--or);flex:none}
+.msg{min-height:1.3em;color:var(--grn);margin:6px 0 0;font-weight:700}
+.msg.err{color:var(--red)}
+
+.result{text-align:center}
+.result .score{font-family:var(--mono);font-weight:700;font-size:clamp(60px,9vw,120px);color:var(--or2);line-height:1;margin:6px 0 0}
+.rosette{display:inline-flex;align-items:center;gap:10px;margin:10px 0 4px;padding:.25em 1em .25em .25em;
+  background:#fff3e2;border:3px solid var(--or);border-radius:40px;font-size:1.2em;font-weight:700;font-family:var(--head);color:var(--bl2)}
+.rosette span{width:2.3em;height:2.3em;border-radius:50%;background:var(--or);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-size:.78em}
+.newpb{display:inline-block;background:var(--grn);color:#fff;border-radius:12px;padding:.2em .8em;font-family:var(--head);font-size:1.25em;margin-top:8px}
+.bad{color:var(--red)}.good{color:var(--grn)}
+.save{margin:14px auto 0;max-width:520px;text-align:left;border-top:2px dashed #dfe4e8;padding-top:4px}
+.center{justify-content:center}
+
+.mlist{max-height:300px;overflow:auto;border:2px solid #dfe4e8;border-radius:12px;padding:4px 8px;background:#fff}
+.mrow{display:grid;grid-template-columns:24px 1fr 4em 6em;align-items:center;gap:10px;padding:4px 0;border-bottom:1px dashed #dfe4e8;cursor:pointer;font-weight:400}
+.mrow .sc{font-size:1em}
+.mergebox{background:#eef3f8;border-radius:12px;padding:8px 12px;margin-top:8px}
+.awgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px 18px}
+.awgrid label{flex-direction:row;align-items:center;gap:8px}
+.awgrid span{width:3.3em;text-align:right;color:var(--or2);font-family:var(--mono);font-weight:700}
+.awgrid input{flex:1;min-width:0}
+table.awards{width:100%;border-collapse:collapse}
+table.awards td,table.awards th{padding:6px 8px;border-bottom:1px dashed #dfe4e8;text-align:left}
+table.awards th{color:var(--bl2)}
+table.awards td.n{color:var(--or2);font-family:var(--mono);font-weight:700;text-align:right;width:4em}
+
+.study{font-size:clamp(13px,1.25vw,19px)}
+.srow{display:flex;gap:12px;align-items:baseline;padding:3px 0;border-bottom:1px dashed #dfe4e8}
+.slab{width:5.2em;flex:none;text-align:right;color:var(--gr2);font-size:.75em}
+.srow .mono{letter-spacing:.04em;display:flex;flex-wrap:wrap;gap:0 .55em}
+.ms{color:var(--or2);text-decoration:underline;text-underline-offset:4px}
+
+.stepper{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px 0}
+.stepper output{font-family:var(--mono);font-weight:700;font-size:2.4em;color:var(--or2);min-width:3em;text-align:center}
+.quick{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+
+.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-180%);visibility:hidden;z-index:70;background:var(--bl2);color:#fff;font-weight:700;
+  padding:.5em 1.2em;border-radius:14px;font-size:clamp(15px,1.6vw,24px);box-shadow:0 8px 20px rgba(0,0,0,.35);transition:transform .35s,visibility .35s;max-width:92vw;text-align:center}
+.toast.show{transform:translate(-50%,0);visibility:visible}
+
+/* big screens: fit one screen, lists scroll inside */
+@media (min-width:761px) and (min-height:561px){
+  body{overflow:hidden}
+  .shop{height:calc(100dvh - 34px)}
+}
+/* phones and narrow windows */
+@media (max-width:760px){
+  #idle{grid-template-columns:1fr}
+  #hofList.two{grid-template-columns:1fr;grid-auto-flow:row}
+  #hofList.two{grid-template-rows:none !important}
+  .bigpie{width:96px}
+  .till{margin-right:22px}.till::after{right:-22px;width:30px}
+  .tape{padding:0 12px 20px}
+  .aw{display:none}
+  #hofList li,#hofList.dates li{grid-template-columns:2.1em minmax(0,1fr) 3em}
+  #hofList.dates li{grid-template-columns:2.1em minmax(0,1fr) 3em 5.2em}
+  .mrow{grid-template-columns:24px 1fr 3em 5.4em}
+  .srow{flex-direction:column;gap:0}.slab{text-align:left}
+}
+/* phone held sideways: compact keypad, no header while reciting */
+@media (max-height:520px){
+  body.reciting header{display:none}
+  .keypad{width:min(640px,96vw);padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+  .keys{grid-template-columns:repeat(4,1fr);gap:7px}
+  .k{height:40px;font-size:24px;border-radius:12px;box-shadow:0 3px 0 #c9bfa6}
+  .k.wide{grid-column:4;grid-row:1}
+  .k[data-k="."]{grid-column:4;grid-row:2}
+  .k.done{grid-column:4;grid-row:3;font-size:15px;height:40px;padding:0}
+  .stats{margin-top:6px}
+  .pop{top:38%}
+}
+</style>
+</head>
+<body>
+<div class="awning"></div>
+<div class="shop">
+  <header>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="47" fill="#c98a3c"/>
+        <circle cx="50" cy="50" r="47" fill="none" stroke="#f3cf8a" stroke-width="7" stroke-dasharray="7 6"/>
+        <circle cx="50" cy="50" r="36" fill="#e9b25c"/>
+        <text x="50" y="68" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="54" font-style="italic" fill="#8a531b">π</text>
+      </svg>
+      <div><h1>Recite Pi</h1><p class="tag" id="tag">Easy as pie? Prove it!</p></div>
+    </div>
+    <nav>
+      <button class="btn" id="btnStudy">Study</button>
+      <button class="btn" id="btnAwards">Awards</button>
+      <button class="btn" id="btnSettings">Settings</button>
+    </nav>
+  </header>
+
+  <section class="tapezone">
+    <div class="till"><div class="tape-wrap"><div class="tape" id="tape"><span class="placeholder">3.14159…</span></div></div></div>
+    <div class="pop" id="pop"></div>
+    <div class="stats off" id="stats">
+      <div><span class="big" id="places">0</span> <span id="placesWord">decimal places</span><span id="curAward"></span></div>
+      <div id="nextAward"></div>
+    </div>
+  </section>
+
+  <section id="idle">
+    <div class="startpanel">
+      <svg class="bigpie" viewBox="0 0 200 170" aria-hidden="true">
+        <g class="steam" fill="none" stroke="#9aa5ae" stroke-width="5" stroke-linecap="round">
+          <path d="M70 48c-10-10 10-16 0-28"/><path d="M100 44c-10-10 10-18 0-32"/><path d="M130 48c-10-10 10-16 0-28"/>
+        </g>
+        <ellipse cx="100" cy="150" rx="92" ry="12" fill="rgba(0,0,0,.12)"/>
+        <path d="M14 96h172l-16 46a12 12 0 0 1-11 8H41a12 12 0 0 1-11-8z" fill="#c9d0d6"/>
+        <path d="M14 96h172l-4 12H18z" fill="#aab3bb"/>
+        <path d="M12 96c0-26 40-44 88-44s88 18 88 44z" fill="#e9b25c"/>
+        <path d="M12 96c6 10 16 10 22 0c6 10 16 10 22 0c6 10 16 10 22 0c6 10 16 10 22 0c6 10 16 10 22 0c6 10 16 10 22 0c6 10 16 10 22 0c6 10 16 10 22 0z" fill="#d79a45"/>
+        <text x="100" y="92" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="38" font-style="italic" fill="#8a531b">π</text>
+      </svg>
+      <button class="start" id="btnStart">Recite Pi!</button>
+      <button class="btn ghost" id="btnPractice">Practise a section</button>
+      <div class="record" id="record"></div>
+    </div>
+    <div class="panel" id="hofPanel"><h2>Hall of Fame</h2><ol id="hofList"></ol></div>
+    <div class="panel" id="pbPanel"><h2>My Personal Best</h2><div id="pbBody"></div></div>
+  </section>
+</div>
+
+<div class="keypad" id="keypad"><div class="keys" id="keys"></div></div>
+<div class="modal" id="modal"><div class="card" id="card"></div></div>
+<div class="modal" id="confirm" style="z-index:60">
+  <div class="card" style="width:min(460px,100%);text-align:center">
+    <p class="cmsg" style="font-size:1.15em;font-weight:700"></p>
+    <div class="row center"><button class="btn danger cyes">Yes</button><button class="btn ghost cno">Cancel</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const PI = "1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748815209209628292540917153643678925903600113305305488204665213841469519415116094330572703657595919530921861173819326117931051185480744623799627495673518857527248912279381830119491298336733624406566430860213949463952247371907021798609437027705392171762931767523846748184676694051320005681271452635608277857713427577896091736371787214684409012249534301465495853710507922796892589235420199561121290219608640344181598136297747713099605187072113499999983729780499510597317328160963185950244594553469083026425223082533446850352619311881710100031378387528865875332083814206171776691473035982534904287554687311595628638823537875937519577818577805321712268066130019278766111959092164201989";           // first 1000 decimal places
+const FULL = "3." + PI;
+const THRESHOLDS = [5,10,15,20,25,50,75,100,150,200,250,300,400,500,750,1000];
+const DEFAULT_NAMES = ["Bronze Award","Silver Award","Gold Award","Platinum Award","Diamond Award",
+  "Pi Scholar","Pi Expert","Pi Master","Pi Grandmaster","Pi Legend",
+  "Pi Hero","Pi Genius","Pi Wizard","Pi Superstar","Pi Guru","Pi Immortal"];
+const KEY = "recitePi.v1";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const norm = s => s.toLowerCase().replace(/[\s.]+/g, "");
+const plural = (n, w) => n === 1 ? w : w + "s";
+const newMe = () => ({ best: 0, bestDate: "", attempts: 0, history: [], fails: {} });
+
+let S = { hall: [], me: newMe(),
+  settings: { mode: "auto", showDates: true, keypad: "phone", popups: true, awardNames: DEFAULT_NAMES.slice() } };
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return;
+    const o = JSON.parse(raw);
+    if(Array.isArray(o.hall)) S.hall = o.hall.filter(e => e && typeof e.name === "string" && Number.isFinite(e.score));
+    if(o.me && Number.isFinite(o.me.best)) S.me = Object.assign(newMe(), o.me);
+    Object.assign(S.settings, o.settings || {});
+    if(Array.isArray(S.settings.awardNames) && S.settings.awardNames.length === 15)
+      S.settings.awardNames.splice(14, 0, "Pi Guru");   // older save without the 750 award
+    if(!Array.isArray(S.settings.awardNames) || S.settings.awardNames.length !== THRESHOLDS.length)
+      S.settings.awardNames = DEFAULT_NAMES.slice();
+  }catch(e){}
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function ukDate(iso){ const p = (iso||"").split("-"); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : ""; }
+
+/* phone = small touch screen. Tablets and whiteboards keep the class Hall of Fame. */
+function isPhone(){
+  const coarse = window.matchMedia && matchMedia("(pointer:coarse)").matches;
+  return coarse && Math.min(screen.width, screen.height) <= 600;
+}
+function personal(){ const m = S.settings.mode; return m === "personal" || (m !== "class" && isPhone()); }
+
+const awards = () => THRESHOLDS.map((n,i) => ({ n, name: (S.settings.awardNames[i] || "").trim() || DEFAULT_NAMES[i] }));
+function awardFor(p){ let a = null; for(const x of awards()) if(p >= x.n) a = x; return a; }
+function nextAward(p){ return awards().find(x => x.n > p) || null; }
+
+/* digits for decimal places a..b (1-based, inclusive), grouped in fives */
+function fmtPlaces(a, b){
+  let s = "";
+  for(let p = a; p <= b && p <= 1000; p++){ s += PI[p-1]; if(p % 5 === 0 && p < b) s += " "; }
+  return s;
+}
+function fmtName(first, init){
+  first = first.trim().replace(/\s+/g, " ");
+  first = first.charAt(0).toUpperCase() + first.slice(1);
+  init = (init || "").trim().charAt(0).toUpperCase();
+  return init ? `${first} ${init}.` : first;
+}
+
+/* ---------- Hall of Fame (class mode) ---------- */
+function sortHall(){ S.hall.sort((a,b) => b.score - a.score || (a.date||"").localeCompare(b.date||"") || a.name.localeCompare(b.name)); }
+function rankOf(e){ return 1 + S.hall.filter(x => x.score > e.score).length; }
+function upsert(name, score, date){
+  const ex = S.hall.find(e => norm(e.name) === norm(name));
+  if(ex){
+    if(score > ex.score){ const old = ex.score; ex.score = score; ex.date = date; save(); return { status:"improved", entry:ex, old }; }
+    return { status:"kept", entry:ex };
+  }
+  const e = { id: uid(), name, score, date };
+  S.hall.push(e); save();
+  return { status:"new", entry:e };
+}
+function renderHall(highlightId){
+  sortHall();
+  const L = $("#hofList");
+  L.className = (S.settings.showDates ? "dates " : "") + (S.hall.length > 10 ? "two" : "");
+  L.style.gridTemplateRows = S.hall.length > 10 ? `repeat(${Math.ceil(S.hall.length/2)}, auto)` : "";
+  if(!S.hall.length){ L.innerHTML = '<li class="empty">No reciters yet — who will be first?</li>'; }
+  else L.innerHTML = S.hall.map(e => {
+    const r = rankOf(e), a = awardFor(e.score);
+    return `<li class="${r<=3 ? "m"+r : ""} ${e.id === highlightId ? "hl" : ""}" data-id="${e.id}">
+      <span class="rk">${r}</span><span class="nm">${esc(e.name)}</span>
+      <span class="aw">${a ? esc(a.name) : ""}</span><span class="sc">${e.score}</span>
+      ${S.settings.showDates ? `<span class="dt">${ukDate(e.date)}</span>` : ""}</li>`;
+  }).join("");
+  const top = S.hall[0];
+  $("#record").innerHTML = top
+    ? `Class record: ${top.score} ${plural(top.score,"place")}<br>${esc(top.name)}`
+    : "Tap the button, then tap out<br>as many digits as you can!";
+  if(highlightId){
+    const li = L.querySelector(`[data-id="${highlightId}"]`);
+    if(li) li.scrollIntoView({ block:"nearest", behavior:"smooth" });
+  }
+}
+
+/* ---------- Personal Best (phone mode) ---------- */
+function trickiest(){
+  let best = null;
+  for(const [p, c] of Object.entries(S.me.fails)) if(c >= 2 && (!best || c > best.c)) best = { p: +p, c };
+  return best;
+}
+function renderPB(){
+  const m = S.me, a = awardFor(m.best), nx = nextAward(m.best);
+  let h = "";
+  if(!m.attempts){
+    h += `<p style="text-align:center" class="dim">No attempts yet. Have a go — your best score is kept here.</p>`;
+  } else {
+    h += `<div class="pbtop"><div class="pbnum">${m.best}</div><div>
+        <div class="pbsub">${plural(m.best, "decimal place")}</div>
+        ${m.bestDate ? `<div class="dim small">set on ${ukDate(m.bestDate)}</div>` : ""}
+        ${a ? `<div class="rosette"><span>${a.n}</span>${esc(a.name)}</div>` : ""}
+      </div></div>`;
+    if(nx){
+      const prev = a ? a.n : 0, pct = Math.round(100 * (m.best - prev) / (nx.n - prev));
+      h += `<div class="pbsub" style="margin-top:8px">Next: ${esc(nx.name)} at ${nx.n} <span class="dim">(${nx.n - m.best} to go)</span></div>
+            <div class="bar"><i style="width:${pct}%"></i></div>`;
+    } else h += `<div class="pbsub good" style="text-align:center">Every award won!</div>`;
+    const maxH = Math.max(...m.history.map(x => x.s));
+    h += `<div class="pbh">Last ${m.history.length === 1 ? "attempt" : m.history.length + " attempts"} <span class="dim small">(newest first · ${m.attempts} in total)</span></div>
+          <div class="tries">${m.history.slice().reverse().map(x => `<span class="try ${x.s === m.best && x.s > 0 ? "best" : ""}">${x.s}</span>`).join("")}</div>`;
+    const t = trickiest();
+    if(t){
+      const from = Math.max(1, t.p - 5);
+      h += `<div class="pbh">Trickiest spot</div>
+        <div>Place ${t.p} — missed ${t.c} times. <span class="mono">…${PI.slice(from-1, t.p-1)}<span class="hot">${PI[t.p-1]}</span></span></div>`;
+    }
+  }
+  h += `<div class="pbh">Award ladder</div><div class="ladder">${awards().map(x =>
+    `<div class="chip ${m.best >= x.n ? "got" : ""}"><b>${x.n}</b>${esc(x.name)}</div>`).join("")}</div>`;
+  $("#pbBody").innerHTML = h;
+  $("#record").innerHTML = m.best ? `Can you beat ${m.best}?` : "Tap the button, then tap out<br>as many digits as you can!";
+}
+function recordAttempt(p, kind){
+  const m = S.me;
+  m.attempts++;
+  m.history.push({ s: p, d: todayISO() });
+  if(m.history.length > 10) m.history.shift();
+  if(kind === "wrong" && R.pos >= 2) m.fails[p + 1] = (m.fails[p + 1] || 0) + 1;
+  const old = m.best, isNew = p > old;
+  if(isNew){ m.best = p; m.bestDate = todayISO(); }
+  save();
+  return { isNew, old };
+}
+
+function renderHome(highlightId){
+  document.body.classList.toggle("personal", personal());
+  if(personal()) renderPB(); else renderHall(highlightId);
+}
+
+/* ---------- Reciting ---------- */
+let R = null;
+const tape = $("#tape");
+function places(){ return !R ? 0 : R.practice ? R.pos - R.start : Math.max(0, R.pos - 2); }
+
+function updateStats(){
+  $("#stats").classList.toggle("off", !R);
+  const p = places();
+  $("#places").textContent = p;
+  if(R && R.practice){
+    $("#placesWord").textContent = `correct — practising from place ${R.from}`;
+    $("#curAward").textContent = "";
+    $("#nextAward").innerHTML = `<span class="dim">Practice doesn't change your best</span>`;
+    return;
+  }
+  $("#placesWord").textContent = p === 1 ? "decimal place" : "decimal places";
+  const a = awardFor(p);
+  $("#curAward").textContent = a ? " — " + a.name : "";
+  const nx = nextAward(p);
+  $("#nextAward").innerHTML = nx
+    ? `Next: <b>${esc(nx.name)}</b> at ${nx.n} <span class="dim">(${nx.n - p} to go)</span>`
+    : "Every award won!";
+}
+function buildKeypad(){
+  const top = S.settings.keypad === "calc" ? [7,8,9,4,5,6,1,2,3] : [1,2,3,4,5,6,7,8,9];
+  $("#keys").innerHTML =
+    top.map(d => `<button class="k" data-k="${d}">${d}</button>`).join("") +
+    `<button class="k wide" data-k="0">0</button><button class="k" data-k=".">.</button>` +
+    `<button class="k done" data-k="done">I'm done</button>`;
+}
+function scrollTape(){
+  tape.scrollLeft = tape.scrollWidth;
+  tape.classList.toggle("scrolled", tape.scrollLeft > 0);
+}
+function appendChar(ch, pos, cls){
+  const s = document.createElement("span");
+  s.className = "d" + (cls ? " " + cls : "");
+  s.textContent = ch;
+  const dp = pos - 1;             // decimal place number for pos >= 2
+  if(pos >= 2){
+    if(dp > 1 && (dp - 1) % 5 === 0) s.classList.add("gap");
+    if(dp % 10 === 0){ s.classList.add("tick"); s.dataset.n = dp; }
+  }
+  tape.insertBefore(s, tape.querySelector(".caret"));
+}
+function start(from){
+  closeModal();
+  R = { pos: 0, start: 0, over: false, practice: false, from: 0 };
+  tape.innerHTML = '<span class="caret"></span>';
+  tape.classList.remove("scrolled");
+  if(from){
+    R.practice = true; R.from = from; R.pos = R.start = from + 1;
+    for(let i = Math.max(0, R.pos - 10); i < R.pos; i++) appendChar(FULL[i], i, "lead");
+  }
+  updateStats();
+  buildKeypad();
+  document.body.classList.add("reciting");
+  window.scrollTo(0, 0);
+  scrollTape();
+}
+function flashKey(k){
+  const b = document.querySelector(`.k[data-k="${k}"]`);
+  if(!b) return;
+  b.classList.add("flash");
+  setTimeout(() => b.classList.remove("flash"), 120);
+}
+function popAward(text){
+  const p = $("#pop");
+  p.textContent = text + "!";
+  p.classList.remove("show"); void p.offsetWidth; p.classList.add("show");
+}
+function press(k){
+  if(!R || R.over) return;
+  if(k === "done"){ end("stop"); return; }
+  flashKey(k);
+  const exp = FULL[R.pos];
+  if(k === exp){
+    appendChar(k, R.pos);
+    R.pos++;
+    scrollTape();
+    updateStats();
+    if(!R.practice && R.pos > 2 && S.settings.popups){
+      const a = awards().find(x => x.n === places());
+      if(a) popAward(a.name);
+    }
+    if(R.pos === FULL.length) end("perfect");
+  } else {
+    const w = document.createElement("span"); w.className = "d wrong"; w.textContent = k;
+    const sh = document.createElement("span"); sh.className = "d should"; sh.textContent = exp;
+    const c = tape.querySelector(".caret");
+    tape.insertBefore(w, c); tape.insertBefore(sh, c); c.remove();
+    scrollTape();
+    try{ if(navigator.vibrate) navigator.vibrate(180); }catch(e){}
+    end("wrong", k, exp);
+  }
+}
+function end(kind, said, exp){
+  R.over = true;
+  const c = tape.querySelector(".caret"); if(c) c.remove();
+  setTimeout(() => {
+    document.body.classList.remove("reciting");
+    showResult(kind, said, exp);
+  }, kind === "wrong" ? 1300 : 500);
+}
+
+/* ---------- Modals ---------- */
+const modal = $("#modal"), card = $("#card");
+let modalKind = null;
+function openModal(kind, html){ modalKind = kind; card.innerHTML = html; modal.classList.add("open"); card.scrollTop = 0; }
+function closeModal(){ modal.classList.remove("open"); modalKind = null; }
+modal.addEventListener("pointerdown", e => { if(e.target === modal && modalKind !== "result") closeModal(); });
+card.addEventListener("click", e => { if(e.target.classList.contains("x")) closeModal(); });
+
+let confirmCb = null;
+function confirmBox(msg, yes, cb){
+  const c = $("#confirm");
+  c.querySelector(".cmsg").innerHTML = msg;
+  c.querySelector(".cyes").textContent = yes;
+  confirmCb = cb; c.classList.add("open");
+}
+function closeConfirm(){ $("#confirm").classList.remove("open"); confirmCb = null; }
+$("#confirm .cyes").onclick = () => { const f = confirmCb; closeConfirm(); if(f) f(); };
+$("#confirm .cno").onclick = closeConfirm;
+
+let toastTimer;
+function toast(msg){
+  const t = $("#toast");
+  t.innerHTML = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3800);
+}
+
+/* ---------- Result ---------- */
+function showResult(kind, said, exp){
+  const p = places();
+  let why = "";
+  if(kind === "wrong"){
+    const what = exp === "." ? `the <b class="good">decimal point</b>` : `<b class="good">${exp}</b>`;
+    why = `<p>You tapped <b class="bad">${esc(said === "." ? "the decimal point" : said)}</b>, but the next ${exp === "." ? "thing" : "digit"} was ${what}.</p>`;
+  }
+  const nextPlace = Math.max(1, R.pos - 1);
+  const upHTML = R.pos >= 2 && nextPlace <= 1000
+    ? `<p class="dim">Coming up next: <span class="mono" style="color:var(--ink)">${fmtPlaces(nextPlace, nextPlace + 9)}…</span></p>` : "";
+
+  if(R.practice){
+    const from = R.from;
+    openModal("result", `<div class="result"><h2 style="padding:0">Practice round</h2>
+      <p style="margin:0">From place ${from} you got</p><div class="score">${p}</div>
+      <p style="margin:.2em 0 0">correct${p ? ` (up to place ${from + p - 1})` : ""}</p>${why}${upHTML}
+      <div class="row center"><button class="btn primary" id="rAgain">Again from place ${from}</button>
+      <button class="btn ghost" id="rHome">Back to Home</button></div></div>`);
+    $("#rAgain").onclick = () => start(from);
+    $("#rHome").onclick = closeModal;
+    return;
+  }
+
+  const a = awardFor(p), nx = nextAward(p);
+  const head = kind === "perfect" ? "All 1000 places — astonishing!" : kind === "stop" ? "Well done!" : "Oops — that's where it ends!";
+  const awHTML = a ? `<div class="rosette"><span>${a.n}</span>${esc(a.name)}!</div>`
+    : `<p class="dim">No award yet — ${THRESHOLDS[0]} places earns the ${esc(awards()[0].name)}.</p>`;
+  const nxHTML = nx && a ? `<p class="dim">${nx.n - p} more for the ${esc(nx.name)} (${nx.n}).</p>` : "";
+  const twoBtns = `<div class="row center" style="margin-top:16px"><button class="btn primary" id="rAgain">Try again</button>
+      <button class="btn ghost" id="rHome">Back to Home</button></div>`;
+  let tail;
+  if(personal()){
+    const typed = R.pos > 0 || kind === "wrong";
+    let pb = "";
+    if(typed){
+      const r = recordAttempt(p, kind);
+      pb = r.isNew ? `<div class="newpb">New personal best!</div>${r.old ? `<p class="dim" style="margin:.3em 0 0">Up from ${r.old}.</p>` : ""}`
+                   : `<p class="dim">Your best is still ${S.me.best}.</p>`;
+    }
+    tail = pb + twoBtns;
+    renderHome();
+  } else if(p > 0){
+    tail = `<div class="save">
+      <h3>Add your name to the Hall of Fame</h3>
+      <div class="row">
+        <label>First name<input type="text" id="fFirst" maxlength="20" autocomplete="off" spellcheck="false"></label>
+        <label>Initial<input type="text" id="fInit" class="init" maxlength="1" autocomplete="off"></label>
+      </div>
+      <div class="row"><button class="btn primary" id="fSave">Add to Hall of Fame</button>
+        <button class="btn ghost" id="rHome">No thanks</button></div>
+      <p class="msg err" id="fMsg"></p></div>`;
+  } else tail = twoBtns;
+
+  openModal("result", `<div class="result"><h2 style="padding:0">${head}</h2>
+    <p style="margin:0">You recited</p><div class="score">${p}</div>
+    <p style="margin:.2em 0 0">${plural(p, "decimal place")}</p>
+    ${awHTML}${nxHTML}${why}${upHTML}${tail}</div>`);
+  $("#rHome").onclick = closeModal;
+  const ag = $("#rAgain"); if(ag) ag.onclick = () => start();
+  const fs = $("#fSave");
+  if(fs){ fs.onclick = saveResult; setTimeout(() => { const f = $("#fFirst"); if(f) f.focus(); }, 60); }
+}
+function saveResult(){
+  const first = $("#fFirst").value, init = $("#fInit").value;
+  if(!first.trim()){ $("#fMsg").textContent = "Please type a first name."; $("#fFirst").focus(); return; }
+  const r = upsert(fmtName(first, init), places(), todayISO());
+  closeModal();
+  renderHome(r.entry.id);
+  if(r.status === "new") toast(`Welcome to the Hall of Fame, ${esc(r.entry.name)}!`);
+  else if(r.status === "improved") toast(`New personal best for ${esc(r.entry.name)} — up from ${r.old} to ${r.entry.score}!`);
+  else toast(`${esc(r.entry.name)}'s best of ${r.entry.score} still stands.`);
+}
+
+/* ---------- Practise a section (personal mode) ---------- */
+let pracN = 1;
+function openPractice(){
+  const t = trickiest(), b = S.me.best;
+  const clampN = n => Math.min(1000, Math.max(1, n));
+  if(pracN === 1 && b > 5) pracN = clampN(b - 4);
+  const quick = [];
+  if(b >= 1 && b < 1000) quick.push([clampN(b - 4), `The run-up to my best (place ${clampN(b - 4)})`]);
+  if(t) quick.push([clampN(t.p - 5), `My trickiest spot (place ${t.p})`]);
+  openModal("practice", `<button class="x" aria-label="Close">&times;</button>
+    <h2>Practise a section</h2>
+    <p style="margin-top:0">Pick a decimal place to start from. You'll see the ten digits before it, then carry on from there. Practice doesn't change your personal best.</p>
+    <div class="stepper">
+      <button class="btn ghost" data-d="-10">−10</button><button class="btn ghost" data-d="-1">−1</button>
+      <output id="pracOut">${pracN}</output>
+      <button class="btn ghost" data-d="1">+1</button><button class="btn ghost" data-d="10">+10</button>
+    </div>
+    <div class="quick">${quick.map(q => `<button class="btn ghost" data-q="${q[0]}">${q[1]}</button>`).join("")}</div>
+    <div class="row center"><button class="btn primary" id="pracGo">Start practising</button></div>`);
+  card.querySelectorAll("[data-d]").forEach(x => x.onclick = () => { pracN = clampN(pracN + (+x.dataset.d)); $("#pracOut").textContent = pracN; });
+  card.querySelectorAll("[data-q]").forEach(x => x.onclick = () => { pracN = +x.dataset.q; $("#pracOut").textContent = pracN; });
+  $("#pracGo").onclick = () => start(pracN);
+}
+
+/* ---------- Study ---------- */
+let studyN = 100;
+function openStudy(){
+  const ms = new Map(awards().map(a => [a.n, a.name]));
+  let rows = `<div class="srow"><span class="slab"></span><span class="mono">3.</span></div>`;
+  for(let r = 0; r < studyN; r += 50){
+    const endR = Math.min(r + 50, studyN);
+    let groups = "";
+    for(let g = r; g < endR; g += 5){
+      let grp = "";
+      for(let i = g; i < Math.min(g + 5, endR); i++)
+        grp += ms.has(i+1) ? `<span class="ms" title="${esc(ms.get(i+1))} (${i+1})">${PI[i]}</span>` : PI[i];
+      groups += `<span>${grp}</span>`;
+    }
+    rows += `<div class="srow"><span class="slab">${r+1}–${endR}</span><span class="mono">${groups}</span></div>`;
+  }
+  const opts = [25,50,100,200,300,500,750,1000].map(n =>
+    `<button class="btn ${n === studyN ? "primary" : "ghost"}" data-n="${n}">${n}</button>`).join("");
+  openModal("study", `<button class="x" aria-label="Close">&times;</button>
+    <h2>Study the digits</h2>
+    <p class="dim small" style="margin-top:0">Grouped in fives. <span class="ms">Underlined</span> digits are award milestones.</p>
+    <div class="row">${opts}</div><div class="study">${rows}</div>`);
+  card.querySelectorAll("[data-n]").forEach(b => b.onclick = () => { studyN = +b.dataset.n; openStudy(); });
+}
+
+/* ---------- Awards ---------- */
+function openAwards(){
+  const pm = personal();
+  const rows = awards().map(a => {
+    const note = pm ? (S.me.best >= a.n ? `<span class="good">✓ won</span>` : "")
+      : (c => c ? c + " in the Hall of Fame" : "")(S.hall.filter(e => e.score >= a.n).length);
+    return `<tr><td class="n">${a.n}</td><td>${esc(a.name)}</td><td class="dim">${note}</td></tr>`;
+  }).join("");
+  openModal("awards", `<button class="x" aria-label="Close">&times;</button>
+    <h2>Awards</h2>
+    <table class="awards"><tr><th style="text-align:right">Places</th><th>Award</th><th></th></tr>${rows}</table>`);
+}
+
+/* ---------- Settings ---------- */
+const sel = new Set();
+let mergeOpen = false;
+function openSettings(){ sel.clear(); mergeOpen = false; renderSettings(); modal.classList.add("open"); modalKind = "settings"; }
+
+function renderSettings(keepScroll){
+  const y = card.scrollTop, st = S.settings, pm = personal();
+  sortHall();
+  [...sel].forEach(id => { if(!S.hall.some(e => e.id === id)) sel.delete(id); });
+  const radio = (name, val, cur, text) => `<label class="chk"><input type="radio" name="${name}" value="${val}" ${cur === val ? "checked" : ""}> ${text}</label>`;
+  let h = `<button class="x" aria-label="Close">&times;</button><h2>Settings</h2>
+  <section style="border:none;margin-top:0">
+    <h3 style="margin-top:0">Display</h3>
+    ${pm ? "" : `<label class="chk"><input type="checkbox" id="sDates" ${st.showDates ? "checked" : ""}> Show the date of each recitation in the Hall of Fame</label>`}
+    <label class="chk"><input type="checkbox" id="sPop" ${st.popups ? "checked" : ""}> Show award pop-ups while reciting</label>
+    <div style="margin-top:8px"><b>Keypad layout</b>
+      ${radio("kp", "phone", st.keypad === "calc" ? "calc" : "phone", "Phone style (1 2 3 along the top)")}
+      ${radio("kp", "calc", st.keypad === "calc" ? "calc" : "phone", "Number keypad style (7 8 9 along the top)")}
+    </div>
+  </section>
+  <section>
+    <h3>Scoring on this device</h3>
+    ${radio("mode", "auto", st.mode, "Automatic — Personal Best on a phone, Hall of Fame on bigger screens")}
+    ${radio("mode", "class", st.mode, "Hall of Fame (a class sharing one screen)")}
+    ${radio("mode", "personal", st.mode, "Personal Best (one player)")}
+  </section>`;
+  if(pm){
+    h += `<section><h3>My Personal Best</h3>
+      <p style="margin-top:0">Best: <b>${S.me.best}</b> ${plural(S.me.best, "place")} · ${S.me.attempts} ${plural(S.me.attempts, "attempt")}</p>
+      <div class="row"><button class="btn danger" id="pbReset" ${S.me.attempts ? "" : "disabled"}>Reset my personal best</button></div></section>`;
+  } else {
+    const rows = S.hall.length ? S.hall.map(e => `
+      <label class="mrow"><input type="checkbox" data-id="${e.id}" ${sel.has(e.id) ? "checked" : ""}>
+        <span>${esc(e.name)}</span><span class="sc">${e.score}</span><span class="dim">${ukDate(e.date)}</span></label>`).join("")
+      : '<p class="dim">The Hall of Fame is empty.</p>';
+    const selArr = S.hall.filter(e => sel.has(e.id));
+    let mergeHTML = "";
+    if(mergeOpen && selArr.length === 2){
+      const [a, b] = selArr;
+      mergeHTML = `<div class="mergebox">
+        <p style="margin:.3em 0">Merge these two into one entry. The best score (${Math.max(a.score, b.score)}) is kept. Which name should stay?</p>
+        <div class="row"><button class="btn primary" data-keep="${a.id}">${esc(a.name)}</button>
+        <button class="btn primary" data-keep="${b.id}">${esc(b.name)}</button>
+        <button class="btn ghost" id="mCancel">Cancel</button></div></div>`;
+    }
+    h += `<section>
+      <h3>Manage the Hall of Fame</h3>
+      <p class="small dim" style="margin-top:0">Tick entries to delete them, or tick exactly two to merge them (e.g. the same student spelt two ways).</p>
+      <div class="mlist">${rows}</div>
+      <div class="row">
+        <button class="btn danger" id="mDel" ${selArr.length ? "" : "disabled"}>Delete ticked (${selArr.length})</button>
+        <button class="btn ghost" id="mMerge" ${selArr.length === 2 ? "" : "disabled"}>Merge ticked two</button>
+        <button class="btn danger" id="mClear" ${S.hall.length ? "" : "disabled"}>Clear everything</button>
+      </div>${mergeHTML}
+    </section>
+    <section>
+      <h3>Add an entry by hand</h3>
+      <p class="small dim" style="margin-top:0">For a recitation done elsewhere. If the student is already listed, only a higher score replaces theirs.</p>
+      <div class="row">
+        <label>First name<input type="text" id="aFirst" maxlength="20" autocomplete="off"></label>
+        <label>Initial<input type="text" id="aInit" class="init" maxlength="1" autocomplete="off"></label>
+        <label>Places<input type="number" id="aScore" min="1" max="1000" step="1"></label>
+        <label>Date<input type="date" id="aDate" value="${todayISO()}"></label>
+        <button class="btn primary" id="aAdd">Add</button>
+      </div>
+      <p class="msg" id="aMsg"></p>
+    </section>
+    <section>
+      <h3>Award names</h3>
+      <div class="awgrid">${awards().map((a,i) =>
+        `<label><span>${a.n}</span><input type="text" data-aw="${i}" value="${esc(st.awardNames[i] || "")}" placeholder="${esc(DEFAULT_NAMES[i])}" maxlength="30"></label>`).join("")}</div>
+      <div class="row"><button class="btn ghost" id="awReset">Reset to suggested names</button></div>
+    </section>`;
+  }
+  card.innerHTML = h;
+  if(keepScroll) card.scrollTop = y;
+  bindSettings(pm);
+}
+
+function bindSettings(pm){
+  const st = S.settings;
+  $("#sPop").onchange = e => { st.popups = e.target.checked; save(); };
+  card.querySelectorAll('input[name="kp"]').forEach(r => r.onchange = () => { st.keypad = r.value; save(); });
+  card.querySelectorAll('input[name="mode"]').forEach(r => r.onchange = () => { st.mode = r.value; save(); renderHome(); renderSettings(true); });
+  if(pm){
+    $("#pbReset").onclick = () => confirmBox("Reset your personal best and attempt history? This can't be undone.", "Reset", () => {
+      S.me = newMe(); save(); renderHome(); renderSettings(true);
+    });
+    return;
+  }
+  $("#sDates").onchange = e => { st.showDates = e.target.checked; save(); renderHome(); };
+  card.querySelectorAll(".mrow input").forEach(c => c.onchange = () => {
+    c.checked ? sel.add(c.dataset.id) : sel.delete(c.dataset.id);
+    mergeOpen = false; renderSettings(true);
+  });
+  $("#mDel").onclick = () => {
+    const names = S.hall.filter(e => sel.has(e.id)).map(e => esc(e.name));
+    confirmBox(`Delete ${names.length === 1 ? names[0] : names.length + " entries"} from the Hall of Fame?`, "Delete", () => {
+      S.hall = S.hall.filter(e => !sel.has(e.id)); sel.clear(); save(); renderHome(); renderSettings(true);
+    });
+  };
+  $("#mMerge").onclick = () => { mergeOpen = true; renderSettings(true); };
+  const mc = $("#mCancel"); if(mc) mc.onclick = () => { mergeOpen = false; renderSettings(true); };
+  card.querySelectorAll("[data-keep]").forEach(b => b.onclick = () => {
+    const [a, c] = S.hall.filter(e => sel.has(e.id));
+    const keep = a.id === b.dataset.keep ? a : c, drop = keep === a ? c : a;
+    if(drop.score > keep.score || (drop.score === keep.score && (drop.date||"") < (keep.date||""))){
+      keep.score = drop.score; keep.date = drop.date;
+    }
+    S.hall = S.hall.filter(e => e.id !== drop.id);
+    sel.clear(); mergeOpen = false; save(); renderHome(keep.id); renderSettings(true);
+    toast(`Merged into ${esc(keep.name)} (${keep.score})`);
+  });
+  $("#mClear").onclick = () => confirmBox("Clear the <b>whole</b> Hall of Fame? This can't be undone.", "Clear it all", () => {
+    S.hall = []; sel.clear(); save(); renderHome(); renderSettings(true);
+  });
+  $("#aAdd").onclick = () => {
+    const msg = $("#aMsg"); msg.className = "msg";
+    const first = $("#aFirst").value, sc = Math.floor(+$("#aScore").value), dt = $("#aDate").value || todayISO();
+    if(!first.trim()){ msg.className = "msg err"; msg.textContent = "Please type a first name."; return; }
+    if(!(sc >= 1 && sc <= 1000)){ msg.className = "msg err"; msg.textContent = "Places must be a whole number from 1 to 1000."; return; }
+    const r = upsert(fmtName(first, $("#aInit").value), sc, dt);
+    renderHome(r.entry.id);
+    renderSettings(true);
+    $("#aMsg").textContent = r.status === "new" ? `Added ${r.entry.name} with ${sc}.`
+      : r.status === "improved" ? `${r.entry.name} updated from ${r.old} to ${sc}.`
+      : `${r.entry.name} already has ${r.entry.score}, so nothing changed.`;
+  };
+  card.querySelectorAll("[data-aw]").forEach(inp => inp.onchange = () => {
+    st.awardNames[+inp.dataset.aw] = inp.value.trim(); save(); renderHome();
+  });
+  $("#awReset").onclick = () => { st.awardNames = DEFAULT_NAMES.slice(); save(); renderHome(); renderSettings(true); };
+}
+
+/* ---------- Wiring ---------- */
+$("#btnStart").onclick = () => start();
+$("#btnPractice").onclick = openPractice;
+$("#btnStudy").onclick = openStudy;
+$("#btnAwards").onclick = openAwards;
+$("#btnSettings").onclick = openSettings;
+
+$("#keys").addEventListener("pointerdown", e => {
+  const b = e.target.closest(".k"); if(!b) return;
+  e.preventDefault();
+  press(b.dataset.k);
+});
+document.addEventListener("keydown", e => {
+  if(e.target.matches("input,textarea,select")){
+    if(e.key === "Enter"){
+      if(e.target.closest(".save")){ e.preventDefault(); saveResult(); }
+      else if(["aFirst","aInit","aScore","aDate"].includes(e.target.id)){ e.preventDefault(); $("#aAdd").click(); }
+    }
+    return;
+  }
+  if($("#confirm").classList.contains("open")){ if(e.key === "Escape") closeConfirm(); return; }
+  if(modal.classList.contains("open")){ if(e.key === "Escape") closeModal(); return; }
+  if(R && !R.over && document.body.classList.contains("reciting")){
+    if(/^[0-9]$/.test(e.key)){ e.preventDefault(); press(e.key); }
+    else if(e.key === "." || e.key === ","){ e.preventDefault(); press("."); }
+    else if(e.key === "Escape"){ press("done"); }
+  }
+});
+
+// the first three are equally likely; "Lord of the Pies" is half as likely (weights 2:2:2:1)
+const TAGLINES = ["Easy as pie? Prove it!", "Who recited all the pi?", "Mm… Loads of Pie!", "Lord of the Pies"];
+$("#tag").textContent = TAGLINES[Math.min(3, Math.floor(Math.random() * 7 / 2))];
+
+load();
+renderHome();
+updateStats();
+</script>
+</body>
+</html>

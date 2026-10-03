@@ -20,6 +20,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Number Memory Game | `number-memory-game/` |
 | Penguins & Icebergs | `penguins-and-icebergs/` |
 | Potato | `potato/` |
+| Recite Pi | `recite-pi/` |
 | Reserve Records | `reserve-records/` |
 | Times Tables Quiz | `times-tables-quiz/` |
 | Trio | `trio/` |
