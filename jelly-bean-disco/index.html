@@ -94,6 +94,13 @@ button{font:inherit;color:#fff;border:0;cursor:pointer}
 .go{background:linear-gradient(135deg,#ff3d81,#a45cf0);box-shadow:0 4px 0 #5b1b8f}
 .go:active{transform:translateY(3px);box-shadow:0 1px 0 #5b1b8f}
 .alt{background:#3b2a66;box-shadow:0 4px 0 #1d1236}
+.go.party{background:linear-gradient(135deg,#ffb000,#ff3d81);box-shadow:0 4px 0 #8a3b00;animation:partypulse 1s ease-in-out infinite}
+@keyframes partypulse{50%{transform:scale(1.12);box-shadow:0 4px 0 #8a3b00,0 0 26px #ffb000}}
+.homebtn{display:none;align-items:center;justify-content:center;width:clamp(48px,8vw,72px);height:clamp(48px,8vw,72px);border-radius:50%;background:#2d1d52;color:#fff;box-shadow:0 4px 0 #1d1236,0 0 18px #a45cf0aa}
+.homebtn svg{width:55%;height:55%}
+body.partyview .stat.left .lab,body.partyview .stat.left .big{display:none}
+body.partyview .homebtn{display:flex}
+body.partyview .lights{opacity:.7}
 #ctrl{display:flex;gap:10px;align-items:center;justify-content:center;padding:6px 10px 10px;min-height:52px;flex-wrap:wrap}
 #ctrl button{background:#2d1d52;padding:8px 14px;border-radius:999px;font-size:.95rem}
 #ctrl button.off{opacity:.45;text-decoration:line-through}
@@ -116,7 +123,7 @@ button{font:inherit;color:#fff;border:0;cursor:pointer}
 <div class="lights"></div>
 <div id="app">
   <header id="top">
-    <div class="stat left"><div class="lab">Beans left</div><div id="left" class="big">0</div></div>
+    <div class="stat left"><div class="lab">Beans left</div><div id="left" class="big">0</div><button id="homeBtn" class="homebtn" aria-label="Home (settings and new game)"><svg viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-6h4v6"/></svg></button></div>
     <div class="qwrap"><div id="q" class="q">&nbsp;</div><div id="last" class="last">&nbsp;</div></div>
     <div class="stat right"><div class="lab">Time</div><div id="time" class="big">0:00</div><div id="targ" class="sm"></div><div id="best" class="sm"></div></div>
   </header>
@@ -315,7 +322,7 @@ function makeBeanEl(b,i){
 }
 function newBoard(){
   clearTimeout(h1);clearTimeout(h2);clearInterval(partyInt);clearTimeout(partyEnd);
-  partyMode=false;$('#endcard').classList.remove('show');$('#banner').classList.remove('show');
+  partyMode=false;document.body.classList.remove('partyview');$('#endcard').classList.remove('show');$('#banner').classList.remove('show');
   board.innerHTML='';board.style.setProperty('--n',S.n);board.dataset.num=S.nums;board.dataset.bounce=S.bounce;
   const N=S.n*S.n;
   const prods=shuffle([...new Set(S.tables.flatMap(a=>range(2,12).map(b=>a*b)))]);
@@ -396,19 +403,30 @@ function finish(){
   else if(prev==null)lines+=`<p>That is your time to beat next time.</p>`;
   else lines+=`<p>Your best is ${Math.min(prev,t).toFixed(1)}s</p>`;
   if(tg)lines+=`<p>${beat?'★ Under the target time of '+fmt(tg*1000)+'!':'Target was '+fmt(tg*1000)+'. Board cleared all the same!'}</p>`;
-  lines+=`<button class="go" id="again">Play again</button><button class="alt" id="toSet">Settings</button>`;
+  lines+=`<button class="go" id="again">Play again</button><button class="go party" id="partyBtn">Party!</button><button class="alt" id="toSet"><svg viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" style="vertical-align:-.18em;margin-right:.35em"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-6h4v6"/></svg>Settings</button>`;
   setTimeout(()=>{const e=$('#endcard');e.innerHTML=lines;e.classList.add('show');
-    $('#again').onclick=newBoard;$('#toSet').onclick=openSetup},2300);
+    $('#again').onclick=newBoard;$('#partyBtn').onclick=partyView;$('#toSet').onclick=openSetup},2300);
 }
 
 /* ---------- controls ---------- */
+function partyView(){
+  clearInterval(partyInt);clearTimeout(partyEnd);
+  $('#endcard').classList.remove('show');$('#banner').classList.remove('show');
+  document.body.classList.add('partyview');
+  const q=$('#q');q.textContent='Party time!';q.classList.remove('pop');void q.offsetWidth;q.classList.add('pop');$('#last').innerHTML='&nbsp;';
+  partyMode=true;running=true;
+  for(let k=0;k<4;k++)setTimeout(()=>burst(innerWidth*(.12+k*.25),innerHeight*.55,45,ALLC,1.3),k*200);
+  partyInt=setInterval(()=>burst(Math.random()*innerWidth,-10,14,ALLC,.5),350);
+}
 function openSetup(){
+  clearInterval(partyInt);document.body.classList.remove('partyview');
   pauseT();running=false;buildSetup();$('#setup').classList.add('show');
   $('#back').hidden=!(inGame&&!partyMode);$('#go').textContent=inGame?'New game':"Let's dance!";
 }
 $('#go').onclick=()=>{if(!S.tables.length)return;saveS();audioInit();$('#setup').classList.remove('show');newBoard()};
 $('#back').onclick=()=>{$('#setup').classList.remove('show');running=true;resumeT()};
 $('#bSet').onclick=openSetup;
+$('#homeBtn').onclick=openSetup;
 $('#bMusic').onclick=e=>{musicOn=!musicOn;e.target.classList.toggle('off',!musicOn)};
 $('#bFx').onclick=e=>{fxOn=!fxOn;e.target.classList.toggle('off',!fxOn)};
 $('#vol').oninput=e=>{vol=e.target.value/100;if(master)master.gain.value=vol};
