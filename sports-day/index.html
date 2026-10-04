@@ -110,6 +110,9 @@ input:focus{border-color:var(--bl);outline:none}
 
 /* race */
 .info{display:flex;justify-content:space-between;color:#dbe6fb;font-size:1rem;margin:0 4px 10px}
+.infor{display:flex;align-items:center;gap:10px}
+.endbtn{font-family:'Super Bouncer',sans-serif;background:linear-gradient(#ee6a55,var(--red));color:#fff;font-size:1.05rem;padding:.4em 1em;border-radius:999px;box-shadow:0 .2em 0 #8f2a1a,0 .3em .6em rgba(0,0,0,.3);touch-action:manipulation}
+.endbtn:active{transform:translateY(.15em);box-shadow:0 .04em 0 #8f2a1a}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tiles.one{grid-template-columns:1fr}
 .tile{position:relative;border-radius:18px;color:#fff;min-height:112px;border:3px solid rgba(255,255,255,.55);overflow:hidden;box-shadow:0 4px 0 rgba(0,0,0,.28)}
@@ -197,12 +200,11 @@ table.laps tr.tot td{font-weight:800;border-top:2px solid var(--bl)}
 <!-- RACE -->
 <div class="screen" id="race">
   <div class="timer" id="timerPanel" data-style="classic"><div class="host" id="clockHost"></div><div class="l" id="clockLabel">Elapsed time</div></div>
-  <div class="info"><span id="raceInfo"></span><span id="raceCount"></span></div>
+  <div class="info"><span id="raceInfo"></span><span class="infor"><span id="raceCount"></span><button class="endbtn" id="endBtn" style="display:none">End race</button></span></div>
   <button class="btn start" id="startBtn">START</button>
   <div class="tiles" id="tiles" style="display:none"></div>
   <div class="bar" id="raceBar">
     <button class="btn ghost" id="backBtn">◂ Setup</button>
-    <button class="btn red" id="endBtn" style="display:none">End race</button>
   </div>
 </div>
 
@@ -586,18 +588,25 @@ $('tiles').addEventListener('pointerdown',e=>{
     endRace(Math.max(...race.runners.map(x=>x.splits[cfg.laps-1])));
   }
 });
-function endRace(endT){
+function endRace(endT,instant){
+  if(!race||race.ended)return;
   race.running=false;race.ended=true;race.endT=endT;
   cancelAnimationFrame(raf);
   clock.update(endT,true);
   $('timerPanel').classList.add('done');
-  setTimeout(()=>{renderResults();show('results')},900);
+  setTimeout(()=>{renderResults();show('results')},instant?0:900);
 }
-$('endBtn').onclick=()=>{
-  if(!race.running)return;
-  if(!confirm('End the race now? Anyone not finished will be marked DNF.'))return;
-  endRace(performance.now()-race.t0);
-};
+function abortRace(){
+  race.running=false;cancelAnimationFrame(raf);
+  prepRace();
+  toast('Race cancelled – ready to start again');
+}
+$('endBtn').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(!race||!race.running)return;
+  if(!race.runners.some(r=>r.splits.length)){abortRace();return}   // false start: nobody timed yet
+  endRace(performance.now()-race.t0,true);
+});
 $('backBtn').onclick=()=>show('setup');
 
 /* ---------- results ---------- */
