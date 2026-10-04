@@ -29,6 +29,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Reserve Records | `reserve-records/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
 | Times Tables Quiz | `times-tables-quiz/` |
+| Toast | `toast/` |
 | Trio | `trio/` |
 
 ## Updating a game

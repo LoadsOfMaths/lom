@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toast – LoadsOfMaths</title>
+<style>
+:root{
+  --cream:#fff6e5; --cream2:#ffe9c4; --brown:#6b4226; --brown2:#8a5a35; --crust:#c98a3c;
+  --bread:#f3d9a0; --steel:#c9d1d9; --steel2:#9aa6b2; --steel3:#6f7c89; --green:#3f9a5b; --red:#c8553d; --blue:#2f6f9f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;background:linear-gradient(#fff6e5,#ffe2b0);color:var(--brown);
+  display:flex;flex-direction:column;align-items:center;user-select:none;-webkit-user-select:none;overflow-x:hidden}
+header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 20px}
+h1{font-size:2.2rem;letter-spacing:1px}
+.brand{font-size:.9rem;opacity:.7}
+.hud{display:flex;gap:14px;font-size:1.15rem;font-weight:bold}
+.hud span{background:#fff;border:3px solid var(--brown2);border-radius:14px;padding:4px 14px}
+main{flex:1;width:100%;max-width:1000px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 14px 20px;gap:8px;position:relative}
+.screen{display:none;width:100%;flex-direction:column;align-items:center;gap:14px}
+.screen.on{display:flex}
+.card{background:#fff;border:4px solid var(--brown2);border-radius:22px;padding:20px 26px;box-shadow:0 6px 0 var(--brown2);max-width:760px;width:100%;text-align:center}
+.card h2{margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 16px}
+.chip{font:inherit;font-size:1.3rem;font-weight:bold;padding:8px 18px;border-radius:30px;border:3px solid var(--brown2);background:#fff;color:var(--brown);cursor:pointer}
+.chip.sel{background:var(--crust);color:#fff;border-color:var(--brown)}
+.opt{margin:8px 0;font-size:1.05rem}
+.opt label{cursor:pointer}
+button.big{font:inherit;font-size:1.5rem;font-weight:bold;padding:12px 34px;border-radius:40px;border:4px solid var(--brown);background:var(--green);color:#fff;cursor:pointer;box-shadow:0 5px 0 var(--brown)}
+button.big:active{transform:translateY(4px);box-shadow:0 1px 0 var(--brown)}
+button.big.alt{background:var(--blue)}
+.target{font-size:2rem;font-weight:bold;min-height:2.6rem;text-align:center}
+.target small{display:block;font-size:1rem;font-weight:normal;opacity:.75}
+.stage{position:relative;width:min(420px,92vw);height:calc(min(420px,92vw) * 0.7857);flex:none;}
+.stage .scale{position:absolute;left:50%;top:0;width:420px;height:330px;transform-origin:top center}
+.bread{position:absolute;left:105px;top:-6px;width:150px;height:150px;z-index:1;transition:top .9s cubic-bezier(.5,0,.4,1)}
+.bread.down{top:128px}
+.bread.eject{transition:top .22s cubic-bezier(.2,.9,.3,1.25);top:40px}
+.bread.eject.slow{transition:top .5s cubic-bezier(.2,.9,.3,1.1)}
+.bread.lost{transition:transform 1.3s cubic-bezier(.2,.7,.4,1),top 1.3s cubic-bezier(.2,.7,.4,1),opacity 1.3s;top:-420px;transform:rotate(540deg) translateX(90px);opacity:.0}
+.bread.toasted svg .face{fill:#d99a4b}
+.toaster{position:absolute;left:30px;top:150px;width:300px;height:150px;z-index:2}
+.lever{position:absolute;right:-26px;top:50px;width:30px;height:16px;background:var(--steel3);border-radius:0 8px 8px 0;transition:top .6s}
+.lever.down{top:92px}
+.glow{position:absolute;left:62px;top:122px;width:176px;height:14px;border-radius:7px;background:#ff7a3c;opacity:0;filter:blur(5px);z-index:3;transition:opacity .2s}
+.steam{position:absolute;left:60px;top:70px;font-size:2rem;opacity:0;z-index:0}
+.cheer{position:absolute;inset:0;pointer-events:none}
+canvas#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+.ejectwrap{position:relative;z-index:5;flex:none;min-height:84px;display:flex;align-items:center;justify-content:center}
+button.eject{font:inherit;font-size:2rem;font-weight:bold;padding:14px 60px;border-radius:50px;border:5px solid #7a2a1a;background:var(--red);color:#fff;cursor:pointer;box-shadow:0 7px 0 #7a2a1a;touch-action:manipulation}
+button.eject:active{transform:translateY(6px);box-shadow:0 1px 0 #7a2a1a}
+button.eject:disabled{opacity:.35;cursor:default}
+.clock{font-size:2.4rem;font-weight:bold;font-variant-numeric:tabular-nums;height:3rem}
+.result{min-height:150px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.pts{font-size:3rem;font-weight:bold}
+.msg{font-size:1.3rem}
+.detail{font-size:1.1rem;opacity:.85}
+table{border-collapse:collapse;margin:10px auto;font-size:1.05rem}
+td,th{padding:4px 14px;border-bottom:2px solid #f0dcb6}
+.hint{font-size:.9rem;opacity:.6}
+.sound{position:fixed;right:12px;bottom:10px;font-size:.9rem;opacity:.7}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🍞 Toast</h1><div class="brand">LoadsOfMaths</div></div>
+  <div class="hud" id="hud" style="display:none"><span id="hudRound">Round 1/5</span><span id="hudScore">Score 0</span></div>
+</header>
+<main>
+  <!-- Setup -->
+  <section class="screen on" id="setup">
+    <div class="card">
+      <h2>How good is your sense of time?</h2>
+      <p>Toast is on! Press <b>Eject</b> <b>just before</b> it pops out. Too late and it's lost!</p>
+      <p style="margin-top:12px"><b>Choose the timer lengths (seconds)</b></p>
+      <div class="chips" id="chips"></div>
+      <div class="opt">Rounds:
+        <button class="chip sel" data-r="5">5</button>
+        <button class="chip" data-r="10">10</button>
+        <button class="chip" data-r="15">15</button>
+      </div>
+      <div class="opt"><label><input type="checkbox" id="showClock"> Show a clock while toasting (easy mode)</label></div>
+      <div class="opt"><label><input type="checkbox" id="showGlow"> Toaster glows as time runs out (hint)</label></div>
+      <div class="opt"><label><input type="checkbox" id="sound" checked> Sound</label></div>
+      <p style="margin-top:14px"><button class="big" id="startBtn">Start</button></p>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section class="screen" id="game">
+    <div class="target" id="target"></div>
+    <div class="stage"><div class="scale" id="scale">
+      <div class="steam" id="steam">♨️</div>
+      <div class="bread" id="bread">
+        <svg viewBox="0 0 150 150" width="150" height="150">
+          <path class="face" fill="#f3d9a0" stroke="#c98a3c" stroke-width="9" stroke-linejoin="round"
+            d="M30 140 V70 C8 66 8 22 40 18 C55 6 95 6 110 18 C142 22 142 66 120 70 V140 Z"/>
+          <path fill="none" stroke="#e8c27a" stroke-width="3" stroke-linecap="round" d="M50 50 q8 -8 16 0 M84 40 q8 -8 16 0 M60 90 q8 -8 16 0"/>
+        </svg>
+      </div>
+      <div class="toaster">
+        <svg viewBox="0 0 300 150" width="300" height="150">
+          <rect x="0" y="0" width="300" height="150" rx="34" fill="#c9d1d9" stroke="#6f7c89" stroke-width="6"/>
+          <rect x="14" y="8" width="272" height="30" rx="14" fill="#e6ebf0"/>
+          <rect x="52" y="0" width="196" height="26" rx="13" fill="#3a3330"/>
+          <circle cx="50" cy="104" r="14" fill="#6f7c89"/><circle cx="50" cy="104" r="5" fill="#e6ebf0"/>
+          <rect x="190" y="92" width="80" height="24" rx="12" fill="#9aa6b2"/>
+          <rect x="30" y="132" width="40" height="10" rx="4" fill="#6f7c89"/><rect x="230" y="132" width="40" height="10" rx="4" fill="#6f7c89"/>
+        </svg>
+        <div class="lever" id="lever"></div>
+      </div>
+      <div class="glow" id="glow"></div>
+    </div></div>
+    <div class="clock" id="clock"></div>
+    <div class="ejectwrap" id="ejectwrap"><button class="big" id="pushBtn" type="button">Push the bread down</button><button class="eject" id="ejectBtn" type="button" disabled style="display:none">EJECT</button></div>
+    <div class="hint" id="hintTxt">Tip: you can also press the space bar</div>
+    <div class="result" id="result"></div>
+  </section>
+
+  <!-- Final -->
+  <section class="screen" id="final">
+    <div class="card">
+      <h2 id="finalTitle">All done!</h2>
+      <div class="pts" id="finalScore"></div>
+      <div class="msg" id="finalMsg"></div>
+      <table id="finalTable"></table>
+      <p style="margin-top:12px"><button class="big" id="againBtn">Play again</button>
+      <button class="big alt" id="menuBtn">Settings</button></p>
+    </div>
+  </section>
+</main>
+<canvas id="confetti"></canvas>
+
+<script>
+(function(){
+const TIMES=[5,10,15,20,30,45,60];
+let selected=new Set([10,20,30]), rounds=5;
+let round=0, total=0, history=[], target=0, t0=0, state='idle', raf=0, popTimer=0;
+const $=id=>document.getElementById(id);
+
+// chips
+const chips=$('chips');
+TIMES.forEach(t=>{const b=document.createElement('button');b.className='chip'+(selected.has(t)?' sel':'');b.textContent=t;
+  b.onclick=()=>{ if(selected.has(t)){ if(selected.size>1){selected.delete(t);b.classList.remove('sel');} } else {selected.add(t);b.classList.add('sel');} };
+  chips.appendChild(b);});
+document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{rounds=+b.dataset.r;document.querySelectorAll('[data-r]').forEach(x=>x.classList.toggle('sel',x===b));});
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));}
+
+// scale stage on small screens
+function fit(){const st=document.querySelector('.stage');const s=Math.min(1,st.clientWidth/420);st.style.height=Math.round(330*s)+'px';const sc=$('scale');sc.style.transform='translateX(-50%) scale('+s+')';}
+window.addEventListener('resize',fit);
+
+// audio
+let ac=null;
+function tone(f,d,type,vol,when){ if(!$('sound').checked)return; try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  const o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.value=f;g.gain.value=vol||.15;
+  const t=ac.currentTime+(when||0);g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d);}catch(e){} }
+const sfx={
+  down(){tone(180,.25,'triangle',.2);tone(120,.3,'triangle',.2,.15);},
+  ding(){tone(1320,.9,'sine',.18);},
+  cheer(){[523,659,784,1047].forEach((f,i)=>tone(f,.25,'triangle',.15,i*.09));},
+  ok(){tone(660,.2,'triangle',.15);tone(784,.25,'triangle',.15,.1);},
+  sad(){tone(300,.3,'sine',.15);tone(240,.45,'sine',.15,.2);}
+};
+
+function newRound(){
+  round++; $('hudRound').textContent='Round '+round+'/'+rounds; $('hudScore').textContent='Score '+total;
+  const arr=[...selected]; target=arr[Math.floor(Math.random()*arr.length)];
+  if(arr.length>1 && history.length && history[history.length-1].target===target){ // avoid immediate repeat when possible
+    let tries=0; while(target===history[history.length-1].target && tries++<10) target=arr[Math.floor(Math.random()*arr.length)]; }
+  $('target').innerHTML='Target: '+target+' seconds<small>Eject just before the toast pops!</small>';
+  $('result').innerHTML=''; $('clock').textContent='';
+  const b=$('bread'); b.className='bread'; b.style.transition='none'; b.style.top='-6px'; b.style.transform=''; b.style.opacity=1; void b.offsetWidth; b.style.transition='';b.style.top='';
+  $('lever').classList.remove('down'); $('glow').style.opacity=0; $('steam').style.opacity=0;
+  $('ejectBtn').disabled=true; $('ejectBtn').style.display='none'; $('pushBtn').style.display='';
+  state='ready';
+  $('hintTxt').textContent='Press the button (or space bar) to start';
+}
+
+function push(){
+  if(state!=='ready')return; state='pushing';
+  $('pushBtn').style.display='none'; $('ejectBtn').style.display='';
+  $('bread').classList.add('down'); $('lever').classList.add('down'); sfx.down();
+  $('hintTxt').textContent='Toasting… press Eject (or space bar) just before it pops!';
+  setTimeout(()=>{ if(state!=='pushing')return; state='running'; t0=performance.now(); $('ejectBtn').disabled=false;
+    popTimer=setTimeout(pop,target*1000); tick(); },900);
+}
+
+function tick(){
+  if(state!=='running')return;
+  const el=(performance.now()-t0)/1000;
+  if($('showClock').checked) $('clock').textContent=el.toFixed(1)+' s';
+  if($('showGlow').checked){ const f=Math.max(0,el/target); $('glow').style.opacity=Math.min(1,Math.pow(f,3)).toFixed(2); }
+  raf=requestAnimationFrame(tick);
+}
+
+function pop(){ // too slow – toast is lost
+  if(state!=='running')return; state='done'; cancelAnimationFrame(raf);
+  $('ejectBtn').disabled=true;
+  const b=$('bread'); b.classList.add('toasted'); b.classList.add('lost'); $('lever').classList.remove('down'); sfx.ding(); setTimeout(sfx.sad,300);
+  finish(null);
+}
+
+function eject(){
+  if(state!=='running')return; const el=(performance.now()-t0)/1000;
+  clearTimeout(popTimer); cancelAnimationFrame(raf); state='done'; $('ejectBtn').disabled=true;
+  const b=$('bread'); b.classList.remove('down'); b.classList.add('eject'); if(target-el>1)b.classList.add('slow');
+  $('lever').classList.remove('down'); $('glow').style.opacity=0;
+  const early=target-el; // positive = early
+  finish(early,el);
+}
+
+function score(early){
+  if(early<=1) return 100;
+  const span=target*0.5;                     // zero points once you're half the timer early
+  return Math.max(0,Math.round(100*(1-(early-1)/span)));
+}
+
+function finish(early,el){
+  let pts=0, msg='', cls='';
+  const tt=target;
+  if(early===null){ pts=0; msg='Oh no! The toast popped out and landed on the floor. 😢'; }
+  else{
+    pts=score(early);
+    if(early<=1){ msg=['Perfect toast! 🎉','Golden brown! 🎉','Brilliant timing! 🎉'][Math.floor(Math.random()*3)]; cheer(); sfx.ding(); sfx.cheer(); }
+    else if(pts>=70){ msg='Lovely – nearly there! 😊'; sfx.ok(); }
+    else if(pts>=30){ msg='A bit early – the toast is still pale. 🍞'; sfx.ok(); }
+    else { msg='Very early! That bread is barely warm. 🍞'; sfx.sad(); }
+  }
+  total+=pts; $('hudScore').textContent='Score '+total;
+  history.push({target:tt,time:early===null?null:el,pts});
+  const last=round>=rounds;
+  let detail = early===null ? 'You were too slow, so no points.' :
+     'You ejected at <b>'+el.toFixed(1)+' s</b> – that is <b>'+early.toFixed(1)+' s</b> early.';
+  $('result').innerHTML='<div class="pts">+'+pts+'</div><div class="msg">'+msg+'</div><div class="detail">Target '+tt+' s &nbsp;|&nbsp; '+detail+'</div>';
+  const nb=document.createElement('button'); nb.className='big'; nb.textContent=last?'See my results':'Next toast';
+  nb.onclick=next; nb.style.marginTop='8px'; $('result').appendChild(nb);
+  state='result'; $('hintTxt').textContent='Press space bar to continue';
+}
+
+function next(){ if(state!=='result')return; if(round>=rounds) end(); else newRound(); }
+
+function end(){
+  show('final'); $('hud').style.display='none';
+  const max=rounds*100; $('finalScore').textContent=total+' / '+max;
+  const pct=total/max;
+  $('finalMsg').textContent= pct>=.9?'Master Toaster! 🏆':pct>=.7?'Top-notch timing! 🌟':pct>=.4?'Good effort – keep practising!':'Plenty of toast to eat – try again! 🍞';
+  const tb=$('finalTable'); tb.innerHTML='<tr><th>#</th><th>Target</th><th>Your time</th><th>Points</th></tr>'+
+    history.map((h,i)=>'<tr><td>'+(i+1)+'</td><td>'+h.target+' s</td><td>'+(h.time===null?'Too slow':h.time.toFixed(1)+' s')+'</td><td>'+h.pts+'</td></tr>').join('');
+  if(pct>=.7) cheer();
+}
+
+function start(){ round=0; total=0; history=[]; $('hud').style.display='flex'; show('game'); fit(); newRound(); }
+
+$('startBtn').onclick=start; $('againBtn').onclick=start;
+$('menuBtn').onclick=()=>{show('setup');};
+$('pushBtn').onclick=push;
+$('ejectBtn').onclick=eject;
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.key===' '){ if(!$('game').classList.contains('on'))return; e.preventDefault(); if(e.repeat)return;
+    if(state==='ready')push(); else if(state==='running')eject(); else if(state==='result')next(); }
+});
+// touch-friendly: pointerdown on eject for tight timing
+$('ejectBtn').addEventListener('pointerdown',e=>{e.preventDefault();eject();});
+
+// confetti
+const cv=$('confetti'),cx=cv.getContext('2d'); let parts=[],cr=0;
+function sz(){cv.width=innerWidth;cv.height=innerHeight;} addEventListener('resize',sz); sz();
+function cheer(){
+  const cols=['#e63946','#f4a261','#2a9d8f','#457b9d','#ffd166','#9b5de5','#06d6a0'];
+  for(let i=0;i<180;i++) parts.push({x:cv.width/2+(Math.random()-.5)*200,y:cv.height*.45,vx:(Math.random()-.5)*16,vy:-Math.random()*16-4,
+    s:6+Math.random()*8,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-.5)*.4,life:140+Math.random()*60});
+  if(!cr) loop();
+}
+function loop(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.vx*=.99;p.r+=p.vr;p.life--;
+    cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.globalAlpha=Math.min(1,p.life/40);cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore();});
+  parts=parts.filter(p=>p.life>0&&p.y<cv.height+40);
+  if(parts.length) cr=requestAnimationFrame(loop); else {cr=0;cx.clearRect(0,0,cv.width,cv.height);}
+}
+fit();
+})();
+</script>
+</body>
+</html>
