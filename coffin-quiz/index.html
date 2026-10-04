@@ -88,7 +88,11 @@ h1{margin:0;text-align:center;font-size:clamp(1.8rem,5vw,3.6rem);line-height:1.0
 #tag{font-size:clamp(.85rem,1.5vw,1.2rem);color:#a5520a;margin-bottom:4px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 #tag .risk{background:var(--blood);color:#fff;border-radius:10px;padding:0 10px;animation:pulse .8s infinite alternate}
 @keyframes pulse{to{transform:scale(1.07)}}
-#qtext{font-size:clamp(1.3rem,3.2vw,2.6rem);line-height:1.2;font-weight:bold}
+#qrow{display:flex;gap:clamp(10px,2vw,28px);align-items:center}
+#qtext{flex:1;min-width:0;font-size:clamp(1.3rem,3.2vw,2.6rem);line-height:1.2;font-weight:bold}
+#fig{flex:none;text-align:center}
+#fig svg{height:clamp(110px,24vh,230px);width:auto;max-width:min(42vw,420px);display:block;margin:0 auto;background:#faf6ff;border:2px solid #d9c9f5;border-radius:14px}
+#fig small{display:block;font-size:clamp(.65rem,1.1vw,.85rem);color:#8a6ab3;font-weight:normal;margin-top:2px}
 #say{font-size:clamp(1rem,2vw,1.6rem);color:#b3122c;margin-top:8px;min-height:1.3em}
 #say.pop{animation:popin .35s}
 @keyframes popin{from{transform:scale(.7);opacity:0}}
@@ -140,6 +144,8 @@ h1{margin:0;text-align:center;font-size:clamp(1.8rem,5vw,3.6rem);line-height:1.0
 @keyframes rain{to{transform:translateY(110vh) rotate(360deg)}}
 
 @media (max-width:760px){
+  #qrow{flex-direction:column;align-items:stretch}
+  #fig svg{height:auto;width:100%;max-width:300px}
   #stage{flex-direction:column;align-items:stretch}
   #stage .count{align-self:center;width:34vw}
   .bubble.left::before{display:none}
@@ -208,7 +214,7 @@ h1{margin:0;text-align:center;font-size:clamp(1.8rem,5vw,3.6rem);line-height:1.0
     <div id="gameCount"></div>
     <div id="qBubble" class="bubble left">
       <div id="tag"></div>
-      <div id="qtext"></div>
+      <div id="qrow"><div id="qtext"></div><div id="fig" class="hidden"></div></div>
       <div id="say"></div>
     </div>
   </div>
@@ -504,6 +510,98 @@ Q("£1 = €1.15. How many euros is £80?","€92",["€69.57","You divided by 1
 Q("What is 20% of 20% of 500?","20",["100","That is only one 20% of 500."],["10","20% of 20% is 4%, not 2%."],["200","You added the percentages to make 40%."])
 ];
 
+/* ---------- figures ---------- */
+const FC={ink:'#2a0b4f',fill:'#efe6ff',fill2:'#d9c9f5',fill3:'#c4b0ec',red:'#c4122c'};
+const f1=n=>Math.round(n*10)/10;
+const pt=p=>f1(p[0])+','+f1(p[1]);
+const P=(c,r,a)=>[c[0]+r*Math.cos(a*Math.PI/180),c[1]-r*Math.sin(a*Math.PI/180)];
+const dirAng=(a,b)=>((Math.atan2(-(b[1]-a[1]),b[0]-a[0])*180/Math.PI)+360)%360;
+const SW=(inner,h)=>`<svg viewBox="0 0 240 ${h||150}" xmlns="http://www.w3.org/2000/svg" font-family="'Chalkboard SE','Comic Sans MS','Trebuchet MS',sans-serif" font-size="14" font-weight="bold" role="img" aria-label="Diagram for the question">${inner}</svg>`;
+const ln=(a,b,o)=>`<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="${FC.ink}" stroke-width="2.5" stroke-linecap="round" ${o||''}/>`;
+const dash=(a,b)=>ln(a,b,'stroke-dasharray="6 5" stroke-width="2"');
+const pg=(pts,fill)=>`<polygon points="${pts.map(pt).join(' ')}" fill="${fill||FC.fill}" stroke="${FC.ink}" stroke-width="2.5" stroke-linejoin="round"/>`;
+const tx=(p,s,o)=>{o=o||{};return `<text x="${f1(p[0])}" y="${f1(p[1])}" text-anchor="${o.a||'middle'}" dominant-baseline="central" fill="${o.c||FC.ink}"${o.s?` font-size="${o.s}"`:''}>${s}</text>`};
+const lab=(p,s,o)=>{if(!s)return '';o=o||{};if(s[0]==='!'){s=s.slice(1);o=Object.assign({},o,{c:FC.red,s:s==='?'?20:o.s})}return tx(p,s,o)};
+function arc(c,r,a1,a2,label,lr,col){col=col||FC.red;const s=P(c,r,a1),e=P(c,r,a2),large=(a2-a1)>180?1:0;
+  let o=`<path d="M${pt(s)} A${r} ${r} 0 ${large} 0 ${pt(e)}" fill="none" stroke="${col}" stroke-width="2.5"/>`;
+  if(label!=null&&label!=='')o+=tx(P(c,lr||r+16,(a1+a2)/2),label,{c:col,s:label==='?'?20:13});
+  return o}
+function vArc(V,P1,P2,r,label,lr,col){let a1=dirAng(V,P1),a2=dirAng(V,P2),d=((a2-a1)%360+360)%360;if(d>180){const t=a1;a1=a2;a2=t;d=360-d}return arc(V,r,a1,a1+d,label,lr,col)}
+function rtMark(c,a,s){const p1=P(c,s,a),p2=P(c,s,a+90),p3=[p1[0]+p2[0]-c[0],p1[1]+p2[1]-c[1]];return `<polyline points="${pt(p1)} ${pt(p3)} ${pt(p2)}" fill="none" stroke="${FC.ink}" stroke-width="2"/>`}
+function tick(a,b){const m=[(a[0]+b[0])/2,(a[1]+b[1])/2],d=[b[0]-a[0],b[1]-a[1]],l=Math.hypot(d[0],d[1]),n=[-d[1]/l*6,d[0]/l*6];return ln([m[0]-n[0],m[1]-n[1]],[m[0]+n[0],m[1]+n[1]])}
+const chev=(x,y)=>`<polyline points="${x-6},${y-6} ${x},${y} ${x-6},${y+6}" fill="none" stroke="${FC.ink}" stroke-width="2.2"/>`;
+const apex=(x1,x2,y,a,b)=>{const r=Math.PI/180,d=(x2-x1)*Math.sin(b*r)/Math.sin((a+b)*r);return [x1+d*Math.cos(a*r),y-d*Math.sin(a*r)]};
+function cuboid(x0,y0,W,H,v,wl,hl,dl,inside){const A=[x0,y0],B=[x0+W,y0],C=[x0+W,y0+H],D=[x0,y0+H],sh=p=>[p[0]+v[0],p[1]+v[1]];
+  return pg([A,B,sh(B),sh(A)],FC.fill2)+pg([B,sh(B),sh(C),C],FC.fill3)+pg([A,B,C,D],FC.fill)
+   +lab([x0+W/2,y0+H+16],wl)+lab([x0-8,y0+H/2],hl,{a:'end'})+lab([C[0]+v[0]/2+12,C[1]+v[1]/2+12],dl,{a:'start'})+(inside||'')}
+function rtri(wpx,hpx,wl,hl,yl){const B=[45,128],C=[45+wpx,128],A=[45,128-hpx],M=[(A[0]+C[0])/2,(A[1]+C[1])/2],len=Math.hypot(wpx,hpx),n=[hpx/len,-wpx/len];
+  return SW(pg([B,C,A])+rtMark(B,0,11)+lab([B[0]+wpx/2,B[1]+14],wl)+lab([B[0]-8,B[1]-hpx/2],hl,{a:'end'})+lab([M[0]+n[0]*20,M[1]+n[1]*20],yl))}
+const FIGS=[];const fig=(pre,svg,ns)=>FIGS.push([pre,svg,ns]);
+
+/* angles */
+{const L=[40,125],R=[200,125],A=apex(40,200,125,50,60);
+ fig('Two angles in a triangle are 50°',SW(pg([L,R,A])+vArc(L,R,A,30,'50°',48)+vArc(R,A,L,30,'60°',48)+vArc(A,L,R,24,'?',42)),true);}
+{const O=[120,115];
+ fig('Three angles on a straight line are x, 2x and 3x',SW(ln([20,115],[220,115])+ln(O,P(O,95,90))+ln(O,P(O,95,30))+arc(O,32,0,30,'x',50)+arc(O,32,30,90,'2x',52)+arc(O,32,90,180,'3x',50)),true);}
+{const O=[120,78];
+ fig('Angles around a point are 120°, 150° and x',SW([0,120,270].map(a=>ln(O,P(O,62,a))).join('')+arc(O,22,0,120,'120°',44)+arc(O,22,120,270,'150°',44)+arc(O,22,270,360,'x',40)),true);}
+{const Pb=[100,108],Pt=[100+60/Math.tan(65*Math.PI/180),48];
+ fig('Two parallel lines are crossed by a third line. One of a pair of alternate',SW(ln([30,108],[210,108])+ln([30,48],[210,48])+chev(205,108)+chev(205,48)+ln(P(Pb,-28,65),P(Pt,28,65))+arc(Pb,24,0,65,'65°',44)+arc(Pt,24,180,245,'?',44)),true);}
+{const hw=107*Math.tan(20*Math.PI/180),A=[120,18],L=[120-hw,125],R=[120+hw,125];
+ fig('An isosceles triangle has a top angle of 40°',SW(pg([L,R,A])+tick(A,L)+tick(A,R)+vArc(A,L,R,28,'40°',50)+vArc(L,R,A,20)+vArc(R,A,L,20)+tx([L[0]-4,141],'?',{c:FC.red,s:20})+tx([R[0]+4,141],'?',{c:FC.red,s:20})),true);}
+{const O=[120,118];
+ fig('Angles on a straight line are 2x and x + 60',SW(ln([20,118],[220,118])+ln(O,P(O,95,80))+arc(O,30,0,80,'2x',52)+arc(O,30,80,180,'x + 60',60)),true);}
+{const O=[120,78];
+ fig('Angles around a point are 40°, 80° and 3x',SW([0,40,120].map(a=>ln(O,P(O,65,a))).join('')+arc(O,26,0,40,'40°',60)+arc(O,26,40,120,'80°',50)+arc(O,26,120,360,'3x',46)),true);}
+{const L=[30,125],R=[200,125],A=[200,125-170*Math.tan(Math.PI/6)];
+ fig('The angles of a triangle are x, 2x and 3x',SW(pg([L,R,A])+vArc(L,R,A,34,'x',58)+vArc(A,L,R,28,'2x',52)+vArc(R,A,L,22,'3x',40)),true);}
+{const Pb=[110,115],Pt=[110+80/Math.tan(70*Math.PI/180),35];
+ fig('Two parallel lines are crossed by a third line. One angle is 110°',SW(ln([30,115],[210,115])+ln([30,35],[210,35])+chev(205,115)+chev(205,35)+ln(P(Pb,-25,70),P(Pt,25,70))+arc(Pb,24,70,180,'110°',46)+arc(Pt,24,180,250,'?',40)),true);}
+{const O=[120,78];
+ fig('Two straight lines cross. One angle is 125°',SW(ln(P(O,-92,20),P(O,92,20))+ln(P(O,-92,145),P(O,92,145))+arc(O,26,20,145,'125°',50)+arc(O,26,200,325,'?',48)),true);}
+{const O=[120,118];
+ fig('Angles on a straight line are 50°, 75° and x',SW(ln([20,118],[220,118])+ln(O,P(O,95,125))+ln(O,P(O,95,50))+arc(O,30,0,50,'50°',54)+arc(O,30,50,125,'75°',56)+arc(O,30,125,180,'x',50)),true);}
+{const A=[30,125],B=[165,125],C=apex(30,165,125,40,75);
+ fig('A triangle has angles of 40° and 65°',SW(pg([A,B,C])+ln(B,[218,125])+vArc(A,B,C,30,'40°',50)+vArc(C,A,B,24,'65°',44)+arc(B,26,0,dirAng(B,C),'?',48)),true);}
+{const A=[50,125],B=[190,125],C=[173.2,30],D=[50,30];
+ fig('Three angles of a quadrilateral are 90°',SW(pg([A,B,C,D])+rtMark(A,0,12)+tx([A[0]+32,A[1]-20],'90°',{c:FC.red,s:13})+vArc(B,A,C,26,'80°',46)+vArc(C,B,D,26,'100°',50)+vArc(D,A,C,22,'?',38)),true);}
+{const O=[50,120];
+ fig('A right angle is split into two angles',SW(ln(O,[210,120])+ln(O,[50,15])+ln(O,P(O,115,50))+arc(O,40,0,50,'2x',64)+arc(O,40,50,90,'x + 15',76)),true);}
+{const hw=55*Math.tan(50*Math.PI/180),A=[120,70],L=[120-hw,125],R=[120+hw,125];
+ fig('An isosceles triangle has one angle of 100°',SW(pg([L,R,A])+tick(A,L)+tick(A,R)+vArc(A,L,R,22,'100°',42)+vArc(L,R,A,22)+vArc(R,A,L,22)+tx([L[0]-4,141],'?',{c:FC.red,s:20})+tx([R[0]+4,141],'?',{c:FC.red,s:20})),true);}
+{const A=[70,118],B=[70+80*Math.sin(70*Math.PI/180),118-80*Math.cos(70*Math.PI/180)];
+ const north=(p,top)=>ln(p,[p[0],top])+`<polygon points="${p[0]},${top-5} ${p[0]-5},${top+7} ${p[0]+5},${top+7}" fill="${FC.ink}"/>`+tx([p[0]+13,top+4],'N');
+ fig('The bearing of B from A is 070°',SW(north(A,28)+north(B,22)+ln(A,B)+`<circle cx="${f1(A[0])}" cy="${f1(A[1])}" r="3.5" fill="${FC.ink}"/><circle cx="${f1(B[0])}" cy="${f1(B[1])}" r="3.5" fill="${FC.ink}"/>`+tx([A[0]-12,A[1]+8],'A')+tx([B[0]-12,B[1]-12],'B')+arc(A,28,20,90,'070°',54)+arc(B,22,200,450,'?',42)),false);}
+{const C=[120,75];let s=`<circle cx="120" cy="75" r="62" fill="#fff" stroke="${FC.ink}" stroke-width="3"/>`;
+ for(let h=1;h<=12;h++)s+=tx(P(C,50,90-h*30),String(h),{s:12});
+ s+=ln(C,P(C,32,-30),'stroke-width="4.5"')+ln(C,P(C,40,90),'stroke-width="3"')+arc(C,18,-30,90,'?',30)+`<circle cx="120" cy="75" r="4" fill="${FC.ink}"/>`;
+ fig('It is 4 o',SW(s),false);}
+
+/* shape and measures */
+{const A=[35,125],B=[161,125],D=[77,69],C=[203,69];
+ fig('A parallelogram has base 9 cm',SW(pg([A,B,C,D])+dash(D,[77,125])+rtMark([77,125],0,10)+tx([98,141],'9 cm')+tx([194,106],'5 cm',{a:'start'})+tx([84,100],'4 cm',{a:'start'})));}
+{fig('A trapezium has parallel sides',SW(pg([[50,125],[190,125],[162,69],[78,69]])+dash([162,69],[162,125])+rtMark([162,125],90,10)+tx([120,141],'10 cm')+tx([120,54],'6 cm')+tx([168,98],'4 cm',{a:'start'})));}
+{fig('A triangle has base 8 cm and height 5 cm',SW(pg([[50,125],[190,125],[110,38]])+dash([110,38],[110,125])+rtMark([110,125],0,10)+tx([120,141],'8 cm')+tx([116,84],'5 cm',{a:'start'})));}
+{fig('A triangle has area 24 cm²',SW(pg([[45,125],[185,125],[100,20]])+dash([100,20],[100,125])+rtMark([100,125],0,10)+tx([115,141],'8 cm')+lab([106,78],'!h = ?',{a:'start',s:15})+tx([186,38],'Area = 24 cm²',{s:12})));}
+{fig('What is the area of a circle with radius 5 cm?',SW(`<circle cx="120" cy="75" r="58" fill="${FC.fill}" stroke="${FC.ink}" stroke-width="2.5"/>`+ln([120,75],[178,75])+`<circle cx="120" cy="75" r="3.5" fill="${FC.ink}"/>`+tx([149,62],'5 cm')));}
+{fig('A circle has diameter 10 cm',SW(`<circle cx="120" cy="75" r="58" fill="${FC.fill}" stroke="${FC.ink}" stroke-width="2.5"/>`+ln([62,75],[178,75])+`<circle cx="120" cy="75" r="3.5" fill="${FC.ink}"/>`+tx([120,60],'10 cm')));}
+{fig('A circle has diameter 8 cm',SW(`<circle cx="120" cy="75" r="58" fill="${FC.fill}" stroke="${FC.ink}" stroke-width="2.5"/>`+ln([62,75],[178,75])+`<circle cx="120" cy="75" r="3.5" fill="${FC.ink}"/>`+tx([120,60],'8 cm')));}
+{fig('A rectangle is 7 cm by 3 cm',SW(pg([[45,43],[195,43],[195,107],[45,107]])+tx([120,126],'7 cm')+tx([203,75],'3 cm',{a:'start'})));}
+{fig('What is the volume of a cuboid measuring 4 cm',SW(cuboid(56,62,100,50,[46,-30],'4 cm','2 cm','3 cm')));}
+{fig('A right-angled triangle has short sides 6 cm and 8 cm',rtri(120,90,'8 cm','6 cm','!?'));}
+{fig('A right-angled triangle has longest side 13 cm',rtri(144,60,'!?','5 cm','13 cm'));}
+{fig('A right-angled triangle has short sides 5 cm and 12 cm',rtri(144,60,'12 cm','5 cm','!?'));}
+{fig('A right-angled triangle has longest side 10 cm',rtri(120,90,'!?','6 cm','10 cm'));}
+{fig('Which has the greater area: a square of side 6 cm',SW(pg([[25,38],[115,38],[115,128],[25,128]])+tx([70,24],'6 cm')+`<circle cx="180" cy="83" r="45" fill="${FC.fill}" stroke="${FC.ink}" stroke-width="2.5"/>`+ln([180,83],[225,83])+`<circle cx="180" cy="83" r="3.5" fill="${FC.ink}"/>`+tx([203,70],'3 cm')));}
+{fig('What is the volume of a cube with side 5 cm?',SW(cuboid(60,62,72,72,[40,-30],'','','')+tx([96,148],'5 cm'),156));}
+{fig('A cylinder has radius 2 cm and height 5 cm',SW(`<path d="M65,42 L65,112 A45,14 0 0 0 155,112 L155,42 Z" fill="${FC.fill}" stroke="${FC.ink}" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="110" cy="42" rx="45" ry="14" fill="${FC.fill2}" stroke="${FC.ink}" stroke-width="2.5"/>`+ln([110,42],[155,42])+`<circle cx="110" cy="42" r="3" fill="${FC.ink}"/>`+tx([163,42],'2 cm',{a:'start'})+ln([50,42],[50,112])+ln([45,42],[55,42])+ln([45,112],[55,112])+tx([44,77],'5 cm',{a:'end'})));}
+{fig('A cuboid has volume 60 cm³',SW(cuboid(50,56,120,58,[40,-28],'','!h = ?','','')+tx([110,78],'Volume = 60 cm³',{s:12})+tx([110,96],'Base area = 12 cm²',{s:11}),150));}
+{fig('A 5 m ladder leans against a wall',SW(ln([20,125],[215,125])+ln([50,125],[50,22],'stroke-width="5"')+ln([116,125],[50,37],'stroke="#8a5a2b" stroke-width="5"')+rtMark([50,125],0,11)+tx([92,76],'5 m',{a:'start'})+tx([83,141],'3 m')+lab([40,81],'!?',{a:'end'})));}
+{fig('A semicircle has diameter 10 cm',SW(`<path d="M50,100 A70,70 0 0 1 190,100 Z" fill="${FC.fill}" stroke="${FC.ink}" stroke-width="2.5" stroke-linejoin="round"/>`+tx([120,120],'10 cm')));}
+{fig('A 10 cm by 6 cm rectangle has a 4 cm by 3 cm corner',SW(pg([[50,120],[180,120],[180,81],[128,81],[128,42],[50,42]])+`<rect x="128" y="42" width="52" height="39" fill="none" stroke="${FC.ink}" stroke-width="2" stroke-dasharray="6 5"/>`+tx([115,136],'10 cm')+tx([40,81],'6 cm',{a:'end'})+tx([154,30],'4 cm')+tx([187,61],'3 cm',{a:'start'})));}
+{fig('A rectangle has area 48 cm²',SW(pg([[55,35],[185,35],[185,115],[55,115]])+tx([120,75],'Area = 48 cm²',{s:15})+tx([45,75],'6 cm',{a:'end'})+lab([120,132],'!?')));}
+FIGS.forEach(([pre,svg,ns])=>{const m=BANK.filter(q=>q.q.startsWith(pre));if(m.length!==1)console.error('figure match problem:',pre,m.length);else{m[0].fig=svg;m[0].ns=!!ns}});
+
 /* ---------- art ---------- */
 const BAT='<svg viewBox="0 0 60 30"><g class="flap"><path d="M30 8C26 2 18 0 2 4C8 8 10 14 14 18C18 12 22 14 26 20L30 14L34 20C38 14 42 12 46 18C50 14 52 8 58 4C42 0 34 2 30 8Z" fill="#241038"/><path d="M27 9L25 2L30 7L35 2L33 9Z" fill="#241038"/><circle cx="28" cy="11" r="1.6" fill="#ffe27a"/><circle cx="32" cy="11" r="1.6" fill="#ffe27a"/></g></svg>';
 function countSVG(){return `<svg class="count" viewBox="0 0 220 300"><g class="all">
@@ -587,6 +685,7 @@ function nextQuestion(first){
   $('#tag').innerHTML=`<span>${S.players>1?'Over to <b></b>!':'Your question'}</span>`+(S.risk?'<span class="risk">DOUBLE OR NOTHING – one go only!</span>':'');
   if(S.players>1)$('#tag b').textContent=t.name;
   $('#qtext').innerHTML=fmt(S.q.q);say('');
+  const fg=$('#fig');if(S.q.fig){fg.innerHTML=S.q.fig+(S.q.ns?'<small>Not drawn accurately</small>':'');fg.classList.remove('hidden')}else{fg.innerHTML='';fg.classList.add('hidden')}
   $('#worth').textContent='· this question is worth '+S.value+' 🎃';
   $('#nextBtn').classList.add('hidden');
   const c=$('#coffins');c.innerHTML='';
