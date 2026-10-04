@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0d33">
+<title>Nul Points! – LoadsOfMaths</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{--gold:#ffd23f;--pink:#ff4fa3;--cyan:#42d6ff;--ink:#0a0d33;--mute:#b9bfe8}
+html{font-size:16px}
+body{margin:0;min-height:100vh;color:#fff;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+ background:radial-gradient(60vw 40vh at 12% 0%,rgba(255,79,163,.28),transparent 60%),radial-gradient(60vw 45vh at 92% 8%,rgba(66,214,255,.22),transparent 60%),linear-gradient(180deg,#0a0d33 0%,#170f48 55%,#0a0d33 100%);background-attachment:fixed;overflow-x:hidden}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+button:focus-visible,input:focus-visible{outline:.15rem solid var(--cyan);outline-offset:.15rem}
+.btn{background:linear-gradient(180deg,#ffe27a,#ffbd2e);color:#2a1700;font-weight:800;padding:.55em 1.3em;border-radius:.8em;box-shadow:0 .2rem 0 #b57d00,0 .5rem 1rem rgba(0,0,0,.35);font-size:1.1rem;letter-spacing:.03em}
+.btn:active{transform:translateY(.1rem)}
+.btn.sec{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 0 0 0 .1rem rgba(255,255,255,.28)}
+.btn.big{font-size:1.6rem;padding:.65em 1.8em}
+.btn.sm{font-size:.9rem;padding:.35em .9em;box-shadow:none}
+#bunting svg{display:block;width:100%;height:auto}
+.screen{display:none;padding:.6rem 4vw 2rem;max-width:1500px;margin:0 auto}
+.screen.on{display:block}
+.center{text-align:center}
+/* home */
+.hero{display:flex;align-items:center;justify-content:center;gap:3vw;flex-wrap:wrap;margin-top:1.5vh}
+.bigflag{width:min(19vw,330px);aspect-ratio:3/2;height:auto;border-radius:.4rem;box-shadow:0 .5rem 1.5rem rgba(0,0,0,.55),0 0 0 .12rem rgba(255,255,255,.25);flex:none}
+.logo{text-align:center}
+.zero{position:relative;width:12rem;height:12rem;margin:0 auto}
+.zero svg{position:absolute;inset:0;width:100%;height:100%}
+.zero b{position:absolute;inset:0;display:grid;place-items:center;font-size:7rem;color:var(--gold);text-shadow:0 .1rem 0 #b57d00}
+h1{font-size:4.4rem;margin:.1em 0 0;line-height:1;letter-spacing:.05em;background:linear-gradient(180deg,#fff6c9,#ffd23f 55%,#ff9d2e);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 .2rem 0 rgba(0,0,0,.35))}
+.tagline{font-size:1.5rem;margin:.4em 0 0;color:#e7eaff}
+.tagline b{color:var(--gold)}
+.menu{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin:2.2rem 0 1rem}
+.foot{text-align:center;color:var(--mute);font-size:.85rem}
+.logobar{display:flex;justify-content:center;margin:1.4rem 0 .5rem}
+.logobar img{display:block;width:min(30rem,86vw);height:auto;background:#fff;padding:.5rem 1.1rem;border-radius:1rem;box-shadow:0 .4rem 1.2rem rgba(0,0,0,.4)}
+/* panels */
+.panel{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:1rem;padding:.9rem 1.2rem;margin:.8rem 0}
+.panel h3{margin:.1em 0 .5em;font-size:1.05rem;letter-spacing:.12em;color:var(--cyan);text-transform:uppercase}
+.panel h3 small{letter-spacing:0;text-transform:none;color:var(--mute);font-weight:400;margin-left:.6em}
+.page-title{font-size:2.2rem;margin:.3em 0;color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:.45rem}
+label.chip{cursor:pointer}
+label.chip input{position:absolute;opacity:0;pointer-events:none}
+label.chip span{display:inline-block;padding:.35em .85em;border-radius:2em;background:rgba(255,255,255,.1);border:.1rem solid rgba(255,255,255,.22);font-weight:700;font-size:1rem}
+label.chip input:checked+span{background:var(--gold);color:#2a1700;border-color:var(--gold)}
+label.chip input:focus-visible+span{outline:.15rem solid var(--cyan)}
+.seg{display:inline-flex;gap:.35rem;flex-wrap:wrap}
+.seg button{padding:.4em .95em;border-radius:.65em;background:rgba(255,255,255,.1);font-weight:700;border:.1rem solid rgba(255,255,255,.2)}
+.seg button.on{background:var(--gold);color:#2a1700;border-color:var(--gold)}
+.setrow{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin:.5rem 0}
+.setrow>b{min-width:9rem}
+.miniact{background:none;color:var(--cyan);text-decoration:underline;font-size:.85rem;padding:0 .4em}
+.teamnames{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
+.teamnames input{font:inherit;padding:.3em .6em;border-radius:.5em;border:.1rem solid rgba(255,255,255,.3);background:rgba(0,0,0,.3);color:#fff;width:9rem}
+.howlist{font-size:1.15rem;line-height:1.5;padding-left:1.3em}
+.howlist li{margin:.4em 0}
+.howlist b{color:var(--gold)}
+/* game */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap}
+.pill{display:inline-block;padding:.25em .9em;border-radius:2em;background:rgba(255,255,255,.14);font-weight:800;letter-spacing:.06em}
+.pill.alt{background:rgba(66,214,255,.2);color:var(--cyan)}
+.timetxt{font-size:1.5rem;font-weight:800;min-width:5rem;text-align:center}
+.timer{height:.55rem;border-radius:1rem;background:rgba(255,255,255,.15);overflow:hidden;margin:.4rem 0}
+.timer i{display:block;height:100%;width:100%;background:var(--cyan);transition:width .3s linear}
+.qcard{background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.22);border-radius:1.2rem;padding:1rem 1.6rem;text-align:center;margin:.7rem 0}
+.qtitle{letter-spacing:.22em;color:var(--cyan);font-weight:800;font-size:.95rem}
+.qtext{font-size:1.9rem;line-height:1.35;margin:.35em 0 .1em}
+.qtext b{color:var(--gold)}
+.qtext small{display:block;font-size:.95rem;color:var(--mute);margin-top:.5em}
+.instr{font-size:1.3rem;color:#e7eaff}
+.goesto{text-align:center;letter-spacing:.14em;margin:.2rem 0 .4rem;color:var(--pink);font-size:1.5rem}
+.board{display:grid;gap:.3rem;max-width:960px;margin:0 auto}
+.row{display:grid;grid-template-columns:2.6rem 1fr auto;align-items:center;gap:.8rem;padding:.2rem .9rem;border-radius:.8rem;background:rgba(255,255,255,.11);min-height:2.4rem;border:.1rem solid rgba(255,255,255,.12)}
+.row.hidden{opacity:.25}
+.row.click{cursor:pointer}
+.row.click:hover{border-color:var(--gold)}
+.rf{width:2.6rem;height:1.75rem;border-radius:.2rem;box-shadow:0 0 0 .08rem rgba(255,255,255,.3)}
+.ans{font-weight:800;font-size:1.5rem}
+.ans small{display:block;font-size:.8rem;font-weight:700;letter-spacing:.04em}
+.tag{font-size:.7rem;font-weight:700;color:var(--mute);margin-left:.5em;letter-spacing:.02em}
+.row.nul .tag,.row.nul .ans small{color:#5a3200}
+.pts{font-weight:900;background:#101552;border:.12rem solid rgba(255,255,255,.3);border-radius:.6em;padding:.1em .7em;min-width:6.5em;text-align:center;letter-spacing:.04em;font-size:1.1rem}
+.row.nul{background:linear-gradient(90deg,#ffd23f,#ff9d2e);color:#2a1700;border-color:#fff3b0}
+.row.nul .pts{background:#2a1700;color:var(--gold);border-color:#2a1700}
+.row.show{animation:pop .4s ease-out}
+@keyframes pop{0%{transform:scale(.97);opacity:.3}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.row.show{animation:none}.timer i{transition:none}}
+.ctrls{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin:.7rem 0}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 .12em;font-size:.85em}
+.fr span:first-child{border-bottom:.07em solid currentColor;padding:0 .2em}
+.fr span:last-child{padding:0 .2em}
+#checkPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:.8rem;width:min(60rem,94vw);z-index:5;background:#1b1664;box-shadow:0 .5rem 2rem rgba(0,0,0,.6);margin:0}
+.chkrow{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.chkrow input{font:inherit;font-size:1.3rem;padding:.3em .6em;border-radius:.5em;border:.1rem solid rgba(255,255,255,.35);background:rgba(0,0,0,.35);color:#fff;width:min(26rem,100%)}
+.chkout{font-size:1.4rem;margin-top:.6rem;font-weight:800}
+.chkout.good{color:var(--gold)}
+.chkout.bad{color:#ff8f9a}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.6rem;margin-top:.6rem}
+.team{border-radius:.9rem;padding:.45rem .7rem;background:rgba(255,255,255,.1);border:.14rem solid transparent;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:.1rem .5rem;align-items:center}
+.team.sel{border-color:var(--gold);background:rgba(255,210,63,.18)}
+.dot{width:.9rem;height:.9rem;border-radius:50%}
+.team .tot{font-size:1.7rem;font-weight:900}
+.team .sub{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:var(--mute)}
+.team .sub button{background:rgba(255,255,255,.14);border-radius:.4em;width:1.8em;height:1.6em;margin-left:.25em;font-weight:800}
+.hint{text-align:center;color:var(--mute);font-size:.9rem;margin:.3rem 0}
+.endtable{width:100%;max-width:760px;margin:1rem auto;border-collapse:collapse;font-size:1.6rem}
+.endtable td{padding:.45em .8em;border-bottom:1px solid rgba(255,255,255,.15)}
+.endtable td:last-child{text-align:right;font-weight:900}
+.endtable tr.win td{color:var(--gold)}
+.winner{font-size:3rem;color:var(--gold);text-align:center;font-weight:900;margin:.3em 0}
+.badge{display:inline-block;margin-left:.6em;padding:.05em .6em;border-radius:2em;background:linear-gradient(90deg,#ffd23f,#ff9d2e);color:#2a1700;font-size:.75rem;font-weight:900;letter-spacing:.05em;vertical-align:middle}
+@media (max-width:760px){h1{font-size:2.6rem}.bigflag{width:34vw}.qtext{font-size:1.5rem}.ans{font-size:1.25rem}.pts{font-size:1rem;min-width:5.2em}}
+
+.btn:disabled{opacity:.4;cursor:not-allowed}
+button{touch-action:manipulation}
+.ansbox{display:flex;flex-direction:column;align-items:center;gap:.5rem;margin:.6rem 0 1rem}
+.ansbox input{font:inherit;font-size:max(16px,1.5rem);text-align:center;padding:.4em .6em;border-radius:.7em;border:.12rem solid rgba(255,255,255,.4);background:rgba(0,0,0,.35);color:#fff;width:min(24rem,92vw)}
+.soloresult{text-align:center;margin:.3rem auto .7rem;max-width:960px;padding:.5rem 1rem;border-radius:1rem;background:rgba(255,255,255,.1);border:.12rem solid rgba(255,255,255,.25)}
+.soloresult .big{font-size:2.1rem;font-weight:900;color:var(--gold)}
+.soloresult.bad .big{color:#ff8f9a}
+.soloresult.nul{background:linear-gradient(90deg,#ffd23f,#ff9d2e);color:#2a1700}
+.soloresult.nul .big{color:#2a1700}
+.row.mine{outline:.2rem solid var(--cyan);outline-offset:.1rem}
+.row.mine .ans::after{content:" \2190 you";font-size:.65em;color:var(--cyan)}
+.row.nul.mine .ans::after{color:#2a1700}
+@media (max-width:700px){
+ .screen{padding:.4rem 3vw 1.5rem}
+ h1{font-size:2.5rem}.zero{width:8rem;height:8rem}.zero b{font-size:4.6rem}
+ .tagline{font-size:1.1rem}.menu{gap:.6rem;margin:1.2rem 0 .8rem}.btn.big{font-size:1.2rem;padding:.6em 1.2em}
+ .btn{min-height:2.6rem}
+ .qtext{font-size:1.3rem}.qcard{padding:.7rem .8rem}.page-title{font-size:1.6rem}
+ .row{grid-template-columns:2rem 1fr auto;gap:.5rem;padding:.2rem .5rem}.rf{width:2rem;height:1.35rem}
+ .ans{font-size:1.1rem}.tag{display:block;margin:0;font-size:.62rem}.pts{font-size:.85rem;min-width:4.8em;padding:.1em .3em}
+ .soloresult .big{font-size:1.5rem}
+ .topbar{gap:.4rem}.setrow>b{min-width:100%}
+ .teams{grid-template-columns:repeat(2,1fr)}
+ .endtable{font-size:1.1rem}.winner{font-size:2rem}
+ .logobar img{padding:.3rem .6rem}
+}
+</style>
+</head>
+<body>
+<svg id="defs" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
+<div id="bunting" aria-hidden="true"></div>
+<main>
+
+<section id="home" class="screen on">
+  <div class="hero">
+    <div class="logo">
+      <div class="zero"><svg viewBox="0 0 200 200" id="ring"></svg><b>0</b></div>
+      <h1>NUL POINTS!</h1>
+      <p class="tagline">The Maths game where <b>zero</b> is the best score.</p>
+    </div>
+  </div>
+  <div class="menu">
+    <button class="btn big" data-act="play">PLAY</button>
+    <button class="btn sec big" data-act="go-settings">SETTINGS</button>
+    <button class="btn sec big" data-act="go-how">HOW TO PLAY</button>
+  </div>
+  <div class="logobar"><img src="data:image/jpeg;base64,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" alt="www.loadsofmaths.co.uk" width="900" height="89"></div>
+</section>
+
+<section id="how" class="screen">
+  <h2 class="page-title">How to play</h2>
+  <div class="panel">
+    <ol class="howlist">
+      <li>A maths question appears. There are <b>lots of correct answers</b>.</li>
+      <li>Everyone writes <b>one answer</b> on paper or a mini-whiteboard. Nothing is typed into the computer.</li>
+      <li>The teacher reveals the <b>points board</b>. Each answer has a score &ndash; <b>the lower the better</b>.</li>
+      <li>Find your answer and add its points to your running total.</li>
+      <li>The <b>Nul Hunt</b>: a correct answer that few people would think of scores <b>NUL POINTS!</b> Don&rsquo;t just solve the maths &ndash; think about which correct answer is least obvious.</li>
+      <li>On a phone? Choose <b>Solo (phone)</b> in Settings: type your answer, tap reveal, and the app keeps your score for you.</li>
+      <li>A <b>wrong answer</b> scores a heavy penalty (you choose how heavy in Settings).</li>
+      <li>Not on the board? Every valid answer still has a score &ndash; the teacher uses <b>Check an answer</b>.</li>
+      <li>After the last round, the <b>lowest total wins</b>.</li>
+    </ol>
+  </div>
+  <div class="menu"><button class="btn" data-act="play">PLAY</button><button class="btn sec" data-act="go-home">BACK</button></div>
+</section>
+
+<section id="settings" class="screen">
+  <h2 class="page-title">Settings</h2>
+  <div id="setBody"></div>
+  <div class="menu"><button class="btn big" data-act="startgame">START GAME</button><button class="btn sec" data-act="go-home">BACK</button></div>
+  <p class="hint" id="setMsg"></p>
+</section>
+
+<section id="game" class="screen">
+  <div class="topbar">
+    <div><span class="pill" id="gRound"></span> <span class="pill alt" id="gTopic"></span> <span class="pill" id="gScore" hidden></span></div>
+    <div class="timetxt" id="gTimerTxt"></div>
+    <div><button class="btn sec sm" data-act="quit">&#10005; Menu</button></div>
+  </div>
+  <div class="timer" id="gTimer" hidden><i></i></div>
+  <div class="qcard"><div class="qtitle" id="gTitle"></div><div class="qtext" id="gText"></div></div>
+  <div id="qPhase" class="center">
+    <p class="instr" id="instr">Write your answer down &ndash; and keep it secret!</p>
+    <div class="ansbox" id="soloIn" hidden><input id="ansIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your answer" placeholder="Type your answer"><div class="hint" id="ansHint"></div></div>
+    <button class="btn big" id="revealBtn" data-act="reveal">REVEAL THE POINTS &#9654;</button>
+  </div>
+  <div id="rPhase" hidden>
+    <div class="soloresult" id="soloResult" hidden></div>
+    <h2 class="goesto">AND THE POINTS GO TO&hellip;</h2>
+    <div class="board" id="board"></div>
+    <div class="ctrls" id="ctrls"></div>
+    <div id="checkPanel" class="panel" hidden>
+      <h3>Check an answer <small>every valid answer has a score, even if it isn&rsquo;t on the board</small></h3>
+      <div class="chkrow"><input id="chkIn" type="text" autocomplete="off" aria-label="Answer to check"><button class="btn sm" data-act="check">CHECK</button><button class="btn sec sm" data-act="toggle-check">Close</button></div>
+      <div class="chkout" id="chkOut"></div>
+    </div>
+    <div id="teamArea"></div>
+  </div>
+</section>
+
+<section id="end" class="screen"></section>
+</main>
+
+<script>
+/*ENGINE-START*/
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+const lcm=(a,b)=>a/gcd(a,b)*b;
+const MINUS='\u2212';
+const fmtN=v=>v<0?MINUS+(-v):String(v);
+const frac=(a,b)=>'<span class="fr"><span>'+a+'</span><span>'+b+'</span></span>';
+const I=s=>'<i>'+s+'</i>';
+function lin(a,b,v){
+  if(a<0&&b>0)return b+' '+MINUS+' '+(a===-1?'':-a)+v;
+  let s=a===1?v:a===-1?MINUS+v:fmtN(a)+v;
+  if(b>0)s+=' + '+b;else if(b<0)s+=' '+MINUS+' '+(-b);
+  return s;
+}
+function nice(n){n=Math.abs(n);let v=0;if(n<=10)v+=4;else if(n<=20)v+=2;if(n>0&&n%100===0)v+=2;if(n%10===0)v+=3;else if(n%5===0)v+=2;if(n%2===0)v+=1;if(n>10&&/^(\d)\1+$/.test(String(n)))v+=2;return v;}
+const divisors=n=>{const r=[];for(let i=1;i<=n;i++)if(n%i===0)r.push(i);return r;};
+const isPrime=n=>{if(n<2)return false;for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true;};
+function numKey(s){s=String(s).trim().replace(/[\u2212\u2013]/g,'-').replace(/[\u00b0%a-z\u00b2\u00b3\s,]/gi,'');if(!/^-?\d+(\.\d+)?$/.test(s))return null;return String(Number(s));}
+function pairKey(s){const m=String(s).trim().match(/^(\d+)\s*[^\d\s]+\s*(\d+)$/);if(!m)return null;const a=+m[1],b=+m[2];return Math.min(a,b)+','+Math.max(a,b);}
+function fracKey(s){const m=String(s).trim().match(/^(\d+)\s*\/\s*(\d+)$/);return m?(+m[1])+'/'+(+m[2]):null;}
+function mk(topic,title,html,answers,parse,min){if(answers.length<(min||5))return null;return{topic,title,html,answers,parse};}
+function mkNum(topic,title,html,vals,popFn,fmt,min){return mk(topic,title,html,vals.map(v=>({key:String(v),label:fmt?fmt(v):fmtN(v),pop:popFn(v)})),numKey,min);}
+
+/* ---------- NUMBER ---------- */
+function gFactors(d){
+  const N=pick([[12,18,20,24,30,36,40,48],[48,60,72,84,90,96,100,120],[120,144,180,210,240,252,360,420]][d]);
+  let vals=divisors(N),txt='Give a factor of <b>'+N+'</b>.';const r=Math.random();
+  if(d>0&&r<0.3){vals=vals.filter(x=>x>1&&!isPrime(x));txt='Give a <b>composite</b> factor of <b>'+N+'</b>.';}
+  else if(r<0.5){vals=vals.filter(x=>x%2===0);txt='Give an <b>even</b> factor of <b>'+N+'</b>.';}
+  return mkNum('factors','FACTORS OF '+N,txt,vals,x=>nice(x)+(x===N?2:0));
+}
+function gMultiples(d){
+  const k=pick([[3,4,5,6,7],[6,7,8,9,11,12],[13,14,15,16,17,18,19]][d]);
+  const L=pick([[60,70,80],[100,120],[200,250]][d]);const vals=[];for(let m=k;m<L;m+=k)vals.push(m);
+  return mkNum('multiples','MULTIPLES OF '+k,'Give a multiple of <b>'+k+'</b> that is less than <b>'+L+'</b>.',vals,x=>nice(x)+(x===k?3:0));
+}
+function gCommon(d){
+  const a=pick([[2,3,4,5],[3,4,5,6,8],[4,6,7,8,9]][d]),b=pick([[2,3,4,5],[3,4,5,6,8],[4,6,7,8,9]][d]);
+  if(a===b||a%b===0||b%a===0)return null;
+  const l=lcm(a,b),L=pick([[100],[100,150],[150,200]][d]),vals=[];for(let m=l;m<L;m+=l)vals.push(m);
+  return mkNum('commonmult','COMMON MULTIPLES OF '+a+' AND '+b,'Give a <b>common multiple</b> of <b>'+a+'</b> and <b>'+b+'</b> that is less than <b>'+L+'</b>.',vals,x=>nice(x)+(x===l?3:0),null,5);
+}
+function gPrimes(d){
+  const [lo,hi]=pick([[[1,30],[10,40],[1,40]],[[20,80],[30,90],[10,70]],[[50,150],[70,170],[90,200]]][d]);
+  const vals=[];for(let n=lo;n<=hi;n++)if(isPrime(n))vals.push(n);
+  return mkNum('primes','PRIME NUMBERS','Give a <b>prime number</b> from <b>'+lo+'</b> to <b>'+hi+'</b> (inclusive).',vals,p=>([2,3,5,7,11,13].includes(p)?9:6-p/25+((p%10===7||p%10===3)?1.5:0)));
+}
+function gSquares(d){
+  const [lo,hi]=pick([[[1,100],[1,150]],[[30,300],[50,400]],[[100,1000],[200,1500]]][d]);
+  const vals=[];for(let i=1;i*i<=hi;i++)if(i*i>=lo)vals.push(i*i);
+  return mkNum('squares','SQUARE NUMBERS','Give a <b>square number</b> from <b>'+lo+'</b> to <b>'+hi+'</b> (inclusive).',vals,x=>{const r=Math.sqrt(x);return(r<=10?8-r*0.4:5-r*0.1)+((r%5===0||r===12)?1:0);});
+}
+function gCubes(d){
+  const U=[500,1000,2000][d],vals=[];for(let i=1;i*i*i<=U;i++)vals.push(i*i*i);
+  return mkNum('cubes','CUBE NUMBERS','Give a <b>cube number</b> from <b>1</b> to <b>'+U+'</b> (inclusive).',vals,x=>9-Math.cbrt(x)*0.7+([8,27,64,125,1000].includes(x)?1.5:0));
+}
+function gDivis(d){
+  const ds=pick([[[3],[4],[6],[9]],[[6],[7],[8],[9],[11],[12]],[[4,6],[6,8],[3,5],[6,9],[4,9],[8,12]]][d]);
+  const [lo,hi]=[[20,99],[100,199],[100,300]][d];const L=ds.length>1?lcm(ds[0],ds[1]):ds[0];
+  const vals=[];for(let n=lo;n<=hi;n++)if(n%L===0)vals.push(n);
+  const t=ds.length>1?'divisible by both <b>'+ds[0]+'</b> and <b>'+ds[1]+'</b>':'divisible by <b>'+ds[0]+'</b>';
+  return mkNum('divisibility','DIVISIBILITY','Give a number from <b>'+lo+'</b> to <b>'+hi+'</b> that is '+t+'.',vals,x=>nice(x)+(x%100===0?2:0));
+}
+function perms(a){if(a.length<=1)return[a.slice()];const out=[];a.forEach((x,i)=>{perms(a.slice(0,i).concat(a.slice(i+1))).forEach(p=>out.push([x].concat(p)));});return out;}
+function gDigits(d){
+  const ds=shuffle([1,2,3,4,5,6,7,8,9]).slice(0,4).sort((a,b)=>a-b);
+  const all=[...new Set(perms(ds).map(p=>+p.join('')))].sort((a,b)=>a-b);
+  const med=all[Math.floor(all.length/2)],T=Math.round(med/100)*100;
+  const opts=[{t:'greater than <b>'+T+'</b>',f:v=>v>T},{t:'less than <b>'+T+'</b>',f:v=>v<T}];
+  if(d>=1)opts.push({t:'<b>even</b>',f:v=>v%2===0},{t:'<b>odd</b>',f:v=>v%2===1});
+  if(d===2)opts.push({t:'a <b>multiple of 5</b>',f:v=>v%5===0});
+  const o=pick(opts),vals=all.filter(o.f);
+  if(vals.length>20)return null;
+  const asc=ds.join(''),desc=ds.slice().reverse().join('');
+  return mk('digits','MAKE A NUMBER','Use each of the digits <b>'+ds.join(', ')+'</b> exactly once to make a 4-digit number that is '+o.t+'.',
+    vals.map(v=>({key:String(v),label:String(v),pop:((String(v)===asc||String(v)===desc)?6:0)+(String(v)[0]==String(ds[0])?1:0)})),s=>{s=String(s).replace(/\s/g,'');return/^\d{4}$/.test(s)?s:null;});
+}
+
+/* ---------- ARITHMETIC ---------- */
+function gSums(d){
+  const T=pick([[10,12,14,15,16,18,20],[30,40,50,60,100],[100,120,150,200,250,500]][d]),ans=[];
+  for(let a=1;a<T-a;a++){const b=T-a;ans.push({key:a+','+b,label:a+' + '+b,pop:(nice(a)+nice(b))/2});}
+  return mk('sums','TWO NUMBERS THAT ADD TO '+T,'Give <b>two different whole numbers</b> that <b>add up to '+T+'</b>.',ans,pairKey);
+}
+function gProducts(d){
+  const N=pick([[36,48,60,72],[72,84,90,96,100,120],[144,180,240,360,420]][d]),ans=[];
+  for(let a=2;a*a<=N;a++)if(N%a===0){const b=N/a;ans.push({key:a+','+b,label:a+' \u00d7 '+b,pop:(nice(a)+nice(b))/2});}
+  return mk('products','TWO NUMBERS THAT MULTIPLY TO '+N,'Give <b>two whole numbers</b>, both greater than 1, that <b>multiply to '+N+'</b>.',ans,pairKey,4);
+}
+function gFractions(d){
+  if(Math.random()<0.5){
+    const [a,b]=pick([[1,2],[1,3],[2,3],[1,4],[3,4],[2,5],[3,5],[1,5],[3,7],[1,6]]),D=[20,30,40][d],ans=[];
+    for(let k=2;b*k<D;k++)ans.push({key:(a*k)+'/'+(b*k),label:frac(a*k,b*k),pop:nice(b*k)+(k===2?2:0)});
+    return mk('fractions','EQUIVALENT FRACTIONS','Give a fraction <b>equivalent</b> to '+frac(a,b)+' with a denominator <b>less than '+D+'</b>.',ans,fracKey);
+  }
+  const [p1,q1,p2,q2]=pick([[1,3,1,2],[1,4,1,2],[1,2,3,4],[1,5,1,3],[2,3,1,1],[1,2,2,3]]),Q=[12,14,16][d],ans=[];
+  for(let q=2;q<=Q;q++)for(let p=1;p<q;p++)if(gcd(p,q)===1&&p*q1>p1*q&&p*q2<p2*q)ans.push({key:p+'/'+q,label:frac(p,q),pop:nice(q)+nice(p)*0.5});
+  return mk('fractions','FRACTIONS BETWEEN','Give a fraction <b>in its simplest form</b> that is <b>between</b> '+frac(p1,q1)+' and '+frac(p2,q2)+', with a denominator of <b>'+Q+' or less</b>.',ans,fracKey);
+}
+function gDecimals(d){
+  const dp=d===2?3:2,unit=Math.pow(10,dp),lo=rnd(10,95)*10*(dp===3?10:1),w=pick(d===0?[10]:[10,20,30]);
+  const hi=lo+(dp===3?w:w);const ans=[];
+  for(let v=lo+1;v<hi;v++){if(v%10===0)continue;ans.push({key:(v/unit).toFixed(dp),label:(v/unit).toFixed(dp),pop:(v%10===5?7:3)+(v%10===1?1:0)+(Math.floor(v/10)%10===5?1:0)});}
+  const re=new RegExp('^\\d+\\.\\d{'+dp+'}$');
+  return mk('decimals','DECIMALS BETWEEN','Give a decimal with <b>exactly '+dp+' decimal places</b> that is between <b>'+(lo/unit).toFixed(dp-1)+'</b> and <b>'+(hi/unit).toFixed(dp-1)+'</b>.',ans,s=>{s=String(s).trim();return re.test(s)?s:null;});
+}
+function gPercent(d){
+  const N=pick([[20,40,50,60,80],[30,45,60,90,120,150,250],[125,175,225,350,375,450]][d]),vals=[];
+  for(let p=1;p<=100;p++)if((N*p)%100===0)vals.push(p);
+  return mkNum('percentages','PERCENTAGES OF '+N,'Give a whole-number percentage '+I('p')+'% (from 1% to 100%) such that '+I('p')+'% of <b>'+N+'</b> is a whole number.',vals,p=>nice(p)+((p===25||p===50||p===75)?3:0),p=>p+'%');
+}
+
+/* ---------- 24 GAME ---------- */
+const rat=(n,d)=>{if(d<0){n=-n;d=-d;}const g=gcd(n,d)||1;return[n/g,d/g];};
+const DISP={'+':'+','-':MINUS,'*':'\u00d7','/':'\u00f7'},PREC={'+':1,'-':1,'*':2,'/':2};
+const leaf=n=>({n,v:[n,1]});
+function node(op,l,r){let v;const a=l.v,b=r.v;
+  if(op==='+')v=rat(a[0]*b[1]+b[0]*a[1],a[1]*b[1]);else if(op==='-')v=rat(a[0]*b[1]-b[0]*a[1],a[1]*b[1]);
+  else if(op==='*')v=rat(a[0]*b[0],a[1]*b[1]);else v=rat(a[0]*b[1],a[1]*b[0]);
+  return{op,l,r,v};}
+function enumTrees(nums,target){
+  const out=[];
+  (function rec(items){
+    if(items.length===1){const t=items[0];if(t.v[0]===target&&t.v[1]===1)out.push(t);return;}
+    for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+      const a=items[i],b=items[j],rest=items.filter((_,k)=>k!==i&&k!==j);
+      const c=[node('+',a,b),node('*',a,b),node('-',a,b),node('-',b,a)];
+      if(b.v[0]!==0)c.push(node('/',a,b));if(a.v[0]!==0)c.push(node('/',b,a));
+      c.forEach(x=>rec(rest.concat([x])));
+    }
+  })(nums.map(leaf));
+  return out;
+}
+function tstr(t,pp,right,pop){
+  if(t.n!==undefined)return String(t.n);
+  const p=PREC[t.op],s=tstr(t.l,p,false,t.op)+' '+DISP[t.op]+' '+tstr(t.r,p,true,t.op);
+  return(p<pp||(p===pp&&right&&!(pop===t.op&&(pop==='+'||pop==='*'))))?'('+s+')':s;
+}
+function canon(t){
+  if(t.n!==undefined)return String(t.n);
+  if(t.op==='+'||t.op==='*'){const parts=[];(function g(x){if(x.n===undefined&&x.op===t.op){g(x.l);g(x.r);}else parts.push(canon(x));})(t);parts.sort();return'('+parts.join(t.op)+')';}
+  return'('+canon(t.l)+t.op+canon(t.r)+')';
+}
+function info(t){let dv=false,fr=false;(function w(x){if(x.n!==undefined)return;if(x.op==='/')dv=true;if(x.v[1]!==1)fr=true;w(x.l);w(x.r);})(t);return t.op+'|'+(fr?'f':dv?'d':'-');}
+function clsLabel(k){const p=k.split('|');let s='finishes with '+DISP[p[0]];if(p[1]==='d')s+=' \u00b7 uses \u00f7, whole numbers throughout';if(p[1]==='f')s+=' \u00b7 uses fractions on the way';return s;}
+function parse24(s,nums,cls,target){
+  s=String(s).replace(/[\u2212\u2013]/g,'-').replace(/[\u00d7xX]/g,'*').replace(/\u00f7/g,'/').replace(/\s+/g,'');
+  if(!/^[\d+\-*/()]+$/.test(s))return null;
+  let i=0;const used=[];
+  function num(){const m=/^\d+/.exec(s.slice(i));if(!m)throw 0;i+=m[0].length;used.push(+m[0]);return leaf(+m[0]);}
+  function fac(){if(s[i]==='('){i++;const e=expr();if(s[i]!==')')throw 0;i++;return e;}return num();}
+  function term(){let l=fac();while(s[i]==='*'||s[i]==='/'){const op=s[i++],r=fac();if(op==='/'&&r.v[0]===0)throw 0;l=node(op,l,r);}return l;}
+  function expr(){let l=term();while(s[i]==='+'||s[i]==='-'){const op=s[i++],r=term();l=node(op,l,r);}return l;}
+  try{const t=expr();if(i!==s.length||t.n!==undefined)return null;
+    if(used.slice().sort((a,b)=>a-b).join()!==nums.join())return null;
+    if(!(t.v[0]===target&&t.v[1]===1))return null;
+    const k=info(t);return cls.has(k)?k:null;}catch(e){return null;}
+}
+function buildExpr(topic,title,nums,target){
+  const trees=enumTrees(nums,target);if(!trees.length)return null;
+  const seen=new Map();trees.forEach(t=>{const c=canon(t);if(!seen.has(c))seen.set(c,t);});
+  const cls=new Map();
+  seen.forEach(t=>{const k=info(t);let e=cls.get(k);if(!e){e={key:k,count:0,reps:[]};cls.set(k,e);}e.count++;e.reps.push(t);});
+  if(cls.size<3||seen.size<4)return null;
+  const answers=[...cls.values()].map(e=>{const strs=e.reps.map(t=>tstr(t,0,false,null)),m=Math.min(...strs.map(x=>x.length)),best=pick(strs.filter(x=>x.length===m));
+    return{key:e.key,label:best+' <span class="tag">'+clsLabel(e.key)+'</span>',pop:Math.log(e.count)*3};});
+  return{topic,title,html:'Use <b>'+nums.join(', ')+'</b> once each, with + '+MINUS+' × ÷ and brackets, to make <b>'+target+'</b>.<small>Your answer scores by its <i>type</i>. Find a way few others will think of.</small>',answers,parse:s=>parse24(s,nums,cls,target)};
+}
+function g24(d){
+  const hi=[6,9,13][d];
+  for(let t=0;t<400;t++){
+    const nums=[rnd(1,hi),rnd(1,hi),rnd(1,hi),rnd(1,hi)].sort((a,b)=>a-b);
+    const q=buildExpr('game24','THE 24 GAME',nums,24);if(q)return q;
+  }
+  return null;
+}
+function gExpr(d){
+  for(let t=0;t<400;t++){
+    const k=d===0?3:4,hi=[9,12,15][d],nums=[];for(let i=0;i<k;i++)nums.push(rnd(1,hi));nums.sort((a,b)=>a-b);
+    const target=rnd(10,[30,50,100][d]);if(target===24)continue;
+    const q=buildExpr('expressions','MAKE THE TARGET',nums,target);if(q)return q;
+  }
+  return null;
+}
+
+/* ---------- ALGEBRA ---------- */
+function gSeq(d){
+  let a,b;if(d===2&&Math.random()<0.4){a=-rnd(2,9);b=rnd(60,120);}else{a=rnd(2,[5,8,11][d]);b=rnd(-3,9);}
+  const n1=rnd(2,6),n2=n1+rnd(5,[8,10,14][d]),f=n=>a*n+b,lo=Math.min(f(n1),f(n2)),hi=Math.max(f(n1),f(n2)),vals=[];
+  for(let n=1;n<=200;n++){const v=f(n);if(v>=lo&&v<=hi)vals.push(v);}
+  vals.sort((x,y)=>x-y);
+  return mkNum('sequences','SEQUENCES','The '+I('n')+'th term of a sequence is <b>'+lin(a,b,I('n'))+'</b>. Give a term of this sequence from <b>'+lo+'</b> to <b>'+hi+'</b> (inclusive).',vals,x=>nice(x)+(x===f(1)?2:0));
+}
+function gSubst(d){
+  const a=rnd(2,[5,7,9][d]),b=rnd(0,9),m=pick([3,4,5,6,7]),U=[40,40,60][d];
+  if(gcd(a,m)!==1)return null;
+  const vals=[];for(let x=1;x<=U;x++)if((a*x+b)%m===0)vals.push(x);
+  return mkNum('substitution','SUBSTITUTION','Give a whole-number value of '+I('x')+' from 1 to '+U+' for which <b>'+lin(a,b,I('x'))+'</b> is a <b>multiple of '+m+'</b>.',vals,nice);
+}
+function gIneq(d){
+  const a=rnd(2,5)*(d===2&&Math.random()<0.4?-1:1),b=rnd(-6,6),c=rnd(-6,12),op=pick(['>','<','\u2265','\u2264']);
+  const f={'>':(x,y)=>x>y,'<':(x,y)=>x<y,'\u2265':(x,y)=>x>=y,'\u2264':(x,y)=>x<=y}[op],vals=[];
+  for(let x=-10;x<=10;x++)if(f(a*x+b,c))vals.push(x);
+  if(vals.length<6||vals.length>14)return null;
+  return mkNum('inequalities','INEQUALITIES','Give an integer '+I('x')+' from '+MINUS+'10 to 10 for which <b>'+lin(a,b,I('x'))+' '+op+' '+fmtN(c)+'</b>.',vals,x=>nice(x)+(x===0?1:0));
+}
+function gQuad(d){
+  let r1=d===0?rnd(1,6):rnd(-7,7),r2=d===0?rnd(1,6):rnd(-7,7);if(r1===r2)return null;if(r1>r2)[r1,r2]=[r2,r1];
+  const op=pick(['>','<']),vals=[];
+  for(let x=-10;x<=10;x++){const v=(x-r1)*(x-r2);if(op==='>'?v>0:v<0)vals.push(x);}
+  if(vals.length<6||vals.length>19)return null;
+  const s=-(r1+r2),q=r1*r2;let e=I('x')+'\u00b2';
+  if(s)e+=' '+(s<0?MINUS:'+')+' '+(Math.abs(s)===1?'':Math.abs(s))+I('x');
+  if(q)e+=' '+(q<0?MINUS:'+')+' '+Math.abs(q);
+  return mkNum('quadratics','QUADRATIC INEQUALITIES','Give an integer '+I('x')+' from '+MINUS+'10 to 10 for which <b>'+e+' '+op+' 0</b>.',vals,x=>nice(x)+(x===0?1:0));
+}
+
+/* ---------- GEOMETRY ---------- */
+function gAngles(d){
+  const r=Math.random();
+  if(r<0.4){
+    const maxN=[12,40,360][d],ns=divisors(360).filter(n=>n>=3&&n<=maxN);
+    return mk('angles','REGULAR POLYGONS','Give a whole-number angle that could be an <b>interior angle of a regular polygon</b>'+(maxN<360?' (with at most '+maxN+' sides)':'')+'.',
+      ns.map(n=>({key:String(180-360/n),label:(180-360/n)+'\u00b0',pop:10-2*Math.log2(n)+([5,6,8,10,12].includes(n)?1.5:0)})),numKey);
+  }
+  if(r<0.7){
+    const X=5*rnd(4,20),vals=[];for(let a=1;a<=179-X;a++)vals.push(a);
+    return mkNum('angles','ANGLES IN A TRIANGLE','A triangle has one angle of <b>'+X+'\u00b0</b>. Give a possible size, in whole degrees, for <b>one of its other angles</b>.',vals,a=>nice(a)+(a===X?3:0)+(a===90?2:0)+(a===60?2:0),a=>a+'\u00b0');
+  }
+  const kinds=[{n:'an <b>obtuse</b> angle',lo:91,hi:179,ms:[15,12,10,8]},{n:'an <b>acute</b> angle',lo:1,hi:89,ms:[12,9,7,6]},{n:'a <b>reflex</b> angle',lo:181,hi:359,ms:[20,25,18,15]}],k=pick(kinds),m=pick(k.ms),vals=[];
+  for(let a=k.lo;a<=k.hi;a++)if(a%m===0)vals.push(a);
+  return mkNum('angles','TYPES OF ANGLE','Give '+k.n+' that is a <b>multiple of '+m+'\u00b0</b>.',vals,a=>nice(a)+(a%90===0?1:0),a=>a+'\u00b0');
+}
+function gPolygons(d){
+  const lo=rnd(3,[6,7,8][d]),hi=lo+rnd(5,[7,9,11][d]),X=(lo-2)*180-rnd(1,20),Y=(hi-2)*180+rnd(1,20),vals=[];
+  for(let n=3;n<=30;n++){const s=(n-2)*180;if(s>X&&s<Y)vals.push(n);}
+  return mkNum('polygons','POLYGON ANGLE SUMS','Give the <b>number of sides</b> of a polygon whose interior angles add up to <b>more than '+X+'\u00b0</b> and <b>less than '+Y+'\u00b0</b>.',vals,n=>10-0.35*n+([5,6,8,10].includes(n)?3:0),n=>n+' sides');
+}
+function gArea(d){
+  const A=pick([[24,30,36,40,48],[60,72,84,90,96],[120,144,180,240]][d]);
+  return mkNum('area','AREA OF A RECTANGLE','A rectangle has an area of <b>'+A+' cm\u00b2</b>. Give a possible <b>whole-number length</b>, in cm, for one of its sides.',divisors(A),x=>nice(x)+(x===A?2:0),x=>x+' cm');
+}
+function gPerim(d){
+  const P=pick([[20,24,30],[36,40,50],[64,80,100]][d]),vals=[];for(let s=1;s<P/2;s++)vals.push(s);
+  return mkNum('perimeter','PERIMETER OF A RECTANGLE','A rectangle has a perimeter of <b>'+P+' cm</b>. Give a possible <b>whole-number length</b>, in cm, for one of its sides.',vals,x=>nice(x)+(x===P/4?3:0),x=>x+' cm');
+}
+function gVolume(d){
+  const V=pick([[24,30,36],[48,60,72],[96,120,144]][d]);
+  return mkNum('volume','VOLUME OF A CUBOID','A cuboid has a volume of <b>'+V+' cm\u00b3</b>. Give a possible <b>whole-number length</b>, in cm, for one of its edges.',divisors(V),x=>nice(x)+(x===V?2:0),x=>x+' cm');
+}
+
+/* ---------- STATISTICS & PROBABILITY ---------- */
+function gAverages(d){
+  if(Math.random()<0.55){
+    const k=d===0?3:pick([3,4]),data=[];for(let i=0;i<k;i++)data.push(rnd(2,[12,15,20][d]));
+    const S=data.reduce((a,b)=>a+b,0),vals=[];for(let x=1;x<=30;x++)if((S+x)%(k+1)===0)vals.push(x);
+    return mkNum('averages','THE MEAN','The numbers <b>'+data.join(', ')+'</b> are given. Add one more whole number from 1 to 30 so that the <b>mean</b> of all the numbers is a <b>whole number</b>.',vals,nice);
+  }
+  const data=[rnd(3,15),rnd(3,15),rnd(3,15)],mx=Math.max(...data),mn=Math.min(...data),R=mx-mn+rnd(5,[9,11,13][d]),vals=[];
+  for(let x=0;x<=40;x++){const m2=Math.max(mx,x),n2=Math.min(mn,x);if(m2-n2<R)vals.push(x);}
+  return mkNum('averages','THE RANGE','Give a whole number <b>from 0 to 40</b> that can be added to <b>'+data.join(', ')+'</b> so that the <b>range</b> of all four numbers is <b>less than '+R+'</b>.',vals,nice);
+}
+function gProb(d){
+  const r=rnd(1,5),b=rnd(3,9),q=pick([3,4,5,6,8,10]),vals=[];
+  for(let x=1;x<=40;x++)if(r*q<r+b+x)vals.push(x);
+  if(vals.length<6||vals.length>30)return null;
+  return mkNum('probability','PROBABILITY','A bag has <b>'+r+' red</b> and <b>'+b+' blue</b> counters. Give a number of <b>extra blue counters</b> (1 to 40) to add so that P(red) is <b>less than '+frac(1,q)+'</b>.',vals,nice);
+}
+
+/* ---------- MORE NUMBER & ARITHMETIC ---------- */
+function gOddEven(d){
+  const lohi=[[10,100],[50,250],[100,500]][d],lo=lohi[0],hi=lohi[1];
+  if(Math.random()<0.5){
+    const k=pick([3,5,7,9,11,13]),vals=[];for(let n=lo;n<=hi;n++)if(n%2===1&&n%k===0)vals.push(n);
+    return mkNum('oddeven','ODD MULTIPLES','Give an <b>odd</b> multiple of <b>'+k+'</b> from <b>'+lo+'</b> to <b>'+hi+'</b> (inclusive).',vals,nice);
+  }
+  const par=pick([0,1]),S=rnd(8,14),vals=[];
+  for(let n=100;n<=400;n++)if(n%2===par&&String(n).split('').reduce((a,c)=>a+ +c,0)===S)vals.push(n);
+  return mkNum('oddeven','DIGIT SUMS','Give '+(par?'an <b>odd</b>':'an <b>even</b>')+' number from <b>100</b> to <b>400</b> whose digits add up to <b>'+S+'</b>.',vals,nice);
+}
+function gPlace(d){
+  if(d===0||Math.random()<0.5){
+    const k=rnd(1,9),pl=pick([['h',100],['t',10],['u',1]]),vals=[];
+    for(let n=100;n<=999;n++){const s=String(n);if(new Set(s).size!==3)continue;if(+s[pl[0]==='h'?0:pl[0]==='t'?1:2]===k)vals.push(n);}
+    return mkNum('placevalue','PLACE VALUE','Give a <b>3-digit number</b> with <b>three different digits</b> in which the digit <b>'+k+'</b> is worth <b>'+(k*pl[1])+'</b>.',vals,n=>{const s=String(n),up=s[0]<s[1]&&s[1]<s[2],dn=s[0]>s[1]&&s[1]>s[2];return(up||dn?4:0)+(s.includes('0')?1:0)+nice(n)*0.3;});
+  }
+  const W=rnd(1,9),k=rnd(2,9),ans=[];
+  for(let x=0;x<=9;x++){const key=W+'.'+x+k;ans.push({key,label:key,pop:(x===0?3:0)+(x===5?2:0)+(x===k?1:0)});}
+  return mk('placevalue','PLACE VALUE','Give a number with <b>exactly 2 decimal places</b> between <b>'+W+'</b> and <b>'+(W+1)+'</b> in which the digit <b>'+k+'</b> is worth <b>0.0'+k+'</b>.',ans,s=>{s=String(s).trim();return/^\d+\.\d\d$/.test(s)?s:null;},5);
+}
+function gDiff(d){
+  const D=[rnd(3,9),rnd(12,25),rnd(35,80)][d],L=[30,100,160][d],ans=[];
+  for(let b=1;b+D<L;b++)ans.push({key:b+','+(b+D),label:(b+D)+' '+MINUS+' '+b,pop:(nice(b)+nice(b+D))/2});
+  return mk('differences','DIFFERENCE OF '+D,'Give <b>two whole numbers</b>, both <b>less than '+L+'</b>, that have a <b>difference of '+D+'</b>.',ans,pairKey);
+}
+function gQuot(d){
+  const Q=[rnd(3,9),rnd(6,15),rnd(12,25)][d],L=[60,150,400][d],ans=[];
+  for(let b=2;Q*b<L;b++)ans.push({key:(Q*b)+','+b,label:(Q*b)+' ÷ '+b,pop:(nice(Q*b)+nice(b))/2});
+  return mk('quotients','DIVISIONS WITH ANSWER '+Q,'Give a <b>division</b> of whole numbers with an answer of <b>'+Q+'</b>. The number being divided must be <b>less than '+L+'</b>, and you can&rsquo;t divide by 1.',ans,s=>{const m=String(s).trim().match(/^(\d+)\s*[÷\/:]\s*(\d+)$/);return m?(+m[1])+','+(+m[2]):null;});
+}
+function gMental(d){
+  const r=Math.random(),m=pick([[5,6,7,8,9],[7,8,9,11,12],[13,14,15,16,17]][d]);
+  if(r<0.4){
+    const A=rnd(20,[90,150,300][d]),vals=[];for(let x=1;x<=60;x++)if((A+x)%m===0)vals.push(x);
+    return mkNum('mentalmaths','MAKE A MULTIPLE','Give a number from 1 to 60 to <b>add</b> to <b>'+A+'</b> so that the total is a <b>multiple of '+m+'</b>.',vals,nice);
+  }
+  if(r<0.75){
+    const A=rnd(60,[150,250,500][d]),vals=[];for(let x=1;x<=60&&x<A;x++)if((A-x)%m===0&&A-x>0)vals.push(x);
+    return mkNum('mentalmaths','MAKE A MULTIPLE','Give a number from 1 to 60 to <b>subtract</b> from <b>'+A+'</b> so that the answer is a <b>positive multiple of '+m+'</b>.',vals,nice);
+  }
+  const A=rnd(12,[25,35,60][d]),n1=rnd(3,8),n2=n1+rnd(5,9),lo=A*n1-1,hi=A*n2+1,vals=[];
+  for(let n=1;n<=100;n++)if(A*n>lo&&A*n<hi)vals.push(n);
+  return mkNum('mentalmaths','MENTAL MULTIPLICATION','Give a whole number to <b>multiply</b> <b>'+A+'</b> by to get an answer <b>between '+lo+' and '+hi+'</b>.',vals,nice);
+}
+function gBidmas(d){
+  const a=rnd(2,9),b=rnd(2,[6,9,12][d]),c=rnd(1,9),n=I('n');
+  const forms=[
+    {s:a+' + '+n+' × '+b,f:x=>a+x*b},
+    {s:'('+a+' + '+n+') × '+b,f:x=>(a+x)*b},
+    {s:a+' × '+n+' '+MINUS+' '+c,f:x=>a*x-c},
+    {s:n+'² + '+a,f:x=>x*x+a}];
+  if(d>=1)forms.push({s:a+' + '+b+' × '+n+'²',f:x=>a+b*x*x},{s:'('+n+' + '+a+')² '+MINUS+' '+c,f:x=>(x+a)*(x+a)-c});
+  const F=pick(forms),n1=rnd(2,10),n2=n1+rnd(5,9),lo=F.f(n1)-1,hi=F.f(n2)+1,vals=[];
+  for(let x=1;x<=60;x++){const v=F.f(x);if(v>lo&&v<hi)vals.push(x);}
+  return mkNum('bidmas','BIDMAS','Give a whole number '+n+' so that <b>'+F.s+'</b> is <b>between '+fmtN(lo)+' and '+fmtN(hi)+'</b>.',vals,nice);
+}
+
+/* ---------- MORE PUZZLES, NUMBER & ALGEBRA ---------- */
+function targetKey(s){
+  const m=String(s).trim().replace(/[−–]/g,'-').match(/^(\d+)\s*([+\-*\/xX×÷])\s*(\d+)$/);if(!m)return null;
+  let a=+m[1],b=+m[3],o=m[2];o=o==='+'?'+':o==='-'?'-':(o==='/'||o==='÷')?'/':'*';
+  if((o==='+'||o==='*')&&a>b){const t=a;a=b;b=t;}
+  return o+':'+a+','+b;
+}
+function gTarget(d){
+  const pool=[[1,2,3,4,5,6,7,8,9,10,12],[2,3,4,5,6,7,8,9,10,12,15,20,25],[2,3,4,5,6,7,8,9,10,12,15,20,25,50,75]][d];
+  const K=[6,8,8][d],nums=shuffle(pool).slice(0,K).sort((a,b)=>a-b),all=[];
+  const push=(o,a,b,v)=>{const sym={'+':'+','*':'×','-':MINUS,'/':'÷'}[o];all.push({key:o+':'+a+','+b,label:a+' '+sym+' '+b,v,pop:({'+':4,'*':3,'-':2,'/':1})[o]+(nice(a)+nice(b))/3});};
+  for(let i=0;i<K;i++)for(let j=0;j<K;j++){
+    if(i===j)continue;const a=nums[i],b=nums[j];
+    if(i<j){push('+',a,b,a+b);push('*',a,b,a*b);}
+    if(a>b)push('-',a,b,a-b);
+    if(a%b===0)push('/',a,b,a/b);
+  }
+  const g=new Map();all.forEach(x=>{if(!g.has(x.v))g.set(x.v,[]);g.get(x.v).push(x);});
+  const ok=[...g.keys()].filter(v=>v>=6&&g.get(v).length>=5);if(!ok.length)return null;
+  const T=pick(ok);
+  return mk('target','TARGET '+T,'Using <b>two</b> of the numbers <b>'+nums.join(', ')+'</b> and <b>one</b> of + '+MINUS+' × ÷, make <b>'+T+'</b>.',g.get(T),targetKey);
+}
+function gMissing(d){
+  const m=pick([[3,9],[3,4,5,6,9],[4,6,7,9,11,12]][d]);
+  const pos=shuffle([0,1,2,3]).slice(0,2).sort(),dg=[0,0,0,0].map(()=>rnd(1,9)),ans=[];
+  for(let x=0;x<=9;x++)for(let y=0;y<=9;y++){
+    const ds=dg.slice();ds[pos[0]]=x;ds[pos[1]]=y;if(ds[0]===0)continue;
+    const n=+ds.join('');if(n%m===0)ans.push({key:String(n),label:String(n),pop:(x===y?2:0)+(x===0||y===0?1:0)+(x%5===0?1:0)+(y%5===0?1:0)});
+  }
+  const tpl=dg.map((v,i)=>pos.includes(i)?'□':v).join(' ');
+  return mk('missingdigits','MISSING DIGITS','Fill in the two boxes to make a 4-digit number that is <b>divisible by '+m+'</b>: <b>'+tpl+'</b><small>Give the complete number.</small>',ans,s=>{s=String(s).replace(/\s/g,'');return/^\d{4}$/.test(s)?s:null;});
+}
+function gBonds(d){
+  const T=pick([[1,2],[3,5],[10,20]][d]),t10=T*10,ans=[];
+  for(let a=1;a<=t10/2;a++){const b=t10-a;ans.push({key:a+','+b,label:(a/10).toFixed(1)+' + '+(b/10).toFixed(1),pop:(nice(a)+nice(b))/2});}
+  return mk('bonds','NUMBER BONDS TO '+T,'Give <b>two positive numbers</b>, each with <b>1 decimal place</b>, that add up to <b>'+T+'</b>. They may be the same.',ans,s=>{
+    const m=String(s).trim().match(/^(\d+(?:\.\d+)?)\s*\+\s*(\d+(?:\.\d+)?)$/);if(!m)return null;
+    const x=+m[1]*10,y=+m[2]*10;if(Math.abs(x-Math.round(x))>1e-9||Math.abs(y-Math.round(y))>1e-9)return null;
+    const a=Math.round(x),b=Math.round(y);return Math.min(a,b)+','+Math.max(a,b);});
+}
+function gRemain(d){
+  const m=rnd(3,[6,9,12][d]),r=rnd(1,m-1),lo=rnd(20,[60,150,300][d]),hi=lo+rnd(40,[60,100,160][d]),vals=[];
+  for(let n=lo;n<=hi;n++)if(n%m===r)vals.push(n);
+  return mkNum('remainders','REMAINDERS','Give a number from <b>'+lo+'</b> to <b>'+hi+'</b> that leaves a <b>remainder of '+r+'</b> when divided by <b>'+m+'</b>.',vals,nice);
+}
+function gExpand(d){
+  const a=rnd(2,[5,7,9][d]),b=rnd(1,4),c=rnd(1,9),dd=rnd(1,4),e=rnd(1,9),sg=pick([1,-1]);
+  const f=k=>a*b+sg*k*dd,k1=rnd(1,8),k2=k1+rnd(5,10),lo=Math.min(f(k1),f(k2))-1,hi=Math.max(f(k1),f(k2))+1,vals=[];
+  for(let k=1;k<=30;k++){const v=f(k);if(v>lo&&v<hi)vals.push(k);}
+  const x=I('x'),cf=v=>v===1?'':v;
+  const expr=a+'('+cf(b)+x+' + '+c+') '+(sg>0?'+':MINUS)+' '+I('m')+'('+cf(dd)+x+' + '+e+')';
+  return mkNum('expanding','EXPANDING BRACKETS','Give a whole number '+I('m')+' (from 1 to 30) so that when <b>'+expr+'</b> is expanded and simplified, the coefficient of '+x+' is <b>between '+fmtN(lo)+' and '+fmtN(hi)+'</b>.',vals,nice);
+}
+function gFactorise(d){
+  if(Math.random()<(d===0?0.6:0.25)){
+    const g=pick([12,18,20,24,30,36,48]),p=pick([1,2,3,4,5]),q=pick([1,2,3,4,5]);
+    if(p===q||gcd(p,q)!==1)return null;
+    return mkNum('factorising','COMMON FACTORS','Give a whole number that is a <b>common factor</b> of both terms of <b>'+(g*p)+I('x')+' + '+(g*q)+'</b>.',divisors(g),x=>nice(x)+(x===g?2:0));
+  }
+  const c=pick([[12,18,20,24],[24,30,36,-12,-24],[48,60,72,-36,-48,-60]][d]),set=new Set();
+  for(let r=-Math.abs(c);r<=Math.abs(c);r++){if(r===0||c%r!==0)continue;set.add(r+c/r);}
+  const vals=[...set].sort((x,y)=>x-y);
+  return mkNum('factorising','FACTORISING','Give an integer '+I('n')+' so that <b>'+I('x')+'² + '+I('n')+I('x')+' '+(c<0?MINUS+' '+(-c):'+ '+c)+'</b> factorises into <b>two brackets</b> with whole numbers in them.',vals,x=>nice(x)+(x>0?1:0));
+}
+function gLinear(d){
+  if(Math.random()<0.5){
+    const a=rnd(2,[5,7,9][d]),T=rnd(40,[80,120,200][d]),vals=[];
+    for(let k=1;k<T;k++)if((T-k)%a===0)vals.push(k);
+    return mkNum('linear','LINEAR EQUATIONS','Give a whole number '+I('k')+' (from 1 to '+(T-1)+') so that <b>'+a+I('x')+' + '+I('k')+' = '+T+'</b> has a <b>positive whole-number solution</b>.',vals,nice);
+  }
+  const b=rnd(3,15),N=pick([[48,60,72],[60,72,84,90],[96,120,144,180]][d]);
+  return mkNum('linear','LINEAR EQUATIONS','Give a whole number '+I('k')+' so that <b>'+I('k')+I('x')+' + '+b+' = '+(N+b)+'</b> has a <b>positive whole-number solution</b>.',divisors(N),x=>nice(x)+(x===N?2:0));
+}
+function gSimplify(d){
+  const a=rnd(2,9),b=rnd(1,9),c=rnd(2,[6,8,9][d]),e=rnd(1,9),neg=d>=1&&Math.random()<0.5,es=pick([1,-1]),x=I('x');
+  const F=v=>(a+(neg?-c:c))*v+b+es*e;
+  const expr=a+x+' + '+b+' '+(neg?MINUS:'+')+' '+c+x+' '+(es>0?'+':MINUS)+' '+e;
+  const less=Math.random()<0.5;
+  for(let t=0;t<40;t++){
+    const T=F(rnd(-6,6))+(less?1:-1)*rnd(0,2),vals=[];
+    for(let v=-10;v<=10;v++)if(less?F(v)<T:F(v)>T)vals.push(v);
+    if(vals.length>=6&&vals.length<=14)return mkNum('simplifying','SIMPLIFYING EXPRESSIONS','Simplify first! Give an integer '+x+' from '+MINUS+'10 to 10 for which <b>'+expr+'</b> is <b>'+(less?'less':'greater')+' than '+fmtN(T)+'</b>.',vals,v=>nice(v)+(v===0?1:0));
+  }
+  return null;
+}
+function gQexpr(d){
+  const b=rnd(-6,8),c=rnd(-10,12),m=pick([[2,3,4,5],[3,4,5,6,7],[5,6,7,8,9]][d]),vals=[];
+  for(let x=1;x<=30;x++){const v=x*x+b*x+c;if(v>0&&v%m===0)vals.push(x);}
+  if(vals.length<5||vals.length>20)return null;
+  let e=I('x')+'²';if(b)e+=' '+(b<0?MINUS:'+')+' '+(Math.abs(b)===1?'':Math.abs(b))+I('x');if(c)e+=' '+(c<0?MINUS:'+')+' '+Math.abs(c);
+  return mkNum('quadexpr','QUADRATIC EXPRESSIONS','Give a whole number '+I('x')+' from 1 to 30 for which <b>'+e+'</b> is a <b>positive multiple of '+m+'</b>.',vals,nice);
+}
+
+function gChoose(d){
+  const L=pick([['x','y'],['p','q'],['m','n']]),C=pick([['a','b'],['c','d'],['k','l']]);
+  const xv=rnd(2,[6,9,12][d]),yv=rnd(2,[7,9,12][d]);if(xv===yv)return null;
+  const mx=[9,9,12][d],sub=d===2&&Math.random()<0.5,gt=d>0&&Math.random()<0.5,reps=new Map();
+  for(let a=1;a<=mx;a++)for(let b=1;b<=mx;b++){
+    const v=sub?a*xv-b*yv:a*xv+b*yv;
+    if(!reps.has(v))reps.set(v,[]);reps.get(v).push([a,b]);
+  }
+  const vs=[...reps.keys()].sort((x,y)=>x-y),lo=vs[0],hi=vs[vs.length-1],cands=[];
+  for(let lim=Math.ceil(lo/5)*5;lim<=hi;lim+=5){
+    const n=vs.filter(v=>gt?v>lim:v<lim).length;if(n>=6&&n<=40)cands.push(lim);
+  }
+  if(!cands.length)return null;
+  const lim=pick(cands),op=sub?MINUS:'+',expr=I(C[0])+I(L[0])+' '+op+' '+I(C[1])+I(L[1]);
+  const answers=vs.filter(v=>gt?v>lim:v<lim).map(v=>{
+    const r=pick(reps.get(v)),small=Math.min(...reps.get(v).map(q=>q[0]+q[1]));
+    return{key:String(v),label:fmtN(v)+' <span class="tag">'+C[0]+' = '+r[0]+', '+C[1]+' = '+r[1]+'</span>',pop:nice(v)+Math.max(0,6-small/2.5)};
+  });
+  return mk('choosecoef','SUBSTITUTION','<b>'+I(L[0])+' = '+xv+'</b> and <b>'+I(L[1])+' = '+yv+'</b>. Choose whole numbers '+I(C[0])+' and '+I(C[1])+' (from 1 to '+mx+') so that <b>'+expr+'</b> is <b>'+(gt?'greater':'less')+' than '+fmtN(lim)+'</b>.<small>Write down the <i>value</i> of '+expr+' that you get.</small>',answers,numKey);
+}
+
+/* ---------- MORE GEOMETRY & STATISTICS ---------- */
+const DEG=a=>a+'°',CM=a=>a+' cm';
+function gQuads(d){
+  const r=Math.random();
+  if(r<0.4){
+    const m=[20,26,30][d],A=5*rnd(12,m),B=5*rnd(12,m),S=360-A-B,vals=[];
+    for(let a=1;a<S;a++)vals.push(a);
+    return mkNum('quadrilaterals','ANGLES IN A QUADRILATERAL','A quadrilateral has two angles of <b>'+A+'°</b> and <b>'+B+'°</b>. Give a possible size, in whole degrees, for <b>one of the other two angles</b>.',vals,a=>nice(a)+(a*2===S?3:0)+(a===90?2:0),DEG);
+  }
+  if(r<0.7){
+    const L=5*rnd(8,16),less=Math.random()<0.5,vals=[];
+    for(let ac=1;ac<90;ac++)if(less?ac<L:ac>L)vals.push(180-ac);
+    vals.sort((x,y)=>x-y);
+    return mkNum('quadrilaterals','PARALLELOGRAMS','A parallelogram has an acute angle that is <b>'+(less?'less':'greater')+' than '+L+'°</b>. Give a possible size, in whole degrees, for <b>one of its obtuse angles</b>.',vals,a=>nice(a)+([120,135,150].includes(a)?2:0),DEG);
+  }
+  const lo=5*rnd(6,12),hi=lo+rnd(10,25),vals=[];
+  for(let ac=lo+1;ac<hi;ac++)vals.push(180-ac);
+  vals.sort((x,y)=>x-y);
+  return mkNum('quadrilaterals','ISOSCELES TRAPEZIUM','The acute angles of an <b>isosceles trapezium</b> are between <b>'+lo+'°</b> and <b>'+hi+'°</b>. Give a possible size, in whole degrees, for <b>one of its obtuse angles</b>.',vals,a=>nice(a)+(a===120?2:0),DEG);
+}
+function gTriangles(d){
+  const r=Math.random();
+  if(r<0.45){
+    const a=rnd(3,[8,12,20][d]),b=rnd(3,[8,12,20][d]),vals=[];
+    for(let c=Math.abs(a-b)+1;c<a+b;c++)vals.push(c);
+    return mkNum('triangles','THE THIRD SIDE','Two sides of a triangle are <b>'+a+' cm</b> and <b>'+b+' cm</b>. Give a possible <b>whole-number length</b> for the third side.',vals,c=>nice(c)+(c===a||c===b?3:0),CM);
+  }
+  if(r<0.75){
+    const P=pick([[24,30,36],[40,50,60],[64,80,100]][d]),vals=[];
+    for(let a=1;a<P/2;a++)if(4*a>P)vals.push(a);
+    return mkNum('triangles','ISOSCELES TRIANGLE','An isosceles triangle has a perimeter of <b>'+P+' cm</b>. Give a possible <b>whole-number length</b> for each of its two equal sides.',vals,nice,CM);
+  }
+  const L=[50,100,150][d],set=new Set();
+  for(let a=3;a<=L;a++)for(let b=a;b<=L;b++){const c=Math.sqrt(a*a+b*b);if(Number.isInteger(c)&&c<=L)set.add(c);}
+  return mkNum('triangles','PYTHAGOREAN TRIPLES','A right-angled triangle has <b>whole-number</b> lengths for all three sides. Give a possible length for the <b>hypotenuse</b> (the longest side), up to <b>'+L+'</b> units.',[...set].sort((x,y)=>x-y),c=>10-c/12+(c%5===0?2:0)+([5,13,17,25].includes(c)?2:0));
+}
+function gAngleProps(d){
+  if(Math.random()<0.5){
+    const X=5*rnd(4,[24,28,32][d]),S=180-X,vals=[];
+    for(let b=1;b<S;b++)if(b<90&&S-b<90)vals.push(b);
+    if(vals.length<5)return null;
+    return mkNum('angleprops','ANGLES ON A STRAIGHT LINE','Three angles meet on a <b>straight line</b>. One of them is <b>'+X+'°</b>, and the other two are both <b>acute</b>. Give a possible size, in whole degrees, for <b>one of the other two</b>.',vals,a=>nice(a)+(a*2===S?3:0),DEG);
+  }
+  const X=5*rnd(10,[30,40,50][d]),Y=5*rnd(10,[30,40,50][d]),S=360-X-Y,vals=[];
+  if(S<12)return null;
+  for(let b=Math.floor(S/2)+1;b<S;b++)vals.push(b);
+  return mkNum('angleprops','ANGLES AROUND A POINT','Four angles meet at a <b>point</b>. Two of them are <b>'+X+'°</b> and <b>'+Y+'°</b>. Give a possible size, in whole degrees, for the <b>larger</b> of the other two angles.',vals,nice,DEG);
+}
+function gMedian(d){
+  const k=d===0?4:pick([4,6]),U=[15,25,40][d],data=[];
+  for(let i=0;i<k;i++)data.push(rnd(2,U));
+  data.sort((a,b)=>a-b);
+  const med=arr=>{const a=arr.slice().sort((x,y)=>x-y);return a[(a.length-1)/2];};
+  const gt=Math.random()<0.5;
+  for(let t=0;t<40;t++){
+    const T=rnd(Math.min(...data),Math.max(...data)),vals=[];
+    for(let x=1;x<=50;x++){const m=med(data.concat([x]));if(gt?m>T:m<T)vals.push(x);}
+    if(vals.length>=6&&vals.length<=30)
+      return mkNum('median','THE MEDIAN','The numbers <b>'+data.join(', ')+'</b> are given. Add one more whole number from 1 to 50 so that the <b>median</b> of the new list is <b>'+(gt?'greater':'less')+' than '+T+'</b>.',vals,nice);
+  }
+  return null;
+}
+function gMode(d){
+  const U=[12,15,20][d],cM=d===2?4:3,pool=shuffle(Array.from({length:U},(_,i)=>i+1)),M=pool[0],two=[pool[1],pool[2]],one=[pool[3],pool[4]],data=[];
+  for(let i=0;i<cM;i++)data.push(M);
+  two.forEach(v=>{for(let i=0;i<cM-1;i++)data.push(v);});
+  one.forEach(v=>data.push(v));
+  const vals=[];for(let x=1;x<=U;x++)if(!two.includes(x))vals.push(x);
+  return mkNum('mode','THE MODE','The mode of <b>'+shuffle(data).join(', ')+'</b> is <b>'+M+'</b>. Add one more whole number from 1 to '+U+' so that the mode is <b>still just '+M+'</b>.',vals,x=>nice(x)+(x===M?3:0));
+}
+function gSample(d){
+  const f=pick(d===0?[[4,6],[6,6],[4,4]]:[[4,6],[6,6],[6,8],[4,4],[6,10],[8,8],[10,10],[6,12]]),op=pick(d===0?['+']:['+','*','-']),ways=new Map();
+  for(let i=1;i<=f[0];i++)for(let j=1;j<=f[1];j++){const v=op==='+'?i+j:op==='*'?i*j:Math.abs(i-j);ways.set(v,(ways.get(v)||0)+1);}
+  const what=op==='+'?'<b>total</b>':op==='*'?'<b>product</b> (the two scores multiplied)':'<b>difference</b> (bigger score minus smaller score)';
+  const dice=f[0]===f[1]?'Two fair dice, both numbered 1 to '+f[0]+',':'Two fair dice, numbered 1 to '+f[0]+' and 1 to '+f[1]+',';
+  return mk('samplespaces','SAMPLE SPACES',dice+' are rolled. Give a possible '+what+'.',[...ways.keys()].map(v=>({key:String(v),label:String(v),pop:ways.get(v)})),numKey);
+}
+
+const TOPICS=[
+ {id:'factors',cat:'Number',name:'Factors',gen:gFactors},
+ {id:'multiples',cat:'Number',name:'Multiples',gen:gMultiples},
+ {id:'commonmult',cat:'Number',name:'Common multiples',gen:gCommon},
+ {id:'primes',cat:'Number',name:'Prime numbers',gen:gPrimes},
+ {id:'squares',cat:'Number',name:'Square numbers',gen:gSquares},
+ {id:'cubes',cat:'Number',name:'Cube numbers',gen:gCubes},
+ {id:'divisibility',cat:'Number',name:'Divisibility',gen:gDivis},
+ {id:'digits',cat:'Number',name:'Make a number',gen:gDigits},
+ {id:'oddeven',cat:'Number',name:'Odd and even',gen:gOddEven},
+ {id:'placevalue',cat:'Number',name:'Place value',gen:gPlace},
+ {id:'remainders',cat:'Number',name:'Remainders',gen:gRemain},
+ {id:'sums',cat:'Arithmetic',name:'Sums',gen:gSums},
+ {id:'products',cat:'Arithmetic',name:'Products',gen:gProducts},
+ {id:'fractions',cat:'Arithmetic',name:'Fractions',gen:gFractions},
+ {id:'decimals',cat:'Arithmetic',name:'Decimals',gen:gDecimals},
+ {id:'percentages',cat:'Arithmetic',name:'Percentages',gen:gPercent},
+ {id:'differences',cat:'Arithmetic',name:'Differences',gen:gDiff},
+ {id:'quotients',cat:'Arithmetic',name:'Quotients',gen:gQuot},
+ {id:'mentalmaths',cat:'Arithmetic',name:'Mental arithmetic',gen:gMental},
+ {id:'bidmas',cat:'Arithmetic',name:'BIDMAS',gen:gBidmas},
+ {id:'game24',cat:'Puzzles',name:'24 Game',gen:g24},
+ {id:'target',cat:'Puzzles',name:'Target numbers',gen:gTarget},
+ {id:'missingdigits',cat:'Puzzles',name:'Missing digits',gen:gMissing},
+ {id:'bonds',cat:'Puzzles',name:'Number bonds',gen:gBonds},
+ {id:'expressions',cat:'Puzzles',name:'Mathematical expressions',gen:gExpr},
+ {id:'sequences',cat:'Algebra',name:'Sequences',gen:gSeq},
+ {id:'substitution',cat:'Algebra',name:'Substitution',gen:gSubst},
+ {id:'inequalities',cat:'Algebra',name:'Inequalities',gen:gIneq},
+ {id:'quadratics',cat:'Algebra',name:'Quadratics',gen:gQuad},
+ {id:'simplifying',cat:'Algebra',name:'Simplifying',gen:gSimplify},
+ {id:'expanding',cat:'Algebra',name:'Expanding brackets',gen:gExpand},
+ {id:'factorising',cat:'Algebra',name:'Factorising',gen:gFactorise},
+ {id:'linear',cat:'Algebra',name:'Linear equations',gen:gLinear},
+ {id:'quadexpr',cat:'Algebra',name:'Quadratic expressions',gen:gQexpr},
+ {id:'choosecoef',cat:'Algebra',name:'Choose a and b',gen:gChoose},
+ {id:'angles',cat:'Geometry',name:'Angles',gen:gAngles},
+ {id:'angleprops',cat:'Geometry',name:'Angle properties',gen:gAngleProps},
+ {id:'triangles',cat:'Geometry',name:'Triangles',gen:gTriangles},
+ {id:'quadrilaterals',cat:'Geometry',name:'Quadrilaterals',gen:gQuads},
+ {id:'polygons',cat:'Geometry',name:'Polygons',gen:gPolygons},
+ {id:'area',cat:'Geometry',name:'Area',gen:gArea},
+ {id:'perimeter',cat:'Geometry',name:'Perimeter',gen:gPerim},
+ {id:'volume',cat:'Geometry',name:'Volume',gen:gVolume},
+ {id:'averages',cat:'Statistics & probability',name:'Averages',gen:gAverages},
+ {id:'median',cat:'Statistics & probability',name:'Median',gen:gMedian},
+ {id:'mode',cat:'Statistics & probability',name:'Mode',gen:gMode},
+ {id:'samplespaces',cat:'Statistics & probability',name:'Sample spaces',gen:gSample},
+ {id:'probability',cat:'Statistics & probability',name:'Probability',gen:gProb}
+];
+const CATS=[...new Set(TOPICS.map(t=>t.cat))];
+
+/* ---------- scoring ---------- */
+function compile(q){
+  const A=q.answers;if(!A||A.length<3)return null;
+  const pops=A.map(a=>a.pop),mn=Math.min(...pops),mx=Math.max(...pops),sp=(mx-mn)||1;
+  const ranked=A.map(a=>({key:a.key,label:a.label,sc:(a.pop-mn)/sp*10+(Math.random()-0.5)*4})).sort((a,b)=>b.sc-a.sc);
+  const N=ranked.length,nul=Math.max(1,Math.round(N*0.06)),M=N-nul;
+  ranked.forEach((a,i)=>{a.points=i>=M?0:(M===1?10:Math.round(10-9*i/(M-1)));});
+  const map=new Map(ranked.map(a=>[a.key,a]));
+  let idx;
+  if(N<=9)idx=ranked.map((_,i)=>i);
+  else{const k=7;idx=[];for(let j=0;j<k;j++){const lo=Math.floor(j*M/k),hi=Math.max(lo,Math.floor((j+1)*M/k)-1);idx.push(rnd(lo,hi));}idx.push(M+rnd(0,nul-1));}
+  const board=idx.map(i=>ranked[i]);
+  return{q,ranked,map,board,total:N};
+}
+function checkAnswer(comp,input){
+  const k=comp.q.parse(input);
+  if(k===null||!comp.map.has(k))return{valid:false};
+  const a=comp.map.get(k);return{valid:true,key:k,points:a.points,label:a.label};
+}
+function makeQuestion(ids,d,avoid,seen){
+  for(let t=0;t<250;t++){
+    let pool=ids.filter(i=>i!==avoid);if(!pool.length)pool=ids;
+    const T=TOPICS.find(x=>x.id===pick(pool));let q=null;
+    try{q=T.gen(d);}catch(e){q=null;}
+    if(!q)continue;
+    const sig=q.title+'|'+q.html;if(seen.has(sig)&&t<150)continue;
+    q.catName=T.cat;q.topicName=T.name;q.topic=T.id;
+    const c=compile(q);if(!c)continue;seen.add(sig);return c;
+  }
+  return null;
+}
+/*ENGINE-END*/
+
+/* ================= FLAGS ================= */
+const FL={};
+const hs=c=>c.map((x,i)=>'<rect x="0" y="'+(i*20/c.length)+'" width="30" height="'+(20/c.length+.02)+'" fill="'+x+'"/>').join('');
+const vs=c=>c.map((x,i)=>'<rect x="'+(i*30/c.length)+'" y="0" width="'+(30/c.length+.02)+'" height="20" fill="'+x+'"/>').join('');
+const R=(x,y,w,h,f)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"/>';
+function starPts(cx,cy,Ro,ri){let p=[];for(let i=0;i<10;i++){const r=i%2?ri:Ro,a=-Math.PI/2+i*Math.PI/5;p.push((cx+r*Math.cos(a)).toFixed(2)+','+(cy+r*Math.sin(a)).toFixed(2));}return p.join(' ');}
+(function(){
+  let eu=R(0,0,30,20,'#003399');
+  for(let i=0;i<12;i++){const a=i*Math.PI/6;eu+='<polygon points="'+starPts(15+6.5*Math.sin(a),10-6.5*Math.cos(a),1.2,.5)+'" fill="#ffcc00"/>';}
+  FL.eu=eu;
+  FL.ua=R(0,0,30,10,'#0057b7')+R(0,10,30,10,'#ffd700');
+  FL.fr=vs(['#0055a4','#fff','#ef4135']);FL.it=vs(['#009246','#fff','#ce2b37']);FL.ie=vs(['#169b62','#fff','#ff883e']);
+  FL.be=vs(['#000','#fae042','#ed2939']);FL.de=hs(['#000','#dd0000','#ffce00']);FL.nl=hs(['#ae1c28','#fff','#21468b']);
+  FL.lu=hs(['#ef3340','#fff','#00a3e0']);FL.at=hs(['#ed2939','#fff','#ed2939']);FL.pl=hs(['#fff','#dc143c']);
+  FL.hu=hs(['#ce2939','#fff','#477050']);FL.lt=hs(['#fdb913','#006a44','#c1272d']);FL.ee=hs(['#0072ce','#000','#fff']);
+  FL.lv=R(0,0,30,20,'#9e3039')+R(0,8,30,4,'#fff');FL.bg=hs(['#fff','#00966e','#d62612']);FL.ro=vs(['#002b7f','#fcd116','#ce1126']);
+  FL.es=R(0,0,30,20,'#aa151b')+R(0,5,30,10,'#f1bf00');
+  FL.pt=R(0,0,12,20,'#006600')+R(12,0,18,20,'#ff0000')+'<circle cx="12" cy="10" r="3.6" fill="#ffcc00"/><circle cx="12" cy="10" r="2.2" fill="#ff0000"/>';
+  FL.se=R(0,0,30,20,'#006aa7')+R(9,0,3.8,20,'#fecc02')+R(0,8.1,30,3.8,'#fecc02');
+  FL.no=R(0,0,30,20,'#ba0c2f')+R(8.2,0,5.5,20,'#fff')+R(0,7.5,30,5,'#fff')+R(9.6,0,2.7,20,'#00205b')+R(0,8.75,30,2.5,'#00205b');
+  FL.fi=R(0,0,30,20,'#fff')+R(8,0,4.5,20,'#003580')+R(0,7.6,30,4.8,'#003580');
+  FL.dk=R(0,0,30,20,'#c8102e')+R(9,0,3.5,20,'#fff')+R(0,8.2,30,3.6,'#fff');
+  FL.is=R(0,0,30,20,'#02529c')+R(8,0,5,20,'#fff')+R(0,7.5,30,5,'#fff')+R(9,0,3,20,'#dc1e35')+R(0,8.5,30,3,'#dc1e35');
+  let gr=R(0,0,30,20,'#0d5eaf');for(let i=1;i<9;i+=2)gr+=R(0,i*20/9,30,20/9,'#fff');
+  gr+=R(0,0,100/9,100/9,'#0d5eaf')+R(40/9,0,20/9,100/9,'#fff')+R(0,40/9,100/9,20/9,'#fff');FL.gr=gr;
+  FL.ch=R(0,0,30,20,'#da291c')+R(13,3.5,4,13,'#fff')+R(9.5,7,11,4,'#fff');
+  FL.cz=hs(['#fff','#d7141a'])+'<polygon points="0,0 15,10 0,20" fill="#11457e"/>';
+  FL.hr=hs(['#ff0000','#fff','#171796']);
+  FL.ge=R(0,0,30,20,'#fff')+R(13,0,4,20,'#f00')+R(0,8,30,4,'#f00')+[[6.5,4],[23.5,4],[6.5,16],[23.5,16]].map(p=>R(p[0]-2,p[1]-.5,4,1,'#f00')+R(p[0]-.5,p[1]-2,1,4,'#f00')).join('');
+  FL.am=hs(['#d90012','#0033a0','#f2a800']);
+  document.getElementById('defs').innerHTML=Object.keys(FL).map(k=>'<symbol id="fl-'+k+'" viewBox="0 0 30 20">'+FL[k]+'</symbol>').join('');
+})();
+const FLAG_IDS=Object.keys(FL);
+function buildBunting(N,spacing,size,vbH,amp){vbH=vbH||110;amp=amp||16;
+  const W=N*spacing,seg=spacing*6,yAt=x=>12+amp*Math.sin(Math.PI*((x%seg)/seg));
+  const others=shuffle(FLAG_IDS.filter(k=>k!=='eu'&&k!=='ua'));let oi=0,d='M0 '+yAt(0).toFixed(1);
+  for(let x=8;x<=W;x+=8)d+=' L'+x+' '+yAt(x).toFixed(1);
+  let s='<path d="'+d+'" fill="none" stroke="#e8d9a0" stroke-width="2.5"/>';
+  for(let i=0;i<N;i++){
+    const x=spacing*(i+.5),id=(i%7===1)?'eu':(i%7===4)?'ua':others[oi++%others.length],rot=(Math.random()*6-3).toFixed(1);
+    s+='<g transform="translate('+(x-size/2).toFixed(1)+' '+(yAt(x)+1).toFixed(1)+') rotate('+rot+' '+(size/2)+' 0)"><use href="#fl-'+id+'" width="'+size+'" height="'+(size*2/3)+'"/><rect width="'+size+'" height="'+(size*2/3)+'" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1"/></g>';
+  }
+  return'<svg viewBox="0 0 '+W+' '+vbH+'" preserveAspectRatio="xMidYMin meet">'+s+'</svg>';
+}
+function drawRing(){
+  let s='';for(let i=0;i<12;i++){const a=i*Math.PI/6;s+='<polygon points="'+starPts(100+84*Math.sin(a),100-84*Math.cos(a),13,5.2)+'" fill="#ffd23f"/>';}
+  document.getElementById('ring').innerHTML=s;
+}
+function flagSvg(id,cls){return'<svg class="'+cls+'" viewBox="0 0 30 20"><use href="#fl-'+id+'" width="30" height="20"/></svg>';}
+
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DEF={topics:['factors','multiples','primes','squares','divisibility','sums','products','percentages','angles'],diff:1,rounds:10,timer:0,mode:'individual',teams:4,names:['Red','Blue','Green','Yellow','Purple','Orange'],penalty:12,sound:true};
+const TEAMCOL=['#ff5a5f','#42a5ff','#4cd964','#ffd23f','#b57cff','#ff9d2e'];
+const NUL_MSGS=['NUL POINTS!','You found the Nul!','Brilliantly obscure!','NUL!'];
+let S=Object.assign({},DEF),G=null;
+try{const sv=JSON.parse(localStorage.getItem('nulpoints.v1')||'null');if(sv)S=Object.assign({},DEF,sv);}catch(e){}
+const save=()=>{try{localStorage.setItem('nulpoints.v1',JSON.stringify(S));}catch(e){}};
+let AC;
+function tone(freqs,dur){
+  if(!S.sound)return;dur=dur||.14;
+  try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    freqs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(AC.destination);
+      const t=AC.currentTime+i*dur;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.14,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+dur*1.7);o.start(t);o.stop(t+dur*1.8);});}catch(e){}
+}
+function fit(){
+  const el=document.documentElement,sc=document.querySelector('.screen.on');
+  const small=innerWidth<700||innerHeight<520;
+  let base=small?Math.max(14,Math.min(innerWidth/24,18)):Math.max(12,Math.min(innerWidth*0.0125,innerHeight*0.019,30));
+  el.style.fontSize=base+'px';
+  if(small||!sc||!['home','game','end','how'].includes(sc.id))return;
+  let q,r,qh,rh;
+  if(sc.id==='game'&&G&&G.comp){q=$('qPhase');r=$('rPhase');qh=q.hidden;rh=r.hidden;q.hidden=true;r.hidden=false;}
+  let g=0;while(el.scrollHeight>innerHeight+1&&base>9&&g++<80){base-=0.5;el.style.fontSize=base+'px';}
+  if(q){q.hidden=qh;r.hidden=rh;}
+}
+window.addEventListener('resize',fit);
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  const nw=innerWidth<700;
+  $('bunting').innerHTML=id==='home'?(nw?buildBunting(10,80,58,110,16):buildBunting(20,80,58,110,16)):(nw?buildBunting(12,60,36,52,8):buildBunting(48,60,36,52,8));
+  window.scrollTo(0,0);fit();
+}
+
+/* ---- settings ---- */
+function seg(k,opts,labelFn){return'<div class="seg">'+opts.map(v=>'<button type="button" data-act="set" data-k="'+k+'" data-v="'+v+'" class="'+(String(S[k])===String(v)?'on':'')+'">'+labelFn(v)+'</button>').join('')+'</div>';}
+function renderSettings(){
+  let h='';
+  CATS.forEach(c=>{
+    h+='<div class="panel"><h3>'+esc(c)+'<small><button type="button" class="miniact" data-act="cat" data-c="'+esc(c)+'" data-v="1">all</button><button type="button" class="miniact" data-act="cat" data-c="'+esc(c)+'" data-v="0">none</button></small></h3><div class="chips">'+
+      TOPICS.filter(t=>t.cat===c).map(t=>'<label class="chip"><input type="checkbox" data-topic="'+t.id+'"'+(S.topics.includes(t.id)?' checked':'')+'><span>'+esc(t.name)+'</span></label>').join('')+'</div></div>';
+  });
+  h+='<div class="panel"><h3>Game</h3>'+
+   '<div class="setrow"><b>Difficulty</b>'+seg('diff',[0,1,2],v=>['Easy','Standard','Challenge'][v])+'</div>'+
+   '<div class="setrow"><b>Rounds</b>'+seg('rounds',[5,10,15,20],v=>v)+'</div>'+
+   '<div class="setrow"><b>Timer</b>'+seg('timer',[0,10,15,20,30],v=>v?v+' sec':'Off')+'</div>'+
+   '<div class="setrow"><b>Scoring</b>'+seg('mode',['individual','teams','class','solo'],v=>({individual:'Pupils self-mark',teams:'Teams',class:'Whole class',solo:'Solo (phone)'})[v])+'</div>'+
+   (S.mode==='solo'?'<p class="hint" style="text-align:left">Each pupil types an answer before the reveal, and the app keeps their score &ndash; ideal for phones.</p>':'')+(S.mode==='teams'?'<div class="setrow"><b>Teams</b>'+seg('teams',[2,3,4,5,6],v=>v)+'</div><div class="teamnames">'+S.names.slice(0,S.teams).map((n,i)=>'<input type="text" maxlength="14" data-team="'+i+'" value="'+esc(n)+'" aria-label="Team '+(i+1)+' name">').join('')+'</div>':'')+
+   '<div class="setrow"><b>Wrong answer</b>'+seg('penalty',[10,12,15],v=>v+' points')+'</div>'+
+   '<div class="setrow"><b>Nul sound</b>'+seg('sound',[true,false],v=>v?'On':'Off')+'</div></div>';
+  $('setBody').innerHTML=h;
+}
+
+/* ---- game flow ---- */
+function startGame(){
+  if(!S.topics.length){$('setMsg').textContent='Choose at least one topic.';show('settings');renderSettings();return;}
+  save();
+  G={history:[],cur:null,round:0,comp:null,revealed:0,phase:'question',seen:new Set(),last:null,teams:null,sel:0,timerId:null,classNuls:0,nulRound:false,lastCheck:null,flags:[]};
+  if(S.mode==='teams')G.teams=S.names.slice(0,S.teams).map((n,i)=>({name:n||('Team '+(i+1)),hist:[],adj:0,col:TEAMCOL[i]}));
+  show('game');nextRound();
+}
+function nextRound(){
+  G.round++;
+  const c=makeQuestion(S.topics,S.diff,G.last,G.seen);
+  if(!c){alert('Could not make a question from those topics.');goHome();return;}
+  G.comp=c;G.last=c.q.topic;G.revealed=0;G.phase='question';G.nulRound=false;G.lastCheck=null;
+  G.flags=shuffle(FLAG_IDS).slice(0,Math.max(c.board.length,1));
+  if(G.teams)G.sel=0;
+  $('checkPanel').hidden=true;$('chkIn').value='';$('chkOut').textContent='';$('ansIn').value='';G.cur=null;
+  renderGame();startTimer();
+  if(S.mode==='solo')setTimeout(()=>{try{$('ansIn').focus();}catch(e){}},60);
+}
+function stopTimer(){if(G&&G.timerId){clearInterval(G.timerId);G.timerId=null;}}
+function startTimer(){
+  stopTimer();
+  if(!S.timer){$('gTimer').hidden=true;$('gTimerTxt').textContent='';return;}
+  $('gTimer').hidden=false;G.timeLeft=S.timer;paintTimer();
+  G.t0=Date.now();
+  G.timerId=setInterval(()=>{G.timeLeft=Math.max(0,S.timer-(Date.now()-G.t0)/1000);paintTimer();if(G.timeLeft<=0){stopTimer();if(S.mode==='solo'&&G.phase==='question')revealPhase(true);}},250);
+}
+function paintTimer(){
+  const t=G.timeLeft;$('gTimer').firstElementChild.style.width=(100*t/S.timer)+'%';
+  $('gTimerTxt').textContent=t>0?Math.ceil(t)+' s':'Pens down!';
+}
+const HINT_PAIR=['sums','products','differences','quotients','bonds','target'];
+function hintFor(t){
+  if(HINT_PAIR.includes(t))return'Type it like 7 + 13 (use x for \u00d7 and / for \u00f7)';
+  if(t==='game24'||t==='expressions')return'Type your expression, e.g. 6 x 4 x (3 - 2)';
+  if(t==='fractions')return'Type a fraction like 4/6';
+  if(t==='decimals')return'Type a decimal like 3.14';
+  if(t==='digits'||t==='missingdigits')return'Type the whole number';
+  return'Type a number';
+}
+const soloTotal=()=>G.history.reduce((a,h)=>a+h.pts,0);
+function soloSubmit(v){
+  const r=checkAnswer(G.comp,v);
+  const e={round:G.round,title:G.comp.q.title,input:v,valid:r.valid,pts:r.valid?r.points:S.penalty,nul:r.valid&&r.points===0,key:r.valid?r.key:null};
+  G.history.push(e);G.cur=e;if(e.nul)tone([523,659,784,1047]);
+}
+function renderSolo(){
+  const el=$('soloResult');
+  if(S.mode!=='solo'||G.phase!=='reveal'||!G.cur){el.hidden=true;return;}
+  const c=G.cur;el.hidden=false;el.className='soloresult'+(c.valid?(c.nul?' nul':''):' bad');
+  if(c.valid){const onB=G.comp.board.some(b=>b.key===c.key);
+    el.innerHTML='<div class="big">'+(c.nul?'NUL POINTS!':ptsText(c.pts))+'</div><div>You answered <b>'+esc(c.input)+'</b>'+(onB?'':' &ndash; a valid answer that wasn&rsquo;t on the board')+'</div>';
+  }else el.innerHTML='<div class="big">WRONG &ndash; '+S.penalty+' POINTS</div><div>'+(c.input?'<b>'+esc(c.input)+'</b> isn&rsquo;t a valid answer':'No answer given')+'</div>';
+}
+function revealPhase(forced){
+  if(S.mode==='solo'&&G.phase==='question'){
+    const v=$('ansIn').value.trim();if(!v&&!forced)return;
+    soloSubmit(v);
+  }
+  stopTimer();G.phase='reveal';G.revealed=(S.mode==='solo')?G.comp.board.length:0;
+  if(S.timer){$('gTimerTxt').textContent='';$('gTimer').hidden=true;}
+  renderGame();
+}
+function revealNext(){
+  if(G.revealed>=G.comp.board.length)return;
+  const i=G.revealed++;renderBoard(i);renderCtrls();
+  if(G.comp.board[i].points===0){tone([523,659,784,1047]);G.nulRound=true;}
+}
+function revealAll(){while(G.revealed<G.comp.board.length)revealNext();}
+function primary(){
+  if(!G||!$('game').classList.contains('on'))return;
+  if(G.phase==='question'){if(S.mode!=='solo')revealPhase();}
+  else if(G.revealed<G.comp.board.length)revealNext();
+  else nextQuestion();
+}
+function nextQuestion(){if(G.round>=S.rounds)showEnd();else nextRound();}
+function goHome(){stopTimer();show('home');}
+
+function ptsText(p){return p===0?'NUL POINTS!':p===1?'1 POINT':p+' POINTS';}
+function renderGame(){
+  const q=G.comp.q;
+  $('gRound').textContent='ROUND '+G.round+' / '+S.rounds;
+  $('gTopic').textContent=q.catName.toUpperCase()+' \u00b7 '+q.topicName.toUpperCase();
+  $('gTitle').textContent=q.title;$('gText').innerHTML=q.html;
+  const solo=S.mode==='solo';
+  $('gScore').hidden=!solo;
+  if(solo){const nl=G.history.filter(h=>h.nul).length;$('gScore').textContent='SCORE '+soloTotal()+(nl?' \u00b7 NULS '+nl:'');}
+  $('soloIn').hidden=!(solo&&G.phase==='question');
+  $('instr').textContent=solo?'Type your answer, then reveal the points!':'Write your answer down \u2013 and keep it secret!';
+  if(solo&&G.phase==='question'){$('ansHint').textContent=hintFor(q.topic);$('revealBtn').disabled=!$('ansIn').value.trim();}else $('revealBtn').disabled=false;
+  renderBoard(-1);renderCtrls();renderTeams();renderSolo();
+  $('qPhase').hidden=G.phase!=='question';$('rPhase').hidden=G.phase!=='reveal';
+  fit();
+}
+function renderBoard(newIdx){
+  const b=G.comp.board,canAward=!!G.teams;
+  $('board').innerHTML=b.map((a,i)=>{
+    const shown=i<G.revealed,nul=shown&&a.points===0;
+    return'<div class="row'+(shown?'':' hidden')+(nul?' nul':'')+(i===newIdx?' show':'')+(shown&&canAward?' click':'')+(shown&&G.cur&&G.cur.valid&&G.cur.key===a.key?' mine':'')+'" data-act="award-row" data-i="'+i+'">'+
+      flagSvg(G.flags[i%G.flags.length],'rf')+
+      '<span class="ans">'+(shown?a.label:'?')+(nul?'<small>'+NUL_MSGS[(G.round+i)%NUL_MSGS.length]+'</small>':'')+'</span>'+
+      '<span class="pts">'+(shown?ptsText(a.points):'&nbsp;')+'</span></div>';
+  }).join('');
+}
+function renderCtrls(){
+  const done=G.revealed>=G.comp.board.length,last=G.round>=S.rounds;let h='';
+  if(S.mode==='solo'){$('ctrls').innerHTML='<button class="btn" data-act="next-q">'+(last?'MY SCORE &#9654;':'NEXT QUESTION &#9654;')+'</button>';return;}
+  if(!done)h+='<button class="btn" data-act="next-point">NEXT &#9654;</button><button class="btn sec" data-act="reveal-all">Reveal all</button>';
+  else h+='<button class="btn" data-act="next-q">'+(last?'FINAL SCORES &#9654;':'NEXT QUESTION &#9654;')+'</button>';
+  h+='<button class="btn sec" data-act="toggle-check">Check an answer</button>';
+  if(S.mode==='class'&&done)h+='<button class="btn sec" data-act="class-nul">'+(G.nulRound&&G.classNulRounds&&G.classNulRounds.has(G.round)?'\u2713 ':'')+'The class found a Nul!</button>';
+  $('ctrls').innerHTML=h;
+}
+function teamTotal(t){return t.hist.reduce((s,x)=>s+(x?x.pts:0),0)+t.adj;}
+function renderTeams(){
+  const el=$('teamArea');
+  if(S.mode==='solo'){el.innerHTML='';return;}
+  if(S.mode==='individual'){el.innerHTML='<p class="hint">Everyone adds up their own score. Lowest total wins.</p>';return;}
+  if(S.mode==='class'){const n=G.classNulRounds?G.classNulRounds.size:0;el.innerHTML='<p class="hint">Nuls found by the class so far: <b>'+n+'</b> out of '+G.round+' rounds</p>';return;}
+  el.innerHTML='<p class="hint">Select a team, then tap a row on the board to give it those points.</p><div class="teams">'+
+    G.teams.map((t,i)=>{const h=t.hist[G.round-1];
+      return'<div class="team'+(i===G.sel?' sel':'')+'" data-act="sel-team" data-t="'+i+'"><span class="dot" style="background:'+t.col+'"></span><b>'+esc(t.name)+'</b><span class="tot">'+teamTotal(t)+'</span>'+
+      '<span class="sub"><span>'+(h?(h.nul?'NUL! +0':'this round +'+h.pts):'')+'</span><span><button type="button" data-act="adj" data-t="'+i+'" data-d="-1" aria-label="Minus one">&minus;</button><button type="button" data-act="adj" data-t="'+i+'" data-d="1" aria-label="Plus one">+</button></span></span></div>';}).join('')+
+    '</div><div class="ctrls"><button class="btn sec sm" data-act="wrong">Wrong answer: +'+S.penalty+' to selected team</button></div>';
+}
+function award(ti,pts,nul){
+  const t=G.teams[ti];t.hist[G.round-1]={pts,nul};
+  for(let k=1;k<=G.teams.length;k++){const j=(ti+k)%G.teams.length;if(!G.teams[j].hist[G.round-1]){G.sel=j;break;}}
+  renderTeams();
+}
+function doCheck(){
+  const v=$('chkIn').value;if(!v.trim())return;
+  const r=checkAnswer(G.comp,v),out=$('chkOut');
+  if(r.valid){
+    G.lastCheck={pts:r.points,nul:r.points===0};
+    out.className='chkout good';
+    out.innerHTML=(r.points===0?'NUL POINTS! ':'')+r.label+' &rarr; '+ptsText(r.points)+(G.teams?' <button class="btn sm" data-act="award-check">Give to '+esc(G.teams[G.sel].name)+'</button>':'');
+    if(r.points===0)tone([523,659,784,1047]);
+  }else{
+    G.lastCheck={pts:S.penalty,nul:false};
+    out.className='chkout bad';
+    out.innerHTML='Not a valid answer &rarr; '+S.penalty+' POINTS'+(G.teams?' <button class="btn sm" data-act="award-check">Give to '+esc(G.teams[G.sel].name)+'</button>':'');
+  }
+}
+
+/* ---- end ---- */
+function showEnd(){
+  stopTimer();show('end');let h='';
+  if(S.mode==='teams'){
+    const rows=G.teams.map(t=>({t,tot:teamTotal(t),nuls:t.hist.filter(x=>x&&x.nul).length})).sort((a,b)=>a.tot-b.tot),best=rows[0].tot;
+    h='<h2 class="page-title center">FINAL SCORES</h2><table class="endtable">'+rows.map(r=>'<tr class="'+(r.tot===best?'win':'')+'"><td><span class="dot" style="display:inline-block;background:'+r.t.col+'"></span> '+esc(r.t.name)+(r.nuls?'<span class="badge">NUL POINTS &times;'+r.nuls+'</span>':'')+'</td><td>'+r.tot+'</td></tr>').join('')+'</table>'+
+      '<div class="center"><button class="btn big" id="winBtn" data-act="show-winner">THE WINNER IS&hellip;</button></div><div class="winner" id="winTxt" hidden>'+
+      rows.filter(r=>r.tot===best).map(r=>esc(r.t.name).toUpperCase()).join(' &amp; ')+'<div style="font-size:1.6rem">'+best+' POINTS</div></div>';
+  }else if(S.mode==='solo'){
+    const tot=soloTotal(),nuls=G.history.filter(x=>x.nul).length;
+    h='<h2 class="page-title center">FULL TIME</h2><div class="winner">'+tot+' POINTS'+(nuls?'<span class="badge">NUL POINTS &times;'+nuls+'</span>':'')+'</div><p class="center" style="color:var(--mute)">Lowest score wins &ndash; can you beat it?</p><table class="endtable">'+
+      G.history.map(x=>'<tr><td>'+x.round+'. <span style="color:var(--mute);font-size:.65em">'+esc(x.title)+'</span><br>'+esc(x.input||'no answer')+'</td><td>'+(x.nul?'NUL!':x.pts)+(x.valid?'':' \u2717')+'</td></tr>').join('')+'</table>';
+  }else if(S.mode==='class'){
+    const n=G.classNulRounds?G.classNulRounds.size:0;
+    h='<h2 class="page-title center">FULL TIME</h2><div class="winner">'+n+' Nul'+(n===1?'':'s')+' found</div><p class="center" style="font-size:1.4rem">out of '+S.rounds+' rounds</p>';
+  }else{
+    h='<h2 class="page-title center">FULL TIME</h2><p class="center" style="font-size:1.6rem">Add up your scores &ndash; <b style="color:var(--gold)">lowest total wins</b>.</p><p class="center" style="font-size:1.4rem">Did anyone score <b style="color:var(--gold)">NUL POINTS</b>?</p>';
+  }
+  h+='<div class="menu"><button class="btn" data-act="play">PLAY AGAIN</button><button class="btn sec" data-act="go-settings">SETTINGS</button><button class="btn sec" data-act="go-home">HOME</button></div>';
+  $('end').innerHTML=h;fit();
+}
+
+/* ---- events ---- */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const a=el.dataset.act;
+  if(el.tagName==='BUTTON')el.blur();
+  switch(a){
+    case'play':case'startgame':startGame();break;
+    case'go-home':goHome();break;
+    case'go-how':show('how');break;
+    case'go-settings':$('setMsg').textContent='';renderSettings();show('settings');break;
+    case'set':{const k=el.dataset.k;let v=el.dataset.v;if(v==='true')v=true;else if(v==='false')v=false;else if(/^\d+$/.test(v))v=+v;S[k]=v;save();renderSettings();break;}
+    case'cat':{const ids=TOPICS.filter(t=>t.cat===el.dataset.c).map(t=>t.id);S.topics=S.topics.filter(x=>!ids.includes(x));if(el.dataset.v==='1')S.topics=S.topics.concat(ids);save();renderSettings();break;}
+    case'reveal':revealPhase();break;
+    case'next-point':revealNext();break;
+    case'reveal-all':revealAll();break;
+    case'next-q':nextQuestion();break;
+    case'toggle-check':{const p=$('checkPanel');p.hidden=!p.hidden;if(!p.hidden)$('chkIn').focus();break;}
+    case'check':doCheck();break;
+    case'sel-team':G.sel=+el.dataset.t;renderTeams();break;
+    case'adj':G.teams[+el.dataset.t].adj+=+el.dataset.d;renderTeams();break;
+    case'award-row':{if(!G.teams)break;const i=+el.dataset.i;if(i<G.revealed){const b=G.comp.board[i];award(G.sel,b.points,b.points===0);}break;}
+    case'award-check':if(G.lastCheck){award(G.sel,G.lastCheck.pts,G.lastCheck.nul);$('chkOut').textContent='';$('chkIn').value='';}break;
+    case'wrong':award(G.sel,S.penalty,false);break;
+    case'class-nul':{G.classNulRounds=G.classNulRounds||new Set();if(G.classNulRounds.has(G.round))G.classNulRounds.delete(G.round);else{G.classNulRounds.add(G.round);tone([523,659,784,1047]);}renderCtrls();renderTeams();break;}
+    case'show-winner':$('winBtn').hidden=true;$('winTxt').hidden=false;tone([392,523,659,784,1047],.16);break;
+    case'quit':if(confirm('Leave this game and return to the menu?'))goHome();break;
+  }
+});
+document.addEventListener('change',e=>{
+  if(e.target.dataset&&e.target.dataset.topic){const id=e.target.dataset.topic;S.topics=S.topics.filter(x=>x!==id);if(e.target.checked)S.topics.push(id);save();}
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='ansIn'&&G&&G.phase==='question'){$('revealBtn').disabled=!e.target.value.trim();return;}
+  if(e.target.dataset&&e.target.dataset.team!==undefined){S.names[+e.target.dataset.team]=e.target.value;save();}
+});
+document.addEventListener('keydown',e=>{
+  const t=e.target;
+  if(t.tagName==='INPUT'){if(e.key==='Enter'&&t.id==='chkIn'){e.preventDefault();doCheck();}if(e.key==='Enter'&&t.id==='ansIn'){e.preventDefault();revealPhase();}return;}
+  if(t.tagName==='BUTTON')return;
+  if(e.key===' '||e.key==='Enter'){if(G&&$('game').classList.contains('on')){e.preventDefault();primary();}}
+});
+drawRing();show('home');
+</script>
+</body>
+</html>
