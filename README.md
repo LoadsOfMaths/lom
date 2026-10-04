@@ -27,6 +27,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Potato | `potato/` |
 | Recite Pi | `recite-pi/` |
 | Reserve Records | `reserve-records/` |
+| Sports Day | `sports-day/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
 | Times Tables Quiz | `times-tables-quiz/` |
 | Toast | `toast/` |

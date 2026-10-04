@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#14532d">
+<title>Sports Day</title>
+<style>
+:root{
+  --bg:#0f2a1d; --panel:#16382a; --panel2:#1d4a37; --ink:#f4faf6; --muted:#a9c8b8;
+  --green:#22c55e; --greenD:#15803d; --red:#dc2626; --gold:#facc15; --line:#2e6149;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation}
+body{min-height:100vh;min-height:100dvh}
+.screen{display:none;padding:14px 14px 28px;max-width:560px;margin:0 auto}
+.screen.on{display:block}
+h1{margin:4px 0 2px;font-size:28px;letter-spacing:.5px}
+h1 span{color:var(--green)}
+.sub{color:var(--muted);font-size:14px;margin-bottom:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:0 0 4px}
+.row{display:flex;gap:10px;margin-bottom:10px}
+.row>div{flex:1;min-width:0}
+input,select{width:100%;font-size:17px;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0b1f15;color:var(--ink);font-family:inherit;-webkit-user-select:text;user-select:text}
+input:focus,select:focus{outline:2px solid var(--green)}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:24px;font-weight:700}
+.stepper output{flex:1;text-align:center;font-size:24px;font-weight:700}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.names .nm{display:flex;align-items:center;gap:6px}
+.dot{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;border:2px solid rgba(255,255,255,.7)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;padding:10px 4px;background:#0b1f15;color:var(--muted);border:0;font-size:15px;font-weight:600}
+.seg button.on{background:var(--greenD);color:#fff}
+.btn{display:block;width:100%;border:0;border-radius:14px;font-weight:800;color:#fff;font-size:20px;padding:16px}
+.btn.start{background:var(--green);color:#052e16;font-size:34px;padding:34px 10px;letter-spacing:2px;box-shadow:0 6px 0 var(--greenD)}
+.btn.start:active{transform:translateY(4px);box-shadow:0 2px 0 var(--greenD)}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line);font-size:16px;padding:12px}
+.btn.red{background:var(--red);font-size:16px;padding:12px}
+.warn{color:#fca5a5;font-size:14px;margin:6px 0 10px;min-height:1em}
+.hint{color:var(--muted);font-size:13px;margin-top:6px}
+
+/* race */
+.timer{background:#000;border-radius:16px;text-align:center;padding:12px 8px;margin-bottom:10px;border:2px solid var(--line)}
+.timer .t{font-variant-numeric:tabular-nums;font-size:clamp(44px,15vw,76px);font-weight:800;line-height:1;color:var(--gold);font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.timer .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+.info{display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin:0 4px 10px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tiles.one{grid-template-columns:1fr}
+.tile{position:relative;border-radius:16px;color:#fff;padding:0;min-height:112px;border:3px solid rgba(255,255,255,.35);overflow:hidden}
+.tiles.one .tile{min-height:96px}
+.tile .tap{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;color:inherit;text-align:left;padding:10px 12px;font-family:inherit}
+.tile .nm{font-size:20px;font-weight:800;line-height:1.1;text-shadow:0 1px 2px rgba(0,0,0,.4);padding-right:34px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .ln{font-size:12px;opacity:.9;text-transform:uppercase;letter-spacing:1px}
+.tile .st{font-size:15px;margin-top:6px;font-variant-numeric:tabular-nums}
+.tile .big{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.tile .undo{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;font-size:17px;z-index:2}
+.tile.off .tap{opacity:.55}
+.tile.done{filter:saturate(.55) brightness(.8)}
+.tile.flash{animation:fl .35s}
+@keyframes fl{0%{box-shadow:0 0 0 0 #fff;transform:scale(.97)}100%{box-shadow:0 0 0 14px transparent;transform:scale(1)}}
+.bar{display:flex;gap:10px;margin-top:12px}
+.bar .btn{flex:1}
+
+/* results */
+.rank{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.rank td,.rank th{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);font-size:15px}
+.rank th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.rank td.r,.rank th.r{text-align:right}
+.rcard .head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.rcard .head b{font-size:19px;flex:1}
+.pos{font-weight:800;color:var(--gold)}
+table.laps{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+table.laps td,table.laps th{padding:6px 4px;text-align:right;font-size:15px;border-bottom:1px solid rgba(255,255,255,.07)}
+table.laps th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+table.laps td:first-child,table.laps th:first-child{text-align:left}
+table.laps tr.best td{background:rgba(250,204,21,.16);color:var(--gold);font-weight:700}
+table.laps tr.tot td{font-weight:800;border-top:2px solid var(--line)}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
+.stats b{color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 18px;border-radius:20px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div class="screen on" id="setup">
+  <h1>Sports <span>Day</span></h1>
+  <div class="sub">Stand on the finish line and tap each runner as they pass.</div>
+
+  <div class="card">
+    <h2>Runners</h2>
+    <div class="stepper"><button id="rMinus">−</button><output id="rCount">6</output><button id="rPlus">+</button></div>
+    <div class="names" id="names" style="margin-top:12px"></div>
+    <div class="hint">Leave a name blank to use its lane number.</div>
+  </div>
+
+  <div class="card">
+    <h2>Race</h2>
+    <div class="row">
+      <div>
+        <label>Number of laps (1 = straight race)</label>
+        <div class="stepper"><button id="lMinus">−</button><output id="lCount">1</output><button id="lPlus">+</button></div>
+      </div>
+    </div>
+    <div class="row">
+      <div id="lapDistWrap"><label>Lap distance (m)</label><input id="lapDist" type="number" inputmode="decimal" min="1" step="any" value="400"></div>
+      <div><label id="totLabel">Race distance (m)</label><input id="totDist" type="number" inputmode="decimal" min="1" step="any" value="100"></div>
+    </div>
+    <div class="hint" id="lapNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>Display</h2>
+    <label>Times</label>
+    <div class="seg" id="segTime" style="margin-bottom:10px"><button data-v="s">Seconds</button><button data-v="ms">Mins &amp; secs</button></div>
+    <label>Speeds</label>
+    <div class="seg" id="segSpeed"><button data-v="mps">m/s</button><button data-v="mph">mph</button><button data-v="kph">km/h</button></div>
+  </div>
+
+  <div class="warn" id="warn"></div>
+  <button class="btn ghost" id="toRace">Get ready ▸</button>
+</div>
+
+<!-- RACE -->
+<div class="screen" id="race">
+  <div class="timer"><div class="t" id="clock">0.00</div><div class="l" id="clockLabel">Elapsed time</div></div>
+  <div class="info"><span id="raceInfo"></span><span id="raceCount"></span></div>
+  <button class="btn start" id="startBtn">START</button>
+  <div class="tiles" id="tiles" style="display:none"></div>
+  <div class="bar" id="raceBar">
+    <button class="btn ghost" id="backBtn">◂ Setup</button>
+    <button class="btn red" id="endBtn" style="display:none">End race</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="results">
+  <h1>Results</h1>
+  <div class="sub" id="resInfo"></div>
+  <div class="card">
+    <div class="row">
+      <div><label>Times</label><div class="seg" id="segTime2"><button data-v="s">Secs</button><button data-v="ms">m:ss</button></div></div>
+      <div><label>Speeds</label><div class="seg" id="segSpeed2"><button data-v="mps">m/s</button><button data-v="mph">mph</button><button data-v="kph">km/h</button></div></div>
+    </div>
+  </div>
+  <div class="card" id="rankCard"></div>
+  <div id="runnerCards"></div>
+  <div class="bar"><button class="btn ghost" id="copyBtn">Copy results</button></div>
+  <div class="bar"><button class="btn ghost" id="newBtn">New race (same setup)</button></div>
+  <div class="bar"><button class="btn ghost" id="setupBtn">Back to setup</button></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+const COLS=['#dc2626','#2563eb','#ca8a04','#16a34a','#9333ea','#ea580c'];
+const $=id=>document.getElementById(id);
+const KEY='lom-sportsday-v1';
+
+let cfg={n:6,names:['','','','','',''],laps:1,lapDist:400,totDist:100,totTouched:false,timeFmt:'s',speedFmt:'mps'};
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s)cfg=Object.assign(cfg,s)}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(cfg))}catch(e){}}
+
+let race=null; // {t0, running, ended, endT, runners:[{name,splits:[]}]}
+let raf=0;
+
+/* ---------- formatting ---------- */
+function fmtTime(ms,mode){
+  mode=mode||cfg.timeFmt;
+  const cs=Math.round(ms/10);
+  if(mode==='s'){return (cs/100).toFixed(2)}
+  const m=Math.floor(cs/6000), r=cs-m*6000;
+  const s=Math.floor(r/100), c=r%100;
+  return m+':'+(s<10?'0':'')+s+'.'+(c<10?'0':'')+c;
+}
+function speed(d,ms){
+  if(!(ms>0)||!(d>0))return null;
+  const mps=d/(ms/1000);
+  if(cfg.speedFmt==='mph')return mps*2.2369363;
+  if(cfg.speedFmt==='kph')return mps*3.6;
+  return mps;
+}
+function fmtSpeed(d,ms){const v=speed(d,ms);return v==null?'–':v.toFixed(2)}
+function speedUnit(){return cfg.speedFmt==='mph'?'mph':cfg.speedFmt==='kph'?'km/h':'m/s'}
+function timeUnit(){return cfg.timeFmt==='s'?'s':'m:ss.ss'}
+function ord(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])}
+function fmtDist(d){return (Math.round(d*100)/100).toString()}
+
+/* ---------- derived race geometry ---------- */
+function lapLens(){
+  const L=[];
+  if(cfg.laps===1){L.push(cfg.totDist);return L}
+  for(let i=0;i<cfg.laps-1;i++)L.push(cfg.lapDist);
+  L.push(cfg.totDist-cfg.lapDist*(cfg.laps-1));
+  return L;
+}
+function rname(i,src){const n=(src||cfg.names)[i];return (n&&n.trim())||('Lane '+(i+1))}
+
+/* ---------- setup screen ---------- */
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo(0,0)}
+
+function renderNames(){
+  const box=$('names');box.innerHTML='';
+  for(let i=0;i<cfg.n;i++){
+    const d=document.createElement('div');d.className='nm';
+    d.innerHTML='<span class="dot" style="background:'+COLS[i]+'">'+(i+1)+'</span>';
+    const inp=document.createElement('input');inp.type='text';inp.maxLength=18;inp.placeholder='Lane '+(i+1);inp.value=cfg.names[i]||'';
+    inp.addEventListener('input',()=>{cfg.names[i]=inp.value;save()});
+    d.appendChild(inp);box.appendChild(d);
+  }
+}
+function syncSetup(){
+  $('rCount').textContent=cfg.n;
+  $('lCount').textContent=cfg.laps;
+  const straight=cfg.laps===1;
+  $('lapDistWrap').style.display=straight?'none':'';
+  $('totLabel').textContent=straight?'Race distance (m)':'Total distance (m)';
+  $('lapDist').value=cfg.lapDist;
+  $('totDist').value=cfg.totDist;
+  document.querySelectorAll('#segTime button,#segTime2 button').forEach(b=>b.classList.toggle('on',b.dataset.v===cfg.timeFmt));
+  document.querySelectorAll('#segSpeed button,#segSpeed2 button').forEach(b=>b.classList.toggle('on',b.dataset.v===cfg.speedFmt));
+  let note='';
+  if(!straight&&cfg.lapDist>0&&cfg.totDist>0){
+    const lens=lapLens(),last=lens[lens.length-1];
+    if(Math.abs(last-cfg.lapDist)>1e-9&&last>0)note='Final lap is '+fmtDist(last)+' m.';
+    else if(last>0)note=cfg.laps+' × '+fmtDist(cfg.lapDist)+' m';
+  }
+  $('lapNote').textContent=note;
+  $('warn').textContent='';
+}
+function setLaps(v){
+  cfg.laps=Math.max(1,Math.min(20,v));
+  if(cfg.laps===1){ if(!cfg.totTouched) cfg.totDist=cfg.lapDist; }
+  else if(!cfg.totTouched) cfg.totDist=cfg.lapDist*cfg.laps;
+  save();syncSetup();
+}
+$('rMinus').onclick=()=>{cfg.n=Math.max(1,cfg.n-1);save();renderNames();syncSetup()};
+$('rPlus').onclick=()=>{cfg.n=Math.min(6,cfg.n+1);save();renderNames();syncSetup()};
+$('lMinus').onclick=()=>setLaps(cfg.laps-1);
+$('lPlus').onclick=()=>setLaps(cfg.laps+1);
+$('lapDist').addEventListener('input',e=>{
+  const v=parseFloat(e.target.value);if(!(v>0))return;
+  cfg.lapDist=v;if(!cfg.totTouched){cfg.totDist=v*cfg.laps;$('totDist').value=cfg.totDist}
+  save();const n=$('lapNote');syncNote();
+});
+$('totDist').addEventListener('input',e=>{
+  const v=parseFloat(e.target.value);if(!(v>0))return;
+  cfg.totDist=v;cfg.totTouched=true;
+  if(cfg.laps===1)cfg.lapDist=v;
+  save();syncNote();
+});
+function syncNote(){
+  let note='';
+  if(cfg.laps>1&&cfg.lapDist>0&&cfg.totDist>0){
+    const last=lapLens().slice(-1)[0];
+    if(last<=0)note='Total distance is too short for this many laps.';
+    else if(Math.abs(last-cfg.lapDist)>1e-9)note='Final lap is '+fmtDist(last)+' m.';
+    else note=cfg.laps+' × '+fmtDist(cfg.lapDist)+' m';
+  }
+  $('lapNote').textContent=note;
+}
+function bindSeg(id,key,after){
+  $(id).addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    cfg[key]=b.dataset.v;save();syncSetup();if(after)after();
+  });
+}
+bindSeg('segTime','timeFmt');bindSeg('segSpeed','speedFmt');
+bindSeg('segTime2','timeFmt',renderResults);bindSeg('segSpeed2','speedFmt',renderResults);
+
+$('toRace').onclick=()=>{
+  if(!(cfg.totDist>0)){$('warn').textContent='Enter the race distance.';return}
+  if(cfg.laps>1){
+    if(!(cfg.lapDist>0)){$('warn').textContent='Enter the lap distance.';return}
+    if(lapLens().slice(-1)[0]<=0){$('warn').textContent='Total distance is too short for '+cfg.laps+' laps of '+fmtDist(cfg.lapDist)+' m.';return}
+  }
+  prepRace();show('race');
+};
+
+/* ---------- race screen ---------- */
+function prepRace(){
+  cancelAnimationFrame(raf);
+  race={t0:0,running:false,ended:false,endT:0,
+    runners:Array.from({length:cfg.n},(_,i)=>({name:rname(i),splits:[]}))};
+  const straight=cfg.laps===1;
+  $('clock').textContent=fmtTime(0);
+  $('clock').style.color='';
+  $('clockLabel').textContent='Elapsed time ('+timeUnit()+')';
+  $('raceInfo').textContent=straight?fmtDist(cfg.totDist)+' m straight':cfg.laps+' laps · '+fmtDist(cfg.totDist)+' m';
+  $('raceCount').textContent='';
+  $('startBtn').style.display='';
+  $('tiles').style.display='none';
+  $('endBtn').style.display='none';
+  $('backBtn').style.display='';
+  buildTiles();
+}
+function buildTiles(){
+  const box=$('tiles');box.innerHTML='';
+  box.className='tiles'+(cfg.n===1?' one':'');
+  race.runners.forEach((r,i)=>{
+    const t=document.createElement('div');t.className='tile off';t.id='tile'+i;t.style.background=COLS[i];
+    t.innerHTML='<button class="tap" data-i="'+i+'"><div class="ln">Lane '+(i+1)+'</div><div class="nm"></div><div class="st"></div></button><button class="undo" data-u="'+i+'" title="Undo last tap">↶</button>';
+    box.appendChild(t);
+  });
+  race.runners.forEach((_,i)=>updateTile(i));
+}
+function updateTile(i){
+  const r=race.runners[i],t=$('tile'+i),laps=cfg.laps,k=r.splits.length;
+  t.querySelector('.nm').textContent=r.name;
+  const st=t.querySelector('.st');
+  const done=k>=laps;
+  t.classList.toggle('done',done);
+  t.querySelector('.undo').style.display=k>0?'':'none';
+  if(done){
+    const pos=race.runners.filter(x=>x.splits.length>=laps&&x.splits[laps-1]<=r.splits[laps-1]).length;
+    st.innerHTML='<div class="big">'+ord(pos)+'</div>'+fmtTime(r.splits[laps-1])+' '+(cfg.timeFmt==='s'?'s':'');
+  }else if(laps===1){
+    st.innerHTML='<div class="big">TAP</div>at the line';
+  }else{
+    const last=k>0?r.splits[k-1]-(k>1?r.splits[k-2]:0):null;
+    st.innerHTML='<div class="big">Lap '+(k+1)+'<span style="font-size:15px;font-weight:600"> / '+laps+'</span></div>'+(last!=null?'Last: '+fmtTime(last):'Tap each lap');
+  }
+}
+function finishedCount(){return race.runners.filter(r=>r.splits.length>=cfg.laps).length}
+function updateCount(){$('raceCount').textContent=finishedCount()+' / '+cfg.n+' finished'}
+
+function tick(){
+  if(!race||!race.running)return;
+  $('clock').textContent=fmtTime(performance.now()-race.t0);
+  raf=requestAnimationFrame(tick);
+}
+$('startBtn').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  race.t0=performance.now();race.running=true;
+  $('startBtn').style.display='none';
+  $('tiles').style.display='';
+  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('off'));
+  $('endBtn').style.display='';$('backBtn').style.display='none';
+  updateCount();
+  raf=requestAnimationFrame(tick);
+  if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}
+});
+$('tiles').addEventListener('pointerdown',e=>{
+  const now=performance.now();
+  if(!race||!race.running)return;
+  const u=e.target.closest('[data-u]');
+  if(u){
+    e.preventDefault();
+    const i=+u.dataset.u,r=race.runners[i];
+    if(r.splits.length){r.splits.pop();updateTile(i);updateCount();
+      if(race.ended){/* shouldn't occur */}
+      toast('Undid last tap for '+r.name);}
+    return;
+  }
+  const b=e.target.closest('[data-i]');if(!b)return;
+  e.preventDefault();
+  const i=+b.dataset.i,r=race.runners[i];
+  if(r.splits.length>=cfg.laps)return;
+  r.splits.push(now-race.t0);
+  const t=$('tile'+i);t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash');
+  if(navigator.vibrate)try{navigator.vibrate(20)}catch(_){}
+  updateTile(i);updateCount();
+  if(finishedCount()===cfg.n){
+    endRace(Math.max(...race.runners.map(x=>x.splits[cfg.laps-1])));
+  }
+});
+function endRace(endT){
+  race.running=false;race.ended=true;race.endT=endT;
+  cancelAnimationFrame(raf);
+  $('clock').textContent=fmtTime(endT);
+  $('clock').style.color='#4ade80';
+  setTimeout(()=>{renderResults();show('results')},900);
+}
+$('endBtn').onclick=()=>{
+  if(!race.running)return;
+  if(!confirm('End the race now? Anyone not finished will be marked DNF.'))return;
+  endRace(performance.now()-race.t0);
+};
+$('backBtn').onclick=()=>show('setup');
+
+/* ---------- results ---------- */
+function renderResults(){
+  if(!race)return;
+  const laps=cfg.laps,lens=lapLens(),straight=laps===1;
+  $('resInfo').textContent=(straight?fmtDist(cfg.totDist)+' m straight':laps+' laps · '+fmtDist(cfg.totDist)+' m')+' · times in '+timeUnit()+', speeds in '+speedUnit();
+  const info=race.runners.map((r,i)=>{
+    const fin=r.splits.length>=laps;
+    return {i,r,fin,total:fin?r.splits[laps-1]:null};
+  });
+  const order=info.filter(x=>x.fin).sort((a,b)=>a.total-b.total);
+  order.forEach((x,k)=>{x.pos=k+1;if(k&&Math.abs(x.total-order[k-1].total)<1e-9)x.pos=order[k-1].pos});
+  // rank table
+  let h='<h2>Finishing order</h2><table class="rank"><tr><th>Pos</th><th>Runner</th><th class="r">Time</th><th class="r">Avg '+speedUnit()+'</th>'+(straight?'':'<th class="r">Best lap</th>')+'</tr>';
+  const lapTimes=x=>x.r.splits.map((s,k)=>s-(k?x.r.splits[k-1]:0));
+  const bestOf=x=>{const lt=lapTimes(x);let b=-1;lt.forEach((t,k)=>{if(b<0||t/lens[k]<lt[b]/lens[b])b=k});return b};
+  order.forEach(x=>{
+    let bl='';
+    if(!straight){const lt=lapTimes(x),b=bestOf(x);bl=fmtTime(lt[b])}
+    h+='<tr><td class="pos">'+ord(x.pos)+'</td><td><span class="dot" style="display:inline-grid;vertical-align:middle;margin-right:6px;background:'+COLS[x.i]+'">'+(x.i+1)+'</span>'+esc(x.r.name)+'</td><td class="r">'+fmtTime(x.total)+'</td><td class="r">'+fmtSpeed(cfg.totDist,x.total)+'</td>'+(straight?'':'<td class="r">'+bl+'</td>')+'</tr>';
+  });
+  info.filter(x=>!x.fin).forEach(x=>{
+    h+='<tr><td>DNF</td><td><span class="dot" style="display:inline-grid;vertical-align:middle;margin-right:6px;background:'+COLS[x.i]+'">'+(x.i+1)+'</span>'+esc(x.r.name)+'</td><td class="r" colspan="'+(straight?2:3)+'">'+(x.r.splits.length?x.r.splits.length+' of '+laps+' laps':'–')+'</td></tr>';
+  });
+  h+='</table>';
+  $('rankCard').innerHTML=h;
+
+  // per-runner cards
+  let c='';
+  const ordered=order.concat(info.filter(x=>!x.fin));
+  ordered.forEach(x=>{
+    const lt=lapTimes(x);
+    c+='<div class="card rcard"><div class="head"><span class="dot" style="background:'+COLS[x.i]+'">'+(x.i+1)+'</span><b>'+esc(x.r.name)+'</b>'+(x.fin?'<span class="pos">'+ord(x.pos)+'</span>':'<span style="color:#fca5a5;font-weight:700">DNF</span>')+'</div>';
+    if(straight){
+      c+='<table class="laps"><tr><th>Distance</th><th>Time</th><th>Speed '+speedUnit()+'</th></tr>';
+      c+=x.fin?'<tr class="tot"><td>'+fmtDist(cfg.totDist)+' m</td><td>'+fmtTime(x.total)+'</td><td>'+fmtSpeed(cfg.totDist,x.total)+'</td></tr>':'<tr><td colspan="3" style="text-align:left">No time recorded</td></tr>';
+      c+='</table>';
+    }else{
+      const b=lt.length?bestOf(x):-1;
+      c+='<table class="laps"><tr><th>Lap</th><th>Lap time</th><th>'+speedUnit()+'</th><th>Elapsed</th></tr>';
+      lt.forEach((t,k)=>{
+        c+='<tr'+(k===b&&lt.length>1?' class="best"':'')+'><td>'+(k+1)+(k===b&&lt.length>1?' ★':'')+'</td><td>'+fmtTime(t)+'</td><td>'+fmtSpeed(lens[k],t)+'</td><td>'+fmtTime(x.r.splits[k])+'</td></tr>';
+      });
+      if(x.fin)c+='<tr class="tot"><td>Total</td><td>'+fmtTime(x.total)+'</td><td>'+fmtSpeed(cfg.totDist,x.total)+'</td><td></td></tr>';
+      c+='</table>';
+      if(lt.length>1)c+='<div class="stats"><span>★ Best lap: <b>'+(b+1)+'</b> ('+fmtTime(lt[b])+', '+fmtSpeed(lens[b],lt[b])+' '+speedUnit()+')</span></div>';
+    }
+    c+='</div>';
+  });
+  $('runnerCards').innerHTML=c;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+
+$('copyBtn').onclick=()=>{
+  const laps=cfg.laps,lens=lapLens(),straight=laps===1;
+  let out='SPORTS DAY\n'+(straight?fmtDist(cfg.totDist)+' m':laps+' laps, '+fmtDist(cfg.totDist)+' m')+'\nTimes in '+timeUnit()+', speeds in '+speedUnit()+'\n\n';
+  const fin=race.runners.map((r,i)=>({r,i,f:r.splits.length>=laps})).sort((a,b)=>(b.f-a.f)||((a.r.splits[laps-1]||0)-(b.r.splits[laps-1]||0)));
+  let p=0;
+  fin.forEach(x=>{
+    out+=(x.f?ord(++p):'DNF')+'  '+x.r.name+(x.f?'  '+fmtTime(x.r.splits[laps-1])+'  ('+fmtSpeed(cfg.totDist,x.r.splits[laps-1])+' '+speedUnit()+')':'')+'\n';
+    if(!straight){
+      let best=-1,bt=0;
+      x.r.splits.forEach((s,k)=>{const t=s-(k?x.r.splits[k-1]:0);if(best<0||t/lens[k]<bt/lens[best]){best=k;bt=t}});
+      x.r.splits.forEach((s,k)=>{const t=s-(k?x.r.splits[k-1]:0);out+='   Lap '+(k+1)+': '+fmtTime(t)+'  '+fmtSpeed(lens[k],t)+' '+speedUnit()+(k===best&&x.r.splits.length>1?'  *best':'')+'\n'});
+    }
+  });
+  const done=()=>toast('Results copied');
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(out).then(done,()=>fallback(out))}else fallback(out);
+  function fallback(t){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');done()}catch(e){toast('Copy not available')}a.remove()}
+};
+$('newBtn').onclick=()=>{prepRace();show('race')};
+$('setupBtn').onclick=()=>show('setup');
+
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1600)}
+
+/* warn before accidental leave mid-race */
+window.addEventListener('beforeunload',e=>{if(race&&race.running){e.preventDefault();e.returnValue=''}});
+
+renderNames();syncSetup();syncNote();
+})();
+</script>
+</body>
+</html>
