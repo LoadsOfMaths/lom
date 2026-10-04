@@ -109,8 +109,8 @@ input:focus{border-color:var(--bl);outline:none}
 .cp.sel span{color:var(--ord)}
 
 /* race */
-.info{display:flex;justify-content:space-between;color:#dbe6fb;font-size:1rem;margin:0 4px 10px}
-.infor{display:flex;align-items:center;gap:10px}
+.info{display:flex;justify-content:center;color:#dbe6fb;font-size:1rem;margin:0 4px 10px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;margin:0 2px 12px;color:#dbe6fb;font-size:1rem}
 .endbtn{font-family:'Super Bouncer',sans-serif;background:linear-gradient(#ee6a55,var(--red));color:#fff;font-size:1.05rem;padding:.4em 1em;border-radius:999px;box-shadow:0 .2em 0 #8f2a1a,0 .3em .6em rgba(0,0,0,.3);touch-action:manipulation}
 .endbtn:active{transform:translateY(.15em);box-shadow:0 .04em 0 #8f2a1a}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -199,8 +199,9 @@ table.laps tr.tot td{font-weight:800;border-top:2px solid var(--bl)}
 
 <!-- RACE -->
 <div class="screen" id="race">
+  <div class="topbar"><span id="raceInfo"></span><button class="endbtn" id="endBtn" style="display:none">End race</button></div>
   <div class="timer" id="timerPanel" data-style="classic"><div class="host" id="clockHost"></div><div class="l" id="clockLabel">Elapsed time</div></div>
-  <div class="info"><span id="raceInfo"></span><span class="infor"><span id="raceCount"></span><button class="endbtn" id="endBtn" style="display:none">End race</button></span></div>
+  <div class="info"><span id="raceCount"></span></div>
   <button class="btn start" id="startBtn">START</button>
   <div class="tiles" id="tiles" style="display:none"></div>
   <div class="bar" id="raceBar">
