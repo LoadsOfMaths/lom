@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Baked Bean Sim – Statistics Distribution Explorer</title>
+<style>
+:root{--o:#F47B3F;--b:#3F73B8;--ink:#1f2a37;--line:#dbe3ec;--tile:#f2f6fa}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:"Anak Orang","Trebuchet MS","Segoe UI",system-ui,sans-serif;background:var(--bg);background-attachment:fixed}
+body[data-mode=beans]{--bg:repeating-linear-gradient(135deg,#2f3f50 0 24px,#2b3a49 24px 48px);--head:#fff}
+body[data-mode=matches]{--bg:linear-gradient(160deg,#3b4660,#232b3d);--head:#fff}
+body[data-mode=cereal]{--bg:linear-gradient(160deg,#ffe6bf,#ffc98a);--head:#2b2b2b}
+body[data-mode=binom]{--bg:linear-gradient(160deg,#5b2a4e,#2e1b3c);--head:#fff}
+body[data-mode=poisson]{--bg:repeating-linear-gradient(90deg,#8a1c26 0 40px,#7a1620 40px 80px);--head:#fff}
+body[data-mode=poisson][data-ctx=phone]{--bg:linear-gradient(160deg,#16324f,#0c1b2e);--head:#fff}
+.tabs button{border-radius:16px;line-height:1.15;padding:6px 16px}
+.tabs button b{display:block;font-size:17px}
+.tabs button small{display:block;font-size:11.5px;font-weight:600;opacity:.75;margin-top:1px}
+#pTimeline{display:block;width:100%;height:190px;border-radius:10px}
+#profitChart{display:block;width:100%;height:250px;border-radius:10px;background:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid2 label{font-size:13px}
+.grid2 input{width:100%}
+@media (max-width:420px){.grid2{grid-template-columns:1fr}}
+.ecoTog{background:linear-gradient(135deg,#fff7ec,#ffe9cf)}
+.meter{height:24px;border-radius:12px;background:#e3e9f0;overflow:hidden;margin:6px 0}
+.meter i{display:block;height:100%;border-radius:12px;transition:width .3s}
+.scoreline{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.scoreline b{font-size:26px}
+.ecotable table{border-collapse:collapse;width:100%;margin:10px 0 4px}
+.ecotable th,.ecotable td{padding:5px 8px;border-bottom:1px solid #dde5ee;text-align:right;font-size:14px}
+.ecotable th:first-child,.ecotable td:first-child{text-align:left}
+.ecotable tr.tot td{font-weight:800;border-top:2px solid #243241;font-size:15px}
+.ecotable .neg{color:#c0392b}.ecotable .pos{color:#1e8449}
+.ecosum{background:#eef4fb;border-left:5px solid var(--o);border-radius:8px;padding:9px 12px;font-size:14.5px;line-height:1.45;margin-top:8px}
+.ctxwrap{max-width:1500px;margin:0 auto;padding:0 18px 10px}
+.ctxwrap .seg button{font-size:16px;padding:9px 20px;min-height:44px}
+body[data-mode=spinner]{--bg:linear-gradient(160deg,#3a2a7a,#1d1448);--head:#fff}
+body[data-mode=binom][data-ctx=netball]{--bg:linear-gradient(160deg,#1f6f8b,#0e3b4f);--head:#fff}
+.coin.g{background:radial-gradient(circle at 35% 30%,#ffb066,#e8731f);color:#fff}
+.coin.m{background:radial-gradient(circle at 35% 30%,#eef1f4,#bcc5cf);color:#5b6978}
+.trow.sp{grid-template-columns:34px 1fr 58px}
+.sw{display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;font-weight:800;font-size:14px;font-style:normal}
+#spWheel{display:block;width:min(100%,420px);height:auto;aspect-ratio:1/1;margin:0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;min-height:32px}
+.chip{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.chip.hit{box-shadow:0 0 0 2px #fff,0 0 0 5px #243241}
+@media (max-width:900px){.ctxwrap{padding:0 10px 8px}.ctxwrap .seg button{padding:8px 12px;font-size:15px}.tabs button{padding:5px 12px}.tabs button b{font-size:15px}.tabs button small{font-size:10.5px}}
+.coins{display:flex;flex-wrap:wrap;gap:6px;min-height:44px;align-items:center}
+.coin{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.3)}
+.coin.h{background:radial-gradient(circle at 35% 30%,#ffe58a,#e0a82e);color:#6b4a00}
+.coin.t{background:radial-gradient(circle at 35% 30%,#f1f3f5,#aab3bc);color:#3b4650}
+.coin.flip{animation:cflip .5s both}
+@keyframes cflip{0%{transform:rotateY(0) scale(.2);opacity:0}60%{transform:rotateY(540deg) scale(1.15);opacity:1}100%{transform:rotateY(720deg) scale(1);opacity:1}}
+.chartwrap.short{aspect-ratio:21/9}
+@media (max-width:900px){.chartwrap.short{aspect-ratio:16/10}}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:12px 18px;max-width:1500px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px;color:var(--head)}
+.logo{font-size:40px;line-height:1}
+h1{margin:0;font-family:"Super Bouncer","Arial Rounded MT Bold","Trebuchet MS",sans-serif;font-size:30px;letter-spacing:.5px}
+.brand p{margin:2px 0 0;font-size:14px;opacity:.9}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer;background:rgba(255,255,255,.85);color:var(--ink)}
+.tabs button.on{background:var(--o);color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:14px;max-width:1500px;margin:0 auto;padding:6px 18px 24px;align-items:start}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.card h2{margin:0 0 10px;font-size:18px;color:var(--b)}
+.cardhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.cardhead h2{margin:0}
+label{display:block;font-size:14px;font-weight:700;margin:0 0 10px}
+input[type=number],select{font:inherit;font-size:18px;width:100%;padding:8px 10px;border:2px solid var(--line);border-radius:10px;margin-top:4px;background:#fff;color:var(--ink)}
+input[type=number]:focus,select:focus{outline:none;border-color:var(--b)}
+.hint{font-size:12.5px;color:#5b6978;margin:4px 0 0}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px}
+.btnrow label{margin:0;flex:1;min-width:110px}
+.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:12px;padding:10px 16px;min-height:44px;background:var(--b);color:#fff;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.btn.or{background:var(--o)}
+.btn.ghost{background:#e6ecf3;color:var(--ink)}
+.btn.big{font-size:18px;padding:12px 20px}
+.btn:active{transform:translateY(1px) scale(.98)}
+.btn:disabled{opacity:.5;cursor:default}
+.btnrow .btn{flex:1;min-width:64px}
+#belt{display:block;width:100%;height:160px;border-radius:10px}
+.chartwrap{position:relative;width:100%;aspect-ratio:16/9;max-height:64vh}
+.chartwrap canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:8px;border:1px solid var(--line)}
+.seg{display:inline-flex;border-radius:10px;overflow:hidden;border:2px solid var(--b)}
+.seg button{font:inherit;font-weight:700;font-size:14px;border:0;padding:7px 14px;background:#fff;color:var(--b);cursor:pointer;min-height:36px}
+.seg button.on{background:var(--b);color:#fff}
+.chk{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:15px;cursor:pointer}
+.chk input{width:22px;height:22px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.tile{background:var(--tile);border-radius:10px;padding:8px 10px}
+.tile .v{font-size:22px;font-weight:800;color:var(--ink)}
+.tile .l{font-size:12px;color:#5b6978}
+.tile.warn .v{color:#c0392b}
+.theory{margin-top:10px;background:#eef4fb;border-left:5px solid var(--b);border-radius:8px;padding:10px 12px;font-size:14.5px;line-height:1.45}
+.theory table{border-collapse:collapse;width:100%;margin-top:6px}
+.theory th,.theory td{padding:4px 8px;border-bottom:1px solid #cfdcec;text-align:right;font-size:14px}
+.theory th:first-child,.theory td:first-child{text-align:left}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#243241;color:#fff;padding:10px 18px;border-radius:999px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9;max-width:90vw;text-align:center}
+#toast.on{opacity:.95}
+/* cereal */
+.stepper{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.stepper .btn{min-width:48px;flex:0}
+.stepper b{font-size:26px;min-width:34px;text-align:center}
+.trow{display:grid;grid-template-columns:34px 22px 1fr 58px;gap:8px;align-items:center;margin-bottom:6px}
+.trow .emo{font-size:26px;text-align:center}
+.trow input{margin:0;padding:5px 8px;font-size:16px}
+.trow .pr{font-size:13px;text-align:right;color:#5b6978}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.toy{background:var(--tile);border:3px dashed #c3cfdc;border-radius:14px;text-align:center;padding:8px 4px;position:relative;transition:transform .2s}
+.toy .emo{font-size:40px;line-height:1.1;filter:grayscale(1) opacity(.25)}
+.toy .ltr{font-weight:800;font-size:15px}
+.toy .pc{font-size:12px;color:#5b6978}
+.toy .cnt{position:absolute;top:-8px;right:-6px;background:var(--o);color:#fff;font-weight:800;font-size:13px;border-radius:999px;min-width:26px;padding:2px 6px;display:none}
+.toy.have{border:3px solid var(--b);background:#fff}
+.toy.have .emo{filter:none}
+.toy.have .cnt{display:block}
+.toy.last{animation:pop .5s}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18) rotate(-4deg)}100%{transform:scale(1)}}
+.status{margin:12px 0 0;font-size:17px;font-weight:700}
+.status.done{color:#1e8449}
+@media (max-width:900px){
+ .layout{grid-template-columns:1fr;padding:6px 10px 20px}
+ header{padding:10px}
+ h1{font-size:25px}
+ .chartwrap{aspect-ratio:4/3}
+}
+</style>
+</head>
+<body data-mode="beans" data-ctx="beans">
+<header>
+ <div class="brand"><span class="logo" id="logo">🥫</span><div><h1>Baked Bean Sim</h1><p id="sub">Statistics Distribution Explorer</p></div></div>
+ <nav class="tabs" role="tablist">
+  <button role="tab" data-group="normal" class="on"><b>Normal</b><small>Beans · Matchboxes</small></button>
+  <button role="tab" data-group="geometric"><b>Geometric</b><small>Cereal toys · Spinner</small></button>
+  <button role="tab" data-group="binomial"><b>Binomial</b><small>Coin flips · Netball</small></button>
+  <button role="tab" data-group="poisson"><b>Poisson</b><small>Popcorn · Phones</small></button>
+ </nav>
+</header>
+<div class="ctxwrap"><div class="seg" id="ctxSeg"></div></div>
+
+<!-- BEANS + MATCHES -->
+<main class="layout" id="normal">
+ <div class="col">
+  <div class="card">
+   <h2>🏭 Machine settings</h2>
+   <label><span id="lblMean">Mean</span><input id="inMean" type="number" step="any"></label>
+   <label><span id="lblSd">Tolerance (standard deviation)</span><input id="inSd" type="number" step="any" min="0"></label>
+   <label><span id="lblStated">Stated contents</span><input id="inStated" type="number" step="any"></label>
+   <label id="binRow">Class width for the graph (g)
+    <select id="selBin"><option value="auto">Automatic</option><option>0.5</option><option>1</option><option>2</option><option>5</option><option>10</option></select>
+   </label>
+   <p class="hint">Changing the mean, tolerance or stated contents clears the data.</p>
+  </div>
+  <div class="card ecoTog" id="ecoToggleCard">
+   <label class="chk" style="margin:0"><input type="checkbox" id="chkEco"> <span><b>💰 Profit game</b> – add costs, prices and customers</span></label>
+  </div>
+  <div class="card" id="ecoSet" hidden>
+   <h2>💷 Costs and prices</h2>
+   <div class="grid2">
+    <label>Selling price (p)<input id="ecoPrice" type="number" step="0.5" min="10" max="200"></label>
+    <label>Cost to make a tin filled to the stated weight (p)<input id="ecoCost" type="number" step="0.5" min="1"></label>
+    <label>Precision machinery premium (p)<input id="ecoPrec" type="number" step="0.5" min="0"></label>
+    <label>Compensation for each underweight tin (p)<input id="ecoComp" type="number" step="1" min="0"></label>
+    <label>Burst limit (g)<input id="ecoBurst" type="number" step="0.5"></label>
+    <label>Clean-up cost for each burst tin (p)<input id="ecoClean" type="number" step="1" min="0"></label>
+    <label>Customer price sensitivity<input id="ecoSens" type="number" step="0.1" min="1.1" max="5"></label>
+   </div>
+   <p class="hint">A tin costs two-thirds beans (so more beans = more cost) and one-third tin, label and packing. A standard machine holds a tolerance of σ = 5 g; anything tighter costs <b>premium × (5 ÷ σ − 1)</b> pence extra per tin. Underweight tins are sold but must be compensated. Tins fuller than the burst limit burst: no sale, plus clean-up. At 50p about 10,000 tins a day sell; a higher sensitivity means customers desert you faster as the price rises.</p>
+   <button class="btn ghost" id="btnEcoDef" style="width:100%;margin-top:6px">↺ Reset the money settings</button>
+  </div>
+  <div class="card">
+   <h2>▶ Run the line</h2>
+   <div class="btnrow">
+    <button class="btn or big" id="btnRun">▶ Start line</button>
+    <label>Speed
+     <select id="selRate"><option value="1">1 per second</option><option value="2">2 per second</option><option value="5" selected>5 per second</option><option value="10">10 per second</option><option value="25">25 per second</option><option value="100">100 per second</option><option value="500">500 per second</option></select>
+    </label>
+   </div>
+   <div class="btnrow" id="addRow">
+    <button class="btn" data-add="1">+1</button><button class="btn" data-add="10">+10</button><button class="btn" data-add="100">+100</button><button class="btn" data-add="1000">+1000</button>
+   </div>
+   <button class="btn ghost" id="btnReset" style="width:100%">↺ Clear the data</button>
+  </div>
+ </div>
+ <div class="col">
+  <div class="card"><canvas id="belt"></canvas></div>
+  <div class="card">
+   <div class="cardhead"><h2 id="chartTitle">Frequency graph</h2>
+    <div class="seg" id="segStyle"><button data-s="line" class="on">Line</button><button data-s="stick">Stick</button><button data-s="bars">Bars</button><button data-s="both">Bars + line</button></div>
+   </div>
+   <div class="chartwrap"><canvas id="chart"></canvas></div>
+   <label class="chk"><input type="checkbox" id="chkTheory"> <span id="lblTheory">Show the theory</span></label>
+   <div class="theory" id="theoryBox" hidden></div>
+  </div>
+  <div class="card" id="ecoPanel" hidden>
+   <h2>🧾 Factory accounts</h2>
+   <div id="ecoScore"></div>
+   <div class="ecotable" id="ecoTable"></div>
+   <div class="cardhead" style="margin-top:12px"><h2 style="font-size:16px">Daily profit against selling price</h2></div>
+   <canvas id="profitChart"></canvas>
+   <p class="hint">Raise the price and you earn more per tin, but customers drop off. Lower it and sales soar while each tin earns less. The green line marks the best price for your machine settings.</p>
+   <div class="btnrow" style="margin-top:8px"><button class="btn ghost" id="btnEcoBest" style="width:100%">💡 Show me the best settings</button></div>
+  </div>
+  <div class="card"><h2>📋 Records</h2><div class="tiles" id="tiles"></div></div>
+ </div>
+</main>
+
+<!-- CEREAL -->
+<main class="layout" id="cereal" hidden>
+ <div class="col">
+  <div class="card">
+   <h2>🎁 Free toys in the box</h2>
+   <label>How many different toys?</label>
+   <div class="stepper"><button class="btn" id="kMinus">−</button><b id="kVal">6</b><button class="btn" id="kPlus">+</button></div>
+   <label>How common is each toy?
+    <select id="selPreset"><option value="equal">All equally likely</option><option value="rare">One rare toy</option><option value="ladder">Common to rare</option><option value="custom">Custom (edit the weights)</option></select>
+   </label>
+   <div id="toyRows"></div>
+   <p class="hint">A toy's weight says how common it is. Probability = weight ÷ total of all the weights. Changing anything here clears the results.</p>
+  </div>
+  <div class="card">
+   <h2>🛒 Go shopping</h2>
+   <div class="btnrow"><button class="btn or big" id="btnBuy">🛒 Buy a box</button></div>
+   <div class="btnrow">
+    <button class="btn" id="btnAuto">⏩ Buy until complete</button>
+    <label>Speed <select id="selBoxRate"><option value="2">2 boxes per second</option><option value="5" selected>5 boxes per second</option><option value="10">10 boxes per second</option><option value="30">30 boxes per second</option><option value="100">100 boxes per second</option></select></label>
+   </div>
+   <div class="btnrow"><button class="btn ghost" id="btnNewC">↺ New collector</button></div>
+   <h2 style="margin-top:14px">⚡ Many collectors, instantly</h2>
+   <div class="btnrow"><button class="btn" data-batch="10">+10</button><button class="btn" data-batch="100">+100</button><button class="btn" data-batch="1000">+1000</button></div>
+   <button class="btn ghost" id="btnClearC" style="width:100%">↺ Clear all results</button>
+  </div>
+ </div>
+ <div class="col">
+  <div class="card">
+   <h2>🧺 The collection</h2>
+   <div class="shelf" id="shelf"></div>
+   <p class="status" id="status"></p>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2>Boxes needed to complete the set</h2>
+    <div class="seg" id="segStyleC"><button data-s="line" class="on">Line</button><button data-s="stick">Stick</button><button data-s="bars">Bars</button><button data-s="both">Bars + line</button></div>
+   </div>
+   <div class="chartwrap"><canvas id="chartC"></canvas></div>
+   <label class="chk"><input type="checkbox" id="chkTheoryC"> Show the theory (expected number of boxes)</label>
+   <div class="theory" id="theoryBoxC" hidden></div>
+  </div>
+  <div class="card"><h2>📋 Records</h2><div class="tiles" id="tilesC"></div></div>
+ </div>
+</main>
+<!-- BINOMIAL (COIN FLIPS + NETBALL) -->
+<main class="layout" id="binom" hidden>
+ <div class="col">
+  <div class="card">
+   <h2 id="bH1"></h2>
+   <label><span id="bPLbl"></span><input id="bP" type="number" step="0.05" min="0" max="1"></label>
+   <p class="hint" id="bPHint"></p>
+   <label><span id="bNLbl"></span><input id="bN" type="number" step="1" min="1" max="100"></label>
+   <h2 style="margin-top:14px">🎯 What are we looking for?</h2>
+   <label>Event
+    <select id="bEv"><option value="eq">Exactly k</option><option value="ge">At least k</option><option value="le">At most k</option></select>
+   </label>
+   <label><span id="bKLbl"></span><input id="bK" type="number" step="1" min="0"></label>
+   <p class="hint">Changing p or N clears the results. Changing the event keeps them.</p>
+  </div>
+  <div class="card">
+   <h2>▶ Run experiments</h2>
+   <div class="btnrow"><button class="btn or big" id="bFlip" style="width:100%"></button></div>
+   <p class="hint" id="bExpHint" style="margin:-4px 0 10px"></p>
+   <div class="btnrow">
+    <button class="btn" data-bx="10">+10</button><button class="btn" data-bx="100">+100</button><button class="btn" data-bx="1000">+1000</button>
+   </div>
+   <div class="btnrow">
+    <button class="btn or" id="bRun">▶ Start</button>
+    <label>Speed
+     <select id="bRate"><option value="1">1 / sec</option><option value="2">2 / sec</option><option value="5" selected>5 / sec</option><option value="20">20 / sec</option><option value="100">100 / sec</option></select>
+    </label>
+   </div>
+   <button class="btn ghost" id="bClear" style="width:100%">↺ Clear the results</button>
+  </div>
+ </div>
+ <div class="col">
+  <div class="card">
+   <h2 id="bTrayTitle"></h2>
+   <div class="coins" id="coins"></div>
+   <p class="status" id="coinStatus"></p>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2 id="bDistTitle"></h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+     <div class="seg" id="segYB"><button data-y="freq" class="on">Frequency</button><button data-y="prop">Relative frequency</button></div>
+     <div class="seg" id="segStyleB"><button data-s="line" class="on">Line</button><button data-s="stick">Stick</button><button data-s="bars">Bars</button><button data-s="both">Bars + line</button></div>
+    </div>
+   </div>
+   <div class="chartwrap"><canvas id="chartB"></canvas></div>
+   <p class="hint">Green marks the outcomes that match the event we are looking for.</p>
+   <label class="chk"><input type="checkbox" id="chkTheoryB"> Show the theory (binomial probabilities)</label>
+   <div class="theory" id="theoryBoxB" hidden></div>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2 id="bConvTitle"></h2></div>
+   <div class="chartwrap short"><canvas id="chartB2"></canvas></div>
+  </div>
+  <div class="card"><h2>📋 Records</h2><div class="tiles" id="tilesB"></div></div>
+ </div>
+</main>
+
+<!-- GEOMETRIC: SPINNER -->
+<main class="layout" id="spinner" hidden>
+ <div class="col">
+  <div class="card">
+   <h2>🎡 The spinner</h2>
+   <label>Number of segments</label>
+   <div class="stepper"><button class="btn" id="spMinus">−</button><b id="spNVal">6</b><button class="btn" id="spPlus">+</button></div>
+   <label>How big is each segment?
+    <select id="spPreset"><option value="equal">All the same size</option><option value="rare">One small segment</option><option value="ladder">Big to small</option><option value="custom">Custom (edit the weights)</option></select>
+   </label>
+   <div id="spRows"></div>
+   <p class="hint">A segment's weight says how big it is. Probability = weight ÷ total of all the weights.</p>
+  </div>
+  <div class="card">
+   <h2>🎯 The target</h2>
+   <div class="btnrow">
+    <label>Number of hits wanted, r<input id="spR" type="number" step="1" min="1" max="20"></label>
+    <label>Target segment<select id="spT"></select></label>
+   </div>
+   <div class="theory" id="spGoal" style="margin-top:0"></div>
+   <p class="hint">Changing the spinner or the target clears the results.</p>
+  </div>
+  <div class="card">
+   <h2>▶ Spin</h2>
+   <div class="btnrow"><button class="btn or big" id="spOne" style="width:100%">🎡 Spin</button></div>
+   <div class="btnrow">
+    <button class="btn" id="spAuto">⏩ Spin until target reached</button>
+    <label>Speed
+     <select id="spRate"><option value="1">Slow</option><option value="3" selected>Medium</option><option value="12">Fast</option><option value="40">Very fast</option></select>
+    </label>
+   </div>
+   <button class="btn ghost" id="spNew" style="width:100%">↺ New run</button>
+   <h2 style="margin-top:14px">⚡ Many runs, instantly</h2>
+   <div class="btnrow"><button class="btn" data-spb="10">+10</button><button class="btn" data-spb="100">+100</button><button class="btn" data-spb="1000">+1000</button></div>
+   <button class="btn ghost" id="spClear" style="width:100%">↺ Clear all results</button>
+  </div>
+ </div>
+ <div class="col">
+  <div class="card">
+   <canvas id="spWheel"></canvas>
+   <p class="status" id="spStatus"></p>
+   <div class="chips" id="spChips"></div>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2 id="spDistTitle"></h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+     <div class="seg" id="segYS"><button data-y="freq" class="on">Frequency</button><button data-y="prop">Relative frequency</button></div>
+     <div class="seg" id="segStyleS"><button data-s="line" class="on">Line</button><button data-s="stick">Stick</button><button data-s="bars">Bars</button><button data-s="both">Bars + line</button></div>
+    </div>
+   </div>
+   <div class="chartwrap"><canvas id="chartS"></canvas></div>
+   <label class="chk"><input type="checkbox" id="chkTheoryS"> Show the theory (expected number of spins and probabilities)</label>
+   <div class="theory" id="theoryBoxS" hidden></div>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2>Mean number of spins needed as the runs mount up</h2></div>
+   <div class="chartwrap short"><canvas id="chartS2"></canvas></div>
+  </div>
+  <div class="card"><h2>📋 Records</h2><div class="tiles" id="tilesS"></div></div>
+ </div>
+</main>
+
+<!-- POISSON: POPCORN + PHONE NOTIFICATIONS -->
+<main class="layout" id="poisson" hidden>
+ <div class="col">
+  <div class="card">
+   <h2>⚙ Settings</h2>
+   <div class="btnrow" style="margin-top:12px">
+    <label style="flex:2"><span id="pLamLbl"></span><input id="pLam" type="number" step="any" min="0"></label>
+    <label>per<select id="pRateU"><option value="s">second</option><option value="m">minute</option><option value="h">hour</option></select></label>
+   </div>
+   <div class="btnrow">
+    <label style="flex:2">Length of each interval<input id="pLen" type="number" step="any" min="0"></label>
+    <label>in<select id="pLenU"><option value="s">seconds</option><option value="m">minutes</option><option value="h">hours</option></select></label>
+   </div>
+   <div class="theory" id="pMu" style="margin-top:0"></div>
+   <h2 style="margin-top:14px">🎯 What are we looking for?</h2>
+   <label>Event
+    <select id="pEv"><option value="eq">Exactly k</option><option value="ge">At least k</option><option value="le">At most k</option></select>
+   </label>
+   <label><span id="pKLbl"></span><input id="pK" type="number" step="1" min="0"></label>
+   <p class="hint">Changing the rate or interval clears the results. Changing the event keeps them.</p>
+  </div>
+  <div class="card">
+   <h2>▶ Run intervals</h2>
+   <div class="btnrow"><button class="btn or big" id="pOne" style="width:100%">▶ Run one interval (watch it)</button></div>
+   <p class="hint" style="margin:-4px 0 10px">Playback is sped up so you can watch the events arrive. Each interval gives one count.</p>
+   <div class="btnrow">
+    <button class="btn" data-px="10">+10</button><button class="btn" data-px="100">+100</button><button class="btn" data-px="1000">+1000</button>
+   </div>
+   <div class="btnrow">
+    <button class="btn or" id="pRun">▶ Start</button>
+    <label>Speed
+     <select id="pRate"><option value="1">1 / sec</option><option value="2">2 / sec</option><option value="5" selected>5 / sec</option><option value="20">20 / sec</option><option value="100">100 / sec</option></select>
+    </label>
+   </div>
+   <button class="btn ghost" id="pClear" style="width:100%">↺ Clear the results</button>
+   <label class="chk"><input type="checkbox" id="pSound"> 🔊 Sound effects when watching one interval</label>
+  </div>
+ </div>
+ <div class="col">
+  <div class="card">
+   <h2 id="pTLTitle">⏱ The latest interval</h2>
+   <canvas id="pTimeline"></canvas>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2 id="pDistTitle">Count in each interval</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+     <div class="seg" id="segYP"><button data-y="freq" class="on">Frequency</button><button data-y="prop">Relative frequency</button></div>
+     <div class="seg" id="segStyleP"><button data-s="line" class="on">Line</button><button data-s="stick">Stick</button><button data-s="bars">Bars</button><button data-s="both">Bars + line</button></div>
+    </div>
+   </div>
+   <div class="chartwrap"><canvas id="chartP"></canvas></div>
+   <p class="hint">Green marks the counts that match the event we are looking for.</p>
+   <label class="chk"><input type="checkbox" id="chkTheoryP"> Show the theory (Poisson probabilities)</label>
+   <div class="theory" id="theoryBoxP" hidden></div>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2 id="pConvTitle"></h2></div>
+   <div class="chartwrap short"><canvas id="chartP2"></canvas></div>
+  </div>
+  <div class="card"><h2>📋 Records</h2><div class="tiles" id="tilesP"></div></div>
+ </div>
+</main>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+
+/* ---------- maths helpers ---------- */
+function randn(){let u=0;while(u===0)u=Math.random();const v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
+ const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
+const Phi=z=>0.5*(1+erf(z/Math.SQRT2));
+const pdf=(x,m,s)=>Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));
+const NICE=[0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,200,500,1000,2000,5000,10000];
+function nearestNice(raw){let best=NICE[0],bd=1e9;for(const n of NICE){const d=Math.abs(Math.log(n/raw));if(d<bd){bd=d;best=n;}}return best;}
+function niceStep(range,target){const raw=range/target;const mag=Math.pow(10,Math.floor(Math.log10(raw)));const r=raw/mag;return (r<1.5?1:r<3?2:r<7?5:10)*mag;}
+function tickLabel(v,step){const dec=Math.max(0,Math.min(3,Math.ceil(-Math.log10(step)-1e-9)));return v.toFixed(dec);}
+function makeTicks(x0,x1,step,integer){
+ if(integer)step=Math.max(1,Math.round(step));
+ const out=[];let i=Math.ceil(x0/step-1e-9);
+ for(;i*step<=x1+1e-9;i++){const x=Math.round(i*step*1e6)/1e6;out.push({x,label:tickLabel(x,step)});}
+ return out;}
+function pct(a,b){return b?(100*a/b).toFixed(1)+'%':'–';}
+
+function setupCanvas(c){
+ const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;
+ const w=Math.max(10,Math.round(r.width)),h=Math.max(10,Math.round(r.height));
+ if(c.width!==Math.round(w*d)||c.height!==Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d);}
+ const ctx=c.getContext('2d');ctx.setTransform(d,0,0,d,0,0);return {ctx,w,h};
+}
+
+/* ---------- generic frequency chart ---------- */
+function drawChart(cv,o){
+ const {ctx,w,h}=setupCanvas(cv);
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+ const small=w<520;
+ const m={l:small?46:66,r:small?14:24,t:small?26:32,b:small?48:60};
+ const pw=w-m.l-m.r,ph=h-m.t-m.b;
+ let maxC=0;for(const b of o.bins)maxC=Math.max(maxC,b.count);
+ if(o.curve)for(const p of o.curve)maxC=Math.max(maxC,p[1]);
+ let ystep=o.yfrac?niceStep(Math.max(maxC*1.12,0.04),5):Math.max(1,niceStep(Math.max(maxC*1.12,4),5));
+ const ymax=o.yfrac?ystep*Math.ceil(Math.max(maxC*1.12,0.04)/ystep):Math.max(ystep*Math.ceil(maxC*1.12/ystep),ystep*4);
+ const X=x=>m.l+(x-o.x0)/(o.x1-o.x0)*pw, Y=y=>m.t+ph-y/ymax*ph;
+ ctx.font=(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';
+ ctx.textBaseline='middle';ctx.textAlign='right';
+ for(let v=0;v<=ymax+1e-9;v+=ystep){
+  ctx.strokeStyle=v===0?'#243241':'#e3e9f0';ctx.lineWidth=v===0?2:1;
+  ctx.beginPath();ctx.moveTo(m.l,Y(v));ctx.lineTo(m.l+pw,Y(v));ctx.stroke();
+  ctx.fillStyle='#3b4a5a';ctx.fillText(o.yfrac?tickLabel(v,ystep):String(Math.round(v)),m.l-8,Y(v));
+ }
+ ctx.strokeStyle='#243241';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,m.t+ph);ctx.stroke();
+ ctx.textAlign='center';ctx.textBaseline='top';
+ for(const t of o.xticks){
+  ctx.strokeStyle='#243241';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(t.x),m.t+ph);ctx.lineTo(X(t.x),m.t+ph+6);ctx.stroke();
+  ctx.fillStyle='#3b4a5a';ctx.fillText(t.label,X(t.x),m.t+ph+9);
+ }
+ ctx.font='bold '+(small?'12':'14')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#243241';
+ ctx.textBaseline='bottom';ctx.fillText(o.xlabel,m.l+pw/2,h-6);
+ ctx.save();ctx.translate(14,m.t+ph/2);ctx.rotate(-Math.PI/2);ctx.textBaseline='top';ctx.fillText(o.ylabel,0,0);ctx.restore();
+
+ ctx.save();ctx.beginPath();ctx.rect(m.l,m.t-4,pw,ph+4);ctx.clip();
+ const style=o.style;
+ if(style==='bars'||style==='both'){
+  for(const b of o.bins){if(b.count<=0)continue;
+   const xa=X(b.a)+1,xb=X(b.b)-1;
+   const bc=b.c||(b.hi?'#1e8449':null);
+   if(bc){ctx.globalAlpha=style==='bars'?.8:.35;ctx.fillStyle=bc;}
+   else ctx.fillStyle=style==='bars'?'rgba(63,115,184,.75)':'rgba(63,115,184,.28)';
+   ctx.fillRect(xa,Y(b.count),Math.max(1,xb-xa),Y(0)-Y(b.count));ctx.globalAlpha=1;
+   ctx.strokeStyle=bc||'#3F73B8';ctx.lineWidth=1;ctx.strokeRect(xa,Y(b.count),Math.max(1,xb-xa),Y(0)-Y(b.count));
+  }
+ }
+ if(o.curve){
+  ctx.setLineDash([8,5]);ctx.strokeStyle='#1c4f93';ctx.lineWidth=2.6;ctx.beginPath();
+  o.curve.forEach((p,i)=>{i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));});ctx.stroke();ctx.setLineDash([]);
+  if(o.curveDots){ctx.fillStyle='#1c4f93';for(const p of o.curve){ctx.beginPath();ctx.arc(X(p[0]),Y(p[1]),3.5,0,7);ctx.fill();}}
+ }
+ if(style==='stick'){
+  const sw=Math.max(2,Math.min(5,(X(o.bins.length?o.bins[0].b:1)-X(o.bins.length?o.bins[0].a:0))*0.28));
+  ctx.strokeStyle='#F47B3F';ctx.fillStyle='#F47B3F';ctx.lineWidth=sw;ctx.lineCap='round';
+  for(const b of o.bins){if(b.count<=0)continue;
+   const cx=X((b.a+b.b)/2);ctx.strokeStyle=ctx.fillStyle=b.c||(b.hi?'#1e8449':'#F47B3F');
+   ctx.beginPath();ctx.moveTo(cx,Y(0));ctx.lineTo(cx,Y(b.count));ctx.stroke();
+   ctx.beginPath();ctx.arc(cx,Y(b.count),sw*0.9+1.5,0,7);ctx.fill();
+  }
+  ctx.lineCap='butt';
+ }
+ if((style==='line'||style==='both')&&o.bins.length){
+  const pts=o.bins.map(b=>[(b.a+b.b)/2,b.count]);
+  const bw=o.bins[0].b-o.bins[0].a;
+  pts.unshift([pts[0][0]-bw,0]);pts.push([pts[pts.length-1][0]+bw,0]);
+  ctx.strokeStyle='#F47B3F';ctx.lineWidth=3.2;ctx.lineJoin='round';ctx.beginPath();
+  pts.forEach((p,i)=>{i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));});ctx.stroke();
+  if(o.bins.length<=45){for(let i=1;i<pts.length-1;i++){const hi=o.bins[i-1].hi||o.bins[i-1].c;ctx.fillStyle=o.bins[i-1].c||(hi?'#1e8449':'#F47B3F');ctx.beginPath();ctx.arc(X(pts[i][0]),Y(pts[i][1]),hi?5.2:3.4,0,7);ctx.fill();}}
+ }
+ ctx.restore();
+ let li=0;
+ for(const v of (o.vlines||[])){
+  if(v.x<o.x0||v.x>o.x1)continue;
+  ctx.setLineDash(v.dash||[6,5]);ctx.strokeStyle=v.color;ctx.lineWidth=2.2;
+  ctx.beginPath();ctx.moveTo(X(v.x),m.t);ctx.lineTo(X(v.x),m.t+ph);ctx.stroke();ctx.setLineDash([]);
+  ctx.font='bold '+(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle=v.color;ctx.textBaseline='top';
+  const right=X(v.x)>m.l+pw-130;ctx.textAlign=right?'right':'left';
+  ctx.fillText(v.label,X(v.x)+(right?-6:6),m.t+4+li*16);li++;
+ }
+ if(o.empty){ctx.fillStyle='#8895a4';ctx.font='bold '+(small?'14':'18')+'px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(o.empty,m.l+pw/2,m.t+ph/2);}
+}
+
+/* ---------- toast ---------- */
+let toastT;function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);}
+
+/* ======================================================
+   BEANS + MATCHES  (normal distribution machines)
+   ====================================================== */
+const MODES={
+ beans:{key:'beans',integer:false,item:'tin',items:'tins',unit:'g',logo:'🥫',
+  sub:'GCSE Statistics · The baked bean factory',
+  def:{mean:410,sd:5,stated:400},
+  lblMean:'Mean mass of beans per tin (g)',lblSd:'Tolerance: standard deviation (g)',lblStated:'Stated weight on the tin (g)',
+  xlabel:'Mass of beans in tin (g)',ylabel:'Frequency (number of tins)',title:'Frequency graph of tin masses',
+  lblTheory:'Show the theory (normal curve and 68–95–99.7 rule)',
+  gen:(m,s,dp)=>{const f=Math.pow(10,dp);return Math.max(1/f,Math.round((m+s*randn())*f)/f);}},
+ matches:{key:'matches',integer:true,item:'box',items:'boxes',unit:'',logo:'🔥',
+  sub:'GCSE Statistics · The matchbox factory',
+  def:{mean:52,sd:0.8,stated:50},
+  lblMean:'Mean number of matches per box',lblSd:'Tolerance: standard deviation',lblStated:'Stated contents ("average 50")',
+  xlabel:'Number of matches in box',ylabel:'Frequency (number of boxes)',title:'Frequency graph of matches per box',
+  lblTheory:'Show the theory (expected counts)',
+  gen:(m,s)=>Math.max(0,Math.round(m+s*randn()))}
+};
+function newStat(){return {n:0,mean:0,M2:0,min:Infinity,max:-Infinity,atLeast:0,w1:0,w2:0,w3:0};}
+function newState(cfg){
+ const st={mean:cfg.def.mean,sd:cfg.def.sd,stated:cfg.def.stated,bin:'auto',style:'line',theory:false,
+  data:[],stat:newStat(),counts:[],geo:null,recent:[],slide:1,dp:1};
+ st.dp=cfg.integer?0:dpFor(st.sd);return st;}
+function dpFor(sd){return sd>=1?1:(sd>=0.1?2:3);}
+const STATES={beans:newState(MODES.beans),matches:newState(MODES.matches)};
+/* ---------- profit game (beans only) ---------- */
+const ECO={on:false,price:50,cost:18,prec:3,comp:80,burst:415,clean:30,sens:2};
+const ECO_DEF=Object.assign({},ECO);
+const BEAN_SHARE=2/3,SD_REF=5,Q0=10000,P0=50;
+const ecoOn=()=>ECO.on&&mode==='beans';
+function ecoModel(m,s,price){
+ const st=STATES.beans,stated=st.stated,h=0.5*Math.pow(10,-dpFor(s));
+ const pU=Phi((stated-h-m)/s),pB=1-Phi((ECO.burst+h-m)/s);
+ const beans=ECO.cost*BEAN_SHARE*m/stated,fixed=ECO.cost*(1-BEAN_SHARE),prec=ECO.prec*Math.max(0,SD_REF/s-1);
+ const comp=ECO.comp*pU,burst=ECO.clean*pB,rev=price*(1-pB);
+ const tin=rev-beans-fixed-prec-comp-burst,q=Q0*Math.pow(P0/price,ECO.sens);
+ return {pU,pB,beans,fixed,prec,comp,burst,rev,tin,q,daily:tin*q/100};
+}
+function ecoBestPrice(m,s){
+ const a=ecoModel(m,s,P0),cost=a.beans+a.fixed+a.prec+a.comp+a.burst,keep=1-a.pB;
+ return Math.min(200,Math.max(10,ECO.sens*cost/(keep*(ECO.sens-1))));
+}
+let ecoBestKey='',ecoBestVal=null;
+function ecoBest(){
+ const st=STATES.beans,key=[st.stated,ECO.cost,ECO.prec,ECO.comp,ECO.burst,ECO.clean,ECO.sens].join('|');
+ if(key===ecoBestKey)return ecoBestVal;
+ let best=null;
+ const mHi=Math.min(ECO.burst+1,st.stated+60);
+ for(let si=5;si<=150;si++){const s=si/10;
+  for(let mi=Math.round((st.stated-1)*10);mi<=Math.round(mHi*10);mi++){const m=mi/10;
+   const p=Math.round(ecoBestPrice(m,s)*2)/2,r=ecoModel(m,s,p);
+   if(!best||r.daily>best.daily)best={m,s,price:p,daily:r.daily};
+  }}
+ ecoBestKey=key;ecoBestVal=best;return best;
+}
+function ecoSim(){
+ const st=STATES.beans,s=st.stat,n=s.n;
+ if(!n)return null;
+ let u=0,b=0;
+ for(const v of st.data){if(v<st.stated-1e-9)u++;if(v>ECO.burst)b++;}
+ const fU=u/n,fB=b/n;
+ const beans=ECO.cost*BEAN_SHARE*s.mean/st.stated,fixed=ECO.cost*(1-BEAN_SHARE),prec=ECO.prec*Math.max(0,SD_REF/st.sd-1);
+ const comp=ECO.comp*fU,burst=ECO.clean*fB,rev=ECO.price*(1-fB);
+ return {u,b,fU,fB,beans,fixed,prec,comp,burst,rev,tin:rev-beans-fixed-prec-comp-burst};
+}
+const gbp=v=>(v<0?'−':'')+'£'+Math.round(Math.abs(v)).toLocaleString('en-GB');
+const cst=v=>v<0.05?'0.0p':'−'+pp(v);
+const pp=v=>(v<0?'−':'')+Math.abs(v).toFixed(1)+'p';
+function renderEco(){
+ const st=STATES.beans,m=ecoModel(st.mean,st.sd,ECO.price),sim=ecoSim(),best=ecoBest();
+ const score=best.daily>0?Math.max(0,Math.min(1,m.daily/best.daily)):0,pc=Math.round(score*100);
+ const tier=m.daily<=0?['Making a loss! 😱','#c0392b']:pc>=98?['🏆 Master of the line!','#1e8449']:pc>=90?['⭐ Factory boss','#27ae60']:pc>=75?['👍 Good shift – keep tuning','#d4a017']:pc>=50?['🔧 Making a profit – can you do better?','#e67e22']:['😬 Barely scraping by','#c0392b'];
+ const cell=(a,b,neg)=>`<td>${a}</td><td>${b}</td>`;
+ const row=(l,a,b,cls)=>`<tr class="${cls||''}"><td>${l}</td><td>${a}</td><td>${sim?b:'–'}</td></tr>`;
+ let h=`<div class="scoreline"><span>Profit score</span><b style="color:${tier[1]}">${pc}%</b></div>
+ <div class="meter"><i style="width:${pc}%;background:${tier[1]}"></i></div>
+ <div>${tier[0]} Best possible with these costs: <b>${gbp(best.daily)} a day</b>.</div>`;
+ h+=`<table><tr><th>Per tin made</th><th>Expected</th><th>Your tins</th></tr>`+
+  row('Money received (burst tins earn nothing)',pp(m.rev),sim?pp(sim.rev):'')+
+  row(`Beans (${st.mean} g mean)`,cst(m.beans),sim?cst(sim.beans):'')+
+  row('Tin, label and packing',cst(m.fixed),sim?cst(sim.fixed):'')+
+  row('Precision machinery (σ = '+st.sd+' g)',cst(m.prec),sim?cst(sim.prec):'')+
+  row(`Compensation (${(100*m.pU).toFixed(1)}% underweight)`,cst(m.comp),sim?`${cst(sim.comp)} (${(100*sim.fU).toFixed(1)}%)`:'')+
+  row(`Burst clean-up (${(100*m.pB).toFixed(1)}% burst)`,cst(m.burst),sim?`${cst(sim.burst)} (${(100*sim.fB).toFixed(1)}%)`:'')+
+  row('Profit per tin',`<span class="${m.tin<0?'neg':'pos'}">${pp(m.tin)}</span>`,sim?`<span class="${sim.tin<0?'neg':'pos'}">${pp(sim.tin)}</span>`:'','tot')+`</table>`;
+ h+=`<div class="ecosum">At <b>${ECO.price}p</b> customers buy about <b>${Math.round(m.q).toLocaleString('en-GB')} tins a day</b>, so the expected profit is <b class="${m.daily<0?'neg':'pos'}">${gbp(m.daily)} a day</b>.`+
+  (sim?` Your ${st.stat.n.toLocaleString('en-GB')} simulated tins made ${gbp(sim.tin*st.stat.n/100)} between them.`:'')+`</div>`;
+ $('#ecoTable').innerHTML=h;$('#ecoScore').innerHTML='';
+}
+function drawProfitChart(){
+ const cv=$('#profitChart'),{ctx,w,h}=setupCanvas(cv),st=STATES.beans;
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+ const small=w<520,mg={l:small?64:80,r:small?12:22,t:30,b:small?46:54},pw=w-mg.l-mg.r,ph=h-mg.t-mg.b;
+ const bp=ecoBestPrice(st.mean,st.sd);
+ const x0=15,x1=Math.min(200,Math.max(120,Math.ceil(Math.max(ECO.price,bp)*1.25/10)*10));
+ const pts=[];let ymax=0,ymin=0;
+ for(let p=x0;p<=x1;p+=1){const d=ecoModel(st.mean,st.sd,p).daily;pts.push([p,d]);ymax=Math.max(ymax,d);ymin=Math.min(ymin,d);}
+ if(ymax<=0)ymax=1000;
+ const step=niceStep(ymax*1.3,5);ymax=step*Math.ceil(ymax*1.1/step);ymin=Math.max(ymin,-0.35*ymax);ymin=step*Math.floor(ymin/step);
+ const X=x=>mg.l+(x-x0)/(x1-x0)*pw,Y=y=>mg.t+ph-(y-ymin)/(ymax-ymin)*ph;
+ ctx.font=(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+ for(let v=ymin;v<=ymax+1e-9;v+=step){ctx.strokeStyle=v===0?'#243241':'#e3e9f0';ctx.lineWidth=v===0?2:1;ctx.beginPath();ctx.moveTo(mg.l,Y(v));ctx.lineTo(mg.l+pw,Y(v));ctx.stroke();ctx.fillStyle='#3b4a5a';ctx.fillText(gbp(v),mg.l-8,Y(v));}
+ ctx.strokeStyle='#243241';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mg.l,mg.t);ctx.lineTo(mg.l,mg.t+ph);ctx.stroke();
+ ctx.textAlign='center';ctx.textBaseline='top';
+ const xs=niceStep(x1-x0,small?5:8);
+ for(let x=Math.ceil(x0/xs)*xs;x<=x1;x+=xs){ctx.strokeStyle='#243241';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(x),mg.t+ph);ctx.lineTo(X(x),mg.t+ph+6);ctx.stroke();ctx.fillStyle='#3b4a5a';ctx.fillText(x+'p',X(x),mg.t+ph+9);}
+ ctx.font='bold '+(small?'12':'14')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#243241';ctx.textBaseline='bottom';ctx.fillText('Selling price (p)',mg.l+pw/2,h-5);
+ ctx.save();ctx.translate(13,mg.t+ph/2);ctx.rotate(-Math.PI/2);ctx.textBaseline='top';ctx.fillText('Daily profit (£)',0,0);ctx.restore();
+ ctx.save();ctx.beginPath();ctx.rect(mg.l,mg.t-4,pw,ph+4);ctx.clip();
+ ctx.strokeStyle='#3F73B8';ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();pts.forEach((p,i)=>{i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));});ctx.stroke();
+ ctx.restore();
+ if(bp>=x0&&bp<=x1){ctx.setLineDash([6,5]);ctx.strokeStyle='#1e8449';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(X(bp),mg.t);ctx.lineTo(X(bp),mg.t+ph);ctx.stroke();ctx.setLineDash([]);
+  ctx.font='bold '+(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#1e8449';ctx.textBaseline='bottom';const r=X(bp)>mg.l+pw-120;ctx.textAlign=r?'right':'left';ctx.fillText('Best price: '+bp.toFixed(0)+'p',X(bp)+(r?-6:6),mg.t+ph-4);}
+ const cur=ecoModel(st.mean,st.sd,ECO.price).daily,cx=X(Math.min(x1,Math.max(x0,ECO.price))),cy=Math.min(mg.t+ph,Math.max(mg.t,Y(cur)));
+ ctx.fillStyle='#F47B3F';ctx.strokeStyle='#243241';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,7,0,7);ctx.fill();ctx.stroke();
+ ctx.font='bold '+(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#b4531a';ctx.textBaseline='bottom';const rr=cx>mg.l+pw-110;ctx.textAlign=rr?'right':'left';ctx.fillText('You: '+ECO.price+'p',cx+(rr?-10:10),cy-9);
+}
+let mode='beans',running=false,acc=0,dirtyChart=true,beltPhase=0;
+const MAXN=100000;
+const cur=()=>STATES[mode], curCfg=()=>MODES[mode];
+
+function makeGeo(st,cfg){
+ const {mean,sd,stated}=st;
+ let lo=mean-4*sd,hi=mean+4*sd;
+ if(Math.abs(stated-mean)<=6*sd){lo=Math.min(lo,stated-0.5*sd);hi=Math.max(hi,stated+0.5*sd);}
+ if(cfg.key==='beans'&&ECO.on&&Math.abs(ECO.burst-mean)<=7*sd)hi=Math.max(hi,ECO.burst+0.5*sd);
+ if(cfg.integer){
+  lo=Math.max(0,Math.floor(lo));hi=Math.ceil(hi);
+  while(hi-lo<8){if(lo>0)lo--;hi++;}
+  return {bw:1,x0:lo-0.5,x1:hi+0.5,nb:hi-lo+1};
+ }
+ let bw=st.bin==='auto'?nearestNice(sd/3):parseFloat(st.bin);
+ let x0,x1,nb;
+ for(let guard=0;guard<20;guard++){
+  x0=Math.floor(lo/bw+1e-9)*bw;x1=Math.ceil(hi/bw-1e-9)*bw;nb=Math.round((x1-x0)/bw);
+  if(nb>160)bw*=2;else break;
+ }
+ return {bw,x0,x1,nb};
+}
+function binIndex(st,v){const g=st.geo;return Math.min(g.nb-1,Math.max(0,Math.floor((v-g.x0)/g.bw+1e-6)));}
+function rebuild(st,cfg){
+ st.geo=makeGeo(st,cfg);st.counts=new Array(st.geo.nb).fill(0);
+ for(const v of st.data)st.counts[binIndex(st,v)]++;
+ dirtyChart=true;
+}
+function clearData(){const st=cur(),cfg=curCfg();st.data=[];st.stat=newStat();st.recent=[];st.slide=1;rebuild(st,cfg);updateAll();}
+function addValue(st,cfg,v){
+ st.data.push(v);const s=st.stat;s.n++;const d=v-s.mean;s.mean+=d/s.n;s.M2+=d*(v-s.mean);
+ if(v<s.min)s.min=v;if(v>s.max)s.max=v;
+ if(v>=st.stated-1e-9)s.atLeast++;
+ const z=Math.abs(v-st.mean)/st.sd;if(z<=1)s.w1++;if(z<=2)s.w2++;if(z<=3)s.w3++;
+ st.counts[binIndex(st,v)]++;
+ st.recent.unshift(v);if(st.recent.length>9)st.recent.pop();
+}
+function addMany(k){
+ const st=cur(),cfg=curCfg();
+ k=Math.min(k,MAXN-st.stat.n);
+ for(let i=0;i<k;i++)addValue(st,cfg,cfg.gen(st.mean,st.sd,st.dp));
+ if(k>0&&k<=2)st.slide=0;else if(k>2)st.slide=1;
+ dirtyChart=true;updateStats();
+ if(st.stat.n>=MAXN){setRunning(false);toast('Maximum of '+MAXN.toLocaleString('en-GB')+' reached');}
+}
+const fmtV=(st,v)=>v.toFixed(st.dp);
+function sampleSD(s){return s.n>1?Math.sqrt(s.M2/(s.n-1)):0;}
+
+function syncInputs(){
+ const st=cur(),cfg=curCfg();
+ $('#inMean').value=st.mean;$('#inSd').value=st.sd;$('#inStated').value=st.stated;
+ $('#lblMean').textContent=cfg.lblMean;$('#lblSd').textContent=cfg.lblSd;$('#lblStated').textContent=cfg.lblStated;
+ $('#binRow').hidden=cfg.integer;$('#selBin').value=st.bin;
+ $('#chartTitle').textContent=cfg.title;$('#lblTheory').textContent=cfg.lblTheory;
+ $('#chkTheory').checked=st.theory;
+ $$('#segStyle button').forEach(b=>b.classList.toggle('on',b.dataset.s===st.style));
+ $$('#addRow button').forEach(b=>b.textContent='+'+b.dataset.add);
+ const isB=cfg.key==='beans';
+ $('#ecoToggleCard').hidden=!isB;$('#ecoSet').hidden=!(isB&&ECO.on);$('#ecoPanel').hidden=!(isB&&ECO.on);
+ $('#chkEco').checked=ECO.on;syncEco();
+}
+function syncEco(){
+ $('#ecoPrice').value=ECO.price;$('#ecoCost').value=ECO.cost;$('#ecoPrec').value=ECO.prec;$('#ecoComp').value=ECO.comp;
+ $('#ecoBurst').value=ECO.burst;$('#ecoClean').value=ECO.clean;$('#ecoSens').value=ECO.sens;
+}
+function readEco(){
+ const g=id=>parseFloat($(id).value),st=STATES.beans;
+ const v={price:g('#ecoPrice'),cost:g('#ecoCost'),prec:g('#ecoPrec'),comp:g('#ecoComp'),burst:g('#ecoBurst'),clean:g('#ecoClean'),sens:g('#ecoSens')};
+ let bad=false;
+ for(const k in v)if(!isFinite(v[k]))bad=true;
+ if(bad){toast('Please enter a number in every money box.');syncEco();return;}
+ v.price=Math.min(200,Math.max(10,v.price));v.cost=Math.max(1,v.cost);v.prec=Math.max(0,v.prec);v.comp=Math.max(0,v.comp);v.clean=Math.max(0,v.clean);v.sens=Math.min(5,Math.max(1.1,v.sens));
+ if(v.burst<=st.stated){v.burst=ECO.burst>st.stated?ECO.burst:st.stated+15;toast('The burst limit must be above the stated weight.');}
+ Object.assign(ECO,v);syncEco();rebuild(st,MODES.beans);updateAll();
+}
+function readSettings(){
+ const st=cur(),cfg=curCfg();
+ let m=parseFloat($('#inMean').value),s=parseFloat($('#inSd').value),d=parseFloat($('#inStated').value);
+ if(!(m>0)||!(s>0)||!(d>0)){toast('Please enter positive numbers in all three boxes.');syncInputs();return;}
+ if(cfg.integer){d=Math.round(d);}
+ if(m===st.mean&&s===st.sd&&d===st.stated)return;
+ st.mean=m;st.sd=s;st.stated=d;st.dp=cfg.integer?0:dpFor(s);
+ if(cfg.key==='beans'&&ECO.burst<=d+1)ECO.burst=d+15;
+ syncInputs();clearData();toast('Settings changed – data cleared');
+}
+
+function updateStats(){
+ const st=cur(),cfg=curCfg(),s=st.stat,n=s.n,u=cfg.unit?' '+cfg.unit:'';
+ const T=(v,l,c)=>`<div class="tile ${c||''}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+ const below=n-s.atLeast;
+ $('#tiles').innerHTML=
+  T(n.toLocaleString('en-GB'),'Number of '+cfg.items+' made')+
+  T(n?fmtV(st,s.mean)+u:'–','Sample mean')+
+  T(n>1?sampleSD(s).toFixed(st.dp+1)+u:'–','Sample standard deviation')+
+  T(n?fmtV(st,s.min)+u:'–','Smallest')+
+  T(n?fmtV(st,s.max)+u:'–','Largest')+
+  T(n?s.atLeast.toLocaleString('en-GB')+' ('+pct(s.atLeast,n)+')':'–','At or above the stated '+fmtV(st,st.stated)+u)+
+  T(n?below.toLocaleString('en-GB')+' ('+pct(below,n)+')':'–','Below the stated '+fmtV(st,st.stated)+u,below>0?'warn':'')+
+  (ecoOn()?T(n?s.max>ECO.burst?st.data.filter(v=>v>ECO.burst).length.toLocaleString('en-GB'):'0':'–','Burst (over '+ECO.burst+' g)','warn'):'');
+ updateTheory();
+ if(ecoOn())renderEco();
+}
+function updateTheory(){
+ const st=cur(),cfg=curCfg(),s=st.stat,n=s.n,box=$('#theoryBox');
+ box.hidden=!st.theory;if(!st.theory)return;
+ const u=cfg.unit?' '+cfg.unit:'';
+ const pAt=cfg.integer?1-Phi((st.stated-0.5-st.mean)/st.sd):1-Phi((st.stated-st.mean)/st.sd);
+ let h=`The machine is set to μ = ${st.mean}${u} and σ = ${st.sd}${u}. In theory <b>${(100*pAt).toFixed(2)}%</b> of ${cfg.items} should be at or above the stated ${st.stated}${u}`;
+ h+=n?` – so far we have seen <b>${pct(s.atLeast,n)}</b>.`:'.';
+ if(!cfg.integer){
+  const row=(l,o,e)=>`<tr><td>${l}</td><td>${n?pct(o,n):'–'}</td><td>${e}</td></tr>`;
+  h+=`<table><tr><th>Within…</th><th>Observed</th><th>Expected</th></tr>`+
+   row('1 standard deviation of the mean',s.w1,'68.3%')+row('2 standard deviations',s.w2,'95.4%')+row('3 standard deviations',s.w3,'99.7%')+`</table>`;
+ }else{
+  h+=` The counts are whole numbers, so the curve is built from the probability of each whole number (shown as dots).`;
+ }
+ box.innerHTML=h;
+}
+function renderChart(){
+ const st=cur(),cfg=curCfg(),g=st.geo,n=st.stat.n;
+ const bins=[];for(let i=0;i<g.nb;i++)bins.push({a:g.x0+i*g.bw,b:g.x0+(i+1)*g.bw,count:st.counts[i]});
+ const eco=ecoOn();
+ if(eco)for(const b of bins){const c=(b.a+b.b)/2;if(c<st.stated)b.c='#c0392b';else if(c>ECO.burst)b.c='#8e44ad';}
+ let curve=null;
+ if(st.theory&&n>0){
+  curve=[];
+  if(cfg.integer){const lo=Math.round(g.x0+0.5);
+   for(let i=0;i<g.nb;i++){const k=lo+i;curve.push([k,n*(Phi((k+0.5-st.mean)/st.sd)-Phi((k-0.5-st.mean)/st.sd))]);}
+  }else{const N=200;for(let i=0;i<=N;i++){const x=g.x0+(g.x1-g.x0)*i/N;curve.push([x,n*g.bw*pdf(x,st.mean,st.sd)]);}}
+ }
+ const vlines=[{x:cfg.integer?st.stated-0.5:st.stated,label:'Stated: '+fmtV(st,st.stated)+(cfg.unit?' '+cfg.unit:''),color:'#c0392b'}];
+ if(eco)vlines.push({x:ECO.burst,label:'Burst limit: '+ECO.burst+' g',color:'#8e44ad'});
+ if(st.theory)vlines.push({x:st.mean,label:'μ = '+st.mean,color:'#1c4f93',dash:[2,4]});
+ const step=niceStep(g.x1-g.x0,9);
+ drawChart($('#chart'),{bins,x0:g.x0,x1:g.x1,xticks:makeTicks(g.x0,g.x1,step,cfg.integer),
+  xlabel:cfg.xlabel,ylabel:cfg.ylabel,style:st.style,curve,curveDots:cfg.integer,vlines,
+  empty:n===0?'Start the line to see the graph build up':null});
+ if(eco)drawProfitChart();
+}
+
+/* belt animation */
+function drawBelt(dt){
+ const cv=$('#belt'),st=cur(),cfg=curCfg();const {ctx,w,h}=setupCanvas(cv);
+ const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#eef3f8');g.addColorStop(1,'#cdd8e3');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+ const beltY=h-30;
+ if(st.slide<1||running)beltPhase=(beltPhase+dt*(st.slide<1?110:45))%32;
+ ctx.fillStyle='#37424e';ctx.fillRect(0,beltY,w,24);
+ ctx.strokeStyle='#5d6b79';ctx.lineWidth=3;
+ for(let x=-32+beltPhase;x<w;x+=32){ctx.beginPath();ctx.moveTo(x,beltY+2);ctx.lineTo(x+10,beltY+22);ctx.stroke();}
+ ctx.fillStyle='#F47B3F';ctx.fillRect(0,beltY+24,w,6);
+ const sp=Math.min(120,w/5.2),nx=Math.max(sp*1.25,70);
+ const t=st.slide,e=1-Math.pow(1-t,3);
+ // checkweigher gantry
+ ctx.fillStyle='#3F73B8';ctx.fillRect(nx-sp*0.55,12,sp*1.1,10);
+ ctx.fillRect(nx-sp*0.55,12,8,beltY-12);ctx.fillRect(nx+sp*0.55-8,12,8,beltY-12);
+ ctx.fillStyle='#fff';ctx.font='bold 11px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText(cfg.integer?'COUNTER':'SCALES',nx,17);
+ for(let j=st.recent.length-1;j>=0;j--){
+  const x=nx+(j-(1-e))*sp;if(x>w+sp||x<-sp)continue;
+  drawItem(ctx,cfg,st,x,beltY,st.recent[j],sp);
+ }
+ ctx.fillStyle='#5b6978';ctx.font='12px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='right';
+ ctx.fillText('→ conveyor',w-8,beltY-6-(w<400?0:0));
+}
+function drawItem(ctx,cfg,st,x,by,v,sp){
+ const under=v<st.stated-1e-9;
+ const tw=Math.min(66,sp*0.62);
+ let top;
+ if(!cfg.integer){
+  const th=tw*1.15,y=by-th;top=y;
+  const gr=ctx.createLinearGradient(x-tw/2,0,x+tw/2,0);gr.addColorStop(0,'#aab6c2');gr.addColorStop(.35,'#eef2f6');gr.addColorStop(1,'#98a5b2');
+  ctx.fillStyle=gr;ctx.fillRect(x-tw/2,y,tw,th);
+  ctx.fillStyle='#F47B3F';ctx.fillRect(x-tw/2,y+th*0.22,tw,th*0.56);
+  ctx.fillStyle='#d0d8e0';ctx.beginPath();ctx.ellipse(x,y,tw/2,5,0,0,7);ctx.fill();
+  ctx.strokeStyle='#8795a3';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.beginPath();ctx.ellipse(x,by,tw/2,4,0,0,Math.PI);ctx.fillStyle='#9aa7b4';ctx.fill();
+  if(tw>44){ctx.fillStyle='#fff';ctx.font='bold '+Math.round(tw*0.2)+'px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('BEANS',x,y+th*0.5);}
+ }else{
+  const mw=tw*1.35,mh=tw*0.72,y=by-mh;top=y;
+  ctx.fillStyle='#d8a15f';ctx.fillRect(x-mw/2,y,mw,mh);
+  ctx.fillStyle='#F47B3F';ctx.fillRect(x-mw/2+4,y+4,mw-8,mh-8);
+  ctx.fillStyle='#2b3345';ctx.fillRect(x-mw/2+4,y+mh*0.62,mw-8,mh*0.18);
+  if(mw>52){ctx.fillStyle='#fff';ctx.font='bold '+Math.round(tw*0.18)+'px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('MATCHES',x,y+mh*0.34);}
+ }
+ const burstT=ecoOn()&&!cfg.integer&&v>ECO.burst;
+ const txt=(burstT?'💥 ':'')+(cfg.integer?String(v):v.toFixed(st.dp));
+ ctx.font='bold 14px "Courier New",monospace';
+ const lw=Math.max(44,ctx.measureText(txt).width+16),ly=top-26;
+ ctx.fillStyle='#17202a';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x-lw/2,ly,lw,20,5);else ctx.rect(x-lw/2,ly,lw,20);ctx.fill();
+ ctx.fillStyle=burstT?'#d9a7ff':under?'#ff7b6b':'#7CFC8A';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,x,ly+10.5);
+}
+
+function setRunning(r){
+ running=r;acc=0;const b=$('#btnRun');
+ b.textContent=r?'⏸ Stop line':'▶ Start line';b.classList.toggle('or',!r);b.classList.toggle('ghost',r);
+}
+function updateAll(){updateStats();dirtyChart=true;}
+
+/* ======================================================
+   CEREAL TOYS (coupon collector)
+   ====================================================== */
+const EMOJI=['🚂','🤖','🦖','🚀','🧸','🪁','🐢','🦄','🐙','🎲','🦆','🚒'];
+const LET='ABCDEFGHIJKL';
+const cs={k:6,w:[1,1,1,1,1,1],preset:'equal',counts:[],bought:0,got:0,done:false,last:-1,results:[],auto:false,theory:false,E:0,style:'line',acc:0};
+let dirtyC=true;
+function presetWeights(p,k){
+ if(p==='equal')return Array(k).fill(1);
+ if(p==='rare'){const a=Array(k).fill(4);a[k-1]=1;return a;}
+ if(p==='ladder')return Array.from({length:k},(_,i)=>k-i);
+ return null;
+}
+function expectedBoxes(w){
+ const k=w.length,tot=w.reduce((a,b)=>a+b,0),p=w.map(x=>x/tot),full=(1<<k)-1,E=new Float64Array(1<<k);
+ for(let m=full-1;m>=0;m--){let P=0,a=0;for(let i=0;i<k;i++){if(m&(1<<i))P+=p[i];else a+=p[i]*E[m|(1<<i)];}E[m]=(1+a)/(1-P);}
+ return E[0];
+}
+function sampleToy(){
+ const tot=cs.w.reduce((a,b)=>a+b,0);let r=Math.random()*tot;
+ for(let i=0;i<cs.k;i++){r-=cs.w[i];if(r<0)return i;}return cs.k-1;
+}
+function newCollector(){cs.counts=Array(cs.k).fill(0);cs.bought=0;cs.got=0;cs.done=false;cs.last=-1;}
+function resetCereal(msg){cs.results=[];cs.auto=false;newCollector();cs.E=expectedBoxes(cs.w);buildToyRows();buildShelf();setAutoBtn();dirtyC=true;renderCereal();if(msg)toast(msg);}
+function buyOne(){
+ if(cs.done)newCollector();
+ const t=sampleToy();cs.bought++;if(cs.counts[t]++===0)cs.got++;cs.last=t;
+ if(cs.got===cs.k){cs.done=true;cs.results.push(cs.bought);dirtyC=true;}
+ renderShelf(true);
+}
+function runBatch(m){
+ const k=cs.k;
+ for(let c=0;c<m;c++){const cnt=new Array(k).fill(0);let got=0,b=0;
+  while(got<k){b++;if(cnt[sampleToy()]++===0)got++;}
+  cs.results.push(b);}
+ if(cs.results.length>MAXN)cs.results=cs.results.slice(-MAXN);
+ dirtyC=true;renderCereal();
+}
+function buildToyRows(){
+ $('#kVal').textContent=cs.k;$('#selPreset').value=cs.preset;
+ const tot=cs.w.reduce((a,b)=>a+b,0);
+ $('#toyRows').innerHTML=cs.w.map((w,i)=>`<div class="trow"><span class="emo">${EMOJI[i]}</span><b>${LET[i]}</b><input type="number" min="1" max="50" step="1" value="${w}" data-i="${i}" aria-label="Weight of toy ${LET[i]}"><span class="pr" data-p="${i}">${(100*w/tot).toFixed(1)}%</span></div>`).join('');
+ $$('#toyRows input').forEach(inp=>{
+  inp.addEventListener('input',()=>refreshProbs(inp));
+  inp.addEventListener('change',()=>{
+   let v=Math.round(parseFloat(inp.value));if(!(v>=1))v=1;if(v>50)v=50;inp.value=v;
+   const i=+inp.dataset.i;if(cs.w[i]===v)return;cs.w[i]=v;cs.preset='custom';resetCereal('Weights changed – results cleared');});
+ });
+}
+function refreshProbs(){
+ const ws=$$('#toyRows input').map(i=>Math.max(1,parseFloat(i.value)||1)),tot=ws.reduce((a,b)=>a+b,0);
+ ws.forEach((w,i)=>{$('[data-p="'+i+'"]').textContent=(100*w/tot).toFixed(1)+'%';});
+}
+function buildShelf(){
+ const tot=cs.w.reduce((a,b)=>a+b,0);
+ $('#shelf').innerHTML=cs.w.map((w,i)=>`<div class="toy" data-i="${i}"><span class="cnt">0</span><div class="emo">${EMOJI[i]}</div><div class="ltr">Toy ${LET[i]}</div><div class="pc">${(100*w/tot).toFixed(1)}%</div></div>`).join('');
+}
+function renderShelf(flash){
+ $$('#shelf .toy').forEach((el,i)=>{
+  const c=cs.counts[i]||0;el.classList.toggle('have',c>0);el.querySelector('.cnt').textContent=c;
+  el.classList.remove('last');if(flash&&i===cs.last){void el.offsetWidth;el.classList.add('last');}
+ });
+ const s=$('#status');
+ if(cs.bought===0){s.textContent='No boxes bought yet – press "Buy a box".';s.className='status';}
+ else if(cs.done){s.textContent='🎉 Full set after '+cs.bought+' boxes!';s.className='status done';}
+ else{s.textContent='Boxes bought: '+cs.bought+' · Different toys: '+cs.got+' of '+cs.k+(cs.last>=0?' · Latest box: '+EMOJI[cs.last]+' (Toy '+LET[cs.last]+')':'');s.className='status';}
+ updateTilesC();
+}
+function updateTilesC(){
+ const r=cs.results,n=r.length;
+ let mean=0,med=0,mn=0,mx=0;
+ if(n){mean=r.reduce((a,b)=>a+b,0)/n;const so=r.slice().sort((a,b)=>a-b);med=n%2?so[(n-1)/2]:(so[n/2-1]+so[n/2])/2;mn=so[0];mx=so[n-1];}
+ const T=(v,l)=>`<div class="tile"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+ $('#tilesC').innerHTML=T(n.toLocaleString('en-GB'),'Collectors who completed the set')+T(n?mean.toFixed(1):'–','Mean boxes needed')+T(n?med:'–','Median')+T(n?mn:'–','Fewest boxes')+T(n?mx:'–','Most boxes')+T(n?r[n-1]:'–','Latest collector');
+ const box=$('#theoryBoxC');box.hidden=!cs.theory;
+ if(cs.theory){
+  let h=`Expected number of boxes to collect all ${cs.k} toys: <b>${cs.E.toFixed(2)}</b>`;
+  h+=n?` – the ${n.toLocaleString('en-GB')} collector${n>1?'s':''} so far averaged <b>${mean.toFixed(2)}</b>.`:'.';
+  const allEq=cs.w.every(x=>x===cs.w[0]);
+  h+=allEq?`<br>With equal chances this is ${cs.k} × (1 + 1/2 + … + 1/${cs.k}).`:`<br>With unequal chances the rare toys take far longer to find, so the expected number is bigger than when every toy is equally likely.`;
+  box.innerHTML=h;
+ }
+}
+function renderChartC(){
+ const r=cs.results,k=cs.k,n=r.length;
+ let bins=[],x0=k-0.5,x1=k+9.5,bw=1;
+ const mean=n?r.reduce((a,b)=>a+b,0)/n:0;
+ if(n){
+  const mx=Math.max.apply(null,r);
+  const raw=Math.max(1,(mx-k+1)/22);bw=Math.max(1,nearestNice(raw));if(bw<raw)bw=NICE.find(v=>v>=raw)||bw;
+  let nb=Math.floor((mx-k)/bw)+1;
+  if(cs.theory)nb=Math.max(nb,Math.ceil((cs.E-k+1)/bw)+1);
+  nb=Math.max(nb,Math.ceil(10/bw)+1);
+  x0=k-0.5;x1=x0+nb*bw;
+  for(let i=0;i<nb;i++)bins.push({a:x0+i*bw,b:x0+(i+1)*bw,count:0});
+  for(const v of r){const i=Math.min(nb-1,Math.floor((v-k)/bw));bins[i].count++;}
+ }
+ const vlines=[];
+ if(n)vlines.push({x:mean,label:'Mean = '+mean.toFixed(1),color:'#243241',dash:[6,5]});
+ if(cs.theory)vlines.push({x:cs.E,label:'Expected = '+cs.E.toFixed(1),color:'#1c4f93',dash:[2,4]});
+ const step=niceStep(x1-x0,9);
+ drawChart($('#chartC'),{bins,x0,x1,xticks:makeTicks(x0,x1,step,true),xlabel:'Boxes bought to complete the set',
+  ylabel:'Frequency (number of collectors)',style:cs.style,vlines,empty:n===0?'Complete a collection to start the graph':null});
+}
+function renderCereal(){renderShelf(false);dirtyC=true;}
+function setAutoBtn(){const b=$('#btnAuto');b.textContent=cs.auto?'⏸ Pause':'⏩ Buy until complete';b.classList.toggle('or',cs.auto);}
+
+/* ======================================================
+   BINOMIAL (coin flips + netball shots)
+   ====================================================== */
+const BCTX={
+ coin:{h1:'🪙 The coin',pLbl:'Probability of a Head, p',nLbl:'Number of flips in each experiment, N',kLbl:'k (number of Heads)',
+  trial:'flip',trials:'flips',succ:'Head',succs:'Heads',fail:'Tail',fails:'Tails',sT:'H',fT:'T',sCls:'h',fCls:'t',
+  tray:'🪙 The latest experiment',expHint:'One experiment = flip the N coins, then count the Heads.',
+  flipBtn:n=>'🪙 Flip '+n+' coin'+(n===1?'':'s'),
+  pHint:p=>p===0.5?'p = 0.5: a fair coin.':(p<0.5?'Biased towards Tails: Heads are less likely.':'Biased towards Heads: Heads are more likely.'),
+  distTitle:'Number of Heads in each experiment',p:0.5,N:10,k:5},
+ netball:{h1:'🏐 The shooter',pLbl:'Probability the shooter scores, p',nLbl:'Number of shots in each experiment, N',kLbl:'k (number of goals)',
+  trial:'shot',trials:'shots',succ:'goal',succs:'goals',fail:'miss',fails:'misses',sT:'✓',fT:'✗',sCls:'g',fCls:'m',
+  tray:'🏐 The latest experiment: a round of shots',expHint:'One experiment = take the N shots at goal, then count the goals.',
+  flipBtn:n=>'🏐 Take '+n+' shot'+(n===1?'':'s'),
+  pHint:p=>'p = '+p+': the shooter scores about '+Math.round(p*100)+'% of their shots.',
+  distTitle:'Number of goals in each round of shots',p:0.7,N:10,k:7}
+};
+const bs={ctx:'coin',p:0.5,N:10,k:5,ev:'eq',style:'line',yMode:'freq',theory:false,counts:new Array(11).fill(0),n:0,sum:0,
+ seq:new Uint8Array(MAXN),last:null,lastHeads:0,running:false,acc:0,animate:false};
+let dirtyB=true,dirtyCoins=true;
+function bc(){return BCTX[bs.ctx];}
+function binomPmf(N,p){
+ const out=new Array(N+1).fill(0);
+ if(p<=0){out[0]=1;return out;}
+ if(p>=1){out[N]=1;return out;}
+ const lp=Math.log(p),lq=Math.log(1-p);let lc=0;
+ for(let j=0;j<=N;j++){if(j>0)lc+=Math.log((N-j+1)/j);out[j]=Math.exp(lc+j*lp+(N-j)*lq);}
+ return out;
+}
+function choose(N,k){k=Math.min(k,N-k);let c=1;for(let i=1;i<=k;i++)c=c*(N-k+i)/i;return c<9e15?Math.round(c):c;}
+function sig(x,d){d=d||5;if(x===0)return '0';const a=Math.abs(x);if(a<1e-4||a>=1e9)return x.toExponential(3);return String(parseFloat(x.toPrecision(d)));}
+function pf(P){return (P>=0.001||P===0)?P.toFixed(4):P.toPrecision(3);}
+function hitOf(j){return bs.ev==='eq'?j===bs.k:(bs.ev==='ge'?j>=bs.k:j<=bs.k);}
+function evSym(){return bs.ev==='eq'?'=':(bs.ev==='ge'?'≥':'≤');}
+function evWords(){const c=bc();return (bs.ev==='eq'?'exactly':(bs.ev==='ge'?'at least':'at most'))+' '+bs.k+' '+(bs.k===1?c.succ:c.succs);}
+function eventProb(pm){let s=0;for(let j=0;j<=bs.N;j++)if(hitOf(j))s+=pm[j];return Math.min(1,s);}
+function hitCount(){let h=0;for(let j=0;j<=bs.N;j++)if(hitOf(j))h+=bs.counts[j];return h;}
+function setBinomRunBtn(){const b=$('#bRun');b.textContent=bs.running?'⏸ Stop':'▶ Start';b.classList.toggle('or',!bs.running);b.classList.toggle('ghost',bs.running);}
+function runExperiments(m,animate){
+ m=Math.min(m,MAXN-bs.n);
+ if(m<=0){toast('Maximum of '+MAXN.toLocaleString('en-GB')+' experiments reached. Clear the results to go on.');return;}
+ const N=bs.N,p=bs.p;
+ for(let e=0;e<m;e++){
+  const lastOne=(e===m-1),flips=(lastOne&&N<=40)?new Array(N):null;
+  let h=0;
+  for(let i=0;i<N;i++){const f=Math.random()<p;if(f)h++;if(flips)flips[i]=f;}
+  bs.seq[bs.n++]=h;bs.counts[h]++;bs.sum+=h;
+  if(lastOne){bs.last=flips;bs.lastHeads=h;}
+ }
+ bs.animate=!!animate;dirtyB=true;dirtyCoins=true;
+ if(bs.n>=MAXN){bs.running=false;setBinomRunBtn();toast('Maximum of '+MAXN.toLocaleString('en-GB')+' experiments reached.');}
+}
+function binomClear(msg){
+ const had=bs.n>0;
+ bs.running=false;setBinomRunBtn();
+ bs.counts=new Array(bs.N+1).fill(0);bs.n=0;bs.sum=0;bs.last=null;bs.lastHeads=0;bs.animate=false;
+ syncBinomInputs();dirtyB=true;dirtyCoins=true;
+ if(had&&msg)toast(msg);
+}
+function setBinomCtx(c){const d=BCTX[c];bs.ctx=c;bs.p=d.p;bs.N=d.N;bs.k=d.k;binomClear('');}
+function syncBinomInputs(){
+ const c=bc();
+ $('#bH1').textContent=c.h1;$('#bPLbl').textContent=c.pLbl;$('#bNLbl').textContent=c.nLbl;$('#bKLbl').textContent=c.kLbl;
+ $('#bP').value=bs.p;$('#bN').value=bs.N;$('#bK').value=bs.k;$('#bK').max=bs.N;$('#bEv').value=bs.ev;
+ $('#bPHint').textContent=c.pHint(bs.p);
+ $('#bFlip').textContent=c.flipBtn(bs.N);
+ $('#bExpHint').textContent=c.expHint;$('#bTrayTitle').textContent=c.tray;$('#bDistTitle').textContent=c.distTitle;
+ $$('#segStyleB button').forEach(x=>x.classList.toggle('on',x.dataset.s===bs.style));
+ $$('#segYB button').forEach(x=>x.classList.toggle('on',x.dataset.y===bs.yMode));
+ $('#chkTheoryB').checked=bs.theory;
+ $('#bConvTitle').textContent='Relative frequency of "'+evWords()+'" as the experiments mount up';
+}
+function convPoints(){
+ const n=bs.n;if(!n)return [];
+ const step=Math.max(1,Math.floor(n/700)),pts=[],tab=new Uint8Array(bs.N+1);
+ for(let j=0;j<=bs.N;j++)tab[j]=hitOf(j)?1:0;
+ let hits=0;
+ for(let i=0;i<n;i++){hits+=tab[bs.seq[i]];const c=i+1;if(c<=40||c%step===0||c===n)pts.push([c,hits/c]);}
+ return pts;
+}
+function drawConv(cv,o){
+ const {ctx,w,h}=setupCanvas(cv);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+ const small=w<520,m={l:small?62:70,r:small?16:26,t:small?22:28,b:small?46:56};
+ const pw=w-m.l-m.r,ph=h-m.t-m.b;
+ let maxv=0.1;for(const p of o.pts)maxv=Math.max(maxv,p[1]);if(o.theory!==null)maxv=Math.max(maxv,o.theory);
+ const ys=niceStep(maxv*1.15,5),ymax=ys*Math.ceil(maxv*1.15/ys);
+ const xn=Math.max(o.n,10),xs=Math.max(1,Math.round(niceStep(xn,8))),xmax=xs*Math.ceil(xn/xs);
+ const X=x=>m.l+x/xmax*pw,Y=y=>m.t+ph-y/ymax*ph;
+ ctx.font=(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';
+ ctx.textAlign='right';ctx.textBaseline='middle';
+ for(let v=0;v<=ymax+1e-9;v+=ys){
+  ctx.strokeStyle=v<1e-9?'#243241':'#e3e9f0';ctx.lineWidth=v<1e-9?2:1;
+  ctx.beginPath();ctx.moveTo(m.l,Y(v));ctx.lineTo(m.l+pw,Y(v));ctx.stroke();
+  ctx.fillStyle='#3b4a5a';ctx.fillText(tickLabel(v,ys),m.l-8,Y(v));
+ }
+ ctx.strokeStyle='#243241';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,m.t+ph);ctx.stroke();
+ ctx.textAlign='center';ctx.textBaseline='top';
+ for(const t of makeTicks(0,xmax,xs,true)){
+  ctx.strokeStyle='#243241';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(t.x),m.t+ph);ctx.lineTo(X(t.x),m.t+ph+6);ctx.stroke();
+  ctx.fillStyle='#3b4a5a';ctx.fillText(t.label,X(t.x),m.t+ph+9);
+ }
+ ctx.font='bold '+(small?'12':'14')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#243241';
+ ctx.textBaseline='bottom';ctx.fillText(o.xlab||'Number of experiments',m.l+pw/2,h-6);
+ ctx.save();ctx.translate(14,m.t+ph/2);ctx.rotate(-Math.PI/2);ctx.textBaseline='top';ctx.fillText(o.ylab||'Relative frequency',0,0);ctx.restore();
+ ctx.save();ctx.beginPath();ctx.rect(m.l,m.t-4,pw,ph+8);ctx.clip();
+ if(o.pts.length){
+  ctx.strokeStyle='#F47B3F';ctx.lineWidth=2.8;ctx.lineJoin='round';ctx.beginPath();
+  o.pts.forEach((p,i)=>{i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));});ctx.stroke();
+  if(o.pts.length<=60){ctx.fillStyle='#F47B3F';for(const p of o.pts){ctx.beginPath();ctx.arc(X(p[0]),Y(p[1]),3.2,0,7);ctx.fill();}}
+ }
+ ctx.restore();
+ if(o.theory!==null){
+  ctx.setLineDash([8,5]);ctx.strokeStyle='#1c4f93';ctx.lineWidth=2.4;
+  ctx.beginPath();ctx.moveTo(m.l,Y(o.theory));ctx.lineTo(m.l+pw,Y(o.theory));ctx.stroke();ctx.setLineDash([]);
+  ctx.font='bold '+(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#1c4f93';
+  ctx.textAlign='right';ctx.textBaseline='bottom';
+  ctx.fillText(o.tlabel||('Theoretical probability = '+pf(o.theory)),m.l+pw-6,Y(o.theory)-4);
+ }
+ if(o.n===0){ctx.fillStyle='#8895a4';ctx.font='bold '+(small?'14':'18')+'px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('Run some experiments to see the graph',m.l+pw/2,m.t+ph/2);}
+}
+function renderCoins(){
+ const c=bc(),box=$('#coins'),st=$('#coinStatus');
+ if(bs.n===0){box.innerHTML='<span class="hint">Press the button to run the first experiment.</span>';st.textContent='';st.className='status';return;}
+ const N=bs.N,h=bs.lastHeads;
+ if(bs.last){
+  const d=Math.min(40,800/N);
+  box.innerHTML=bs.last.map((f,i)=>'<div class="coin '+(f?c.sCls:c.fCls)+(bs.animate?' flip':'')+'" style="animation-delay:'+(bs.animate?Math.round(i*d):0)+'ms">'+(f?c.sT:c.fT)+'</div>').join('');
+ }else box.innerHTML='<span class="hint">'+N+' '+c.trials+' – too many to show one by one.</span>';
+ st.textContent='Latest experiment: '+h+' '+(h===1?c.succ:c.succs)+', '+(N-h)+' '+(N-h===1?c.fail:c.fails)+' · '+(hitOf(h)?'✔ matches the event':'✘ not the event');
+ st.className='status'+(hitOf(h)?' done':'');
+ bs.animate=false;
+}
+function renderBinomTiles(){
+ const c=bc(),n=bs.n,h=hitCount();let modal=0,best=-1;
+ for(let j=0;j<=bs.N;j++)if(bs.counts[j]>best){best=bs.counts[j];modal=j;}
+ const T=(v,l)=>'<div class="tile"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';
+ $('#tilesB').innerHTML=
+  T(n.toLocaleString('en-GB'),'Experiments run')+
+  T(n?h.toLocaleString('en-GB')+' ('+pct(h,n)+')':'–','Experiments with '+evWords())+
+  T(n?(h/n).toFixed(4):'–','Relative frequency of the event')+
+  T(n?(bs.sum/n).toFixed(2):'–','Mean number of '+c.succs)+
+  T(n?modal:'–','Most common number of '+c.succs)+
+  T(n?bs.lastHeads+' of '+bs.N:'–','Latest experiment: '+c.succs);
+}
+function renderBinomTheory(){
+ const box=$('#theoryBoxB');box.hidden=!bs.theory;if(!bs.theory)return;
+ const c=bc(),N=bs.N,p=bs.p,k=bs.k,q=1-p,pm=binomPmf(N,p),P=eventProb(pm),n=bs.n;
+ let h='';
+ if(bs.ev==='eq'){
+  h+='<b>P(X = '+k+')</b> = C('+N+','+k+') × '+sig(p)+'<sup>'+k+'</sup> × '+sig(q)+'<sup>'+(N-k)+'</sup><br>';
+  h+='= '+sig(choose(N,k))+' × '+sig(Math.pow(p,k))+' × '+sig(Math.pow(q,N-k))+'<br>';
+ }else{
+  const lo=bs.ev==='ge'?k:0,hi=bs.ev==='ge'?N:k,cnt=hi-lo+1,t=j=>'P(X = '+j+')';
+  const expr=cnt===1?t(lo):(cnt===2?t(lo)+' + '+t(hi):t(lo)+' + … + '+t(hi));
+  h+='<b>P(X '+evSym()+' '+k+')</b> = '+expr+'<br>';
+ }
+ h+='= <b>'+pf(P)+'</b> ('+(100*P).toFixed(2)+'%)';
+ h+='<br>Expected number of '+c.succs+' in '+N+' '+(N===1?c.trial:c.trials)+': N × p = <b>'+sig(N*p)+'</b>';
+ if(n>0){
+  const hits=hitCount(),d=hits/n-P;
+  h+='<br>After '+n.toLocaleString('en-GB')+' experiment'+(n===1?'':'s')+', '+hits.toLocaleString('en-GB')+' gave '+evWords()+': relative frequency <b>'+(hits/n).toFixed(4)+'</b>';
+  h+=Math.abs(d)<0.00005?' – spot on the theoretical probability.':' – that is '+Math.abs(d).toFixed(4)+(d>0?' above':' below')+' the theoretical probability.';
+ }
+ box.innerHTML=h;
+}
+function renderBinom(){
+ const c=bc(),N=bs.N,n=bs.n,prop=bs.yMode==='prop',pm=binomPmf(N,bs.p);
+ const bins=[];
+ for(let j=0;j<=N;j++)bins.push({a:j-0.5,b:j+0.5,count:prop?(n?bs.counts[j]/n:0):bs.counts[j],hi:hitOf(j)});
+ let curve=null;
+ if(bs.theory){curve=[];for(let j=0;j<=N;j++)curve.push([j,prop?pm[j]:n*pm[j]]);}
+ const vlines=bs.theory?[{x:N*bs.p,label:'Mean = N × p = '+sig(N*bs.p),color:'#1c4f93',dash:[2,4]}]:[];
+ drawChart($('#chartB'),{bins,x0:-0.5,x1:N+0.5,xticks:makeTicks(-0.5,N+0.5,niceStep(N+1,10),true),
+  xlabel:'Number of '+c.succs+' in '+N+' '+(N===1?c.trial:c.trials),ylabel:prop?'Relative frequency':'Frequency (number of experiments)',
+  style:bs.style,curve,curveDots:true,vlines,yfrac:prop,empty:n===0?'Run an experiment to see the graph build up':null});
+ drawConv($('#chartB2'),{pts:convPoints(),n,theory:bs.theory?eventProb(pm):null});
+ renderBinomTiles();renderBinomTheory();
+}
+$('#bP').addEventListener('change',()=>{
+ let v=parseFloat($('#bP').value);
+ if(!(v>=0&&v<=1)){toast('p must be between 0 and 1.');syncBinomInputs();return;}
+ v=Math.round(v*10000)/10000;
+ if(v===bs.p){syncBinomInputs();return;}
+ bs.p=v;binomClear('Probability changed – results cleared');
+});
+$('#bN').addEventListener('change',()=>{
+ let v=Math.round(parseFloat($('#bN').value));
+ if(!(v>=1)){toast('N must be at least 1.');syncBinomInputs();return;}
+ v=Math.min(100,v);
+ if(v===bs.N){syncBinomInputs();return;}
+ bs.N=v;if(bs.k>v)bs.k=v;binomClear('Number of '+bc().trials+' changed – results cleared');
+});
+$('#bK').addEventListener('change',()=>{
+ let v=Math.round(parseFloat($('#bK').value));if(!(v>=0))v=0;
+ bs.k=Math.min(bs.N,v);syncBinomInputs();dirtyB=true;dirtyCoins=true;
+});
+$('#bEv').addEventListener('change',e=>{bs.ev=e.target.value;syncBinomInputs();dirtyB=true;dirtyCoins=true;});
+$('#bFlip').addEventListener('click',()=>{bs.running=false;setBinomRunBtn();runExperiments(1,true);});
+$$('[data-bx]').forEach(b=>b.addEventListener('click',()=>runExperiments(+b.dataset.bx,false)));
+$('#bRun').addEventListener('click',()=>{
+ if(!bs.running&&bs.n>=MAXN){toast('Clear the results to run again.');return;}
+ bs.running=!bs.running;bs.acc=0;setBinomRunBtn();
+});
+$('#bClear').addEventListener('click',()=>binomClear(''));
+$$('#segStyleB button').forEach(b=>b.addEventListener('click',()=>{bs.style=b.dataset.s;$$('#segStyleB button').forEach(x=>x.classList.toggle('on',x===b));dirtyB=true;}));
+$$('#segYB button').forEach(b=>b.addEventListener('click',()=>{bs.yMode=b.dataset.y;$$('#segYB button').forEach(x=>x.classList.toggle('on',x===b));dirtyB=true;}));
+$('#chkTheoryB').addEventListener('change',e=>{bs.theory=e.target.checked;dirtyB=true;});
+syncBinomInputs();
+
+/* ======================================================
+   SPINNER (geometric / waiting for the r-th hit)
+   ====================================================== */
+const SPCOL=['#d7263d','#f46036','#f2b705','#2e933c','#1b98e0','#3f51b5','#8e44ad','#e84393','#8d6e63','#16a085','#34495e','#7f8c1f'];
+const SPTXT=['#fff','#fff','#243241','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff'];
+const TWO=Math.PI*2;
+const sp={n:6,w:[1,1,1,1,1,1],preset:'equal',target:6,reps:1,style:'line',yMode:'freq',theory:false,
+ spins:0,hits:0,done:false,recent:[],results:[],angle:0,anim:null,auto:false,acc:0,wait:0};
+let dirtyS=true;
+function spTot(){return sp.w.reduce((a,b)=>a+b,0);}
+function spP(){return sp.w[sp.target-1]/spTot();}
+function ordinal(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+function spGoalText(){const t=sp.target;return sp.reps===1?'Keep spinning until we land on segment '+t+' for the first time.':'Keep spinning until we have landed on segment '+t+' a total of '+sp.reps+' times.';}
+function spPick(){const tot=spTot();let r=Math.random()*tot;for(let i=0;i<sp.n;i++){r-=sp.w[i];if(r<0)return i;}return sp.n-1;}
+function spAimAngle(seg,turns){
+ const tot=spTot();let c0=0;for(let i=0;i<seg;i++)c0+=sp.w[i];
+ const theta=TWO*(c0+(0.12+0.76*Math.random())*sp.w[seg])/tot;
+ const delta=(((-theta-sp.angle)%TWO)+TWO)%TWO;
+ return sp.angle+TWO*turns+delta;
+}
+function geoDraw(p){return p>=1?1:Math.max(1,Math.ceil(Math.log(1-Math.random())/Math.log(1-p)));}
+function setSpinBtns(){const b=$('#spAuto');b.textContent=sp.auto?'⏸ Pause':'⏩ Spin until target reached';b.classList.toggle('or',sp.auto);}
+function newRun(){sp.spins=0;sp.hits=0;sp.done=false;sp.recent=[];}
+function commitSpin(seg){
+ sp.spins++;const hit=seg===sp.target-1;if(hit)sp.hits++;
+ sp.recent.push({seg,hit});if(sp.recent.length>48)sp.recent.shift();
+ if(sp.hits>=sp.reps){
+  sp.done=true;sp.results.push(sp.spins);if(sp.results.length>MAXN)sp.results.shift();
+  sp.auto=false;setSpinBtns();
+ }
+ dirtyS=true;
+}
+function beginSpin(dur){
+ if(sp.done)newRun();
+ const seg=spPick();
+ sp.anim={r0:sp.angle,r1:spAimAngle(seg,dur>=700?4:2),t0:0,dur,seg};dirtyS=true;
+}
+function stepSpin(t){
+ const a=sp.anim;if(!a.t0)a.t0=t;
+ const p=Math.min(1,(t-a.t0)/a.dur),e=1-Math.pow(1-p,3);
+ sp.angle=a.r0+(a.r1-a.r0)*e;
+ if(p>=1){
+  sp.angle=a.r1%TWO;sp.anim=null;commitSpin(a.seg);
+  if(sp.auto)sp.wait=Math.max(0,1000/(+$('#spRate').value)-a.dur);
+ }
+}
+function instantSpin(){
+ if(sp.done)newRun();
+ const seg=spPick();sp.angle=spAimAngle(seg,0)%TWO;commitSpin(seg);
+}
+function spBatch(m){
+ sp.auto=false;sp.anim=null;setSpinBtns();
+ const p=spP(),r=sp.reps;
+ for(let i=0;i<m;i++){let x=0;for(let j=0;j<r;j++)x+=geoDraw(p);sp.results.push(x);}
+ if(sp.results.length>MAXN)sp.results=sp.results.slice(-MAXN);
+ dirtyS=true;
+}
+function spinClear(msg){
+ const had=sp.results.length>0;
+ sp.results=[];sp.auto=false;sp.anim=null;newRun();setSpinBtns();
+ syncSpinInputs();dirtyS=true;
+ if(had&&msg)toast(msg);
+}
+function buildSpinRows(){
+ const tot=spTot();
+ $('#spRows').innerHTML=sp.w.map((w,i)=>'<div class="trow sp"><span class="emo"><i class="sw" style="background:'+SPCOL[i]+';color:'+SPTXT[i]+'">'+(i+1)+'</i></span><input type="number" min="1" max="50" step="1" value="'+w+'" data-i="'+i+'" aria-label="Weight of segment '+(i+1)+'"><span class="pr" data-p="'+i+'">'+(100*w/tot).toFixed(1)+'%</span></div>').join('');
+ $$('#spRows input').forEach(inp=>{
+  inp.addEventListener('input',()=>{
+   const ws=$$('#spRows input').map(x=>Math.max(1,parseFloat(x.value)||1)),t=ws.reduce((a,b)=>a+b,0);
+   ws.forEach((w,i)=>{$('#spRows [data-p="'+i+'"]').textContent=(100*w/t).toFixed(1)+'%';});
+  });
+  inp.addEventListener('change',()=>{
+   let v=Math.round(parseFloat(inp.value));if(!(v>=1))v=1;if(v>50)v=50;inp.value=v;
+   const i=+inp.dataset.i;if(sp.w[i]===v)return;
+   sp.w[i]=v;sp.preset='custom';spinClear('Weights changed – results cleared');
+  });
+ });
+}
+function syncSpinInputs(){
+ $('#spNVal').textContent=sp.n;$('#spPreset').value=sp.preset;
+ $('#spT').innerHTML=Array.from({length:sp.n},(_,i)=>'<option value="'+(i+1)+'">Segment '+(i+1)+'</option>').join('');
+ $('#spT').value=sp.target;$('#spR').value=sp.reps;
+ buildSpinRows();
+ const p=spP(),tot=spTot();
+ $('#spGoal').innerHTML=spGoalText()+'<br>Each spin lands on segment '+sp.target+' with probability <b>p = '+sp.w[sp.target-1]+'/'+tot+' = '+sig(p,4)+'</b>.';
+ $$('#segStyleS button').forEach(x=>x.classList.toggle('on',x.dataset.s===sp.style));
+ $$('#segYS button').forEach(x=>x.classList.toggle('on',x.dataset.y===sp.yMode));
+ $('#chkTheoryS').checked=sp.theory;
+ $('#spDistTitle').textContent='Number of spins needed to land on segment '+sp.target+(sp.reps===1?' for the first time':', '+sp.reps+' times');
+}
+function drawWheel(){
+ const cv=$('#spWheel'),{ctx,w,h}=setupCanvas(cv);
+ ctx.clearRect(0,0,w,h);
+ const R=Math.min(w,h)/2-26,cx=w/2,cy=h/2+8,tot=spTot();
+ let f=0;
+ for(let i=0;i<sp.n;i++){
+  const fr=sp.w[i]/tot,a0=-Math.PI/2+sp.angle+TWO*f,a1=a0+TWO*fr;f+=fr;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a0,a1);ctx.closePath();
+  ctx.fillStyle=SPCOL[i];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+  const am=(a0+a1)/2,lr=R*0.68,fs=Math.max(10,Math.min(34,R*0.18,TWO*fr*lr*0.55));
+  ctx.fillStyle=SPTXT[i];ctx.font='bold '+fs+'px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(String(i+1),cx+Math.cos(am)*lr,cy+Math.sin(am)*lr);
+  if(i===sp.target-1){ctx.beginPath();ctx.arc(cx,cy,R+6,a0,a1);ctx.strokeStyle='#243241';ctx.lineWidth=5;ctx.stroke();}
+ }
+ ctx.beginPath();ctx.arc(cx,cy,R*0.09,0,7);ctx.fillStyle='#243241';ctx.fill();
+ ctx.beginPath();ctx.moveTo(cx,cy-R+12);ctx.lineTo(cx-13,cy-R-18);ctx.lineTo(cx+13,cy-R-18);ctx.closePath();
+ ctx.fillStyle='#243241';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+}
+function updateSpinStatus(){
+ const s=$('#spStatus'),t=sp.target;
+ if(sp.spins===0)s.textContent=spGoalText();
+ else if(sp.done)s.textContent='🎉 Landed on segment '+t+(sp.reps===1?' for the first time':' '+sp.reps+' times')+' after '+sp.spins+' spin'+(sp.spins===1?'':'s')+'!';
+ else s.textContent='Spins so far: '+sp.spins+' · Hits on segment '+t+': '+sp.hits+' of '+sp.reps;
+ s.className='status'+(sp.done?' done':'');
+ $('#spChips').innerHTML=sp.recent.map(x=>'<span class="chip'+(x.hit?' hit':'')+'" style="background:'+SPCOL[x.seg]+';color:'+SPTXT[x.seg]+'">'+(x.seg+1)+'</span>').join('');
+}
+function nbPmfBins(r,p,nb,bw){
+ const q=1-p,out=new Array(nb).fill(0);let pm=Math.pow(p,r);
+ for(let x=r;x<r+nb*bw;x++){out[Math.floor((x-r)/bw)]+=pm;pm=pm*q*x/(x-r+1);}
+ return out;
+}
+function renderSpinChart(){
+ const r=sp.reps,p=spP(),res=sp.results,n=res.length,prop=sp.yMode==='prop';
+ const E=r/p,sd=Math.sqrt(r*(1-p))/p;let mx=0;for(const v of res)if(v>mx)mx=v;
+ const span=Math.max(10,Math.ceil(E+4*sd)-r+2,mx-r+1);
+ const raw=span/30,bw=NICE.find(v=>v>=raw&&v>=1)||1,nb=Math.ceil(span/bw),x0=r-0.5,x1=x0+nb*bw;
+ const cnt=new Array(nb).fill(0);for(const v of res)cnt[Math.min(nb-1,Math.floor((v-r)/bw))]++;
+ const bins=[];for(let i=0;i<nb;i++)bins.push({a:x0+i*bw,b:x0+(i+1)*bw,count:prop?(n?cnt[i]/n:0):cnt[i]});
+ let curve=null;
+ if(sp.theory){const eb=nbPmfBins(r,p,nb,bw);curve=eb.map((v,i)=>[x0+(i+0.5)*bw,prop?v:n*v]);}
+ const vlines=[];
+ if(sp.theory)vlines.push({x:E,label:'Expected = '+sig(E,4),color:'#1c4f93',dash:[2,4]});
+ if(n>0){let s=0;for(const v of res)s+=v;vlines.push({x:s/n,label:'Mean = '+(s/n).toFixed(2),color:'#243241',dash:[6,5]});}
+ drawChart($('#chartS'),{bins,x0,x1,xticks:makeTicks(x0,x1,niceStep(x1-x0,9),true),
+  xlabel:'Number of spins needed'+(bw>1?' (grouped in '+bw+'s)':''),ylabel:prop?'Relative frequency':'Frequency (number of runs)',
+  style:sp.style,curve,curveDots:true,vlines,yfrac:prop,empty:n===0?'Complete some runs to see the graph build up':null});
+}
+function renderSpinConv(){
+ const res=sp.results,n=res.length,pts=[];
+ if(n){const step=Math.max(1,Math.floor(n/700));let s=0;for(let i=0;i<n;i++){s+=res[i];const c=i+1;if(c<=40||c%step===0||c===n)pts.push([c,s/c]);}}
+ const E=sp.reps/spP();
+ drawConv($('#chartS2'),{pts,n,theory:sp.theory?E:null,xlab:'Number of runs',ylab:'Mean number of spins',tlabel:'Expected = '+sig(E,4)+' spins'});
+}
+function renderSpinTiles(){
+ const res=sp.results,n=res.length;
+ let mean=0,med=0,mn=0,mx=0;
+ if(n){let s=0;for(const v of res)s+=v;mean=s/n;const so=res.slice().sort((a,b)=>a-b);med=n%2?so[(n-1)/2]:(so[n/2-1]+so[n/2])/2;mn=so[0];mx=so[n-1];}
+ const T=(v,l)=>'<div class="tile"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';
+ $('#tilesS').innerHTML=T(n.toLocaleString('en-GB'),'Runs completed')+T(n?mean.toFixed(2):'–','Mean spins needed')+T(n?med:'–','Median')+T(n?mn:'–','Fewest spins')+T(n?mx:'–','Most spins')+T(n?res[n-1]:'–','Latest run');
+}
+function renderSpinTheory(){
+ const box=$('#theoryBoxS');box.hidden=!sp.theory;if(!sp.theory)return;
+ const r=sp.reps,p=spP(),E=r/p,res=sp.results,n=res.length,t=sp.target,tot=spTot();
+ let h='Each spin lands on segment '+t+' with probability <b>p = '+sp.w[t-1]+'/'+tot+' = '+sig(p,4)+'</b>.<br>';
+ if(r===1)h+='We count the spins up to the first hit: P(X = x) = (1 − p)<sup>x−1</sup> × p. This is the <b>geometric distribution</b>.<br>';
+ else h+='We count the spins up to the '+ordinal(r)+' hit: P(X = x) = C(x−1, '+(r-1)+') × p<sup>'+r+'</sup> × (1 − p)<sup>x−'+r+'</sup> for x ≥ '+r+'. Each wait for a hit is geometric, and we add '+r+' of them.<br>';
+ h+='Expected number of spins = '+r+' ÷ p = '+r+' ÷ '+sig(p,4)+' = <b>'+sig(E,4)+'</b>.';
+ if(n>0){
+  let s=0;for(const v of res)s+=v;const m=s/n,d=m-E;
+  h+='<br>After '+n.toLocaleString('en-GB')+' run'+(n===1?'':'s')+' the mean is <b>'+m.toFixed(2)+'</b> spins';
+  h+=Math.abs(d)<0.005?' – spot on the expected number.':' – that is '+Math.abs(d).toFixed(2)+(d>0?' above':' below')+' the expected number.';
+ }
+ box.innerHTML=h;
+}
+function renderSpin(){drawWheel();updateSpinStatus();renderSpinChart();renderSpinConv();renderSpinTiles();renderSpinTheory();}
+function spChangeN(d){
+ const n=Math.min(12,Math.max(2,sp.n+d));if(n===sp.n)return;
+ sp.n=n;
+ if(sp.preset==='custom'){while(sp.w.length<n)sp.w.push(1);sp.w.length=n;}else sp.w=presetWeights(sp.preset,n);
+ if(sp.target>n)sp.target=n;
+ spinClear('Number of segments changed – results cleared');
+}
+$('#spMinus').addEventListener('click',()=>spChangeN(-1));
+$('#spPlus').addEventListener('click',()=>spChangeN(1));
+$('#spPreset').addEventListener('change',e=>{
+ sp.preset=e.target.value;if(sp.preset!=='custom')sp.w=presetWeights(sp.preset,sp.n);
+ spinClear(sp.preset==='custom'?'Edit the weights below':'Results cleared');
+});
+$('#spR').addEventListener('change',()=>{
+ let v=Math.round(parseFloat($('#spR').value));if(!(v>=1))v=1;if(v>20)v=20;
+ if(v===sp.reps){syncSpinInputs();return;}
+ sp.reps=v;spinClear('Target changed – results cleared');
+});
+$('#spT').addEventListener('change',()=>{
+ const v=+$('#spT').value;if(v===sp.target)return;
+ sp.target=v;spinClear('Target changed – results cleared');
+});
+$('#spOne').addEventListener('click',()=>{if(sp.anim)return;sp.auto=false;sp.wait=0;setSpinBtns();beginSpin(1100);});
+$('#spAuto').addEventListener('click',()=>{
+ if(sp.auto){sp.auto=false;}
+ else{sp.auto=true;if(sp.done&&!sp.anim)newRun();sp.wait=0;sp.acc=0;}
+ setSpinBtns();dirtyS=true;
+});
+$('#spNew').addEventListener('click',()=>{sp.auto=false;sp.anim=null;newRun();setSpinBtns();dirtyS=true;});
+$$('[data-spb]').forEach(b=>b.addEventListener('click',()=>spBatch(+b.dataset.spb)));
+$('#spClear').addEventListener('click',()=>spinClear(''));
+$$('#segStyleS button').forEach(b=>b.addEventListener('click',()=>{sp.style=b.dataset.s;$$('#segStyleS button').forEach(x=>x.classList.toggle('on',x===b));dirtyS=true;}));
+$$('#segYS button').forEach(b=>b.addEventListener('click',()=>{sp.yMode=b.dataset.y;$$('#segYS button').forEach(x=>x.classList.toggle('on',x===b));dirtyS=true;}));
+$('#chkTheoryS').addEventListener('change',e=>{sp.theory=e.target.checked;dirtyS=true;});
+syncSpinInputs();
+
+/* ======================================================
+   POISSON (popcorn + phone notifications)
+   ====================================================== */
+const UNIT={s:1,m:60,h:3600},UNAME={s:'second',m:'minute',h:'hour'};
+const CTX={
+ popcorn:{icon:'🍿',noun:'pop',plural:'pops',sub:'GCSE Statistics · Popcorn popping at random',lam:4,rateU:'s',len:1,lenU:'s',k:4},
+ phone:{icon:'📱',noun:'notification',plural:'notifications',sub:'GCSE Statistics · Phone notifications arriving at random',lam:12,rateU:'h',len:30,lenU:'m',k:6}
+};
+const ps={ctx:'popcorn',lam:4,rateU:'s',len:1,lenU:'s',k:4,ev:'eq',style:'line',yMode:'freq',theory:false,sound:false,
+ counts:[],n:0,sum:0,sumSq:0,seq:new Uint16Array(MAXN),last:null,lastCount:0,running:false,acc:0,anim:null};
+let dirtyP=true,actx=null;
+function unitWord(u,n){return UNAME[u]+(n===1?'':'s');}
+function poisMu(){return parseFloat((ps.lam*ps.len*UNIT[ps.lenU]/UNIT[ps.rateU]).toPrecision(10));}
+function nounK(k){const c=CTX[ps.ctx];return k===1?c.noun:c.plural;}
+function hitP(j){return ps.ev==='eq'?j===ps.k:(ps.ev==='ge'?j>=ps.k:j<=ps.k);}
+function evWordsP(){return (ps.ev==='eq'?'exactly':(ps.ev==='ge'?'at least':'at most'))+' '+ps.k+' '+nounK(ps.k);}
+function evSymP(){return ps.ev==='eq'?'=':(ps.ev==='ge'?'≥':'≤');}
+function poisPmf(mu,M){const out=new Array(M+1);out[0]=Math.exp(-mu);for(let j=1;j<=M;j++)out[j]=out[j-1]*mu/j;return out;}
+function poisEventProb(mu){
+ const M=Math.max(ps.k,Math.ceil(mu+12*Math.sqrt(mu))+30),pm=poisPmf(mu,M);let s=0;
+ for(let j=0;j<=M;j++)if(hitP(j))s+=pm[j];
+ return Math.min(1,s);
+}
+function poisHits(){let h=0;for(let j=0;j<ps.counts.length;j++)if(hitP(j))h+=ps.counts[j];return h;}
+function setPoisRunBtn(){const b=$('#pRun');b.textContent=ps.running?'⏸ Stop':'▶ Start';b.classList.toggle('or',!ps.running);b.classList.toggle('ghost',ps.running);}
+/* sounds (only used while watching a single interval) */
+function popSnd(){
+ const n=Math.floor(actx.sampleRate*0.05),buf=actx.createBuffer(1,n,actx.sampleRate),d=buf.getChannelData(0);
+ for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);
+ const src=actx.createBufferSource();src.buffer=buf;
+ const f=actx.createBiquadFilter();f.type='bandpass';f.frequency.value=1100+Math.random()*1400;
+ const g=actx.createGain();g.gain.value=0.7;
+ src.connect(f);f.connect(g);g.connect(actx.destination);src.start();
+}
+function dingSnd(){
+ const t=actx.currentTime;
+ [880,1318].forEach((fr,i)=>{
+  const o=actx.createOscillator(),g=actx.createGain(),s=t+i*0.12;
+  o.type='sine';o.frequency.value=fr;
+  g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(0.22,s+0.01);g.gain.exponentialRampToValueAtTime(0.001,s+0.28);
+  o.connect(g);g.connect(actx.destination);o.start(s);o.stop(s+0.3);
+ });
+}
+function playSound(){if(!ps.sound||!actx)return;try{if(ps.ctx==='popcorn')popSnd();else dingSnd();}catch(e){}}
+/* simulation */
+function genTimes(mu){const out=[];let t=-Math.log(1-Math.random())/mu;while(t<1){out.push(t);t+=-Math.log(1-Math.random())/mu;}return out;}
+function commitCount(c,times){
+ while(ps.counts.length<=c)ps.counts.push(0);
+ ps.counts[c]++;ps.seq[ps.n++]=c;ps.sum+=c;ps.sumSq+=c*c;
+ if(times){ps.last=times;ps.lastCount=c;}
+}
+function finishAnim(){if(ps.anim){const a=ps.anim;ps.anim=null;commitCount(a.times.length,a.times);dirtyP=true;}}
+function runIntervals(m){
+ finishAnim();
+ m=Math.min(m,MAXN-ps.n);
+ if(m<=0){toast('Maximum of '+MAXN.toLocaleString('en-GB')+' intervals reached. Clear the results to go on.');return;}
+ const mu=poisMu();
+ for(let e=0;e<m;e++){const t=genTimes(mu);commitCount(t.length,e===m-1?t:null);}
+ dirtyP=true;
+ if(ps.n>=MAXN){ps.running=false;setPoisRunBtn();toast('Maximum of '+MAXN.toLocaleString('en-GB')+' intervals reached.');}
+}
+function startAnim(){
+ finishAnim();ps.running=false;setPoisRunBtn();
+ if(ps.n>=MAXN){toast('Maximum reached. Clear the results to go on.');return;}
+ ps.anim={times:genTimes(poisMu()),dur:2800,t0:0,prog:0,next:0};dirtyP=true;
+}
+function stepAnim(t){
+ const a=ps.anim;if(!a)return;
+ if(!a.t0)a.t0=t;
+ a.prog=Math.min(1,(t-a.t0)/a.dur);
+ while(a.next<a.times.length&&a.times[a.next]<=a.prog){playSound();a.next++;}
+ drawTimeline();
+ if(a.prog>=1)finishAnim();
+}
+function poisClear(msg){
+ const had=ps.n>0;
+ ps.running=false;setPoisRunBtn();ps.anim=null;
+ ps.counts=[];ps.n=0;ps.sum=0;ps.sumSq=0;ps.last=null;ps.lastCount=0;
+ syncPoisInputs();dirtyP=true;
+ if(had&&msg)toast(msg);
+}
+function syncPoisInputs(){
+ const c=CTX[ps.ctx],mu=poisMu();
+ document.body.dataset.ctx=ps.ctx;
+  $('#pLamLbl').textContent='Mean number of '+c.plural;
+ $('#pLam').value=ps.lam;$('#pRateU').value=ps.rateU;$('#pLen').value=ps.len;$('#pLenU').value=ps.lenU;
+ $('#pK').value=ps.k;$('#pEv').value=ps.ev;$('#pKLbl').textContent='k (number of '+c.plural+')';
+ const lenInRate=parseFloat((ps.len*UNIT[ps.lenU]/UNIT[ps.rateU]).toPrecision(10));
+ let h='On average <b>'+sig(ps.lam)+' '+c.plural+' per '+UNAME[ps.rateU]+'</b>.';
+ if(ps.lenU!==ps.rateU)h+=' '+sig(ps.len)+' '+unitWord(ps.lenU,ps.len)+' = '+sig(lenInRate)+' '+unitWord(ps.rateU,lenInRate)+'.';
+ h+='<br>In each interval we expect <b>μ = '+sig(ps.lam)+' × '+sig(lenInRate)+' = '+sig(mu)+'</b> '+c.plural+'.';
+ $('#pMu').innerHTML=h;
+ $$('#segStyleP button').forEach(x=>x.classList.toggle('on',x.dataset.s===ps.style));
+ $$('#segYP button').forEach(x=>x.classList.toggle('on',x.dataset.y===ps.yMode));
+ $('#chkTheoryP').checked=ps.theory;$('#pSound').checked=ps.sound;
+ $('#pDistTitle').textContent='Number of '+c.plural+' in each '+sig(ps.len)+'-'+UNAME[ps.lenU]+' interval';
+ $('#pConvTitle').textContent='Relative frequency of "'+evWordsP()+'" as the intervals mount up';
+}
+function readPoisSettings(){
+ const lam=parseFloat($('#pLam').value),len=parseFloat($('#pLen').value),ru=$('#pRateU').value,lu=$('#pLenU').value;
+ if(!(lam>0)||!(len>0)){toast('Please enter positive numbers.');syncPoisInputs();return;}
+ const mu=parseFloat((lam*len*UNIT[lu]/UNIT[ru]).toPrecision(10));
+ if(mu<0.1||mu>60){toast('The mean per interval, μ = '+sig(mu)+', needs to be between 0.1 and 60.');syncPoisInputs();return;}
+ if(lam===ps.lam&&len===ps.len&&ru===ps.rateU&&lu===ps.lenU){syncPoisInputs();return;}
+ ps.lam=lam;ps.len=len;ps.rateU=ru;ps.lenU=lu;
+ poisClear('Settings changed – results cleared');
+}
+/* drawing */
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h);ctx.fill();}
+function drawPopM(ctx,x,y,r){
+ ctx.lineWidth=1.2;ctx.strokeStyle='#d9b45a';ctx.fillStyle='#fffbe9';
+ for(const p of [[-0.62,0.1],[0.62,0.1],[0,-0.62]]){ctx.beginPath();ctx.arc(x+p[0]*r,y+p[1]*r,r*0.72,0,7);ctx.fill();ctx.stroke();}
+ ctx.fillStyle='#f3b93b';ctx.beginPath();ctx.arc(x,y,r*0.28,0,7);ctx.fill();
+}
+function drawPhoneM(ctx,x,y,r){
+ const w=r*1.2,h=r*1.9;
+ ctx.fillStyle='#243241';rrect(ctx,x-w/2,y-h/2,w,h,r*0.25);
+ ctx.fillStyle='#bfe0ff';ctx.fillRect(x-w/2+2,y-h/2+3,w-4,h-8);
+ ctx.fillStyle='#e53935';ctx.beginPath();ctx.arc(x+w/2,y-h/2,r*0.38,0,7);ctx.fill();
+}
+function drawTimeline(){
+ const cv=$('#pTimeline'),{ctx,w,h}=setupCanvas(cv),c=CTX[ps.ctx],pop=ps.ctx==='popcorn',mu=poisMu();
+ ctx.fillStyle=pop?'#fff6e0':'#e9f1fb';ctx.fillRect(0,0,w,h);
+ const small=w<520,m={l:22,r:22,t:34,b:46},pw=w-m.l-m.r,by=h-m.b;
+ ctx.fillStyle='#37424e';ctx.fillRect(m.l,by,pw,6);
+ ctx.font=(small?'11':'12')+'px "Trebuchet MS",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+ const L=ps.len;
+ for(const t of makeTicks(0,L,niceStep(L,small?4:6),false)){
+  const x=m.l+t.x/L*pw;ctx.fillStyle='#37424e';ctx.fillRect(x-1,by+6,2,6);ctx.fillStyle='#3b4a5a';ctx.fillText(t.label,x,by+14);
+ }
+ ctx.font='bold '+(small?'12':'13')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#243241';ctx.textBaseline='bottom';
+ ctx.fillText('Time ('+unitWord(ps.lenU,2)+')',m.l+pw/2,h-3);
+ const a=ps.anim;let times=[],prog=1;
+ if(a){times=a.times;prog=a.prog;}else if(ps.last)times=ps.last;
+ const r=Math.max(4.5,Math.min(9,pw/(mu*1.6+6))),lastX=[-99,-99,-99,-99,-99],gap=r*2.1;
+ let shown=0;
+ for(const tt of times){
+  if(tt>prog)break;
+  shown++;
+  const x=m.l+tt*pw;let lv=0;
+  for(;lv<5;lv++){if(x-lastX[lv]>=gap)break;}
+  if(lv===5){lv=0;let mn=1e9;for(let q=0;q<5;q++)if(lastX[q]<mn){mn=lastX[q];lv=q;}}
+  lastX[lv]=x;
+  const y=by-r*1.5-lv*(r*2.3);
+  let sc=1;if(a){const age=(prog-tt)*a.dur;if(age<260)sc=1+0.7*(1-age/260);}
+  if(pop)drawPopM(ctx,x,y,r*sc);else drawPhoneM(ctx,x,y,r*sc);
+ }
+ if(a){
+  ctx.setLineDash([5,4]);ctx.strokeStyle='#F47B3F';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(m.l+prog*pw,m.t-4);ctx.lineTo(m.l+prog*pw,by+6);ctx.stroke();ctx.setLineDash([]);
+ }
+ ctx.font='bold '+(small?'14':'16')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#243241';ctx.textAlign='left';ctx.textBaseline='top';
+ let msg;
+ if(a)msg='Counting… '+shown;
+ else if(ps.n>0&&ps.last)msg='Latest interval: '+ps.lastCount+' '+nounK(ps.lastCount);
+ else msg='Press "Run one interval" to watch the '+c.plural+' arrive.';
+ ctx.fillText(msg,m.l,8);
+}
+function convPointsP(){
+ const n=ps.n;if(!n)return [];
+ const step=Math.max(1,Math.floor(n/700)),pts=[];let hits=0;
+ for(let i=0;i<n;i++){if(hitP(ps.seq[i]))hits++;const c=i+1;if(c<=40||c%step===0||c===n)pts.push([c,hits/c]);}
+ return pts;
+}
+function renderPoisTiles(){
+ const n=ps.n,h=poisHits(),mean=n?ps.sum/n:0,vr=n>1?Math.max(0,(ps.sumSq-ps.sum*ps.sum/n)/(n-1)):0;
+ let modal=0,best=-1;for(let j=0;j<ps.counts.length;j++)if(ps.counts[j]>best){best=ps.counts[j];modal=j;}
+ const T=(v,l)=>'<div class="tile"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';
+ $('#tilesP').innerHTML=
+  T(n.toLocaleString('en-GB'),'Intervals run')+
+  T(n?h.toLocaleString('en-GB')+' ('+pct(h,n)+')':'–','Intervals with '+evWordsP())+
+  T(n?(h/n).toFixed(4):'–','Relative frequency of the event')+
+  T(n?mean.toFixed(2):'–','Mean count per interval')+
+  T(n>1?vr.toFixed(2):'–','Variance of the counts')+
+  T(n?modal:'–','Most common count')+
+  T(n?String(ps.lastCount):'–','Latest interval: count');
+}
+function renderPoisTheory(){
+ const box=$('#theoryBoxP');box.hidden=!ps.theory;if(!ps.theory)return;
+ const mu=poisMu(),k=ps.k,P=poisEventProb(mu),n=ps.n,t=j=>'P(X = '+j+')';
+ let h='';
+ if(ps.ev==='eq'){
+  let f=1;for(let i=2;i<=k;i++)f*=i;
+  h+='<b>P(X = '+k+')</b> = e<sup>−μ</sup> × μ<sup>'+k+'</sup> ÷ '+k+'!<br>';
+  h+='= e<sup>−'+sig(mu)+'</sup> × '+sig(mu)+'<sup>'+k+'</sup> ÷ '+k+'!<br>';
+  h+='= '+sig(Math.exp(-mu),4)+' × '+sig(Math.pow(mu,k),4)+' ÷ '+sig(f,6)+'<br>';
+ }else if(ps.ev==='le'){
+  h+='<b>P(X ≤ '+k+')</b> = '+(k===0?t(0):(k===1?t(0)+' + '+t(1):t(0)+' + … + '+t(k)))+'<br>';
+ }else{
+  h+='<b>P(X ≥ '+k+')</b> = '+(k===0?'1':'1 − P(X ≤ '+(k-1)+')')+'<br>';
+ }
+ h+='= <b>'+pf(P)+'</b> ('+(100*P).toFixed(2)+'%)';
+ h+='<br>For a Poisson distribution the mean and the variance both equal μ = <b>'+sig(mu)+'</b>.';
+ if(n>1){
+  const mean=ps.sum/n,vr=Math.max(0,(ps.sumSq-ps.sum*ps.sum/n)/(n-1));
+  h+='<br>Observed after '+n.toLocaleString('en-GB')+' intervals: mean <b>'+mean.toFixed(2)+'</b>, variance <b>'+vr.toFixed(2)+'</b>.';
+ }
+ if(n>0){
+  const hits=poisHits(),d=hits/n-P;
+  h+='<br>'+hits.toLocaleString('en-GB')+' intervals had '+evWordsP()+': relative frequency <b>'+(hits/n).toFixed(4)+'</b>';
+  h+=Math.abs(d)<0.00005?' – spot on the theoretical probability.':' – that is '+Math.abs(d).toFixed(4)+(d>0?' above':' below')+' the theoretical probability.';
+ }
+ box.innerHTML=h;
+}
+function renderPois(){
+ const mu=poisMu(),n=ps.n,prop=ps.yMode==='prop',c=CTX[ps.ctx];
+ const xmax=Math.max(Math.ceil(mu+4.5*Math.sqrt(mu))+1,7,ps.counts.length-1),pm=poisPmf(mu,xmax),bins=[];
+ for(let j=0;j<=xmax;j++){const cn=ps.counts[j]||0;bins.push({a:j-0.5,b:j+0.5,count:prop?(n?cn/n:0):cn,hi:hitP(j)});}
+ let curve=null;
+ if(ps.theory){curve=[];for(let j=0;j<=xmax;j++)curve.push([j,prop?pm[j]:n*pm[j]]);}
+ const vlines=ps.theory?[{x:mu,label:'Mean μ = '+sig(mu),color:'#1c4f93',dash:[2,4]}]:[];
+ drawChart($('#chartP'),{bins,x0:-0.5,x1:xmax+0.5,xticks:makeTicks(-0.5,xmax+0.5,niceStep(xmax+1,10),true),
+  xlabel:'Number of '+c.plural+' in '+sig(ps.len)+' '+unitWord(ps.lenU,ps.len),
+  ylabel:prop?'Relative frequency':'Frequency (number of intervals)',
+  style:ps.style,curve,curveDots:true,vlines,yfrac:prop,empty:n===0?'Run some intervals to see the graph build up':null});
+ drawConv($('#chartP2'),{pts:convPointsP(),n,theory:ps.theory?poisEventProb(mu):null,xlab:'Number of intervals'});
+ drawTimeline();renderPoisTiles();renderPoisTheory();
+}
+/* wiring */
+['#pLam','#pRateU','#pLen','#pLenU'].forEach(id=>$(id).addEventListener('change',readPoisSettings));
+$('#pK').addEventListener('change',()=>{let v=Math.round(parseFloat($('#pK').value));if(!(v>=0))v=0;ps.k=Math.min(200,v);syncPoisInputs();dirtyP=true;});
+$('#pEv').addEventListener('change',e=>{ps.ev=e.target.value;syncPoisInputs();dirtyP=true;});
+function setPoisCtx(c){const d=CTX[c];ps.ctx=c;ps.lam=d.lam;ps.rateU=d.rateU;ps.len=d.len;ps.lenU=d.lenU;ps.k=d.k;poisClear('');}
+$('#pOne').addEventListener('click',startAnim);
+$$('[data-px]').forEach(b=>b.addEventListener('click',()=>runIntervals(+b.dataset.px)));
+$('#pRun').addEventListener('click',()=>{
+ finishAnim();
+ if(!ps.running&&ps.n>=MAXN){toast('Clear the results to run again.');return;}
+ ps.running=!ps.running;ps.acc=0;setPoisRunBtn();
+});
+$('#pClear').addEventListener('click',()=>poisClear(''));
+$('#pSound').addEventListener('change',e=>{
+ ps.sound=e.target.checked;
+ if(ps.sound){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.resume)actx.resume();}catch(err){ps.sound=false;e.target.checked=false;toast('Sound is not available in this browser.');}}
+});
+$$('#segStyleP button').forEach(b=>b.addEventListener('click',()=>{ps.style=b.dataset.s;$$('#segStyleP button').forEach(x=>x.classList.toggle('on',x===b));dirtyP=true;}));
+$$('#segYP button').forEach(b=>b.addEventListener('click',()=>{ps.yMode=b.dataset.y;$$('#segYP button').forEach(x=>x.classList.toggle('on',x===b));dirtyP=true;}));
+$('#chkTheoryP').addEventListener('change',e=>{ps.theory=e.target.checked;dirtyP=true;});
+syncPoisInputs();
+
+/* ======================================================
+   wiring
+   ====================================================== */
+const GROUPS={normal:['beans','matches'],geometric:['cereal','spinner'],binomial:['coin','netball'],poisson:['popcorn','phone']};
+const CINFO={beans:{icon:'🥫',name:'Baked Beans'},matches:{icon:'🔥',name:'Matchboxes'},cereal:{icon:'🥣',name:'Cereal Toys'},spinner:{icon:'🎡',name:'Spinner'},
+ coin:{icon:'🪙',name:'Coin Flips'},netball:{icon:'🏐',name:'Netball'},popcorn:{icon:'🍿',name:'Popcorn'},phone:{icon:'📱',name:'Phone notifications'}};
+const MODE_OF={beans:'beans',matches:'matches',cereal:'cereal',spinner:'spinner',coin:'binom',netball:'binom',popcorn:'poisson',phone:'poisson'};
+const lastCtx={normal:'beans',geometric:'cereal',binomial:'coin',poisson:'popcorn'};
+function groupOf(c){for(const g in GROUPS)if(GROUPS[g].indexOf(c)>=0)return g;return 'normal';}
+function openContext(c){
+ const g=groupOf(c);lastCtx[g]=c;
+ setRunning(false);cs.auto=false;setAutoBtn();
+ bs.running=false;setBinomRunBtn();
+ ps.running=false;ps.anim=null;setPoisRunBtn();
+ sp.auto=false;sp.anim=null;setSpinBtns();
+ mode=MODE_OF[c];
+ document.body.dataset.mode=mode;document.body.dataset.ctx=c;
+ $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.group===g));
+ $('#ctxSeg').innerHTML=GROUPS[g].map(x=>'<button data-ctx="'+x+'"'+(x===c?' class="on"':'')+'>'+CINFO[x].icon+' '+CINFO[x].name+'</button>').join('');
+ $('#logo').textContent=CINFO[c].icon;
+ $('#normal').hidden=!(mode==='beans'||mode==='matches');
+ $('#cereal').hidden=mode!=='cereal';$('#spinner').hidden=mode!=='spinner';
+ $('#binom').hidden=mode!=='binom';$('#poisson').hidden=mode!=='poisson';
+ if(mode==='poisson'){if(ps.ctx!==c)setPoisCtx(c);else syncPoisInputs();}
+ else if(mode==='binom'){if(bs.ctx!==c)setBinomCtx(c);else syncBinomInputs();}
+ else if(mode==='cereal'){renderCereal();}
+ else if(mode==='spinner'){syncSpinInputs();}
+ else{const cfg=MODES[mode];if(!cur().geo)rebuild(cur(),cfg);syncInputs();updateAll();}
+ dirtyChart=true;dirtyC=true;dirtyB=true;dirtyCoins=true;dirtyP=true;dirtyS=true;
+}
+$('#ctxSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.ctx)openContext(b.dataset.ctx);});
+$$('.tabs button').forEach(b=>b.addEventListener('click',()=>openContext(lastCtx[b.dataset.group])));
+['#inMean','#inSd','#inStated'].forEach(id=>$(id).addEventListener('change',readSettings));
+$('#chkEco').addEventListener('change',e=>{ECO.on=e.target.checked;syncInputs();rebuild(STATES.beans,MODES.beans);updateAll();dirtyChart=true;});
+['#ecoPrice','#ecoCost','#ecoPrec','#ecoComp','#ecoBurst','#ecoClean','#ecoSens'].forEach(id=>$(id).addEventListener('change',readEco));
+$('#btnEcoDef').addEventListener('click',()=>{const on=ECO.on;Object.assign(ECO,ECO_DEF,{on});const st=STATES.beans;if(ECO.burst<=st.stated)ECO.burst=st.stated+15;syncEco();rebuild(st,MODES.beans);updateAll();toast('Money settings reset');});
+$('#btnEcoBest').addEventListener('click',()=>{const b=ecoBest(),st=STATES.beans;st.mean=b.m;st.sd=b.s;st.dp=dpFor(b.s);ECO.price=b.price;syncInputs();clearData();toast('Best settings applied – data cleared');});
+$('#selBin').addEventListener('change',()=>{const st=cur();st.bin=$('#selBin').value;rebuild(st,curCfg());});
+$('#btnRun').addEventListener('click',()=>{if(!running&&cur().stat.n>=MAXN){toast('Clear the data to run again.');return;}setRunning(!running);});
+$('#btnReset').addEventListener('click',()=>{setRunning(false);clearData();});
+$$('#addRow button').forEach(b=>b.addEventListener('click',()=>{addMany(+b.dataset.add);}));
+$$('#segStyle button').forEach(b=>b.addEventListener('click',()=>{cur().style=b.dataset.s;$$('#segStyle button').forEach(x=>x.classList.toggle('on',x===b));dirtyChart=true;}));
+$('#chkTheory').addEventListener('change',e=>{cur().theory=e.target.checked;updateTheory();dirtyChart=true;});
+
+$('#kMinus').addEventListener('click',()=>changeK(-1));
+$('#kPlus').addEventListener('click',()=>changeK(1));
+function changeK(d){
+ const k=Math.min(12,Math.max(2,cs.k+d));if(k===cs.k)return;
+ cs.k=k;
+ if(cs.preset==='custom'){while(cs.w.length<k)cs.w.push(1);cs.w.length=k;}
+ else cs.w=presetWeights(cs.preset,k);
+ resetCereal('Number of toys changed – results cleared');
+}
+$('#selPreset').addEventListener('change',e=>{
+ cs.preset=e.target.value;
+ if(cs.preset!=='custom')cs.w=presetWeights(cs.preset,cs.k);
+ resetCereal(cs.preset==='custom'?'Edit the weights below':'Results cleared');
+});
+$('#btnBuy').addEventListener('click',()=>{cs.auto=false;setAutoBtn();buyOne();});
+$('#btnAuto').addEventListener('click',()=>{
+ cs.auto=!cs.auto;if(cs.auto&&cs.done)newCollector();cs.acc=0;setAutoBtn();renderShelf(false);
+});
+$('#btnNewC').addEventListener('click',()=>{cs.auto=false;setAutoBtn();newCollector();renderShelf(false);});
+$$('[data-batch]').forEach(b=>b.addEventListener('click',()=>runBatch(+b.dataset.batch)));
+$('#btnClearC').addEventListener('click',()=>{cs.results=[];cs.auto=false;setAutoBtn();dirtyC=true;renderCereal();});
+$$('#segStyleC button').forEach(b=>b.addEventListener('click',()=>{cs.style=b.dataset.s;$$('#segStyleC button').forEach(x=>x.classList.toggle('on',x===b));dirtyC=true;}));
+$('#chkTheoryC').addEventListener('change',e=>{cs.theory=e.target.checked;updateTilesC();dirtyC=true;});
+
+window.addEventListener('resize',()=>{dirtyChart=true;dirtyC=true;dirtyB=true;dirtyP=true;dirtyS=true;});
+
+let lastT=performance.now();
+function frame(t){
+ const dt=Math.min(0.1,(t-lastT)/1000);lastT=t;
+ if(mode==='poisson'){
+  if(ps.anim)stepAnim(t);
+  else if(ps.running){
+   const rate=+$('#pRate').value;
+   ps.acc+=rate*dt;const k=Math.floor(ps.acc);ps.acc-=k;
+   if(k>0)runIntervals(Math.min(k,2000));
+  }
+  if(dirtyP){dirtyP=false;renderPois();}
+ }else if(mode==='binom'){
+  if(bs.running){
+   const rate=+$('#bRate').value;
+   bs.acc+=rate*dt;const k=Math.floor(bs.acc);bs.acc-=k;
+   if(k>0)runExperiments(Math.min(k,2000),k===1&&rate<=2);
+  }
+  if(dirtyCoins){dirtyCoins=false;renderCoins();}
+  if(dirtyB){dirtyB=false;renderBinom();}
+ }else if(mode==='spinner'){
+  if(sp.anim)stepSpin(t);
+  else if(sp.auto){
+   const rate=+$('#spRate').value;
+   if(rate<=3){
+    if(sp.wait>0)sp.wait-=dt*1000;else beginSpin(rate<=1.5?800:260);
+   }else{
+    sp.acc+=rate*dt;let k=Math.min(Math.floor(sp.acc),400);sp.acc-=Math.floor(sp.acc);
+    while(k-->0&&sp.auto)instantSpin();
+   }
+  }
+  if(sp.anim)drawWheel();
+  if(dirtyS){dirtyS=false;renderSpin();}
+ }else if(mode!=='cereal'){
+  const st=cur();
+  if(running){
+   acc+=(+$('#selRate').value)*dt;let k=Math.floor(acc);acc-=k;
+   if(k>0)addMany(Math.min(k,3000));
+  }
+  if(st.slide<1){st.slide=Math.min(1,st.slide+dt/0.3);}
+  drawBelt(dt);
+  if(dirtyChart){dirtyChart=false;renderChart();}
+ }else{
+  if(cs.auto){
+   cs.acc+=(+$('#selBoxRate').value)*dt;let k=Math.min(Math.floor(cs.acc),500);cs.acc-=Math.floor(cs.acc);
+   while(k-->0&&!cs.done)buyOne();
+   if(cs.done){cs.auto=false;setAutoBtn();}
+  }
+  if(dirtyC){dirtyC=false;renderChartC();}
+ }
+ requestAnimationFrame(frame);
+}
+/* init */
+rebuild(STATES.beans,MODES.beans);rebuild(STATES.matches,MODES.matches);
+cs.w=presetWeights('equal',cs.k);cs.E=expectedBoxes(cs.w);newCollector();buildToyRows();buildShelf();
+syncInputs();updateStats();renderShelf(false);
+openContext('beans');
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
