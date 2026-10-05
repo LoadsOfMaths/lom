@@ -34,6 +34,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Times Tables Quiz | `times-tables-quiz/` |
 | Toast | `toast/` |
 | Trio | `trio/` |
+| Whale Watching | `whale-watching/` |
 
 ## Updating a game
 

@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Whale Watching</title>
+<style>
+:root{
+  --orange:#F47B3F; --orange-d:#d4602a; --blue:#3F73B8; --blue-d:#2c5592; --grey:#5d6877; --grey-l:#e6eaf0;
+  --ink:#16273a; --cream:#fff6e8; --wood:#8f5e35; --wood-d:#6a4326; --wood-l:#b27b45;
+  --brass:#dcab3c; --brass-d:#a07a22; --sea-1:#8fd0e6; --sea-2:#2a86ac; --sea-3:#17597f;
+  --tile-c:#3F73B8; --tile-x:#F47B3F; --tile-m:#5d6877;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#17597f;color:var(--ink);
+  font-family:"Anak Orang","Super Bouncer","Trebuchet MS","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 6px var(--blue)}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+
+/* ---------- number furniture: raised negative sign, fractions, equals ---------- */
+.ng{display:inline-block;width:.34em;height:.075em;background:currentColor;border-radius:2px;vertical-align:.58em;margin:0 .06em 0 .02em}
+.tf{display:inline-block;white-space:nowrap}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.62em;line-height:1.05;margin:0 .08em}
+.fr i{font-style:normal;padding:0 .12em}
+.fr i:first-child{border-bottom:.09em solid currentColor}
+.op{display:inline-block;margin:0 .22em}
+.tm{display:inline-block;white-space:nowrap;transition:opacity .5s,transform .5s}
+.tm.fade{opacity:0;transform:scale(.4)}
+.tm.pop{animation:pop .45s ease-out}
+@keyframes pop{from{opacity:0;transform:scale(.3) translateY(-.4em)}to{opacity:1;transform:none}}
+.eqs{display:inline-block;position:relative;width:1.05em;height:.5em;margin:0 .32em;vertical-align:middle}
+.eqs::before,.eqs::after{content:"";position:absolute;left:0;right:0;height:.085em;background:currentColor;border-radius:.05em}
+.eqs::before{top:.09em}.eqs::after{top:.32em}
+
+/* ---------- screens ---------- */
+#app{position:fixed;inset:0;overflow:hidden}
+.screen{position:absolute;inset:0;display:none}
+#app[data-screen=title] #title,#app[data-screen=play] #play,#app[data-screen=quiz] #quiz{display:flex}
+#bg{position:absolute;inset:0;overflow:hidden;background:linear-gradient(#bfe6f5 0,#e9f6fa 28%,#7cc3dc 29%,#2a86ac 55%,#17597f 100%)}
+#bg .swell{position:absolute;left:-10%;width:120%;height:26%;bottom:0;opacity:.16;animation:sway 7s ease-in-out infinite}
+#bg .swell.b{bottom:10%;opacity:.12;animation-duration:9s;animation-delay:-3s}
+@keyframes sway{0%,100%{transform:translateY(0)}50%{transform:translateY(1.2%)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes bob2{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* ---------- title ---------- */
+#title{flex-direction:column;align-items:center;justify-content:center;gap:1.2vh;padding:2vh 3vw;text-align:center;overflow:auto}
+#title .brand{font-size:clamp(14px,2vw,22px);letter-spacing:.14em;text-transform:uppercase;color:var(--blue-d);font-weight:700}
+#title h1{margin:0;font-size:clamp(40px,8vw,104px);line-height:1;color:#fff;text-shadow:0 .05em 0 var(--blue-d),0 .1em .2em rgba(0,0,0,.25)}
+#title .note{max-width:36em;font-size:clamp(14px,1.8vw,20px);color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.3);margin:.2em 0 .6em}
+.btnrow{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center}
+.big{background:var(--orange);color:#fff;font-weight:700;font-size:clamp(18px,2.6vw,30px);padding:.45em 1.1em;border-radius:999px;box-shadow:0 .14em 0 var(--orange-d);transition:transform .08s}
+.big:active{transform:translateY(.1em);box-shadow:0 .04em 0 var(--orange-d)}
+.big.blue{background:var(--blue);box-shadow:0 .14em 0 var(--blue-d)}
+.big.grey{background:var(--grey);box-shadow:0 .14em 0 #3d4652}
+.chip{background:rgba(255,255,255,.92);color:var(--ink);font-weight:700;border-radius:999px;padding:.4em .9em;font-size:clamp(14px,1.6vw,18px);box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.chip[aria-pressed=true],.chip.on{background:var(--ink);color:#fff}
+.seg{display:inline-flex;gap:4px;background:rgba(255,255,255,.25);padding:4px;border-radius:999px}
+.seg .chip{box-shadow:none}
+
+/* organ pistons */
+#organ{background:linear-gradient(#5a3820,#3d2412);border:3px solid #2a190b;border-radius:16px;padding:10px 14px 12px;box-shadow:0 8px 0 rgba(0,0,0,.25);max-width:min(96vw,980px)}
+#organ .tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+#organ .tab{background:#e8c875;color:#3d2412;font-weight:700;border-radius:8px;padding:.25em .9em;min-width:2.4em}
+#organ .tab[aria-selected=true]{background:var(--brass);box-shadow:inset 0 0 0 3px #fff}
+#organ .tabs .sp{flex:1}
+#organ .tool{background:#2a190b;color:#f3e1b0;border-radius:8px;padding:.25em .8em;font-size:clamp(12px,1.4vw,16px)}
+#organ .tool[aria-pressed=true]{background:var(--orange);color:#fff}
+#pistons{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+@media (max-width:640px){#pistons{grid-template-columns:repeat(4,1fr)}}
+.piston{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.piston .cap{width:clamp(38px,5.4vw,60px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3c4,var(--brass) 45%,var(--brass-d));color:#3d2412;font-weight:700;font-size:clamp(14px,1.9vw,22px);box-shadow:0 4px 0 #6d4f10,inset 0 0 0 2px rgba(255,255,255,.4);display:grid;place-items:center}
+.piston .cap:active{transform:translateY(3px);box-shadow:0 1px 0 #6d4f10}
+.piston.empty .cap{background:radial-gradient(circle at 35% 30%,#b9a67a,#7d6d49);opacity:.8}
+.piston.cur .cap{box-shadow:0 4px 0 #6d4f10,0 0 0 4px #fff}
+.piston .nm{font-size:clamp(10px,1.2vw,13px);color:#f3e1b0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:1.2em}
+#organ.armed{box-shadow:0 0 0 4px var(--orange),0 8px 0 rgba(0,0,0,.25)}
+#organMsg{color:#fff;min-height:1.4em;font-size:clamp(13px,1.5vw,17px);text-shadow:0 1px 0 rgba(0,0,0,.3)}
+
+/* ---------- play screen ---------- */
+#play{flex-direction:column}
+#stageWrap{flex:1;min-height:0;position:relative;display:grid;place-items:center;container-type:size;overflow:hidden}
+#stage{position:relative;width:min(100cqw,177.7778cqh);height:min(100cqh,56.25cqw);container-type:size}
+#scene{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#scene .bobA{animation:bob 4.2s ease-in-out infinite}
+#scene .bobB{animation:bob2 5.3s ease-in-out infinite}
+#scene .drift{animation:drift 26s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-90px)}}
+#pod{transition:transform 1.4s ease,opacity 1.4s ease;transform-box:fill-box;transform-origin:50% 100%;transform:translate(0,calc(var(--d,0)*-34px + var(--u,0)*-12px)) scale(calc(1 - var(--d,0)*.24 + var(--u,0)*.04));opacity:calc(1 - var(--d,0)*.7)}
+.whale .wb{fill:#44648a}.whale .wbelly{fill:#8aa6c4}.whale .wfin{fill:#3a5778}
+.whale.calf .wb{fill:#5476a0}.whale.calf .wbelly{fill:#9db8d3}
+.whale .eye{fill:#10243a}
+.blow{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
+.blow path{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round}
+.blow circle{fill:#fff}
+.blow.go{animation:blow 1.7s ease-out}
+@keyframes blow{0%{opacity:0;transform:scaleY(.1)}12%{opacity:1;transform:scaleY(1)}70%{opacity:.9;transform:scaleY(1.05)}100%{opacity:0;transform:scaleY(1.1) translateY(-6px)}}
+.fluke{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
+.fluke.go{animation:slap 1.6s ease-in-out}
+@keyframes slap{0%{opacity:0;transform:translateY(40px) rotate(0)}18%{opacity:1;transform:translateY(-6px) rotate(-26deg)}38%{opacity:1;transform:translateY(0) rotate(-26deg)}52%{opacity:1;transform:translateY(8px) rotate(14deg)}70%{opacity:1;transform:translateY(4px) rotate(6deg)}100%{opacity:0;transform:translateY(34px) rotate(0)}}
+.wrap-big.breach{animation:breach 2.3s ease-in-out}
+@keyframes breach{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(-30px,-150px) rotate(-18deg)}50%{transform:translate(-50px,-190px) rotate(-6deg)}75%{transform:translate(-80px,-60px) rotate(14deg)}100%{transform:translate(-90px,10px) rotate(0)}}
+.splash{opacity:0}.splash.go{animation:splash 1.6s .9s ease-out}
+@keyframes splash{0%{opacity:0;transform:scale(.3)}30%{opacity:.9}100%{opacity:0;transform:scale(1.3)}}
+.whale-turn{transition:transform 1.2s ease}
+#mermaid{transform:translateY(130px);opacity:0}
+#mermaid.go{animation:mer 6.5s ease-in-out}
+@keyframes mer{0%{transform:translateY(130px);opacity:1}12%,86%{transform:translateY(0);opacity:1}100%{transform:translateY(130px);opacity:1}}
+#mermaid .arm{transform-box:fill-box;transform-origin:20% 90%}
+#mermaid.go .arm{animation:wave .9s 1.2s ease-in-out 3}
+@keyframes wave{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(26deg)}}
+#mermaid .tail{transform-box:fill-box;transform-origin:10% 50%}
+#mermaid.go .tail{animation:flick .7s 4.2s ease-in-out 2}
+@keyframes flick{0%,100%{transform:rotate(0)}50%{transform:rotate(-24deg)}}
+
+/* equation on the jetty */
+#eqbox{position:absolute;left:8%;bottom:30%;width:84%;display:flex;justify-content:center;align-items:flex-end;pointer-events:none;
+  animation:bob 4.2s ease-in-out infinite;color:#fff;font-weight:700;font-size:calc(var(--fs,6.2)*1cqw);line-height:1.15;text-shadow:0 .05em 0 rgba(0,0,0,.35)}
+#eq{display:inline-flex;align-items:center;white-space:nowrap;padding:.1em .3em}
+#eq .side{display:inline-block;min-width:1ch}
+#eqnote{position:absolute;left:50%;top:75.5%;transform:translateX(-50%);font-size:2.4cqw;color:#fff;font-weight:700;background:rgba(23,40,58,.7);padding:.2em .8em;border-radius:999px;opacity:0;transition:opacity .6s;pointer-events:none;white-space:nowrap}
+#eqnote.on{opacity:1}
+#plaque{position:absolute;left:19%;top:77.5%;transform:translateX(0);font-size:1.5cqw;color:#fff;background:rgba(61,36,18,.85);padding:.15em .7em;border-radius:.3em;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;animation:bob 4.2s ease-in-out infinite}
+#topbar{position:absolute;top:1.6cqw;left:1.6cqw;right:1.6cqw;display:flex;gap:1.2cqw;justify-content:space-between;z-index:5;pointer-events:none}
+#topbar .grp{display:flex;gap:1cqw;pointer-events:auto}
+.ibtn{display:inline-flex;align-items:center;gap:.5em;background:rgba(255,255,255,.92);color:var(--ink);border-radius:999px;font-weight:700;padding:.35em .85em;font-size:clamp(13px,1.9cqw,22px);box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.ibtn svg{width:1.2em;height:1.2em}
+.ibtn:active{transform:translateY(2px)}
+#msg{position:absolute;left:50%;top:5%;transform:translate(-50%,-10px);background:#fff;color:var(--ink);font-weight:700;font-size:clamp(14px,2.3cqw,26px);padding:.5em 1em;border-radius:1em;box-shadow:0 5px 0 rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:8;max-width:80%;text-align:center}
+#msg.on{opacity:1;transform:translate(-50%,0)}
+.wait #deck button{pointer-events:none}
+
+/* deck (HTML under the stage) */
+#deck{flex:none;min-height:clamp(140px,23vh,280px);background:linear-gradient(var(--wood-l) 0,var(--wood) 14%,var(--wood-d) 100%);border-top:6px solid #3d2412;position:relative;display:flex;gap:2vw;align-items:center;justify-content:center;padding:1.2vh 2vw;flex-wrap:wrap}
+#deck::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent 118px,rgba(0,0,0,.18) 118px,rgba(0,0,0,.18) 120px);pointer-events:none}
+#deck>*{position:relative}
+#rack{display:flex;gap:clamp(8px,1.3vw,18px);flex-wrap:wrap;justify-content:center;align-items:center;max-width:min(92vw,1100px)}
+.tile{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:calc(var(--ts,64px)*1.15);height:var(--ts,64px);padding:0 .55em;border-radius:14px;color:#fff;font-weight:700;font-size:calc(var(--ts,64px)*.5);
+  background:var(--tile-m);box-shadow:0 5px 0 rgba(0,0,0,.35),inset 0 0 0 3px rgba(255,255,255,.22);white-space:nowrap;transition:transform .12s;line-height:1}
+.tile .fr{font-size:.55em}
+.tile:active{transform:translateY(3px)}
+.tile.sel{transform:translateY(-8px);box-shadow:0 11px 0 rgba(0,0,0,.35),0 0 0 4px #fff,inset 0 0 0 3px rgba(255,255,255,.22)}
+.colour .tile.k-c{background:var(--tile-c)}
+.colour .tile.k-x{background:var(--tile-x)}
+.colour .tile.k-m{background:var(--tile-m)}
+body:not(.colour) .tile{background:#5a6a7e}
+.tile.k-x{clip-path:polygon(0 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%);border-radius:14px 0 14px 14px}
+.tile.k-x::after{content:"";position:absolute;top:0;right:0;width:15px;height:15px;background:linear-gradient(225deg,transparent 50%,rgba(0,0,0,.28) 50%)}
+.tile .wv{position:absolute;left:8px;bottom:4px;width:calc(100% - 16px);height:5px;opacity:.55;background:radial-gradient(circle at 50% 100%,transparent 3px,#fff 3.5px,#fff 5px,transparent 5.5px) 0 0/10px 5px repeat-x}
+#actions{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+#throwBtn{background:var(--orange);color:#fff;font-weight:700;font-size:clamp(20px,3.4vh,34px);padding:.45em 1.3em;border-radius:14px;box-shadow:0 .16em 0 var(--orange-d)}
+#throwBtn:active{transform:translateY(.1em);box-shadow:0 .05em 0 var(--orange-d)}
+#throwBtn[disabled]{opacity:.5}
+.sbtn{background:#f3e1b0;color:#3d2412;font-weight:700;border-radius:12px;padding:.4em .9em;font-size:clamp(14px,2.2vh,20px);box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.sbtn[disabled]{opacity:.45}
+#afterBtns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+#afterBtns .big{font-size:clamp(18px,3.2vh,32px)}
+.fxlayer{position:fixed;inset:0;pointer-events:none;z-index:20;overflow:hidden}
+.ptile{position:absolute;transform:translate(-50%,-50%);--ts:clamp(40px,7cqw,64px)}
+.ptile.shake{animation:shake .4s}
+@keyframes shake{0%,100%{margin-left:0}25%{margin-left:-8px}75%{margin-left:8px}}
+.fly{position:absolute;transform:translate(-50%,-50%);will-change:transform}
+
+/* free choice controls */
+#free{display:flex;align-items:center;gap:clamp(10px,2vw,28px);flex-wrap:wrap;justify-content:center}
+#dial{--s:clamp(110px,22vh,170px);width:var(--s);height:var(--s);border-radius:50%;position:relative;background:radial-gradient(circle at 35% 30%,#fff0b8,var(--brass) 50%,var(--brass-d));box-shadow:0 6px 0 #6d4f10,inset 0 0 0 5px #8a6616}
+#dial .d{position:absolute;width:34%;height:34%;border-radius:50%;background:#3d2412;color:#f6e3a5;font-weight:700;font-size:calc(var(--s)*.2);display:grid;place-items:center;box-shadow:inset 0 0 0 3px #a07a22}
+#dial .d[aria-pressed=true]{background:var(--orange);color:#fff;box-shadow:0 0 0 3px #fff}
+#dial .d.n{left:33%;top:3%}#dial .d.e{right:3%;top:33%}#dial .d.s{left:33%;bottom:3%}#dial .d.w{left:3%;top:33%}
+#dial .hub{position:absolute;left:41%;top:41%;width:18%;height:18%;border-radius:50%;background:#3d2412;box-shadow:0 0 0 3px #a07a22}
+#dial .needle{position:absolute;left:47.5%;top:20%;width:5%;height:30%;background:#3d2412;border-radius:3px;transform-origin:50% 100%;transition:transform .35s}
+#keys{display:grid;grid-template-columns:repeat(4,calc(var(--ks)));gap:6px;--ks:clamp(40px,6.4vh,58px)}
+#keys button{height:var(--ks);border-radius:10px;background:#f3e1b0;color:#3d2412;font-weight:700;font-size:calc(var(--ks)*.42);box-shadow:0 3px 0 rgba(0,0,0,.35)}
+#keys button:active{transform:translateY(2px)}
+#keys .xk{background:var(--tile-x);color:#fff}
+#tilePrev{display:flex;align-items:center;justify-content:center;min-width:calc(var(--ks,50px)*3);min-height:calc(var(--ks,50px)*.9);background:rgba(0,0,0,.35);border-radius:10px;color:#fff;font-weight:700;font-size:clamp(20px,3.4vh,32px);padding:0 .6em;grid-column:1/-1}
+.numtag{font-size:.8em;opacity:.7}
+
+/* calculator */
+#calc{position:absolute;right:1.5cqw;bottom:2cqw;width:min(44cqw,260px);background:#2b3748;border-radius:14px;padding:10px;box-shadow:0 8px 0 rgba(0,0,0,.3);z-index:7}
+#calc .scr{background:#c9e8c4;color:#14301a;border-radius:8px;text-align:right;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:22px;padding:6px 10px;min-height:38px;overflow:hidden;margin-bottom:8px}
+#calc .pad{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+#calc .pad button{background:#eceff4;border-radius:8px;padding:.55em 0;font-weight:700}
+#calc .pad .o{background:var(--orange);color:#fff}
+#calc .pad .c{background:#c0392b;color:#fff}
+
+/* ---------- settings ---------- */
+.modal{position:fixed;inset:0;background:rgba(10,25,40,.72);display:none;align-items:center;justify-content:center;z-index:40;padding:2vh 2vw}
+.modal.on{display:flex}
+.sheet{background:#fffdf8;border-radius:18px;max-width:760px;width:100%;max-height:96vh;display:flex;flex-direction:column;box-shadow:0 12px 0 rgba(0,0,0,.25);overflow:hidden}
+.sheet h2{margin:0;padding:.7em 1em;font-size:clamp(20px,3vh,28px);background:var(--blue);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:1em}
+.sheet .body{overflow:auto;padding:.6em 1em 1em;flex:1}
+.sheet .foot{padding:.7em 1em;display:flex;gap:10px;justify-content:flex-end;border-top:2px solid var(--grey-l);flex-wrap:wrap}
+details.sec{border-bottom:2px solid var(--grey-l);padding:.2em 0}
+details.sec>summary{cursor:pointer;list-style:none;padding:.55em .2em;display:flex;flex-direction:column;gap:.1em;font-weight:700;font-size:1.1em;position:relative;padding-right:1.6em}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"";position:absolute;right:.4em;top:1.1em;width:.55em;height:.55em;border-right:.17em solid var(--blue);border-bottom:.17em solid var(--blue);transform:rotate(45deg);transition:transform .2s}
+details.sec[open]>summary::after{transform:rotate(-135deg);top:1.35em}
+details.sec .sum{font-weight:400;font-size:.85em;color:var(--grey)}
+details.sec .inner{padding:.2em .2em .9em;display:flex;flex-direction:column;gap:.45em}
+.chk,.rad{display:flex;align-items:center;gap:.6em;padding:.3em .2em;cursor:pointer;font-size:1.02em;min-height:2.2em}
+.chk input,.rad input{width:1.35em;height:1.35em;accent-color:var(--blue);flex:none}
+.chk .tpl{font-size:1.1em}
+.sub{margin-left:1.8em;display:flex;flex-direction:column;gap:.1em}
+.sub[hidden]{display:none}
+.row{display:flex;gap:.8em;align-items:center;flex-wrap:wrap}
+select{font:inherit;padding:.3em .5em;border-radius:8px;border:2px solid var(--grey-l);background:#fff}
+.hint{font-size:.85em;color:var(--grey)}
+.sheet .big{font-size:clamp(16px,2.4vh,22px)}
+textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;border:2px solid var(--grey-l);border-radius:8px;padding:8px}
+.inl .ng{vertical-align:.6em}
+
+/* ---------- quiz ---------- */
+#quiz{flex-direction:column}
+#quizTop{position:relative;z-index:3;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:1.4vh 2vw;flex-wrap:wrap}
+#quizTop .grp{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#quizTop .count{color:#fff;font-weight:700;font-size:clamp(16px,2.4vh,24px);text-shadow:0 2px 0 rgba(0,0,0,.3)}
+#quizBody{position:relative;flex:1;overflow:auto;padding:1vh 2vw 3vh}
+#grid{display:grid;gap:clamp(10px,1.6vw,22px);grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));max-width:1500px;margin:0 auto}
+#grid.ten{grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr))}
+.q{position:relative;display:flex;flex-direction:column;align-items:center;gap:.2em;padding-top:.3em;--fs:26px}
+.q .no{position:absolute;left:0;top:0;width:1.9em;height:1.9em;border-radius:50%;background:var(--orange);color:#fff;font-weight:700;display:grid;place-items:center;box-shadow:0 2px 0 var(--orange-d);font-size:15px;z-index:2}
+.q .qeq{color:#fff;font-weight:700;font-size:var(--fs);min-height:2em;display:flex;align-items:flex-end;justify-content:center;text-shadow:0 2px 0 rgba(0,0,0,.35);padding-top:.5em;max-width:100%;overflow:hidden}
+.q .qeq .qin{white-space:nowrap;display:inline-flex;align-items:center}
+.q .plank{width:100%;height:18px;background:repeating-linear-gradient(90deg,var(--wood-l) 0,var(--wood-l) 46px,var(--wood) 46px,var(--wood) 48px);border-radius:5px;box-shadow:0 5px 0 #4c2f18;position:relative;animation:bob 4.2s ease-in-out infinite}
+.q .plank::before,.q .plank::after{content:"";position:absolute;bottom:-17px;width:26px;height:20px;border-radius:0 0 10px 10px;background:var(--orange)}
+.q .plank::before{left:6%}.q .plank::after{right:6%}
+.q .ans{display:flex;align-items:center;gap:.5em;margin-top:1.1em;background:rgba(255,255,255,.93);border-radius:12px;padding:.25em .7em;color:var(--ink);font-weight:700;font-size:20px}
+.q .ans input{font:inherit;width:6.2em;border:0;border-bottom:3px solid var(--blue);background:transparent;text-align:center;padding:.1em;border-radius:0;color:var(--ink)}
+.q .ans input:focus{outline:none;border-color:var(--orange)}
+.q .ans .pv{min-width:2.2em;color:var(--blue-d);font-size:.95em}
+.q.cur .ans{box-shadow:0 0 0 4px var(--orange)}
+.q .res{display:none;font-weight:700;margin-top:.4em;background:#fff;border-radius:10px;padding:.2em .7em;font-size:18px}
+.q.marked .res{display:block}
+.q.marked .res.good{color:#18813f}.q.marked .res.bad{color:#b02a2a}
+.q.marked .ans input{pointer-events:none}
+.q.marked .ans{opacity:.95}
+.q .tick{display:inline-block;width:1.1em;height:1.1em;vertical-align:-.15em;margin-right:.2em}
+#one{display:none;align-items:center;justify-content:center;flex-direction:column;gap:1.2em;min-height:100%}
+#one .q{width:min(92vw,720px);--fs:clamp(32px,7vw,70px)}
+#one .q .ans{font-size:clamp(22px,3.4vw,34px)}
+#quizBody.onelay #grid{display:none}
+#quizBody.onelay #one{display:flex}
+@keyframes jin{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+@keyframes jout{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-60px)}}
+#one .q.in{animation:jin .45s ease-out}
+#one .q.out{animation:jout .3s ease-in forwards}
+#pad{position:relative;z-index:4;background:#2b3748;padding:8px 10px;display:none;gap:6px;justify-content:center;flex-wrap:wrap}
+#pad.on{display:flex}
+#pad button{min-width:clamp(40px,8vw,64px);height:clamp(40px,6.5vh,56px);border-radius:10px;background:#eceff4;font-weight:700;font-size:clamp(18px,2.6vh,26px);box-shadow:0 3px 0 #000}
+#pad .o{background:var(--orange);color:#fff}
+#score{position:absolute;inset:0;display:none;flex-direction:column;overflow:auto;z-index:6}
+#score.on{display:flex}
+#scoreScene{position:relative;flex:none;height:min(52vh,460px);display:flex;align-items:flex-end;justify-content:center}
+#scoreScene svg{width:min(96vw,980px);height:100%;overflow:visible}
+#scoreBoard{position:absolute;left:50%;top:14%;transform:translateX(-50%);background:var(--cream);border:6px solid var(--wood-d);border-radius:16px;padding:.1em .7em;font-weight:700;font-size:clamp(40px,10vh,100px);color:var(--ink);box-shadow:0 8px 0 rgba(0,0,0,.25);animation:bob 4.2s ease-in-out infinite;white-space:nowrap}
+#scoreBoard small{font-size:.32em;display:block;text-align:center;opacity:.65;margin-top:-.4em}
+#scoreBtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:1vh 2vw}
+#review{padding:1vh 2vw 4vh}
+#review .hd{color:#fff;font-weight:700;text-align:center;margin-bottom:.6em;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+#confirm{position:fixed;inset:0;z-index:45;background:rgba(10,25,40,.6);display:none;align-items:center;justify-content:center}
+#confirm.on{display:flex}
+#confirm .sheet{max-width:460px}
+#confirm .body{padding:1em 1.2em;font-size:1.1em}
+
+@media (max-width:700px){
+  #deck{padding:.8vh 2vw}
+}
+
+#rack{--ts:clamp(46px,8.5vh,80px)}
+.tile .op0{margin-right:.06em}
+
+#scoreScene svg{pointer-events:none}
+#scoreBtns,#review{position:relative;z-index:2}
+
+#app[data-screen=quiz] #bg{background:linear-gradient(#4aa8cf 0,#2a86ac 30%,#17597f 100%)}
+#quiz.scoring #quizTop,#quiz.scoring #quizBody,#quiz.scoring #pad{display:none}
+#score{background:linear-gradient(#2a86ac 0,#17597f 100%)}
+#scoreScene{background:none}
+</style></head><body class="colour">
+<div id="app" data-screen="title">
+  <div id="bg" aria-hidden="true">
+    <svg class="swell" viewBox="0 0 1600 200" preserveAspectRatio="none"><path d="M0 60 Q 100 20 200 60 T 400 60 T 600 60 T 800 60 T 1000 60 T 1200 60 T 1400 60 T 1600 60 V200 H0Z" fill="#fff"/></svg>
+    <svg class="swell b" viewBox="0 0 1600 200" preserveAspectRatio="none"><path d="M0 90 Q 130 40 260 90 T 520 90 T 780 90 T 1040 90 T 1300 90 T 1560 90 T 1820 90 V200 H0Z" fill="#fff"/></svg>
+  </div>
+
+  <!-- ================= TITLE ================= -->
+  <section id="title" class="screen">
+    <h1>Whale Watching</h1>
+    <p class="note">Keep your distance: engines idling, no approaching, no feeding. Solve each equation from the boat by doing the same to both sides.</p>
+    <div id="loaded" class="note" aria-live="polite"></div>
+    <div class="btnrow">
+      <button class="big" id="goPlay">Free play</button>
+      <span class="btnrow"><button class="big blue" id="goQuiz">Quiz</button>
+        <span class="seg" id="qlen" role="group" aria-label="Number of quiz questions"><button class="chip" data-n="10">10</button><button class="chip" data-n="20">20</button></span></span>
+      <button class="big grey" id="goSettings">Settings</button>
+    </div>
+    <div id="organ" aria-label="Saved class settings">
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div id="pistons"></div>
+    </div>
+    <div id="organMsg" aria-live="polite"></div>
+  </section>
+
+  <!-- ================= FREE PLAY ================= -->
+  <section id="play" class="screen">
+    <div id="stageWrap">
+      <div id="stage">
+        <svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="gSky" gradientUnits="userSpaceOnUse" x1="0" y1="-40" x2="0" y2="332"><stop offset="0" stop-color="#8fd2ec"/><stop offset="1" stop-color="#f6fcfd"/></linearGradient>
+            <linearGradient id="gSea" gradientUnits="userSpaceOnUse" x1="0" y1="330" x2="0" y2="900"><stop offset="0" stop-color="#7fcbe3"/><stop offset=".3" stop-color="#2f8db3"/><stop offset="1" stop-color="#103f5e"/></linearGradient>
+            <linearGradient id="gDeck" gradientUnits="userSpaceOnUse" x1="0" y1="830" x2="0" y2="900"><stop offset="0" stop-color="#b27b45"/><stop offset="1" stop-color="#8f5e35"/></linearGradient>
+            <radialGradient id="gSun"><stop offset="0" stop-color="#fff1c9"/><stop offset=".55" stop-color="#ffe0a3"/><stop offset="1" stop-color="#ffe0a3" stop-opacity="0"/></radialGradient>
+            <clipPath id="cMer"><rect x="360" y="180" width="240" height="196"/></clipPath>
+          </defs>
+          <!-- sky -->
+          <rect x="-2500" y="-1500" width="6600" height="1832" fill="url(#gSky)"/>
+          <circle cx="1230" cy="150" r="150" fill="url(#gSun)"/>
+          <g class="drift" fill="#fff" opacity=".85"><ellipse cx="420" cy="110" rx="90" ry="22"/><ellipse cx="480" cy="96" rx="60" ry="22"/><ellipse cx="900" cy="70" rx="110" ry="24"/><ellipse cx="960" cy="55" rx="64" ry="22"/><ellipse cx="1400" cy="200" rx="80" ry="18"/></g>
+          <!-- far shore: pastel houses and lighthouse -->
+          <path d="M-2500 332 V 296 H-200 C -60 296 40 268 140 262 C 250 256 330 286 420 292 C 500 298 560 316 640 332Z" fill="#a9cfb4"/>
+          <path d="M-2500 332 V 312 H-100 C 20 312 120 296 220 298 C 320 300 420 318 500 332Z" fill="#8dbf9b"/>
+          <g stroke="#fff" stroke-width="2" stroke-linejoin="round">
+            <rect x="60" y="282" width="34" height="30" fill="#f4b6c2"/><path d="M56 282 77 266 98 282Z" fill="#c8566b"/>
+            <rect x="98" y="288" width="30" height="24" fill="#fbe08a"/><path d="M94 288 113 274 132 288Z" fill="#b8742f"/>
+            <rect x="132" y="284" width="34" height="28" fill="#a8e0c5"/><path d="M128 284 149 268 170 284Z" fill="#5e8fb8"/>
+            <rect x="170" y="290" width="30" height="22" fill="#f9c6a0"/><path d="M166 290 185 277 204 290Z" fill="#8a5a8f"/>
+            <rect x="204" y="286" width="34" height="26" fill="#b9d3f2"/><path d="M200 286 221 271 242 286Z" fill="#c8566b"/>
+          </g>
+          <g><rect x="330" y="244" width="22" height="58" fill="#fff"/><rect x="330" y="262" width="22" height="12" fill="#F47B3F"/><rect x="330" y="284" width="22" height="10" fill="#F47B3F"/><rect x="326" y="238" width="30" height="8" fill="#3d4a5c"/><rect x="332" y="226" width="18" height="12" fill="#fff3b0"/><path d="M328 226 341 214 354 226Z" fill="#3d4a5c"/></g>
+          <!-- mermaid (rare, clipped at the water line) -->
+          <g clip-path="url(#cMer)"><g id="mermaid">
+            <ellipse cx="470" cy="366" rx="74" ry="26" fill="#6c7c8a"/><ellipse cx="452" cy="356" rx="40" ry="14" fill="#869aa8"/>
+            <path class="tail" d="M468 338 C 500 340 540 346 566 334 C 580 328 592 318 600 306 C 604 322 600 340 588 352 C 598 354 604 360 610 366 C 590 372 566 368 548 360 C 520 366 488 360 468 350Z" fill="#2fa6a0"/>
+            <path d="M436 300 C 430 320 440 340 468 346 C 480 330 484 312 480 298Z" fill="#f3c9a6"/>
+            <path d="M436 300 C 440 292 452 286 470 286 C 484 286 494 292 498 300 L 480 304 C 470 300 450 302 436 300Z" fill="#f3c9a6"/>
+            <path d="M440 298 C 444 306 470 308 492 298 L 494 316 C 480 322 452 322 442 316Z" fill="#4aa564"/>
+            <circle cx="466" cy="268" r="21" fill="#f3c9a6"/>
+            <path d="M444 270 C 440 244 466 236 484 244 C 494 250 492 262 490 272 C 484 258 470 254 456 258 C 456 290 446 306 436 322 C 428 300 436 282 444 270Z" fill="#d9533a"/>
+            <path d="M490 272 C 496 290 500 310 504 326 C 492 316 486 300 484 280Z" fill="#d9533a"/>
+            <circle cx="458" cy="270" r="2.4" fill="#2a1a12"/><circle cx="474" cy="270" r="2.4" fill="#2a1a12"/><path d="M459 279 Q 466 285 473 279" stroke="#b5503a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path class="arm" d="M492 302 C 508 292 520 276 524 256 C 528 252 534 254 532 262 C 530 284 518 304 496 318Z" fill="#f3c9a6"/>
+          </g></g>
+          <!-- sea -->
+          <rect x="-2500" y="330" width="6600" height="2200" fill="url(#gSea)"/>
+          <rect x="-2500" y="329" width="6600" height="3" fill="#fff" opacity=".6"/>
+          <g class="drift" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".28">
+            <path d="M620 372 q 20 -8 40 0 t 40 0"/><path d="M180 410 q 20 -8 40 0 t 40 0"/><path d="M1380 360 q 20 -8 40 0 t 40 0"/><path d="M420 450 q 20 -8 40 0 t 40 0 t 40 0"/><path d="M1100 430 q 20 -8 40 0 t 40 0"/><path d="M60 520 q 20 -8 40 0 t 40 0 t 40 0"/><path d="M1450 520 q 20 -8 40 0 t 40 0"/><path d="M700 560 q 20 -8 40 0 t 40 0"/>
+          </g>
+          <!-- whale pod -->
+          <g id="pod">
+            <g id="calfWrap"><g transform="translate(1318 372) scale(.42)" id="calfSlot"></g></g>
+            <g class="wrap-big" id="bigWrap"><g transform="translate(905 332) scale(1.05)" id="bigSlot"></g>
+              <g class="splash" id="splash" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"><path d="M880 400 q -30 -50 -10 -80"/><path d="M1000 404 q 20 -50 50 -70"/><circle cx="860" cy="396" r="6" fill="#fff"/><circle cx="1070" cy="400" r="6" fill="#fff"/></g></g>
+          </g>
+          <g fill="none" stroke="#fff" stroke-width="3" opacity=".55" stroke-linecap="round"><ellipse cx="1090" cy="400" rx="230" ry="9"/><ellipse cx="1090" cy="400" rx="270" ry="13" opacity=".5"/><ellipse cx="1385" cy="399" rx="86" ry="5"/></g>
+          <!-- keep your distance line -->
+          <g id="buoys">
+            <path d="M620 478 Q 700 490 780 478 T 940 478 T 1100 478 T 1260 478 T 1420 478 T 1580 478" stroke="#fff" stroke-width="3" stroke-dasharray="3 9" fill="none" opacity=".9" stroke-linecap="round"/>
+          </g>
+          <!-- jetty -->
+          <g class="bobA" id="jetty">
+            <rect x="248" y="696" width="1104" height="22" rx="4" fill="#5b3a20"/>
+            <rect x="228" y="640" width="1144" height="38" rx="7" fill="#b27b45"/>
+            <rect x="228" y="670" width="1144" height="10" fill="#8f5e35"/>
+            <g stroke="#8f5e35" stroke-width="3"><path d="M340 640v30M452 640v30M564 640v30M676 640v30M788 640v30M900 640v30M1012 640v30M1124 640v30M1236 640v30"/></g>
+            <rect x="228" y="640" width="1144" height="6" rx="3" fill="#d6a36a"/>
+            <g id="floatsJ"><rect x="262" y="700" width="70" height="46" rx="16" fill="#F47B3F"/><rect x="262" y="716" width="70" height="8" fill="#fff"/><rect x="1268" y="700" width="70" height="46" rx="16" fill="#F47B3F"/><rect x="1268" y="716" width="70" height="8" fill="#fff"/><rect x="765" y="702" width="70" height="40" rx="14" fill="#F47B3F"/><rect x="765" y="716" width="70" height="7" fill="#fff"/></g>
+          </g>
+          <!-- boat: deck and rail -->
+          <rect x="-2500" y="830" width="6600" height="400" fill="url(#gDeck)"/>
+          <rect x="-2500" y="830" width="6600" height="8" fill="#d6a36a"/>
+          <g stroke="#6a4326" stroke-width="3" opacity=".55"><path d="M-2500 862H4100M-2500 884H4100"/></g>
+          <rect x="-2500" y="782" width="6600" height="14" fill="#efe2c6"/>
+          <rect x="-2500" y="795" width="6600" height="5" fill="#000" opacity=".12"/>
+          <g fill="#efe2c6"><rect x="30" y="782" width="14" height="50"/><rect x="230" y="782" width="14" height="50"/><rect x="1180" y="782" width="14" height="50"/><rect x="1380" y="782" width="14" height="50"/></g>
+          <!-- level rope -->
+          <g id="rope"><path id="ropeLine" d="M1187 798 Q 1287 872 1387 798" fill="none" stroke="#e8dcc0" stroke-width="7" stroke-linecap="round"/><g id="knots"></g></g>
+          <!-- Welsh dragon flag -->
+          <g id="flag"><rect x="1500" y="650" width="8" height="182" fill="#efe2c6"/><circle cx="1504" cy="647" r="8" fill="#dcab3c"/>
+            <g transform="translate(1508 656)"><g class="bobB"><rect width="156" height="52" fill="#fff"/><rect y="52" width="156" height="52" fill="#00ab39"/>
+              <g transform="translate(0 2)" fill="#d30731" stroke="none">
+                <g fill="none" stroke="#d30731" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M66 54 C 56 44 54 34 46 30" stroke-width="14"/>
+                  <path d="M114 60 C 134 62 144 48 134 38 C 128 32 134 24 144 28" stroke-width="10"/>
+                  <path d="M66 70 C 60 80 50 78 46 72" stroke-width="8"/>
+                  <path d="M80 72 L 74 90 L 62 92" stroke-width="9"/>
+                  <path d="M100 72 L 106 90 L 118 92" stroke-width="10"/>
+                  <path d="M114 70 L 124 84 L 134 84" stroke-width="8"/>
+                </g>
+                <ellipse cx="90" cy="60" rx="32" ry="17" transform="rotate(-8 90 60)"/>
+                <path d="M50 28 C 42 20 24 22 8 24 L 22 30 L 8 33 L 22 38 C 36 41 46 37 52 33Z"/>
+                <path d="M40 26 L 42 8 L 52 26Z M50 28 L 62 14 L 60 32Z"/>
+                <path d="M140 22 L 154 26 L 144 36Z"/>
+                <path d="M72 52 C 68 30 84 10 108 4 L 102 16 L 112 18 L 103 28 L 112 33 L 100 40 C 96 46 92 50 88 56Z"/>
+              </g>
+<circle cx="37" cy="31" r="2.4" fill="#fff" stroke="none"/><path d="M8 33 L -2 36 M8 33 L -1 31" stroke="#d30731" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+            </g></g></g>
+          <!-- clock (always 15:57) -->
+          <g stroke="#9c7420" stroke-width="3" fill="none" stroke-linecap="round"><path d="M118 790 L 100 812 M118 790 L 136 812"/></g><circle cx="118" cy="790" r="6" fill="#dcab3c"/>
+          <g id="clock" transform="translate(118 850) scale(.95)">
+            <circle r="52" fill="#dcab3c"/><circle r="52" fill="none" stroke="#9c7420" stroke-width="3"/><circle r="43" fill="#fff6e8"/>
+            <g stroke="#3d2412" stroke-linecap="round"><path d="M0 -38v-6M0 38v6M-38 0h-6M38 0h6" stroke-width="4"/><path d="M19 -33l3 -5M33 -19l5 -3M33 19l5 3M19 33l3 5M-19 33l-3 5M-33 19l-5 3M-33 -19l-5 -3M-19 -33l-3 -5" stroke-width="2.5"/></g>
+            <line x1="0" y1="0" x2="0" y2="-24" stroke="#3d2412" stroke-width="5" stroke-linecap="round" transform="rotate(118.5)"/>
+            <line x1="0" y1="0" x2="0" y2="-36" stroke="#3d2412" stroke-width="3.2" stroke-linecap="round" transform="rotate(342)"/>
+            <circle r="4" fill="#3d2412"/>
+          </g>
+          <!-- catapult -->
+          <g id="cat">
+            <g stroke="#5b3a20" stroke-width="15" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M520 842 V752 M520 752 L488 696 M520 752 L552 696"/><path d="M1080 842 V752 M1080 752 L1048 696 M1080 752 L1112 696"/>
+            </g>
+            <path id="elL" d="M488 696 L520 744 L552 696" fill="none" stroke="#F47B3F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="elR" d="M1048 696 L1080 744 L1112 696" fill="none" stroke="#F47B3F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect id="pL" x="502" y="734" width="36" height="22" rx="8" fill="#6a4326"/><rect id="pR" x="1062" y="734" width="36" height="22" rx="8" fill="#6a4326"/>
+            <path id="cord" d="M520 744 Q 800 790 1080 744" fill="none" stroke="#F47B3F" stroke-width="5" stroke-linecap="round"/>
+            <g id="gripG" style="cursor:grab;touch-action:none"><circle id="gripHit" cx="800" cy="767" r="60" fill="transparent"/><circle id="grip" cx="800" cy="767" r="24" fill="#F47B3F" stroke="#fff" stroke-width="5"/><path id="gripArrow" d="M790 762 l10 12 l10 -12" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+          </g>
+        </svg>
+
+        <div id="eqbox"><div id="eq" role="img"></div></div>
+        <div id="eqnote" aria-live="polite"></div>
+        <div id="plaque"></div>
+        <div id="topbar">
+          <div class="grp"><button class="ibtn" id="pHome"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>Home</button></div>
+          <div class="grp">
+            <button class="ibtn" id="pCalc" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M8 16h2M12 16h2" stroke-linecap="round"/></svg>Calculator</button>
+            <button class="ibtn" id="pQuiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7l2 2 3-4M4 17l2 2 3-4M12 7h8M12 17h8"/></svg>Quiz</button>
+            <button class="ibtn" id="pSet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="6.8"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>Settings</button>
+          </div>
+        </div>
+        <div id="msg" role="status" aria-live="polite"></div>
+        <div id="calc" hidden>
+          <div class="scr" id="calcScr">0</div>
+          <div class="pad" id="calcPad"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="deck" class="colour">
+      <div id="rack" aria-label="Tiles to throw"></div>
+      <div id="free" hidden>
+        <div id="dial" role="group" aria-label="Operation">
+          <button class="d n" data-op="add" aria-label="add">+</button><button class="d e" data-op="mul" aria-label="multiply">×</button>
+          <button class="d s" data-op="sub" aria-label="subtract">−</button><button class="d w" data-op="div" aria-label="divide">÷</button>
+          <div class="needle" id="needle"></div><div class="hub"></div>
+        </div>
+        <div id="keys"></div>
+      </div>
+      <div id="actions">
+        <button id="throwBtn">Throw</button>
+        <button class="sbtn" id="reelBtn">Reel in</button>
+      </div>
+      <div id="afterBtns" hidden></div>
+    </div>
+  </section>
+
+  <!-- ================= QUIZ ================= -->
+  <section id="quiz" class="screen">
+    <div id="quizTop">
+      <div class="grp"><button class="ibtn" id="qHome"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg>Home</button><button class="ibtn" id="qBack">Free play</button></div>
+      <div class="count" id="qCount"></div>
+      <div class="grp"><button class="ibtn" id="qPadBtn" aria-pressed="false">Number pad</button><button class="big" id="qFinish" style="font-size:clamp(16px,2.4vh,24px)">Finish</button></div>
+    </div>
+    <div id="quizBody"><div id="grid"></div><div id="one"></div></div>
+    <div id="pad"></div>
+    <div id="score">
+      <div id="scoreScene">
+        <svg id="scoreSvg" viewBox="0 0 980 460" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+          <defs><linearGradient id="gScoreSky" gradientUnits="userSpaceOnUse" x1="0" y1="-60" x2="0" y2="286"><stop offset="0" stop-color="#8fd2ec"/><stop offset="1" stop-color="#f6fcfd"/></linearGradient></defs>
+          <rect x="-1200" y="-900" width="3400" height="1186" fill="url(#gScoreSky)"/>
+          <rect x="-1200" y="286" width="3400" height="400" fill="#2a86ac"/><rect x="-1200" y="286" width="3400" height="4" fill="#fff" opacity=".6"/>
+          <g id="scoreBig" transform="translate(40 174) scale(1.75)"></g>
+          <g id="scoreCalf" transform="translate(745 251) scale(.55)"></g>
+          <g fill="none" stroke="#fff" stroke-width="4" opacity=".5" stroke-linecap="round"><ellipse cx="360" cy="288" rx="380" ry="12"/><ellipse cx="800" cy="290" rx="130" ry="8"/></g>
+        </svg>
+        <div id="scoreBoard" role="status"></div>
+      </div>
+      <div id="scoreBtns"><button class="big" id="sNew">New quiz</button><button class="big blue" id="sBack">Back to free play</button><button class="big grey" id="sHome">Home</button></div>
+      <div id="review"><div class="hd">Your answers</div><div id="grid2"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <div class="modal" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet">
+      <h2 id="setTitle">Settings</h2>
+      <div class="body" id="setBody"></div>
+      <div class="foot"><button class="big grey" id="setReset">Reset all</button><button class="big blue" id="setIO">Export / Import</button><button class="big" id="setDone">Done</button></div>
+    </div>
+  </div>
+  <div class="modal" id="ioModal" role="dialog" aria-modal="true" aria-labelledby="ioTitle">
+    <div class="sheet">
+      <h2 id="ioTitle">Export or import saved settings</h2>
+      <div class="body">
+        <p class="hint">This holds every bank of pistons. Copy the code to back it up or share it with a colleague. To bring settings in, paste a code here (or choose a saved file) and press Import. Importing replaces the current banks.</p>
+        <textarea class="code" id="ioText" spellcheck="false" aria-label="Settings code"></textarea>
+        <div class="row" style="margin-top:.6em"><button class="sbtn" id="ioCopy">Copy code</button><button class="sbtn" id="ioDown">Save as file</button><label class="sbtn" style="cursor:pointer">Choose file<input type="file" id="ioFile" accept=".json,.txt,application/json" hidden></label></div>
+        <div class="hint" id="ioMsg" aria-live="polite" style="margin-top:.6em;min-height:1.3em"></div>
+      </div>
+      <div class="foot"><button class="big" id="ioImport">Import</button><button class="big grey" id="ioClose">Close</button></div>
+    </div>
+  </div>
+  <div id="confirm" role="dialog" aria-modal="true"><div class="sheet"><h2 id="cfTitle">Finish the quiz?</h2><div class="body" id="cfBody"></div><div class="foot"><button class="big grey" id="cfNo">Keep going</button><button class="big" id="cfYes">Finish</button></div></div></div>
+  <div class="fxlayer" id="fx" aria-hidden="true"></div>
+</div>
+<script>
+/* ================= Whale Watching: maths engine ================= */
+/* Exact rational arithmetic, equation model, generator, canonical solver (par), rack builder. */
+
+let rnd = Math.random;
+function setRng(f){ rnd = f; }
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const ri = (a,b) => a + Math.floor(rnd()*(b-a+1));
+const pick = arr => arr[Math.floor(rnd()*arr.length)];
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---------- fractions ---------- */
+const gcd = (a,b) => { a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a||1; };
+const F = (n,d=1) => { if(d<0){ n=-n; d=-d; } const g=gcd(n,d); return {n:n/g, d:d/g}; };
+const fadd = (a,b) => F(a.n*b.d + b.n*a.d, a.d*b.d);
+const fneg = a => F(-a.n, a.d);
+const fsub = (a,b) => fadd(a, fneg(b));
+const fmul = (a,b) => F(a.n*b.n, a.d*b.d);
+const fdiv = (a,b) => F(a.n*b.d, a.d*b.n);
+const fz = a => a.n === 0;
+const feq = (a,b) => a.n===b.n && a.d===b.d;
+const fabs = a => F(Math.abs(a.n), a.d);
+const fval = a => a.n / a.d;
+const F0 = F(0), F1 = F(1);
+
+/* ---------- equation model ----------
+   side = { hasBr, k, ia, ib, ibs, a, b, bs }
+   value = k*(ia*x + ib) [if hasBr] + a*x + b
+   bs / ibs = how a negative constant is written: 'minus' (x - 3) or 'neg' (x + ⁻3)          */
+function mkSide(o){
+  o = o || {};
+  return { hasBr: !!o.br, k: o.br ? o.br.k : F1, ia: F1, ib: o.br ? o.br.ib : F0, ibs: o.br ? (o.br.ibs||'minus') : 'minus',
+           a: o.a || F0, b: o.b || F0, bs: o.bs || 'minus' };
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+function evalSide(s, x){
+  let v = fadd(fmul(s.a, x), s.b);
+  if(s.hasBr) v = fadd(v, fmul(s.k, fadd(fmul(s.ia, x), s.ib)));
+  return v;
+}
+const hasX = s => s.hasBr || !fz(s.a);
+
+/* ---------- tiles ----------
+   { t:'add'|'sub'|'mul'|'div', v:F, x:bool }  (v may be negative)                               */
+const tk = t => `${t.t}|${t.x?1:0}|${t.v.n}/${t.v.d}`;
+
+function applyTile(eq, t){
+  const e = clone(eq);
+  for(const s of [e.L, e.R]){
+    if(t.t==='add' || t.t==='sub'){
+      const d = t.t==='add' ? t.v : fneg(t.v);
+      if(t.x){ s.a = fadd(s.a, d); }
+      else {
+        const prev = s.b; s.b = fadd(s.b, d);
+        if(s.b.n < 0 && prev.n >= 0) s.bs = (t.t==='sub' && t.v.n > 0) ? 'minus' : 'neg';
+      }
+    } else {
+      const f = t.t==='mul' ? t.v : F(t.v.d, t.v.n);
+      const prevB = s.b;
+      if(s.hasBr) s.k = fmul(s.k, f);
+      s.a = fmul(s.a, f); s.b = fmul(s.b, f);
+      if(f.n < 0 && s.b.n < 0) s.bs = 'neg';
+      if(s.hasBr && feq(s.k, F1)){
+        s.hasBr = false;
+        s.a = fadd(s.a, s.ia);
+        const nb = fadd(s.b, s.ib);
+        if(nb.n < 0 && prevB.n === 0) s.bs = s.ibs;
+        s.b = nb;
+      }
+    }
+  }
+  return e;
+}
+
+/* solved: 'full' (x = k or k = x), 'accepted' (-x = k), or null */
+function solvedState(eq){
+  const xo = s => (!s.hasBr && fz(s.b) && (feq(s.a,F1) || feq(s.a,F(-1)))) ? s.a.n : 0;
+  const co = s => !s.hasBr && fz(s.a);
+  for(const [p,q] of [[eq.L,eq.R],[eq.R,eq.L]]){
+    const g = xo(p);
+    if(g && co(q)) return g === 1 ? 'full' : 'accepted';
+  }
+  return null;
+}
+/* the value of x once solved/accepted (for the equivalence line) */
+function solvedValue(eq){
+  const xo = s => (!s.hasBr && fz(s.b) && (feq(s.a,F1) || feq(s.a,F(-1)))) ? s.a.n : 0;
+  for(const [p,q] of [[eq.L,eq.R],[eq.R,eq.L]]){
+    const g = xo(p);
+    if(g && !hasX(q)) return g === 1 ? q.b : fneg(q.b);
+  }
+  return null;
+}
+
+/* ---------- canonical solver (defines par and the "needed" tiles) ---------- */
+const mkDelta = (d, isX) => d.n < 0 ? {t:'sub', v:fneg(d), x:isX} : {t:'add', v:d, x:isX};
+const coefTile = f => f.d === 1 ? {t:'div', v:f} : {t:'mul', v:F(f.d, f.n)};
+
+function canonTile(eq){
+  if(solvedState(eq)) return null;
+  const L = eq.L, R = eq.R;
+  const xl = hasX(L), xr = hasX(R);
+  if(xl && xr){
+    if(!R.hasBr && !fz(R.a)) return mkDelta(fneg(R.a), true);
+    if(!L.hasBr && !fz(L.a)) return mkDelta(fneg(L.a), true);
+    return null;
+  }
+  const X = xl ? L : xr ? R : null;
+  if(!X) return null;
+  if(!fz(X.b)) return mkDelta(fneg(X.b), false);
+  if(X.hasBr) return coefTile(X.k);
+  return coefTile(X.a);
+}
+function pathOf(eq){
+  const out = []; let e = eq;
+  for(let i=0;i<14;i++){
+    const t = canonTile(e);
+    if(!t) break;
+    out.push(t); e = applyTile(e, t);
+  }
+  return out;
+}
+const stepsOf = eq => pathOf(eq).length;
+
+/* ---------- validity of a throw ---------- */
+function allowedDen(d, st, eq){ return d === 1 || (eq && eq.dens && eq.dens.indexOf(d) >= 0) || (st.frac && d <= 12) || (st.dec && 10 % d === 0); }
+function eachNum(e, fn){
+  for(const s of [e.L, e.R]){ fn(s.a); fn(s.b); if(s.hasBr){ fn(s.k); fn(s.ib); } }
+}
+function checkTile(eq, t, st){
+  if((t.t==='add' || t.t==='sub') && fz(t.v)) return "Adding or taking away nothing changes nothing. Try another number.";
+  if(t.t==='div' && fz(t.v)) return "You can't divide by zero. Try another number.";
+  if(t.t==='mul' && fz(t.v)) return "Multiplying by zero would wipe out the whole equation. Try another number.";
+  if((t.t==='mul' || t.t==='div') && feq(t.v, F1)) return "That leaves the equation exactly as it was. Try another number.";
+  if(t.x && (eq.L.hasBr || eq.R.hasBr)) return "Sort out the brackets first, then try x terms.";
+  const n = applyTile(eq, t);
+  let bad = null;
+  eachNum(n, f => { if(!allowedDen(f.d, st, eq)) bad = bad || 'den'; if(Math.abs(fval(f)) >= eq.cap) bad = bad || 'big'; });
+  if(bad === 'den') return st.frac || st.dec ? "That would leave an awkward number behind. Try another." : "That would bring fractions in, and this set is whole numbers only. Try another number.";
+  if(bad === 'big') return "Those numbers would get far too big. Try a smaller number.";
+  return null;
+}
+
+/* ---------- rack ---------- */
+function candidateTiles(eq, st){
+  const nums = new Set([1,2,3,4,5,6,7,8,9]);
+  for(const s of [eq.L, eq.R]) for(const v of [s.a, s.b, s.k, s.ib]) if(v.d===1 && v.n!==0 && Math.abs(v.n) <= 200) nums.add(Math.abs(v.n));
+  const out = [];
+  for(const n of nums){
+    const v = F(n);
+    out.push({t:'add',v},{t:'sub',v});
+    if(n <= 12){ out.push({t:'add',v,x:true},{t:'sub',v,x:true}); if(n>=2) out.push({t:'mul',v},{t:'div',v}); }
+  }
+  if(st.neg && st.neg.on){
+    out.push({t:'mul',v:F(-1)});
+    for(const n of [2,3,4,5]){ out.push({t:'add',v:F(-n)},{t:'mul',v:F(-n)}); }
+  }
+  return out;
+}
+function decoyCount(mode, completed){
+  if(mode === 'needed') return 0;
+  if(mode === 'busy') return 5;
+  const c = completed;
+  return c < 2 ? 0 : c < 4 ? 1 : c < 6 ? 2 : c < 9 ? 3 : c < 13 ? 4 : c < 18 ? 5 : 6;
+}
+function buildRack(eq, st, completed){
+  const path = pathOf(eq);
+  const before = path.length;
+  const seen = new Set(), tiles = [];
+  for(const t of path){
+    if(!checkTile(eq, t, st) && !seen.has(tk(t))){ seen.add(tk(t)); tiles.push({tile:t, needed:true}); }
+  }
+  if(!tiles.length && path.length){ tiles.push({tile:path[0], needed:true}); seen.add(tk(path[0])); }
+  const want = decoyCount(st.hand || 'grow', completed);
+  if(want){
+    const cands = shuffle(candidateTiles(eq, st));
+    const kinds = {};
+    for(const t of cands){
+      if(tiles.length >= path.length + want) break;
+      if(seen.has(tk(t))) continue;
+      if(checkTile(eq, t, st)) continue;
+      if(stepsOf(applyTile(eq, t)) < before) continue;      /* decoys never make progress */
+      const kk = t.t + (t.x?'x':'');
+      if((kinds[kk]||0) >= 2) continue;
+      kinds[kk] = (kinds[kk]||0) + 1; seen.add(tk(t)); tiles.push({tile:t, needed:false});
+    }
+  }
+  return shuffle(tiles);
+}
+
+/* ---------- generator ---------- */
+const TPLS = ['xpb','xmb','ax','xda','axpb','axmb','abr','both'];
+const TPL_LABEL = { xpb:'x + B = C', xmb:'x − B = C', ax:'Ax = C', xda:'x/A = C', axpb:'Ax + B = C', axmb:'Ax − B = C', abr:'A(x + B) = C', both:'Ax + B = Cx + D' };
+const SPECIAL_OK = {
+  xpb:['nconst','nans','dec','frac'], xmb:['nans','dec','frac'], ax:['ncoef','nans','dec','frac'], xda:['nans','dec','frac'],
+  axpb:['nconst','ncoef','nans','dec','frac'], axmb:['ncoef','nans','dec','frac'], abr:['nconst','ncoef','nans','dec','frac'],
+  both:['nconst','ncoef','nans','frac']
+};
+const bigR = d => d===1 ? [2,9] : [Math.pow(10,d-1), Math.pow(10,d)-1];
+const xR = d => d===1 ? [2,9] : d===2 ? [3,30] : d===3 ? [20,200] : [100,999];
+const decR = d => d===1 ? [11,99] : [Math.pow(10,d)+1, Math.pow(10,d+1)-1];
+const tenth = (d) => { let n = ri(...decR(d)); if(n%10===0) n++; return F(n,10); };
+const fracOf = (qs) => { const q = pick(qs); let p; do { p = ri(1, 3*q); } while(gcd(p,q) !== 1 || p % q === 0); return F(p,q); };
+
+function gen(tpl, d, special){
+  d = Math.max(1, Math.min(4, d|0 || 1));
+  if(special && SPECIAL_OK[tpl].indexOf(special) < 0) special = null;
+  const mode = special==='dec' ? 'dec' : special==='frac' ? 'frac' : 'int';
+  const neg = n => fneg(n);
+  const I = n => F(n);
+  const sg = (v) => v.n < 0;
+  let A, B, C, D, x, L, R;
+  const nans = special==='nans', nconst = special==='nconst', ncoef = special==='ncoef', dec = special==='dec', fr = special==='frac';
+  const pickX = () => dec ? (rnd()<0.5 ? F(ri(...xR(d))*10 + ri(1,9),10) : I(ri(...xR(d)))) : I(ri(...xR(d)));
+  const bigInt = () => I(ri(...bigR(d)));
+  const decB = () => tenth(d);
+  const Bval = () => dec ? decB() : bigInt();
+  let fracVariant = null;
+  if(fr){
+    if(tpl==='xpb'||tpl==='xmb'||tpl==='xda') fracVariant = 'const';
+    else if(tpl==='abr'||tpl==='both') fracVariant = 'answer';
+    else fracVariant = pick(['coef','answer']);
+  }
+  const ansFrac = () => { /* returns {x, A} with A a multiple of q */
+    const q = pick([2,3,4,5]); const t = ri(1, Math.floor(9/q)); let p;
+    do { p = ri(2, 3*q); } while(gcd(p,q)!==1 || p%q===0);
+    return { x:F(p,q), A:I(q*t), q, t, p };
+  };
+
+  if(tpl==='xpb'){
+    if(fracVariant==='const'){ x = I(ri(...xR(d))); B = fracOf([2,3,4,5]); }
+    else { x = dec ? pickX() : I(ri(...bigR(d))); B = Bval(); }
+    if(nans) x = neg(x); if(nconst) B = neg(B);
+    C = fadd(x,B);
+    L = mkSide({a:F1, b:B, bs: sg(B) ? 'neg' : 'minus'}); R = mkSide({b:C});
+  }
+  else if(tpl==='xmb'){
+    if(fracVariant==='const'){ B = fracOf([2,3,4,5]); x = I(ri(...xR(d)) + 2); }
+    else if(nans){ x = neg(I(ri(...bigR(d)))); B = bigInt(); }
+    else if(dec){ C = decB(); B = decB(); x = fadd(C,B); }
+    else { C = bigInt(); B = bigInt(); x = fadd(C,B); }
+    C = fsub(x,B);
+    L = mkSide({a:F1, b:neg(B), bs:'minus'}); R = mkSide({b:C});
+  }
+  else if(tpl==='ax'){
+    if(fracVariant==='coef'){ const q = pick([2,3,4,5]); A = F(ri(1,2*q-1)); do{ A = F(ri(1,2*q-1), q); }while(A.d===1); x = I(q * ri(1, Math.max(1, Math.floor(bigR(d)[1]/q/ (d===1?2:1))))); if(d===1) x = I(q*ri(1,2)); }
+    else if(fracVariant==='answer'){ const o = ansFrac(); A = o.A; x = o.x; }
+    else { A = I(ri(2,9)); x = dec ? pickX() : I(ri(...bigR(d))); }
+    if(ncoef) A = neg(A); if(nans) x = neg(x);
+    C = fmul(A,x);
+    L = mkSide({a:A}); R = mkSide({b:C});
+  }
+  else if(tpl==='xda'){
+    if(fracVariant==='const'){ const q = pick([2,3,4]); const t = ri(1, Math.floor(9/q)); A = I(q*t); let p; do{ p = ri(1,2*q+1); }while(gcd(p,q)!==1 || p%q===0); C = F(p,q); }
+    else { A = I(ri(2,9)); C = dec ? decB() : I(ri(...bigR(d))); }
+    if(nans) C = neg(C);
+    x = fmul(A,C);
+    L = mkSide({a:F(1,A.n)}); R = mkSide({b:C});
+  }
+  else if(tpl==='axpb'){
+    B = null;
+    if(fracVariant==='coef'){ const q = pick([2,3,4,5]); do{ A = F(ri(1,2*q-1), q); }while(A.d===1); x = I(q*ri(1,d===1?2:Math.min(9, xR(d)[1]/q|0 || 2))); B = bigInt(); }
+    else if(fracVariant==='answer'){ const o = ansFrac(); A = o.A; x = o.x; B = bigInt(); }
+    else { A = I(ri(2,9)); x = pickX(); B = Bval(); }
+    if(ncoef) A = neg(A); if(nans) x = neg(x); if(nconst) B = neg(B);
+    C = fadd(fmul(A,x), B);
+    L = mkSide({a:A, b:B, bs: sg(B) ? 'neg' : 'minus'}); R = mkSide({b:C});
+  }
+  else if(tpl==='axmb'){
+    if(fracVariant==='coef'){ const q = pick([2,3,4,5]); do{ A = F(ri(1,2*q-1), q); }while(A.d===1); x = I(q*ri(1,d===1?2:Math.min(9, xR(d)[1]/q|0 || 2))); }
+    else if(fracVariant==='answer'){ const o = ansFrac(); A = o.A; x = o.x; }
+    else { A = I(ri(2,9)); x = pickX(); }
+    if(ncoef) A = neg(A);
+    if(nans) x = neg(x);
+    const Ax = fmul(A,x);
+    if(fval(Ax) > 1.5){
+      /* positive Ax: keep B below it so C stays positive */
+      const hi = Math.max(1, Math.floor(fval(Ax)*(dec?10:1)) - 1);
+      const lo = Math.min(hi, dec ? decR(d)[0] : bigR(d)[0]);
+      const n = ri(lo, hi); B = dec ? F(n,10) : F(n);
+    } else B = Bval();
+    C = fsub(Ax, B);
+    L = mkSide({a:A, b:neg(B), bs:'minus'}); R = mkSide({b:C});
+  }
+  else if(tpl==='abr'){
+    if(fracVariant==='answer'){ const o = ansFrac(); A = o.A; x = o.x; B = bigInt(); }
+    else { A = I(ri(2,9)); x = pickX(); B = Bval(); }
+    if(ncoef) A = neg(A); if(nans) x = neg(x); if(nconst) B = neg(B);
+    C = fmul(A, fadd(x,B));
+    L = mkSide({br:{k:A, ib:B, ibs: sg(B) ? 'neg' : 'minus'}}); R = mkSide({b:C});
+  }
+  else { /* both: Ax + B = Cx + D */
+    let Cc;
+    if(fracVariant==='answer'){
+      const q = pick([2,3,4]); const t = ri(1, Math.floor(8/q)); const Cn = ri(1, Math.max(1, 9 - q*t - 1));
+      Cc = Cn; A = I(Cn + q*t); let p; do{ p = ri(2,3*q); }while(gcd(p,q)!==1 || p%q===0); x = F(p,q); B = bigInt();
+    } else { Cc = ri(1,6); A = I(ri(Cc+1, 9)); x = I(ri(...xR(d))); B = bigInt(); }
+    C = I(Cc);
+    if(nans) x = neg(x);
+    if(nconst) B = neg(B);
+    if(ncoef){ if(rnd()<0.5) A = neg(A); else C = neg(C); }
+    if(feq(A,C)) A = fadd(A, F(1));
+    D = fsub(fadd(fmul(A,x), B), fmul(C,x));
+    L = mkSide({a:A, b:B, bs: sg(B) ? 'neg' : 'minus'}); R = mkSide({a:C, b:D, bs: (nconst && sg(D)) ? 'neg' : 'minus'});
+  }
+  const eq = { tpl, size:d, special: special||null, mode, L, R, x };
+  let mx = 1; eachNum(eq, f => { mx = Math.max(mx, Math.abs(fval(f))); });
+  eq.cap = Math.pow(10, String(Math.floor(mx)).length + 2);
+  const dn = new Set(); eachNum(eq, f => { if(f.d > 1) dn.add(f.d); }); eq.dens = [...dn];
+  eq.par = Math.max(1, stepsOf(eq));
+  return eq;
+}
+
+/* ---------- progression ---------- */
+function ladderOf(st){
+  const on = TPLS.filter(t => st.tpl[t]);
+  const list = on.length ? on : ['axpb'];
+  const lo = st.minSize, hi = Math.max(st.minSize, st.maxSize);
+  const items = [];
+  list.forEach((t, i) => {
+    const last = i === list.length - 1;
+    const top = last ? hi : Math.min(hi, lo + 1);
+    for(let s = lo; s <= top; s++) items.push({tpl:t, size:s});
+  });
+  return items;
+}
+function specialPool(st){
+  const p = [];
+  if(st.neg && st.neg.on){ if(st.neg.consts) p.push('nconst'); if(st.neg.coefs) p.push('ncoef'); if(st.neg.answers) p.push('nans'); }
+  if(st.dec) p.push('dec');
+  if(st.frac) p.push('frac');
+  return p;
+}
+function chooseSpecial(st, tpl){
+  const pool = specialPool(st).filter(s => SPECIAL_OK[tpl].indexOf(s) >= 0);
+  if(!pool.length) return null;
+  return rnd() < 0.6 ? pick(pool) : null;
+}
+function makeQuestion(st, levelIdx, forceItem){
+  const lad = ladderOf(st);
+  let item;
+  if(forceItem) item = forceItem;
+  else if(st.prog === 'gradual') item = lad[Math.max(0, Math.min(lad.length-1, levelIdx|0))];
+  else { const t = pick(lad).tpl; item = { tpl:t, size: ri(st.minSize, Math.max(st.minSize, st.maxSize)) }; }
+  return gen(item.tpl, item.size, chooseSpecial(st, item.tpl));
+}
+
+/* ---------- answers ---------- */
+function parseAnswer(s){
+  if(s == null) return null;
+  s = String(s).trim().replace(/[−‐-―⁻]/g,'-').replace(/\s+/g,'');
+  let m = /^(-?)(\d+)\/(\d+)$/.exec(s);
+  if(m){ const d = +m[3]; if(!d) return null; return F((m[1]?-1:1)*(+m[2]), d); }
+  m = /^(-?)(\d*)\.?(\d*)$/.exec(s);
+  if(m && (m[2] || m[3]) && !(m[2]==='' && m[3]==='')){
+    const frac = m[3] || ''; const den = Math.pow(10, frac.length);
+    return F((m[1]?-1:1) * parseInt((m[2]||'0') + frac, 10), den);
+  }
+  return null;
+}
+
+/* ---------- node test hook ---------- */
+if(typeof module !== 'undefined') module.exports = { setRng, mulberry32, F, fadd, fsub, fmul, fdiv, fneg, fz, feq, fval, evalSide, applyTile, solvedState, solvedValue, canonTile, pathOf, stepsOf, checkTile, buildRack, gen, ladderOf, makeQuestion, parseAnswer, TPLS, SPECIAL_OK, hasX, specialPool };
+/* ================= Whale Watching: interface core ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const app = () => $('#app');
+
+/* ---------- number furniture (raised negative sign is markup, not a character) ---------- */
+const NG = '<span class="ng" role="img" aria-label="negative"></span>';
+const opHTML = c => `<span class="op">${c}</span>`;
+
+function numHTML(f, mode, abs){
+  const neg = f.n < 0, a = F(Math.abs(f.n), f.d); let h;
+  if(a.d === 1) h = String(a.n);
+  else if(mode === 'dec' && 10 % a.d === 0) h = ((a.n * (10 / a.d)) / 10).toFixed(1);
+  else h = `<span class="fr"><i>${a.n}</i><i>${a.d}</i></span>`;
+  return (neg && !abs ? NG : '') + h;
+}
+function xHTML(c, mode){
+  const neg = c.n < 0, a = fabs(c); let h;
+  if(feq(a, F1)) h = 'x';
+  else if(a.n === 1 && a.d > 1) h = `<span class="fr"><i>x</i><i>${a.d}</i></span>`;
+  else h = numHTML(a, mode, true) + 'x';
+  return (neg ? NG : '') + h;
+}
+function sideTerms(s, mode){
+  const t = []; let first = true;
+  if(s.hasBr){
+    const kneg = s.k.n < 0, ka = fabs(s.k); let inner = 'x';
+    if(!fz(s.ib)){
+      if(s.ib.n > 0 || s.ibs === 'neg') inner += opHTML('+') + numHTML(s.ib, mode);
+      else inner += opHTML('−') + numHTML(s.ib, mode, true);
+    }
+    t.push({k:'br', h:(kneg ? NG : '') + (feq(ka, F1) ? '' : numHTML(ka, mode, true)) + '(' + inner + ')'});
+    first = false;
+  }
+  if(!fz(s.a)){ t.push({k:'x', h:(first ? '' : opHTML('+')) + xHTML(s.a, mode)}); first = false; }
+  if(!fz(s.b)){
+    let h;
+    if(first) h = numHTML(s.b, mode);
+    else if(s.b.n > 0 || s.bs === 'neg') h = opHTML('+') + numHTML(s.b, mode);
+    else h = opHTML('−') + numHTML(s.b, mode, true);
+    t.push({k:'c', h});
+  }
+  if(!t.length) t.push({k:'c', h:'0'});
+  return t;
+}
+const termsHTML = ts => ts.map(x => `<span class="tm ${x.cls || ''}">${x.h}</span>`).join('');
+function eqHTML(eq, plain){
+  const idL = plain ? '' : ' id="sideL"', idR = plain ? '' : ' id="sideR"';
+  return `<span class="side"${idL}>${termsHTML(sideTerms(eq.L, eq.mode))}</span><span class="eqs"></span><span class="side"${idR}>${termsHTML(sideTerms(eq.R, eq.mode))}</span>`;
+}
+/* the same equation in words, so a screen reader hears "minus" and "negative" correctly */
+function numText(f, mode, abs){
+  const a = fabs(f);
+  const s = a.d === 1 ? String(a.n) : (mode === 'dec' && 10 % a.d === 0) ? ((a.n * (10 / a.d)) / 10).toFixed(1) : `${a.n} over ${a.d}`;
+  return (!abs && f.n < 0 ? 'negative ' : '') + s;
+}
+function sideText(s, mode){
+  const parts = []; let first = true;
+  if(s.hasBr){
+    let inner = 'x'; if(!fz(s.ib)) inner += (s.ib.n > 0 || s.ibs === 'neg') ? ' plus ' + numText(s.ib, mode) : ' minus ' + numText(s.ib, mode, true);
+    parts.push((feq(fabs(s.k), F1) ? '' : numText(s.k, mode) + ' times ') + 'bracket ' + inner + ' close bracket'); first = false;
+  }
+  if(!fz(s.a)){ const a = fabs(s.a); parts.push((first ? '' : 'plus ') + (s.a.n < 0 ? 'negative ' : '') + (feq(a, F1) ? 'x' : numText(a, mode, true) + ' x')); first = false; }
+  if(!fz(s.b)){
+    if(first) parts.push(numText(s.b, mode));
+    else if(s.b.n > 0 || s.bs === 'neg') parts.push('plus ' + numText(s.b, mode));
+    else parts.push('minus ' + numText(s.b, mode, true));
+  }
+  return parts.length ? parts.join(' ') : '0';
+}
+const eqText = eq => sideText(eq.L, eq.mode) + ' equals ' + sideText(eq.R, eq.mode);
+
+/* ---------- tiles ---------- */
+const SYM = {add:'+', sub:'−', mul:'×', div:'÷'};
+function tileFace(t, mode){
+  const a = fabs(t.v); let val;
+  if(t.x) val = feq(a, F1) ? 'x' : numHTML(a, mode, true) + 'x'; else val = numHTML(a, mode, true);
+  return `<span class="tf"><span class="op0">${SYM[t.t]}</span>${t.v.n < 0 ? NG : ''}${val}</span>`;
+}
+function tileText(t, mode){
+  const a = fabs(t.v); const v = numText(a, mode, true) + (t.x ? ' x' : '');
+  const neg = t.v.n < 0 ? 'negative ' : '';
+  const verb = {add:'add ', sub:'subtract ', mul:'multiply by ', div:'divide by '}[t.t];
+  return verb + neg + (t.x && feq(a, F1) ? 'x' : v);
+}
+const tileKind = t => t.x ? 'k-x' : (t.t === 'add' || t.t === 'sub') ? 'k-c' : 'k-m';
+function mkTileEl(t, mode, tag){
+  const b = document.createElement(tag || 'button');
+  b.className = 'tile ' + tileKind(t);
+  b.innerHTML = tileFace(t, mode);
+  b.setAttribute('aria-label', tileText(t, mode));
+  return b;
+}
+
+/* ---------- whale art (shared by the sea scene and the quiz score screen) ---------- */
+function whaleSVG(cls){
+  return `<g class="whale ${cls || ''}">
+    <g class="blow"><path d="M58 4 C 58 -50 40 -78 14 -86"/><path d="M58 4 C 58 -50 76 -78 102 -86"/><circle cx="14" cy="-92" r="5"/><circle cx="102" cy="-92" r="5"/><circle cx="58" cy="-64" r="4"/></g>
+    <g class="fluke"><path d="M380 56 C 400 20 430 8 462 10 C 448 28 444 40 446 56 C 458 44 478 38 500 40 C 488 60 440 70 380 64 Z" fill="#3a5778"/></g>
+    <path class="wb" d="M0 62 C-8 38 8 12 44 6 C110 -8 222 -4 292 22 C332 36 356 48 380 56 L380 64 L0 64 Z"/>
+    <path class="wbelly" d="M0 62 C 36 54 150 50 262 52 C 316 54 352 58 380 60 L380 64 L0 64 Z"/>
+    <path class="wfin" d="M226 14 C 236 -10 258 -10 268 -2 C 254 0 250 12 252 26 Z"/>
+    <path d="M4 54 C 24 58 50 56 76 48" fill="none" stroke="#1d3350" stroke-width="3" stroke-linecap="round"/>
+    <circle class="eye" cx="46" cy="34" r="5.5"/><circle cx="48" cy="32" r="1.8" fill="#fff"/>
+  </g>`;
+}
+function retrigger(el, cls){ if(!el) return; el.classList.remove(cls); void el.getBoundingClientRect(); el.classList.add(cls); }
+function blowOf(whaleRoot){ return whaleRoot.querySelector('.blow'); }
+
+/* ---------- settings model ---------- */
+const DEFAULTS = {
+  tpl: {xpb:true, xmb:false, ax:true, xda:false, axpb:true, axmb:false, abr:false, both:false},
+  neg: {on:false, consts:true, coefs:false, answers:true},
+  dec:false, frac:false, minSize:1, maxSize:2,
+  prog:'gradual', easier:false,
+  style:'rack', hand:'grow', calc:false, timer:90, colour:true,
+  quizLen:10, quizLayout:'all',
+  extras:true
+};
+let ST = clone(DEFAULTS);
+
+/* ---------- storage (local, with an in-memory fallback) ---------- */
+const mem = {};
+function store(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ mem[k] = JSON.stringify(v); } }
+function load(k){ try { const s = localStorage.getItem(k); if(s != null) return JSON.parse(s); } catch(e){} try { return mem[k] ? JSON.parse(mem[k]) : null; } catch(e){ return null; } }
+
+function mergeSettings(base, inc){
+  const o = clone(base);
+  if(!inc || typeof inc !== 'object') return o;
+  for(const k of Object.keys(DEFAULTS)){
+    if(!(k in inc)) continue;
+    if(k === 'tpl'){ for(const t of TPLS) if(t in inc.tpl) o.tpl[t] = !!inc.tpl[t]; }
+    else if(k === 'neg'){ for(const j of ['on','consts','coefs','answers']) if(j in inc.neg) o.neg[j] = !!inc.neg[j]; }
+    else if(typeof DEFAULTS[k] === typeof inc[k]) o[k] = inc[k];
+  }
+  if(!TPLS.some(t => o.tpl[t])) o.tpl = clone(DEFAULTS.tpl);
+  o.minSize = Math.max(1, Math.min(4, o.minSize|0)); o.maxSize = Math.max(o.minSize, Math.min(4, o.maxSize|0));
+  if(![10,20].includes(o.quizLen)) o.quizLen = 10;
+  return o;
+}
+const forPreset = st => { const c = clone(st); delete c.extras; return c; };
+function saveSettings(){ store('ww.settings.v1', ST); }
+function applyBodyClasses(){ document.body.classList.toggle('colour', !!ST.colour); $('#deck').classList.toggle('colour', !!ST.colour); }
+
+/* ---------- messages ---------- */
+let msgTimer = 0;
+function showMsg(text, ms){
+  const m = $('#msg'); m.textContent = text; m.classList.add('on');
+  clearTimeout(msgTimer); msgTimer = setTimeout(() => m.classList.remove('on'), ms || 4200);
+}
+
+/* ---------- screens ---------- */
+function goScreen(name){ app().dataset.screen = name; }
+
+/* ---------- in-page confirm dialog ---------- */
+function cfAsk(title, body, yes, no){
+  return new Promise(res => {
+    $('#cfTitle').textContent = title; $('#cfBody').textContent = body;
+    $('#cfYes').textContent = yes || 'OK'; $('#cfNo').textContent = no || 'Cancel';
+    const d = $('#confirm'); d.classList.add('on');
+    const done = v => { d.classList.remove('on'); res(v); };
+    $('#cfYes').onclick = () => done(true); $('#cfNo').onclick = () => done(false);
+    setTimeout(() => $('#cfYes').focus(), 30);
+  });
+}
+/* ================= Whale Watching: free play ================= */
+const S = { eq:null, eq0:null, hist:[], throws:0, completed:0, level:0, sel:null, solved:false, busy:false,
+            interest:0, paused:false, pull:0, pt:null, presetName:'' };
+const STAGE_W = 1600, PXL = 520, PXR = 1080, PY = 744;
+const stageScale = () => $('#stage').getBoundingClientRect().width / STAGE_W;
+function stagePt(x, y){ const r = $('#stage').getBoundingClientRect(); const k = r.width / STAGE_W; return {x:r.left + x*k, y:r.top + y*k}; }
+
+/* ---------- scene set-up ---------- */
+function initScene(){
+  $('#bigSlot').innerHTML = whaleSVG('big');
+  $('#calfSlot').innerHTML = whaleSVG('calf');
+  $('#scoreBig').innerHTML = whaleSVG('big');
+  $('#scoreCalf').innerHTML = whaleSVG('calf');
+  /* buoys along the keep-your-distance line */
+  let b = '';
+  for(let i = 0; i < 11; i++){
+    const x = 640 + i*92, y = 478 + (i%2 ? 7 : -1);
+    b += `<g class="bobB" style="animation-delay:${(-i*0.45).toFixed(2)}s"><ellipse cx="${x}" cy="${y}" rx="9" ry="12" fill="${i%2 ? '#fff' : '#F47B3F'}" stroke="#fff" stroke-width="2"/><rect x="${x-9}" y="${y-2}" width="18" height="5" fill="${i%2 ? '#F47B3F' : '#fff'}"/></g>`;
+  }
+  $('#buoys').insertAdjacentHTML('beforeend', b);
+  setPull(0);
+}
+
+/* ---------- the catapult ---------- */
+function setPull(p){
+  S.pull = p; const y = PY + p;
+  $('#elL').setAttribute('d', `M488 696 L${PXL} ${y} L552 696`);
+  $('#elR').setAttribute('d', `M1048 696 L${PXR} ${y} L1112 696`);
+  $('#pL').setAttribute('y', y - 10); $('#pR').setAttribute('y', y - 10);
+  $('#cord').setAttribute('d', `M${PXL} ${y} Q 800 ${y + 46} ${PXR} ${y}`);
+  const gy = y + 23;
+  $('#grip').setAttribute('cy', gy); $('#gripHit').setAttribute('cy', gy);
+  $('#gripArrow').setAttribute('d', `M790 ${gy - 5} l10 12 l10 -12`);
+  placePouchTiles();
+}
+function animatePull(from, to, ms){
+  return new Promise(res => {
+    const t0 = performance.now();
+    (function f(now){
+      const u = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - u, 3);
+      setPull(from + (to - from) * e);
+      u < 1 ? requestAnimationFrame(f) : res();
+    })(t0);
+  });
+}
+function placePouchTiles(){
+  if(!S.pt) return;
+  const k = stageScale();
+  [PXL, PXR].forEach((x, i) => {
+    const p = stagePt(x, PY + S.pull);
+    S.pt[i].style.left = p.x + 'px'; S.pt[i].style.top = p.y + 'px'; S.pt[i].style.setProperty('--ts', (k*72) + 'px');
+  });
+}
+function clearPouch(){ if(S.pt){ S.pt.forEach(e => e.remove()); S.pt = null; } }
+function showPouch(t, from){
+  clearPouch();
+  S.pt = [0,1].map(() => { const e = mkTileEl(t, S.eq.mode, 'div'); e.classList.add('ptile'); $('#fx').appendChild(e); return e; });
+  placePouchTiles();
+  if(from){
+    S.pt.forEach((e, i) => {
+      const to = {left:e.style.left, top:e.style.top};
+      e.animate([{left:from.x+'px', top:from.y+'px', opacity:.35, transform:'translate(-50%,-50%) scale(.7)'},
+                 {left:to.left, top:to.top, opacity:1, transform:'translate(-50%,-50%) scale(1)'}],
+                {duration:420, easing:'cubic-bezier(.2,.8,.3,1)', delay:i*70, fill:'backwards'});
+    });
+  }
+}
+function updatePouch(t){
+  if(!t){ clearPouch(); return; }
+  if(!S.pt){ showPouch(t, null); return; }
+  S.pt.forEach(e => { e.className = 'tile ptile ' + tileKind(t); e.innerHTML = tileFace(t, S.eq.mode); e.setAttribute('aria-label', tileText(t, S.eq.mode)); });
+  placePouchTiles();
+}
+function flyTile(t, from, to, mode, delay){
+  return new Promise(res => {
+    const e = mkTileEl(t, mode, 'div'); e.classList.add('fly'); e.style.setProperty('--ts', (stageScale()*72) + 'px');
+    $('#fx').appendChild(e);
+    const N = 24, frames = [], arc = Math.max(110, Math.abs(from.y - to.y) * .5) * (stageScale()*1.4 + .3);
+    for(let k = 0; k <= N; k++){
+      const u = k / N, w = 1 - Math.pow(1 - u, 1.7);
+      frames.push({ left:(from.x + (to.x - from.x)*w) + 'px', top:(from.y + (to.y - from.y)*w - arc*Math.sin(Math.PI*w)) + 'px',
+                    transform:`translate(-50%,-50%) scale(${1 - .38*u}) rotate(${(u*18).toFixed(1)}deg)`, opacity:u > .93 ? .25 : 1 });
+    }
+    const a = e.animate(frames, {duration:880, delay, easing:'linear', fill:'both'});
+    a.onfinish = () => { e.remove(); res(); };
+  });
+}
+function shakePouch(){ if(S.pt) S.pt.forEach(e => retrigger(e, 'shake')); }
+
+(function wireGrip(){
+  const g = $('#gripG'); let sy = 0, p0 = 0, drag = false;
+  g.addEventListener('pointerdown', e => {
+    if(S.busy || S.solved) return;
+    drag = true; g.setPointerCapture(e.pointerId); sy = e.clientY; p0 = S.pull; e.preventDefault();
+  });
+  g.addEventListener('pointermove', e => { if(drag) setPull(Math.max(0, Math.min(95, p0 + (e.clientY - sy) / stageScale()))); });
+  const end = () => { if(!drag) return; drag = false; if(S.pull >= 38) doThrow(true); else animatePull(S.pull, 0, 160); };
+  g.addEventListener('pointerup', end); g.addEventListener('pointercancel', end);
+})();
+
+/* ---------- showing the equation ---------- */
+function renderEq(pop){
+  const el = $('#eq');
+  el.innerHTML = eqHTML(S.eq);
+  el.setAttribute('aria-label', eqText(S.eq));
+  if(pop) $$('#eq .tm').forEach(e => e.classList.add('pop'));
+  fitEq();
+}
+function fitEq(){
+  const box = $('#eqbox'), eq = $('#eq'); let fs = 6.4; box.style.setProperty('--fs', fs);
+  const avail = box.clientWidth;
+  for(let i = 0; i < 9; i++){
+    const w = eq.getBoundingClientRect().width;
+    if(w <= avail || fs < 2.2) break;
+    fs = fs * avail / w * .97; box.style.setProperty('--fs', fs.toFixed(3));
+  }
+}
+/* the intermediate "tile has landed beside the terms" view */
+function buildPre(prev, t, next){
+  const mode = prev.mode, out = {};
+  for(const [key, ps, ns] of [['L', prev.L, next.L], ['R', prev.R, next.R]]){
+    let terms = sideTerms(ps, mode).map(x => Object.assign({}, x));
+    if(t.t === 'add' || t.t === 'sub'){
+      const a = fabs(t.v);
+      const val = t.x ? (feq(a, F1) ? 'x' : numHTML(a, mode, true) + 'x') : numHTML(a, mode, true);
+      const only0 = terms.length === 1 && terms[0].h === '0';
+      let h = (only0 && t.t === 'add' ? '' : opHTML(SYM[t.t])) + (t.v.n < 0 ? NG : '') + val;
+      const tt = {k: t.x ? 'x' : 'c', h, cls:'pop'};
+      const was = t.x ? ps.a : ps.b, now = t.x ? ns.a : ns.b;
+      if(only0) terms = [];
+      if(fz(now) && !fz(was) && !ps.hasBr){
+        terms.forEach(x => { if(x.k === tt.k) x.cls = (x.cls || '') + ' cancel'; });
+        tt.cls += ' cancel';
+      }
+      terms.push(tt);
+      out[key] = termsHTML(terms);
+    } else {
+      const a = fabs(t.v);
+      out[key] = `<span class="tm">(${termsHTML(terms)})</span><span class="tm pop">${opHTML(SYM[t.t])}${t.v.n < 0 ? NG : ''}${numHTML(a, mode, true)}</span>`;
+    }
+  }
+  return out;
+}
+
+/* ---------- questions ---------- */
+function newQuestion(delta){
+  const L = ladderOf(ST).length;
+  if(ST.prog === 'gradual') S.level = Math.max(0, Math.min(L - 1, S.level + (delta || 0)));
+  else S.level = 0;
+  S.eq0 = makeQuestion(ST, S.level); S.eq = S.eq0; S.hist = [S.eq0];
+  S.throws = 0; S.sel = null; S.solved = false; S.busy = false;
+  document.body.classList.remove('wait');
+  $('#eqnote').classList.remove('on'); clearPouch(); setPull(0);
+  renderEq(true); buildRackUI(); drawKnots(); updatePlaque();
+  S.interest = 0; $('#pod').style.setProperty('--d', 0); $('#pod').style.setProperty('--u', 0);
+}
+function drawKnots(){
+  const g = $('#knots'), rope = $('#rope'); g.innerHTML = '';
+  if(ST.prog !== 'gradual'){ rope.style.display = 'none'; return; }
+  rope.style.display = '';
+  const n = ladderOf(ST).length, filled = Math.min(n, S.level + 1);
+  for(let i = 0; i < filled; i++){
+    const u = (i + 1) / (n + 1), v = 1 - u;
+    const x = v*v*1187 + 2*v*u*1287 + u*u*1387, y = v*v*758 + 2*v*u*842 + u*u*758;
+    g.insertAdjacentHTML('beforeend', `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${n > 14 ? 7 : 10}" fill="#d9b36a" stroke="#8f6a2c" stroke-width="3"/>`);
+  }
+}
+function updatePlaque(){ const p = $('#plaque'); p.textContent = S.presetName || ''; p.hidden = !S.presetName; }
+
+/* ---------- rack and free choice ---------- */
+function buildRackUI(){
+  const free = ST.style === 'free';
+  $('#afterBtns').hidden = true; $('#actions').hidden = false;
+  $('#rack').hidden = free; $('#free').hidden = !free;
+  if(!free){
+    const el = $('#rack'); el.innerHTML = '';
+    const rack = buildRack(S.eq, ST, S.completed);
+    rack.forEach(r => { const b = mkTileEl(r.tile, S.eq.mode); b.dataset.k = tk(r.tile); b.onclick = () => chooseTile(r.tile, b); el.appendChild(b); });
+    S.sel = null; clearPouch();
+  } else { buildKeys(); frReset(true); }
+  updateReel();
+}
+function markSel(btn){ $$('#rack .tile').forEach(b => b.classList.toggle('sel', b === btn)); }
+function chooseTile(t, btn){
+  if(S.busy || S.solved) return;
+  if(S.sel && tk(S.sel) === tk(t)){ S.sel = null; clearPouch(); markSel(null); return; }
+  S.sel = t; markSel(btn);
+  const r = btn.getBoundingClientRect(); showPouch(t, {x:r.left + r.width/2, y:r.top + r.height/2});
+}
+function updateReel(){ $('#reelBtn').disabled = S.hist.length < 2 || S.busy || S.solved; }
+function reelIn(){
+  if(S.busy || S.solved || S.hist.length < 2) return;
+  S.hist.pop(); S.eq = S.hist[S.hist.length - 1]; S.throws = Math.max(0, S.throws - 1); S.sel = null; clearPouch();
+  renderEq(true); buildRackUI();
+}
+
+/* free choice: ship's-telegraph dial and keypad */
+const FR = {op:null, str:'', neg:false, x:false};
+function buildKeys(){
+  const k = $('#keys'); if(k.dataset.built) return; k.dataset.built = 1;
+  k.innerHTML = '<div id="tilePrev" aria-live="polite"></div>';
+  const rows = ['7','8','9','⌫','4','5','6','x','1','2','3','NEG','0','.','/','C'];
+  rows.forEach(c => {
+    const b = document.createElement('button'); b.dataset.k = c;
+    b.innerHTML = c === 'NEG' ? `(${NG})` : c; if(c === 'x') b.className = 'xk';
+    b.setAttribute('aria-label', {'⌫':'delete', NEG:'negative number', x:'x term', '.':'decimal point', '/':'fraction line', C:'clear'}[c] || c);
+    b.onclick = () => keyPress(c); k.appendChild(b);
+  });
+}
+function keyPress(c){
+  if(S.busy || S.solved) return;
+  if(/^\d$/.test(c)){ if(FR.str.length < 8) FR.str += c; }
+  else if(c === '.'){ if(!FR.str.includes('.') && !FR.str.includes('/')) FR.str += FR.str ? '.' : '0.'; }
+  else if(c === '/'){ if(FR.str && !FR.str.includes('.') && !FR.str.includes('/')) FR.str += '/'; }
+  else if(c === '⌫'){ if(FR.str) FR.str = FR.str.slice(0, -1); else if(FR.x) FR.x = false; else FR.neg = false; }
+  else if(c === 'C'){ FR.str = ''; FR.neg = false; FR.x = false; }
+  else if(c === 'NEG'){ FR.neg = !FR.neg; }
+  else if(c === 'x'){
+    if(FR.op === 'mul' || FR.op === 'div'){ showMsg('x terms can only be added or taken away.'); return; }
+    FR.x = !FR.x;
+  }
+  frRefresh();
+}
+function frTile(){
+  if(!FR.op || (!FR.str && !FR.x)) return null;
+  let v = FR.str === '' ? F1 : parseAnswer(FR.str);
+  if(!v) return null;
+  if(FR.neg) v = fneg(v);
+  return {t:FR.op, v, x:FR.x};
+}
+function frReset(keepOp){ FR.str = ''; FR.neg = false; FR.x = false; if(!keepOp) FR.op = null; frRefresh(); }
+function frRefresh(){
+  $$('#dial .d').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.op === FR.op)));
+  const nd = $('#needle'); nd.style.transform = `rotate(${({add:0, mul:90, sub:180, div:270})[FR.op] || 0}deg)`; nd.style.opacity = FR.op ? 1 : .25;
+  const t = frTile(); S.sel = t;
+  const prev = $('#tilePrev');
+  if(prev){
+    prev.innerHTML = (FR.op || FR.str || FR.x || FR.neg)
+      ? `<span class="tf">${FR.op ? SYM[FR.op] : ''}${FR.neg ? NG : ''}${FR.str}${FR.x ? 'x' : ''}</span>`
+      : '<span class="numtag">choose + − × ÷ then type a number</span>';
+  }
+  updatePouch(t);
+}
+$$('#dial .d').forEach(b => b.onclick = () => {
+  if(S.busy || S.solved) return;
+  FR.op = b.dataset.op; if((FR.op === 'mul' || FR.op === 'div') && FR.x) FR.x = false; frRefresh();
+});
+
+/* ---------- throwing ---------- */
+async function doThrow(fromDrag){
+  if(S.busy || S.solved) return;
+  if(!S.sel){
+    showMsg(ST.style === 'free' ? 'Pick + − × ÷ and type a number first.' : 'Choose a tile first.');
+    if(S.pull > 0) animatePull(S.pull, 0, 180); return;
+  }
+  const t = S.sel, bad = checkTile(S.eq, t, ST);
+  if(bad){ showMsg(bad); shakePouch(); if(S.pull > 0) animatePull(S.pull, 0, 180); return; }
+  S.busy = true; document.body.classList.add('wait'); updateReel();
+  if(S.pull < 30) await animatePull(S.pull, 78, fromDrag ? 60 : 300);
+  const starts = [stagePt(PXL, PY + S.pull), stagePt(PXR, PY + S.pull)];
+  clearPouch(); markSel(null); await animatePull(S.pull, 0, 110);
+  const prev = S.eq, next = applyTile(prev, t), pre = buildPre(prev, t, next);
+  const tgts = [$('#sideL'), $('#sideR')].map(e => { const r = e.getBoundingClientRect(); return {x:r.left + r.width/2, y:r.top + r.height/2}; });
+  await Promise.all([0,1].map(i => flyTile(t, starts[i], tgts[i], prev.mode, i*60)));
+  $('#sideL').innerHTML = pre.L; $('#sideR').innerHTML = pre.R; fitEq();
+  await wait((t.t === 'mul' || t.t === 'div') ? 1000 : 780);
+  const cancels = $$('#eq .tm.cancel');
+  cancels.forEach(e => e.classList.add('fade'));
+  await wait(cancels.length ? 560 : 120);
+  S.eq = next; S.hist.push(next); S.throws++; S.sel = null;
+  renderEq(true);
+  S.busy = false; document.body.classList.remove('wait');
+  const ss = solvedState(S.eq);
+  if(ss) onSolved(ss);
+  else { buildRackUI(); if(ST.style === 'free') frReset(true); }
+}
+$('#throwBtn').onclick = () => doThrow(false);
+$('#reelBtn').onclick = reelIn;
+
+/* ---------- solved: whales react ---------- */
+function blow(sel){ retrigger($(sel + ' .blow'), 'go'); }
+async function onSolved(ss){
+  S.solved = true; S.completed++; clearPouch(); updateReel();
+  const par = S.eq0.par, tier = S.throws <= par ? 3 : S.throws <= par + 2 ? 2 : 1;
+  if(ss === 'accepted'){
+    const v = solvedValue(S.eq), note = $('#eqnote');
+    note.innerHTML = `<span class="inl">${eqHTML(S.eq, true)} <span style="margin:0 .6em">means</span> x<span class="eqs"></span>${numHTML(v, S.eq.mode)}</span>`;
+    note.classList.add('on'); setTimeout(() => note.classList.remove('on'), 6500);
+  }
+  showAfter();
+  const pod = $('#pod'); S.interest = 0; pod.style.setProperty('--d', 0); pod.style.setProperty('--u', 1);
+  await wait(800); blow('#bigSlot');
+  if(tier >= 2){ await wait(950); blow('#calfSlot'); }
+  if(tier >= 3){
+    await wait(700);
+    if(Math.random() < .5) retrigger($('#bigSlot .fluke'), 'go');
+    else { retrigger($('#bigWrap'), 'breach'); retrigger($('#splash'), 'go'); }
+    await wait(1500); blow('#bigSlot');
+  }
+}
+function showAfter(){
+  const box = $('#afterBtns'); box.innerHTML = '';
+  const L = ladderOf(ST).length;
+  const mk = (txt, cls, fn) => { const b = document.createElement('button'); b.className = cls; b.textContent = txt; b.onclick = fn; box.appendChild(b); };
+  mk('Another like this', 'big', () => newQuestion(0));
+  if(ST.prog === 'gradual' && S.level < L - 1) mk('Slightly harder', 'big blue', () => newQuestion(1));
+  if(ST.easier && ST.prog === 'gradual' && S.level > 0 && S.throws > S.eq0.par + 1) mk('Slightly easier', 'sbtn', () => newQuestion(-1));
+  $('#rack').hidden = true; $('#free').hidden = true; $('#actions').hidden = true; box.hidden = false;
+}
+
+/* ---------- the pod loses interest (time only, adjustable, with an Off) ---------- */
+let lastTick = performance.now();
+setInterval(() => {
+  const now = performance.now(), dt = (now - lastTick) / 1000; lastTick = now;
+  if(app().dataset.screen !== 'play' || S.solved || S.paused || S.busy || document.hidden) return;
+  if(!ST.timer){ if(S.interest){ S.interest = 0; $('#pod').style.setProperty('--d', 0); } return; }
+  S.interest = Math.min(1, S.interest + dt / ST.timer);
+  $('#pod').style.setProperty('--d', S.interest.toFixed(3));
+}, 250);
+
+/* ---------- the mermaid: rare, silent, no explanation ---------- */
+function showMermaid(){ if(ST.extras) retrigger($('#mermaid'), 'go'); }
+setInterval(() => {
+  if(app().dataset.screen !== 'play' || !ST.extras || S.paused || document.hidden) return;
+  if(Math.random() < .045) showMermaid();
+}, 20000);
+document.addEventListener('keydown', e => { if(e.shiftKey && e.key === 'M' && app().dataset.screen === 'play' && !S.paused) showMermaid(); });
+
+/* ---------- keyboard: digits for free choice, Enter to throw ---------- */
+document.addEventListener('keydown', e => {
+  if(app().dataset.screen !== 'play' || S.paused || e.target.closest && e.target.closest('.modal')) return;
+  if(e.key === 'Enter' && e.target.tagName !== 'BUTTON'){ doThrow(false); return; }
+  if(ST.style === 'free' && !e.ctrlKey && !e.metaKey){
+    if(/^\d$/.test(e.key)) keyPress(e.key);
+    else if(e.key === '.') keyPress('.');
+    else if(e.key === 'Backspace') keyPress('⌫');
+  }
+});
+
+/* ---------- calculator (optional teacher setting) ---------- */
+const CAL = {cur:'0', acc:null, op:null, fresh:true};
+function calcDo(a, b, op){ return op === '+' ? a + b : op === '−' ? a - b : op === '×' ? a * b : (b === 0 ? NaN : a / b); }
+function calcShow(){ $('#calcScr').textContent = CAL.cur.replace('-', '−'); }
+function calcPress(k){
+  if(/^\d$/.test(k)){ if(CAL.fresh){ CAL.cur = k; CAL.fresh = false; } else if(CAL.cur.length < 12) CAL.cur = CAL.cur === '0' ? k : CAL.cur + k; }
+  else if(k === '.'){ if(CAL.fresh){ CAL.cur = '0.'; CAL.fresh = false; } else if(!CAL.cur.includes('.')) CAL.cur += '.'; }
+  else if(k === 'C'){ CAL.cur = '0'; CAL.acc = null; CAL.op = null; CAL.fresh = true; }
+  else if(k === '⌫'){ CAL.cur = CAL.cur.length > 1 ? CAL.cur.slice(0, -1) : '0'; if(CAL.cur === '-') CAL.cur = '0'; }
+  else if(k === '±'){ if(CAL.cur !== '0') CAL.cur = CAL.cur[0] === '-' ? CAL.cur.slice(1) : '-' + CAL.cur; }
+  else {
+    const v = parseFloat(CAL.cur);
+    if(CAL.op && !CAL.fresh){ CAL.acc = calcDo(CAL.acc, v, CAL.op); CAL.cur = isNaN(CAL.acc) ? 'Error' : String(parseFloat(CAL.acc.toPrecision(10))); if(isNaN(CAL.acc)){ CAL.acc = null; CAL.op = null; CAL.fresh = true; calcShow(); return; } }
+    else CAL.acc = isNaN(v) ? 0 : v;
+    CAL.op = k === '=' ? null : k; CAL.fresh = true;
+  }
+  calcShow();
+}
+(function buildCalc(){
+  const keys = ['C','⌫','±','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','='];
+  const pad = $('#calcPad');
+  keys.forEach(k => {
+    const b = document.createElement('button'); b.textContent = k;
+    if('÷×−+='.includes(k)) b.className = 'o'; if(k === 'C') b.className = 'c';
+    if(k === '=') b.style.gridColumn = 'span 2';
+    b.onclick = () => calcPress(k); pad.appendChild(b);
+  });
+})();
+$('#pCalc').onclick = () => { const c = $('#calc'); c.hidden = !c.hidden; };
+function applyCalcSetting(){ $('#pCalc').hidden = !ST.calc; if(!ST.calc) $('#calc').hidden = true; }
+
+/* ---------- navigation ---------- */
+function startPlay(){
+  goScreen('play'); S.completed = 0; S.level = 0; S.paused = false;
+  applyBodyClasses(); applyCalcSetting();
+  requestAnimationFrame(() => { newQuestion(0); setTimeout(fitEq, 60); });
+}
+window.addEventListener('resize', () => { fitEq(); placePouchTiles(); });
+/* ================= Whale Watching: quiz mode ================= */
+const Q = { list:[], i:0, padOn:false, focus:null, layout:'all', done:false };
+const eqKey = eq => JSON.stringify([eq.L, eq.R]);
+const TICK = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#18813f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>';
+const CROSS = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#b02a2a" stroke-width="3.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+function makeQuizSet(){
+  const N = ST.quizLen, lad = ladderOf(ST), out = [], seen = new Set();
+  for(let i = 0; i < N; i++){
+    let eq, tries = 0;
+    do {
+      const lvl = ST.prog === 'gradual' ? Math.min(lad.length - 1, Math.floor(i * lad.length / N)) : 0;
+      eq = makeQuestion(ST, lvl); tries++;
+    } while(seen.has(eqKey(eq)) && tries < 40);
+    seen.add(eqKey(eq)); out.push({eq, val:'', ok:null});
+  }
+  return out;
+}
+
+function previewHTML(str){
+  const s = String(str).trim(); if(!parseAnswer(s)) return '';
+  const neg = /^[-−⁻]/.test(s), body = s.replace(/^[-−⁻]/, '');
+  const m = /^(\d+)\/(\d+)$/.exec(body);
+  return (neg ? NG : '') + (m ? `<span class="fr"><i>${m[1]}</i><i>${m[2]}</i></span>` : body);
+}
+
+function qCard(i, q, marked){
+  const d = document.createElement('div'); d.className = 'q' + (marked ? ' marked' : ''); d.dataset.i = i;
+  d.innerHTML = `<span class="no">${i + 1}</span>
+    <div class="qeq"><span class="qin" role="img" aria-label="${eqText(q.eq)}">${eqHTML(q.eq, true)}</span></div>
+    <div class="plank"></div>
+    <label class="ans"><span>x</span><span class="eqs" style="font-size:.7em"></span><input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="10" aria-label="Answer to question ${i + 1}" inputmode="${Q.padOn ? 'none' : 'text'}"><span class="pv"></span></label>
+    <div class="res"></div>`;
+  const inp = d.querySelector('input'), pv = d.querySelector('.pv');
+  inp.value = q.val; pv.innerHTML = previewHTML(q.val);
+  if(marked){
+    inp.readOnly = true; inp.tabIndex = -1;
+    const res = d.querySelector('.res');
+    if(q.ok){ res.className = 'res good'; res.innerHTML = TICK + 'Correct'; }
+    else { res.className = 'res bad'; res.innerHTML = `${CROSS}x<span class="eqs" style="font-size:.7em"></span>${numHTML(q.eq.x, q.eq.mode)}`; }
+  } else {
+    inp.addEventListener('input', () => { q.val = inp.value; pv.innerHTML = previewHTML(q.val); updateCount(); });
+    inp.addEventListener('focus', () => { Q.focus = inp; setCur(i); });
+    inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); nextFrom(i); } });
+  }
+  return d;
+}
+function fitQ(card){
+  const qe = card.querySelector('.qeq'), qi = card.querySelector('.qin');
+  const base = card.closest('#one') ? Math.min(72, Math.max(30, innerWidth * .065)) : 28;
+  let fs = base; qe.style.fontSize = fs + 'px';
+  for(let k = 0; k < 14 && qi.scrollWidth > qe.clientWidth && fs > 11; k++){ fs *= .93; qe.style.fontSize = fs.toFixed(1) + 'px'; }
+}
+function setCur(i){ $$('#grid .q').forEach(c => c.classList.toggle('cur', +c.dataset.i === i)); }
+function updateCount(){
+  const N = Q.list.length;
+  if(Q.layout === 'one') $('#qCount').textContent = `${Q.i + 1} of ${N}`;
+  else $('#qCount').textContent = `${Q.list.filter(q => q.val.trim()).length} of ${N} answered`;
+}
+
+function renderQuiz(){
+  const one = Q.layout === 'one', body = $('#quizBody');
+  body.classList.toggle('onelay', one);
+  const g = $('#grid'); g.innerHTML = ''; $('#one').innerHTML = '';
+  if(!one){
+    g.className = Q.list.length === 10 ? 'ten' : '';
+    Q.list.forEach((q, i) => g.appendChild(qCard(i, q, false)));
+    $$('#grid .q').forEach(fitQ);
+    if(!Q.padOn){ const f = g.querySelector('input'); if(f) f.focus({preventScroll:true}); }
+  } else showOne(Q.i, false);
+  updateCount();
+}
+function showOne(i, anim){
+  const box = $('#one'), old = box.querySelector('.q');
+  const make = () => {
+    box.innerHTML = '';
+    const c = qCard(i, Q.list[i], false); if(anim) c.classList.add('in');
+    box.appendChild(c); fitQ(c);
+    const nav = document.createElement('div'); nav.className = 'btnrow';
+    const last = i === Q.list.length - 1;
+    nav.innerHTML = `<button class="chip" id="oBack" ${i === 0 ? 'disabled style="opacity:.5"' : ''}>Back</button><button class="big blue" id="oNext">${last ? 'Finish' : 'Next'}</button>`;
+    box.appendChild(nav);
+    $('#oBack').onclick = () => goOne(i - 1); $('#oNext').onclick = () => last ? tryFinish() : goOne(i + 1);
+    if(!Q.padOn) c.querySelector('input').focus({preventScroll:true});
+    Q.focus = c.querySelector('input'); updateCount();
+  };
+  if(old && anim){ old.classList.add('out'); setTimeout(make, 280); } else make();
+}
+function goOne(i){ if(i < 0 || i >= Q.list.length) return; Q.i = i; showOne(i, true); }
+function nextFrom(i){
+  if(Q.layout === 'one'){ i === Q.list.length - 1 ? tryFinish() : goOne(i + 1); return; }
+  const next = $(`#grid .q[data-i="${i + 1}"] input`);
+  if(next) next.focus(); else tryFinish();
+}
+
+/* ---------- on-screen number pad (touch devices) ---------- */
+function buildPad(){
+  const pad = $('#pad'); pad.innerHTML = '';
+  ['7','8','9','4','5','6','1','2','3','0','.','/','NEG','⌫','Next'].forEach(k => {
+    const b = document.createElement('button'); b.dataset.k = k;
+    b.innerHTML = k === 'NEG' ? `(${NG})` : k === 'Next' ? 'Next' : k; if(k === 'Next') b.className = 'o';
+    b.setAttribute('aria-label', {NEG:'negative', '⌫':'delete'}[k] || k);
+    b.addEventListener('pointerdown', e => e.preventDefault());
+    b.onclick = () => padPress(k); pad.appendChild(b);
+  });
+}
+function padPress(k){
+  let inp = Q.focus && document.body.contains(Q.focus) ? Q.focus : $('#quizBody input');
+  if(!inp) return; if(!document.body.contains(Q.focus)) { Q.focus = inp; inp.focus({preventScroll:true}); }
+  let v = inp.value;
+  if(k === 'Next'){ nextFrom(+inp.closest('.q').dataset.i); return; }
+  if(k === '⌫') v = v.slice(0, -1);
+  else if(k === 'NEG') v = v.startsWith('-') ? v.slice(1) : '-' + v;
+  else if(v.length < 10) v += k;
+  inp.value = v; inp.dispatchEvent(new Event('input', {bubbles:true}));
+}
+function setPad(on){
+  Q.padOn = on; $('#pad').classList.toggle('on', on); $('#qPadBtn').setAttribute('aria-pressed', String(on));
+  $$('#quizBody input').forEach(i => i.inputMode = on ? 'none' : 'text');
+}
+$('#qPadBtn').onclick = () => setPad(!Q.padOn);
+
+/* ---------- finish and score ---------- */
+function tryFinish(){
+  const un = Q.list.filter(q => !q.val.trim()).length;
+  if(un) cfAsk('Finish the quiz?', `${un} question${un > 1 ? 's are' : ' is'} still unanswered. Finish anyway?`, 'Finish', 'Keep going').then(y => { if(y) finishQuiz(); });
+  else finishQuiz();
+}
+$('#qFinish').onclick = tryFinish;
+
+function finishQuiz(){
+  Q.done = true;
+  Q.list.forEach(q => { const p = parseAnswer(q.val); q.ok = !!p && feq(p, q.eq.x); });
+  const score = Q.list.filter(q => q.ok).length, N = Q.list.length;
+  $('#scoreBoard').innerHTML = `${score} / ${N}<small>correct</small>`;
+  $('#scoreBoard').setAttribute('aria-label', `${score} out of ${N} correct`);
+  const g = $('#grid2'); g.innerHTML = ''; g.className = N === 10 ? 'ten' : ''; g.id = 'grid2';
+  g.style.cssText = 'display:grid;gap:clamp(10px,1.6vw,22px);grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));max-width:1500px;margin:0 auto';
+  Q.list.forEach((q, i) => g.appendChild(qCard(i, q, true)));
+  $$('#grid2 .q').forEach(fitQ);
+  $('#quiz').classList.add('scoring');
+  const sc = $('#score'); sc.classList.add('on'); sc.scrollTop = 0;
+  setTimeout(() => retrigger($('#scoreBig .blow'), 'go'), 700);
+  setTimeout(() => retrigger($('#scoreCalf .blow'), 'go'), 1300);
+}
+
+/* ---------- entry and exit ---------- */
+function startQuiz(){
+  clearPouch(); S.sel = null; goScreen('quiz'); S.paused = true;
+  Q.layout = ST.quizLayout; Q.list = makeQuizSet(); Q.i = 0; Q.done = false; Q.focus = null;
+  $('#score').classList.remove('on'); $('#quiz').classList.remove('scoring'); $('#confirm').classList.remove('on');
+  setPad(Q.padOn); renderQuiz();
+}
+function leaveQuizToPlay(){
+  $('#score').classList.remove('on'); $('#quiz').classList.remove('scoring');
+  if(S.eq){ goScreen('play'); S.paused = false; S.sel = null; applyBodyClasses(); applyCalcSetting(); if(!S.solved && !S.busy) buildRackUI(); setTimeout(() => { fitEq(); placePouchTiles(); }, 50); }
+  else startPlay();
+}
+$('#qBack').onclick = leaveQuizToPlay; $('#sBack').onclick = leaveQuizToPlay;
+$('#qHome').onclick = () => goTitle(); $('#sHome').onclick = () => goTitle();
+$('#sNew').onclick = startQuiz;
+window.addEventListener('resize', () => { if(app().dataset.screen === 'quiz') $$('#quizBody .q, #grid2 .q').forEach(fitQ); });
+/* ================= Whale Watching: settings, pistons, start-up ================= */
+let dirtyKey = '';
+const genKey = () => JSON.stringify([ST.tpl, ST.neg, ST.dec, ST.frac, ST.minSize, ST.maxSize, ST.prog, ST.style, ST.hand]);
+
+/* ---------- small builders ---------- */
+function mkChk(parent, html, get, set){
+  const l = document.createElement('label'); l.className = 'chk';
+  l.innerHTML = `<input type="checkbox"><span>${html}</span>`;
+  const i = l.querySelector('input'); i.checked = !!get(); i.onchange = () => { set(i.checked, i); changed(); };
+  parent.appendChild(l); return i;
+}
+function mkRad(parent, name, html, val, get, set){
+  const l = document.createElement('label'); l.className = 'rad';
+  l.innerHTML = `<input type="radio" name="${name}"><span>${html}</span>`;
+  const i = l.querySelector('input'); i.checked = get() === val; i.onchange = () => { if(i.checked){ set(val); changed(); } };
+  parent.appendChild(l); return i;
+}
+function mkSel(parent, label, opts, get, set){
+  const r = document.createElement('div'); r.className = 'row';
+  r.innerHTML = `<label>${label}</label>`;
+  const s = document.createElement('select');
+  opts.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); });
+  s.value = String(get()); s.onchange = () => { set(s.value); changed(); };
+  r.appendChild(s); parent.appendChild(r); return s;
+}
+function section(id, title){
+  const d = document.createElement('details'); d.className = 'sec'; d.id = 'sec-' + id;
+  d.innerHTML = `<summary><span>${title}</span><span class="sum" id="sum-${id}"></span></summary><div class="inner"></div>`;
+  $('#setBody').appendChild(d); return d.querySelector('.inner');
+}
+const TIMER_OPTS = [[0,'Off'],[30,'30 seconds'],[60,'1 minute'],[90,'90 seconds'],[120,'2 minutes'],[180,'3 minutes'],[300,'5 minutes']];
+
+function buildSettings(){
+  const body = $('#setBody'); const open = $$('#setBody details').filter(d => d.open).map(d => d.id);
+  body.innerHTML = '';
+
+  let p = section('tpl', 'Equation types');
+  TPLS.forEach(t => {
+    const hint = t === 'axmb' ? ' <span class="hint">a sensible top step for younger classes</span>' : '';
+    mkChk(p, `<span class="tpl">${TPL_LABEL[t]}</span>${hint}`, () => ST.tpl[t], (v, el) => {
+      ST.tpl[t] = v;
+      if(!TPLS.some(k => ST.tpl[k])){ ST.tpl[t] = true; el.checked = true; showSetNote('Keep at least one type ticked.'); }
+    });
+  });
+  p.insertAdjacentHTML('beforeend', '<div class="hint" id="setNote" aria-live="polite" style="min-height:1.2em"></div>');
+
+  p = section('num', 'Number types');
+  const negBox = mkChk(p, `Negatives <span class="hint inl">(${NG}3, ${NG}2x, x = ${NG}4)</span>`, () => ST.neg.on, (v) => {
+    ST.neg.on = v; if(v && !ST.neg.consts && !ST.neg.coefs && !ST.neg.answers){ ST.neg.consts = true; ST.neg.answers = true; }
+    syncNeg();
+  });
+  const sub = document.createElement('div'); sub.className = 'sub'; sub.id = 'negSub'; p.appendChild(sub);
+  const subs = [
+    ['consts', `Negative constants <span class="hint inl">x + ${NG}3 = 10</span>`],
+    ['coefs',  `Negative coefficients <span class="hint inl">${NG}2x = 8</span>`],
+    ['answers',`Negative answers <span class="hint inl">x = ${NG}4</span>`]
+  ];
+  const subEls = {};
+  subs.forEach(([k, h]) => { subEls[k] = mkChk(sub, h, () => ST.neg[k], (v) => {
+    ST.neg[k] = v; if(!ST.neg.consts && !ST.neg.coefs && !ST.neg.answers){ ST.neg.on = false; }
+    syncNeg();
+  }); });
+  function syncNeg(){ negBox.checked = ST.neg.on; sub.hidden = !ST.neg.on; for(const k in subEls) subEls[k].checked = ST.neg[k]; }
+  syncNeg();
+  mkChk(p, 'Decimals', () => ST.dec, v => { ST.dec = v; });
+  mkChk(p, 'Fractions <span class="hint">fractional coefficients or answers (separate from the x/A = C type)</span>', () => ST.frac, v => { ST.frac = v; });
+  p.insertAdjacentHTML('beforeend', '<div class="hint">Each question may use one of these. Decimals and fractions never mix in one equation.</div>');
+
+  p = section('size', 'Size of numbers');
+  const dig = [[1,'1 digit'],[2,'2 digits'],[3,'3 digits'],[4,'4 digits']];
+  const sMin = mkSel(p, 'Smallest numbers', dig, () => ST.minSize, v => { ST.minSize = +v; if(ST.maxSize < ST.minSize){ ST.maxSize = ST.minSize; sMax.value = String(ST.maxSize); } });
+  const sMax = mkSel(p, 'Largest numbers', dig, () => ST.maxSize, v => { ST.maxSize = +v; if(ST.minSize > ST.maxSize){ ST.minSize = ST.maxSize; sMin.value = String(ST.minSize); } });
+  p.insertAdjacentHTML('beforeend', '<div class="hint">Longer numbers are not harder algebra, just longer arithmetic.</div>');
+
+  p = section('prog', 'Progression');
+  mkRad(p, 'prog', 'Stay on one level <span class="hint">questions come from the ticked set, no climbing</span>', 'stay', () => ST.prog, v => ST.prog = v);
+  mkRad(p, 'prog', 'Gradually harder <span class="hint">climbs only through what is ticked above</span>', 'gradual', () => ST.prog, v => ST.prog = v);
+  mkChk(p, 'Offer a quiet “Slightly easier” button after a long solve', () => ST.easier, v => ST.easier = v);
+
+  p = section('throw', 'Throwing');
+  mkRad(p, 'style', 'Hand of tiles <span class="hint">choose from a rack on deck</span>', 'rack', () => ST.style, v => { ST.style = v; });
+  mkRad(p, 'style', 'Free choice <span class="hint">brass dial for the operation, keypad for the number</span>', 'free', () => ST.style, v => { ST.style = v; });
+  mkSel(p, 'Tiles in the hand', [['grow','Grows as you go'],['needed','Just the tiles needed'],['busy','Always a busy hand']], () => ST.hand, v => ST.hand = v);
+  mkSel(p, 'Whales lose interest after', TIMER_OPTS, () => ST.timer, v => { ST.timer = +v; S.interest = 0; $('#pod').style.setProperty('--d', 0); });
+  mkChk(p, 'Show a calculator on deck', () => ST.calc, v => ST.calc = v);
+
+  p = section('disp', 'Display');
+  mkChk(p, 'Colour tiles by type <span class="hint">numbers and x terms get different colours; x tiles always have a notched corner</span>', () => ST.colour, v => { ST.colour = v; applyBodyClasses(); });
+
+  p = section('quiz', 'Quiz');
+  mkRad(p, 'qlen', '10 questions', 10, () => ST.quizLen, v => ST.quizLen = v);
+  mkRad(p, 'qlen', '20 questions', 20, () => ST.quizLen, v => ST.quizLen = v);
+  mkRad(p, 'qlay', 'All questions on screen', 'all', () => ST.quizLayout, v => ST.quizLayout = v);
+  mkRad(p, 'qlay', 'One question at a time', 'one', () => ST.quizLayout, v => ST.quizLayout = v);
+
+  p = section('ext', 'Extras (this device only)');
+  mkChk(p, 'Extras <span class="hint">occasional surprises on the sea; not stored in saved settings</span>', () => ST.extras, v => ST.extras = v);
+
+  open.forEach(id => { const d = document.getElementById(id); if(d) d.open = true; });
+  if(!open.length) $('#sec-tpl').open = true;
+  updateSummaries();
+}
+function showSetNote(t){ const n = $('#setNote'); if(n){ n.textContent = t; setTimeout(() => { if(n.textContent === t) n.textContent = ''; }, 3000); } }
+
+function updateSummaries(){
+  const set = (id, h) => { const e = document.getElementById('sum-' + id); if(e) e.innerHTML = h; };
+  const on = TPLS.filter(t => ST.tpl[t]);
+  set('tpl', on.length > 3 ? on.slice(0, 3).map(t => TPL_LABEL[t]).join(' · ') + ` · +${on.length - 3} more` : on.map(t => TPL_LABEL[t]).join(' · '));
+  const nums = [];
+  if(ST.neg.on){ const n = []; if(ST.neg.consts) n.push('constants'); if(ST.neg.coefs) n.push('coefficients'); if(ST.neg.answers) n.push('answers'); nums.push(`<span class="inl">${NG}negatives: ${n.join(', ')}</span>`); }
+  if(ST.dec) nums.push('decimals'); if(ST.frac) nums.push('fractions');
+  set('num', nums.length ? nums.join(' · ') : 'whole numbers only');
+  set('size', ST.minSize === ST.maxSize ? `${ST.maxSize} digit${ST.maxSize > 1 ? 's' : ''}` : `${ST.minSize} to ${ST.maxSize} digits`);
+  set('prog', (ST.prog === 'gradual' ? 'Gradually harder' : 'Stay on one level') + (ST.easier && ST.prog === 'gradual' ? ' · slightly easier on' : ''));
+  const tm = TIMER_OPTS.find(o => o[0] === ST.timer);
+  set('throw', (ST.style === 'free' ? 'Free choice' : 'Hand of tiles' + ({grow:' · grows as you go', needed:' · just those needed', busy:' · always busy'})[ST.hand]) + ` · whales: ${tm ? tm[1].toLowerCase() : ST.timer + 's'}` + (ST.calc ? ' · calculator' : ''));
+  set('disp', ST.colour ? 'Colour by type' : 'Colour off (notched x tiles)');
+  set('quiz', `${ST.quizLen} questions · ${ST.quizLayout === 'one' ? 'one at a time' : 'all on screen'}`);
+  set('ext', ST.extras ? 'on' : 'off');
+}
+function changed(){
+  S.presetName = ''; ORG.cur = null;
+  saveSettings(); updateSummaries();
+}
+function openSettings(){
+  buildSettings(); dirtyKey = genKey(); S.paused = true;
+  $('#settings').classList.add('on'); setTimeout(() => $('#setDone').focus(), 30);
+}
+function closeSettings(){
+  $('#settings').classList.remove('on'); $('#ioModal').classList.remove('on');
+  const scr = app().dataset.screen; S.paused = scr !== 'play';
+  applyBodyClasses(); applyCalcSetting(); renderTitle();
+  if(scr === 'play'){ if(genKey() !== dirtyKey){ S.level = 0; S.completed = Math.min(S.completed, 99); newQuestion(0); } else { S.interest = Math.min(S.interest, 1); drawKnots(); updatePlaque(); } }
+}
+$('#setDone').onclick = closeSettings;
+$('#setReset').onclick = async () => {
+  if(!await cfAsk('Reset all settings?', 'This puts every setting back to the starting choices. Your saved pistons are not touched.', 'Reset', 'Cancel')) return;
+  const ex = ST.extras; ST = clone(DEFAULTS); ST.extras = ex; changed(); buildSettings();
+};
+
+/* ---------- organ pistons ---------- */
+let PRE = null;
+const ORG = {bank:0, set:false, rename:false, cur:null};
+const defaultPresets = () => ({ banks:['A','B','C','D'].map(n => ({name:n, slots:Array(8).fill(null)})) });
+function validPresets(p){ return p && Array.isArray(p.banks) && p.banks.length === 4 && p.banks.every(b => b && typeof b.name === 'string' && Array.isArray(b.slots) && b.slots.length === 8); }
+function loadPresets(){ const p = load('ww.presets.v1'); PRE = validPresets(p) ? p : defaultPresets(); }
+function savePresets(){ store('ww.presets.v1', PRE); }
+function orgMsg(t){ const m = $('#organMsg'); m.textContent = t; }
+
+function renderOrgan(){
+  const tabs = $('#tabs'); tabs.innerHTML = '';
+  PRE.banks.forEach((b, i) => {
+    const t = document.createElement('button'); t.className = 'tab'; t.textContent = b.name; t.setAttribute('role', 'tab'); t.setAttribute('aria-selected', String(i === ORG.bank));
+    t.onclick = () => {
+      if(ORG.rename){ const n = window.prompt('Name for this bank:', b.name); if(n !== null && n.trim()){ b.name = n.trim().slice(0, 14); savePresets(); } ORG.rename = false; }
+      ORG.bank = i; renderOrgan();
+    };
+    tabs.appendChild(t);
+  });
+  tabs.insertAdjacentHTML('beforeend', '<span class="sp"></span>');
+  const tool = (txt, pressed, fn, label) => { const b = document.createElement('button'); b.className = 'tool'; b.textContent = txt; if(pressed != null) b.setAttribute('aria-pressed', String(pressed)); if(label) b.setAttribute('aria-label', label); b.onclick = fn; tabs.appendChild(b); };
+  tool('Set', ORG.set, () => { ORG.set = !ORG.set; ORG.rename = false; orgMsg(ORG.set ? 'Press a piston to store the current settings there.' : ''); renderOrgan(); }, 'Set: store current settings in a piston');
+  tool('Name', ORG.rename, () => { ORG.rename = !ORG.rename; ORG.set = false; orgMsg(ORG.rename ? 'Press a piston or a bank letter to name it.' : ''); renderOrgan(); }, 'Name a piston or bank');
+  tool('Export / Import', null, openIO);
+  $('#organ').classList.toggle('armed', ORG.set || ORG.rename);
+  const box = $('#pistons'); box.innerHTML = '';
+  PRE.banks[ORG.bank].slots.forEach((slot, i) => {
+    const d = document.createElement('div'); d.className = 'piston' + (slot ? '' : ' empty') + (ORG.cur && ORG.cur.b === ORG.bank && ORG.cur.s === i ? ' cur' : '');
+    d.innerHTML = `<button class="cap" aria-label="Piston ${i + 1}${slot ? ': ' + slot.name : ', empty'}">${i + 1}</button><div class="nm">${slot ? slot.name.replace(/</g, '&lt;') : ''}</div>`;
+    d.querySelector('.cap').onclick = e => pistonPress(i, e.shiftKey);
+    box.appendChild(d);
+  });
+}
+function pistonPress(i, shift){
+  const bank = PRE.banks[ORG.bank], slot = bank.slots[i];
+  if(ORG.set || shift){
+    bank.slots[i] = {name: slot ? slot.name : `${bank.name}${i + 1}`, st: forPreset(ST)};
+    ORG.set = false; ORG.cur = {b:ORG.bank, s:i}; S.presetName = bank.slots[i].name; savePresets();
+    orgMsg(`Stored in piston ${bank.name}${i + 1}.`); renderOrgan(); renderTitle(); return;
+  }
+  if(ORG.rename){
+    if(!slot){ orgMsg('That piston is empty. Use Set to store settings in it first.'); return; }
+    const n = window.prompt('Name for this piston:', slot.name);
+    if(n !== null && n.trim()){ slot.name = n.trim().slice(0, 24); savePresets(); if(S.presetName) S.presetName = slot.name; }
+    ORG.rename = false; renderOrgan(); renderTitle(); return;
+  }
+  if(!slot){ orgMsg('Empty piston. Press Set, then a piston, to store the current settings there.'); return; }
+  const ex = ST.extras; ST = mergeSettings(DEFAULTS, slot.st); ST.extras = ex; saveSettings();
+  ORG.cur = {b:ORG.bank, s:i}; S.presetName = slot.name; S.level = 0;
+  applyBodyClasses(); orgMsg(''); renderOrgan(); renderTitle();
+}
+
+/* export / import */
+function exportCode(){ return JSON.stringify({app:'whale-watching', v:1, banks:PRE.banks}, null, 1); }
+function openIO(){ $('#ioText').value = exportCode(); $('#ioMsg').textContent = ''; $('#ioModal').classList.add('on'); }
+function sanitiseBanks(o){
+  if(!o || !Array.isArray(o.banks) || o.banks.length < 1) return null;
+  const out = defaultPresets();
+  for(let b = 0; b < 4 && b < o.banks.length; b++){
+    const src = o.banks[b]; if(!src || !Array.isArray(src.slots)) continue;
+    out.banks[b].name = String(src.name || out.banks[b].name).slice(0, 14);
+    for(let s = 0; s < 8 && s < src.slots.length; s++){
+      const sl = src.slots[s]; if(sl && typeof sl === 'object' && sl.st) out.banks[b].slots[s] = {name:String(sl.name || `${out.banks[b].name}${s + 1}`).slice(0, 24), st:forPreset(mergeSettings(DEFAULTS, sl.st))};
+    }
+  }
+  return out;
+}
+$('#ioImport').onclick = () => {
+  try {
+    const p = sanitiseBanks(JSON.parse($('#ioText').value));
+    if(!p) throw new Error('shape');
+    PRE = p; ORG.bank = 0; ORG.cur = null; savePresets(); renderOrgan(); $('#ioMsg').textContent = 'Imported. Your pistons have been replaced.';
+  } catch(e){ $('#ioMsg').textContent = 'That code could not be read. Check you pasted all of it.'; }
+};
+$('#ioCopy').onclick = async () => {
+  const ta = $('#ioText');
+  try { await navigator.clipboard.writeText(ta.value); $('#ioMsg').textContent = 'Copied.'; }
+  catch(e){ ta.select(); try { document.execCommand('copy'); $('#ioMsg').textContent = 'Copied.'; } catch(e2){ $('#ioMsg').textContent = 'Select the code and copy it yourself.'; } }
+};
+$('#ioDown').onclick = () => {
+  const blob = new Blob([$('#ioText').value], {type:'application/json'}); const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'whale-watching-settings.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$('#ioFile').onchange = e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { $('#ioText').value = String(r.result); $('#ioMsg').textContent = 'File loaded. Press Import to use it.'; }; r.readAsText(f); e.target.value = ''; };
+$('#ioClose').onclick = () => $('#ioModal').classList.remove('on');
+
+/* ---------- title screen ---------- */
+function renderTitle(){
+  $$('#qlen .chip').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.n === ST.quizLen)));
+  $('#loaded').textContent = S.presetName ? `Loaded: ${S.presetName}` : '';
+  renderOrgan();
+}
+function goTitle(){
+  clearPouch(); S.sel = null; S.paused = true; $('#confirm').classList.remove('on'); $('#quiz').classList.remove('scoring'); $('#score').classList.remove('on');
+  goScreen('title'); renderTitle();
+}
+$$('#qlen .chip').forEach(c => c.onclick = () => { ST.quizLen = +c.dataset.n; saveSettings(); renderTitle(); });
+$('#goPlay').onclick = startPlay;
+$('#goQuiz').onclick = () => { clearPouch(); startQuiz(); };
+$('#goSettings').onclick = openSettings;
+$('#pHome').onclick = goTitle;
+$('#pQuiz').onclick = () => { clearPouch(); S.sel = null; startQuiz(); };
+$('#pSet').onclick = openSettings;
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    if($('#ioModal').classList.contains('on')) $('#ioModal').classList.remove('on');
+    else if($('#settings').classList.contains('on')) closeSettings();
+    else if($('#confirm').classList.contains('on')) $('#cfNo').click();
+  }
+});
+
+/* ---------- start ---------- */
+(function init(){
+  ST = mergeSettings(DEFAULTS, load('ww.settings.v1'));
+  loadPresets(); initScene(); applyBodyClasses(); buildPad(); setPad(!!(window.matchMedia && matchMedia('(pointer:coarse)').matches));
+  renderTitle(); goScreen('title');
+})();
+</script></body></html>
