@@ -31,6 +31,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Reserve Records | `reserve-records/` |
 | Sports Day | `sports-day/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
+| The Choice | `the-choice/` |
 | Times Tables Quiz | `times-tables-quiz/` |
 | Toast | `toast/` |
 | Trio | `trio/` |

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Choice</title>
+<style>
+:root{--gold:#ffcf4a;--panel:rgba(255,255,255,.07);--line:rgba(255,255,255,.18)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:min(0.8333vw,1.4815vh)}
+body{height:100vh;width:100vw;overflow:hidden;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;color:#fff;
+ background:radial-gradient(ellipse at 50% -10%,#3a2a9a 0%,#171048 45%,#08061f 100%)}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;padding:1.2rem 2rem}
+.hidden{display:none!important}
+kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColor;border-radius:.3rem;padding:0 .35rem;margin-left:.4rem}
+
+/* ---------- setup ---------- */
+#setup{align-items:center;justify-content:center;gap:1.2rem}
+.logo{font-size:7rem;font-weight:900;letter-spacing:.5rem;color:var(--gold);text-shadow:0 0 2rem rgba(255,207,74,.45),0 .3rem 0 #8a5a00}
+.tag{font-size:1.9rem;opacity:.8;margin-top:-.6rem}
+.setupcard{background:var(--panel);border:.15rem solid var(--line);border-radius:1.6rem;padding:1.6rem 2.4rem;width:70rem;display:grid;grid-template-columns:15rem 1fr;gap:1rem 1.5rem;align-items:center}
+.setupcard label{font-size:1.6rem;font-weight:700;color:var(--gold)}
+.seg{display:flex;gap:.6rem}
+.seg button{flex:1;background:rgba(255,255,255,.1);border:.15rem solid transparent;border-radius:.9rem;padding:.6rem .8rem;font-size:1.6rem;font-weight:700;line-height:1.2}
+.seg button small{display:block;font-size:1.05rem;font-weight:400;opacity:.75}
+.seg button.on{background:var(--gold);color:#2a1a00;border-color:#fff3c4}
+.names{display:flex;gap:.6rem}
+.names input{flex:1;min-width:0;background:rgba(255,255,255,.1);border:.15rem solid var(--line);border-radius:.8rem;padding:.55rem .8rem;font-size:1.5rem;color:#fff;font-family:inherit}
+.rules{font-size:1.25rem;opacity:.8;line-height:1.5;max-width:70rem;text-align:center}
+.bigbtn{background:linear-gradient(#ffe38a,#f2b632);color:#2a1a00;font-weight:900;font-size:2.4rem;border-radius:1.2rem;padding:.8rem 3rem;box-shadow:0 .4rem 0 #9a6a00;transition:transform .1s}
+.bigbtn:active{transform:translateY(.25rem);box-shadow:0 .15rem 0 #9a6a00}
+.bigbtn:disabled{opacity:.4;cursor:default}
+
+/* ---------- game layout ---------- */
+#game{display:grid;grid-template-rows:4.5rem 1fr 10rem 14rem;gap:.8rem}
+.hdr{display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:2.6rem;font-weight:900;letter-spacing:.3rem;color:var(--gold)}
+.brand small{font-size:1.4rem;letter-spacing:0;color:#fff;opacity:.75;margin-left:1.2rem;font-weight:400}
+.worth{display:flex;align-items:center;gap:.8rem;font-size:1.4rem;opacity:.95}
+.pip{width:2.8rem;height:2.8rem;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.5rem;border:.15rem solid var(--gold);color:var(--gold);transition:all .3s}
+.pip.now{background:var(--gold);color:#2a1a00;transform:scale(1.25);box-shadow:0 0 1.2rem rgba(255,207,74,.7)}
+.pip.gone{opacity:.2}
+.tools{display:flex;gap:.5rem}
+.tools button{background:rgba(255,255,255,.1);border-radius:.8rem;width:3.4rem;height:3.4rem;font-size:1.6rem}
+
+.main{display:grid;grid-template-columns:34% 1fr;gap:1.2rem;min-height:0}
+.stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;overflow:hidden;
+ border-radius:1.4rem;background:linear-gradient(#0c0a2e,#14104a);border:.15rem solid var(--line)}
+.cone{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(to bottom,rgba(255,240,180,.42),rgba(255,240,180,.03));clip-path:polygon(38% 0,62% 0,98% 100%,2% 100%)}
+.floor{position:absolute;bottom:.8rem;left:8%;width:84%;height:3.4rem;border-radius:50%;background:radial-gradient(ellipse,rgba(255,220,120,.4),transparent 70%)}
+.stagelabel{position:absolute;top:.8rem;left:0;right:0;text-align:center;font-size:1.3rem;letter-spacing:.3rem;opacity:.7}
+.stage .chair{margin-bottom:2rem;z-index:2}
+
+/* chairs */
+.chair{position:relative;perspective:900px;width:8rem;height:9.6rem;flex:none}
+.chair.big{width:15rem;height:18rem}
+.chair .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.7s cubic-bezier(.25,.8,.25,1)}
+.chair.noanim .inner{transition:none}
+.chair.spun .inner{transform:rotateY(900deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.front{transform:rotateY(180deg)}
+.face svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 .4rem .6rem rgba(0,0,0,.45))}
+.team,.chair{--c2:color-mix(in srgb,var(--c) 58%,#000)}
+.c1{fill:var(--c)}.c2{fill:var(--c2)}.hl{fill:rgba(255,255,255,.15)}.cush{fill:rgba(255,255,255,.22)}.leg{fill:#2a2450}.shd{fill:rgba(0,0,0,.35)}
+.numplate{position:absolute;left:50%;top:2%;transform:translateX(-50%);background:linear-gradient(#ffe38a,#f2b632);color:#2a1a00;
+ font-weight:900;font-size:5.6rem;line-height:1.1;padding:.2rem 1.4rem;border-radius:1.2rem;box-shadow:0 .5rem 1.2rem rgba(0,0,0,.5);min-width:8rem;text-align:center}
+
+/* clues */
+.clues{display:flex;flex-direction:column;background:var(--panel);border:.15rem solid var(--line);border-radius:1.4rem;padding:.9rem 1.4rem;min-height:0}
+.cluehead{display:flex;justify-content:space-between;align-items:baseline;font-size:1.5rem;margin-bottom:.5rem}
+.cluehead b{color:var(--gold);letter-spacing:.2rem}
+.cluelist{flex:1;display:grid;grid-template-rows:repeat(5,1fr);gap:.4rem;min-height:0}
+.clue{display:flex;align-items:center;gap:1.2rem;border-radius:1rem;padding:0 1.2rem;background:rgba(255,255,255,.05);border:.12rem dashed rgba(255,255,255,.12);min-height:0}
+.clue .n{width:2.8rem;height:2.8rem;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.5rem;background:rgba(255,255,255,.12);flex:none}
+.clue .t{font-size:2.3rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.0}
+.clue.on{background:linear-gradient(90deg,rgba(255,207,74,.22),rgba(255,207,74,.06));border:.12rem solid rgba(255,207,74,.55);animation:slideIn .45s ease-out}
+.clue.on .n{background:var(--gold);color:#2a1a00}
+.clue.on .t{opacity:1}
+.clue.late{opacity:.5}.clue.late .t{opacity:1;font-style:italic}
+@keyframes slideIn{from{transform:translateX(3rem);opacity:0}to{transform:none;opacity:1}}
+.cluefoot{display:flex;align-items:center;gap:1.2rem;margin-top:.6rem}
+.timer{flex:1;height:.8rem;border-radius:.4rem;background:rgba(255,255,255,.1);overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:var(--gold)}
+.nextbtn{background:linear-gradient(#ffe38a,#f2b632);color:#2a1a00;font-weight:900;font-size:1.9rem;padding:.55rem 2rem;border-radius:1rem;box-shadow:0 .3rem 0 #9a6a00;white-space:nowrap;margin-left:auto}
+.nextbtn:disabled{opacity:.35;cursor:default}
+
+/* choice band */
+.band{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;background:rgba(0,0,0,.25);border-radius:1.4rem;border:.15rem solid var(--line);padding:.5rem 1rem}
+.msg{font-size:2.1rem;font-weight:700;text-align:center;line-height:1.25}
+.msg small{display:block;font-size:1.4rem;font-weight:400;opacity:.8}
+.choicehead{display:flex;align-items:center;gap:1.5rem;font-size:1.9rem;font-weight:700}
+.choicehead button{background:rgba(255,255,255,.12);border-radius:.7rem;padding:.25rem .9rem;font-size:1.2rem}
+.cards{display:flex;gap:1.2rem}
+.card{position:relative;width:15rem;height:6.6rem;border-radius:1.2rem;border:.2rem solid var(--gold);background:linear-gradient(#2a2377,#1a1450);
+ font-size:3.8rem;font-weight:900;animation:cardIn .5s both;transition:transform .15s}
+.card:hover{transform:translateY(-.25rem)}
+.card .k{position:absolute;left:.8rem;top:.3rem;font-size:1.2rem;color:var(--gold);font-weight:700}
+.card.right{background:linear-gradient(#35d07f,#168a52);border-color:#c8ffe2;transform:scale(1.07)}
+.card.wrong{background:#4a1d3a;opacity:.5;text-decoration:line-through;border-color:#8a3a5a}
+.card:disabled{cursor:default}
+@keyframes cardIn{from{transform:rotateX(90deg) scale(.7);opacity:0}to{transform:none;opacity:1}}
+
+/* teams */
+.teams{display:flex;gap:1rem;justify-content:center;min-height:0}
+.team{flex:1;max-width:38rem;display:flex;align-items:center;gap:1rem;padding:.7rem 1rem;border-radius:1.4rem;background:var(--panel);border:.2rem solid var(--c);transition:opacity .3s,filter .3s}
+.tinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:.3rem}
+.tname{font-size:1.9rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tscore{font-size:1.4rem;opacity:.9}
+.tscore b{font-size:3.2rem;color:var(--gold);line-height:1;display:inline-block}
+.tscore b.pop{animation:pop .7s}
+@keyframes pop{30%{transform:scale(1.6)}100%{transform:scale(1)}}
+.buzz{background:var(--c);color:#fff;font-size:1.9rem;font-weight:900;letter-spacing:.15rem;border-radius:1rem;padding:.7rem 1rem;box-shadow:0 .3rem 0 var(--c2);text-shadow:0 .1rem .2rem rgba(0,0,0,.4)}
+.buzz:active{transform:translateY(.2rem)}
+.team.off .buzz{opacity:.35;cursor:default;box-shadow:none}
+.team.locked{opacity:.5;filter:grayscale(.7)}
+.team.locked .chair{filter:brightness(.7)}
+
+/* final */
+#final{align-items:center;justify-content:center;gap:1.4rem}
+.final-h{font-size:5rem;font-weight:900;color:var(--gold);text-align:center;text-shadow:0 0 2rem rgba(255,207,74,.4)}
+.rank{display:flex;flex-direction:column;gap:.8rem;width:50rem}
+.rank div{display:flex;align-items:center;gap:1rem;font-size:2.4rem;font-weight:800;padding:.7rem 1.4rem;border-radius:1rem;background:var(--panel);border-left:1rem solid var(--c)}
+.rank div span{flex:1}
+.rank div b{color:var(--gold);font-size:2.8rem}
+.btnrow{display:flex;gap:1.2rem;margin-top:.8rem}
+.btnrow .bigbtn.alt{background:rgba(255,255,255,.14);color:#fff;box-shadow:0 .4rem 0 rgba(0,0,0,.4)}
+
+.conf{position:fixed;top:-3rem;width:1rem;height:1.6rem;z-index:50;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(115vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+
+<!-- ======== SETUP ======== -->
+<div id="setup" class="screen">
+  <div class="logo">THE CHOICE</div>
+  <div class="tag">Blind auditions for number detectives</div>
+  <div class="setupcard">
+    <label>Teams</label>
+    <div class="seg" data-key="teamCount"><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div>
+    <label>Team names</label>
+    <div class="names" id="names"></div>
+    <label>Level</label>
+    <div class="seg" data-key="level">
+      <button data-v="1">Warm-up<small>numbers 1–50</small></button>
+      <button data-v="2" class="on">Standard<small>numbers 1–100</small></button>
+      <button data-v="3">Tough<small>numbers 1–200</small></button>
+    </div>
+    <label>Rounds</label>
+    <div class="seg" data-key="rounds"><button data-v="5">5</button><button data-v="8" class="on">8</button><button data-v="10">10</button></div>
+    <label>Clues appear</label>
+    <div class="seg" data-key="auto"><button data-v="0" class="on">When I click</button><button data-v="10">Every 10 s</button><button data-v="20">Every 20 s</button></div>
+  </div>
+  <div class="rules">A mystery number sits in the chair with its back to you. Clues appear one at a time. Buzz when you think you know &ndash; your chair spins, then pick the number from four cards.
+  The earlier you buzz, the more points (5 down to 1) &ndash; but a wrong pick locks your team out of the round.</div>
+  <button class="bigbtn" id="startBtn">Start the show</button>
+</div>
+
+<!-- ======== GAME ======== -->
+<div id="game" class="screen hidden">
+  <div class="hdr">
+    <div class="brand">THE CHOICE<small id="roundLbl"></small></div>
+    <div class="worth"><span>This round is worth</span><div id="pips" style="display:flex;gap:.7rem"></div></div>
+    <div class="tools">
+      <button id="soundBtn" title="Sound on/off">🔊</button>
+      <button id="fsBtn" title="Full screen">⛶</button>
+      <button id="homeBtn" title="Back to setup">⚙</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="stage">
+      <div class="cone"></div><div class="floor"></div>
+      <div class="stagelabel">THE CONTESTANT</div>
+      <div class="chair big" id="cchair" style="--c:#3d63dd">
+        <div class="inner">
+          <div class="face back" id="cback"></div>
+          <div class="face front"><div id="cfront"></div><div class="numplate" id="numplate">?</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="clues">
+      <div class="cluehead"><b>THE CLUES</b><span id="rangeLbl"></span></div>
+      <div class="cluelist" id="cluelist"></div>
+      <div class="cluefoot">
+        <div class="timer hidden" id="timer"><i id="timerbar"></i></div>
+        <button class="nextbtn" id="nextBtn">Next clue ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="band" id="band"></div>
+  <div class="teams" id="teams"></div>
+</div>
+
+<!-- ======== FINAL ======== -->
+<div id="final" class="screen hidden">
+  <div class="final-h" id="finalH"></div>
+  <div class="rank" id="rank"></div>
+  <div class="btnrow">
+    <button class="bigbtn" id="againBtn">Play again</button>
+    <button class="bigbtn alt" id="setupBtn">Change settings</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/*LOGIC_START*/
+const RANGE={1:[1,50],2:[1,100],3:[1,200]};
+const MULTS={1:[2,3,4,5,6,10],2:[2,3,4,5,6,7,8,9,10,11,12],3:[2,3,4,5,6,7,8,9,10,11,12,13,15]};
+const FACMS={1:[12,18,20,24,30,36,40,48],2:[24,30,36,40,48,60,72,80,90,96,100],3:[48,60,72,90,96,100,120,144,150,180,200]};
+const isPrime=n=>{if(n<2)return false;for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true};
+const isSquare=n=>n>0&&Number.isInteger(Math.sqrt(n));
+const isCube=n=>n>0&&Math.round(Math.cbrt(n))**3===n;
+const isTri=n=>n>0&&Number.isInteger((Math.sqrt(8*n+1)-1)/2);
+const dsum=n=>String(n).split('').reduce((a,d)=>a+ +d,0);
+const dprod=n=>String(n).split('').reduce((a,d)=>a*d,1);
+const nfac=n=>{let c=0;for(let i=1;i<=n;i++)if(n%i===0)c++;return c};
+
+function genPool(n,lvl,lo,hi){
+  const P=[];
+  const add=(type,text,test)=>{if(test(n))P.push({type,text,test});};
+  add('parity','I’m an odd number',x=>x%2===1);
+  add('parity','I’m an even number',x=>x%2===0);
+  MULTS[lvl].forEach(k=>{
+    add('mult','I’m a multiple of '+k,x=>x%k===0);
+    if(lvl>=2&&k>=3&&k<=9)add('notmult','I’m not a multiple of '+k,x=>x%k!==0);
+  });
+  FACMS[lvl].forEach(m=>add('factor','I’m a factor of '+m,x=>m%x===0));
+  add('special','I’m a prime number',isPrime);
+  add('special','I’m a square number',isSquare);
+  if(lvl>=2){
+    add('special','I’m a cube number',isCube);
+    add('special','I’m a triangular number',isTri);
+    add('notspecial','I’m not a prime number',x=>!isPrime(x));
+    add('notspecial','I’m not a square number',x=>!isSquare(x));
+    add('special','I read the same forwards and backwards',x=>x>=10&&String(x)===String(x).split('').reverse().join(''));
+  }
+  for(let t=5;t<=hi+5;t+=5){
+    if(t>lo)add('cmp','I’m less than '+t,x=>x<t);
+    if(t<hi)add('cmp','I’m greater than '+t,x=>x>t);
+  }
+  const words={1:'one',2:'two',3:'three'};
+  const w=String(n).length;
+  add('digits','I have '+words[w]+(w===1?' digit':' digits'),x=>String(x).length===w);
+  add('digit','My units digit is '+(n%10),x=>x%10===n%10);
+  if(n>=10){
+    const td=Math.floor(n/10)%10;
+    add('digit','My tens digit is '+td,x=>x>=10&&Math.floor(x/10)%10===td);
+    add('digit','My digits add up to '+dsum(n),x=>dsum(x)===dsum(n));
+  }
+  if(lvl>=3){
+    if(n>=10)add('digit','My digits multiply to '+dprod(n),x=>x>=10&&dprod(x)===dprod(n));
+    add('factors','I have exactly '+nfac(n)+' factors',x=>nfac(x)===nfac(n));
+    for(let k=3;k<=9;k++){
+      const r=n%k;
+      if(r>0)add('rem','I leave a remainder of '+r+' when divided by '+k,x=>x%k===r);
+    }
+    add('near','I’m one more than a prime number',x=>isPrime(x-1));
+    add('near','I’m one less than a square number',x=>isSquare(x+1));
+    add('near','I’m one more than a square number',x=>isSquare(x-1));
+  }
+  return P;
+}
+
+function buildRound(lvl,used){
+  const lo=RANGE[lvl][0],hi=RANGE[lvl][1];
+  const all=[];for(let x=lo;x<=hi;x++)all.push(x);
+  for(let attempt=0;attempt<800;attempt++){
+    const target=lo+Math.floor(Math.random()*(hi-lo+1));
+    if(used.has(target))continue;
+    const pool=genPool(target,lvl,lo,hi);
+    let cur=all,chosen=[],tc={},ok=true;
+    for(let step=1;step<=5;step++){
+      const desired=Math.pow(all.length,1-step/5);
+      let best=null,bs=1e9;
+      for(const c of pool){
+        if(chosen.includes(c))continue;
+        const nx=cur.filter(x=>c.test(x));
+        const n=nx.length;
+        if(step<5){if(n<2||n>=cur.length)continue}else if(n!==1)continue;
+        const s=Math.abs(Math.log(n)-Math.log(desired))+Math.random()*.5+(tc[c.type]||0)*.45;
+        if(s<bs){bs=s;best={c,nx}}
+      }
+      if(!best){ok=false;break}
+      chosen.push(best.c);tc[best.c.type]=(tc[best.c.type]||0)+1;cur=best.nx;
+    }
+    if(ok&&cur.length===1&&cur[0]===target)return{target,clues:chosen};
+  }
+  throw new Error('Could not build a round');
+}
+
+/* Four cards: the answer plus the three numbers that fit the most clues shown so far. */
+function makeOptions(cur,shown,lvl,wrong){
+  const lo=RANGE[lvl][0],hi=RANGE[lvl][1];
+  const tests=cur.clues.slice(0,shown).map(c=>c.test);
+  const arr=[];
+  for(let x=lo;x<=hi;x++){
+    if(x===cur.target||wrong.has(x))continue;
+    arr.push({x,m:tests.filter(t=>t(x)).length,r:Math.random()});
+  }
+  arr.sort((a,b)=>b.m-a.m||a.r-b.r);
+  return [cur.target].concat(arr.slice(0,3).map(o=>o.x)).sort((a,b)=>a-b);
+}
+/*LOGIC_END*/
+
+/* ---------------- UI ---------------- */
+const $=id=>document.getElementById(id);
+const COLS=['#9b5cff','#17c3b2','#ff9f1c','#ff5fa8'];
+const S={teamCount:2,level:2,rounds:8,auto:0,sound:true,teams:[],round:0,used:new Set(),cur:null,
+  shown:0,phase:'idle',buzzer:null,locked:new Set(),wrong:new Set(),opts:[],tok:0,timeout:null};
+
+const NS='http://www.w3.org/2000/svg';
+function chairBack(q){return '<svg viewBox="0 0 100 120" xmlns="'+NS+'">'+
+ '<ellipse class="shd" cx="50" cy="114" rx="38" ry="5"/>'+
+ '<rect class="leg" x="24" y="92" width="7" height="20" rx="2"/><rect class="leg" x="69" y="92" width="7" height="20" rx="2"/>'+
+ '<rect class="c1" x="9" y="48" width="17" height="42" rx="7"/><rect class="c1" x="74" y="48" width="17" height="42" rx="7"/>'+
+ '<rect class="c2" x="14" y="70" width="72" height="24" rx="8"/>'+
+ '<rect class="c1" x="20" y="4" width="60" height="72" rx="16"/><rect class="hl" x="28" y="12" width="44" height="56" rx="11"/>'+
+ '<circle class="c2" cx="50" cy="40" r="2.2"/><circle class="c2" cx="38" cy="24" r="2"/><circle class="c2" cx="62" cy="24" r="2"/><circle class="c2" cx="38" cy="56" r="2"/><circle class="c2" cx="62" cy="56" r="2"/>'+
+ (q?'<text x="50" y="52" text-anchor="middle" font-size="38" font-weight="900" fill="rgba(255,255,255,.9)" font-family="Trebuchet MS,sans-serif">?</text>':'')+
+ '</svg>'}
+function chairFront(){return '<svg viewBox="0 0 100 120" xmlns="'+NS+'">'+
+ '<ellipse class="shd" cx="50" cy="114" rx="38" ry="5"/>'+
+ '<rect class="leg" x="24" y="92" width="7" height="20" rx="2"/><rect class="leg" x="69" y="92" width="7" height="20" rx="2"/>'+
+ '<rect class="c1" x="20" y="4" width="60" height="62" rx="16"/><rect class="hl" x="28" y="12" width="44" height="46" rx="11"/>'+
+ '<rect class="c2" x="14" y="62" width="72" height="30" rx="10"/><rect class="cush" x="22" y="64" width="56" height="20" rx="9"/>'+
+ '<rect class="c1" x="8" y="44" width="17" height="48" rx="7"/><rect class="c1" x="75" y="44" width="17" height="48" rx="7"/>'+
+ '</svg>'}
+
+function resetChair(el){el.classList.add('noanim');el.classList.remove('spun');void el.offsetWidth;el.classList.remove('noanim')}
+function later(fn,ms){const t=S.tok;setTimeout(()=>{if(t===S.tok)fn()},ms)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* sound */
+let AC=null;
+function tone(f,d,type,v,t0){
+  if(!S.sound)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type=type||'sine';o.frequency.value=f;o.connect(g);g.connect(AC.destination);
+    const t=AC.currentTime+(t0||0);
+    g.gain.setValueAtTime(v||.12,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.start(t);o.stop(t+d+.02);
+  }catch(e){}
+}
+const sfx={
+  clue(){tone(660,.14,'sine',.08)},
+  buzz(){tone(180,.3,'square',.1)},
+  spin(){for(let i=0;i<10;i++)tone(300+i*45,.07,'triangle',.05,i*.1)},
+  ok(){[523,659,784,1047].forEach((f,i)=>tone(f,.28,'triangle',.14,i*.11))},
+  no(){tone(220,.3,'sawtooth',.09);tone(165,.45,'sawtooth',.09,.16)},
+  walk(){tone(392,.25,'sine',.1);tone(294,.4,'sine',.1,.22)}
+};
+
+/* ---------- setup ---------- */
+function renderNames(){
+  const box=$('names');
+  if(!box.children.length){
+    for(let i=0;i<4;i++){
+      const inp=document.createElement('input');
+      inp.value='Team '+(i+1);inp.maxLength=16;inp.style.borderColor=COLS[i];
+      box.appendChild(inp);
+    }
+  }
+  [...box.children].forEach((inp,i)=>inp.classList.toggle('hidden',i>=S.teamCount));
+}
+document.querySelectorAll('.seg').forEach(seg=>{
+  seg.addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');S[seg.dataset.key]=+b.dataset.v;
+    if(seg.dataset.key==='teamCount')renderNames();
+  });
+});
+renderNames();
+
+function showScreen(id){['setup','game','final'].forEach(s=>$(s).classList.toggle('hidden',s!==id));S.screen=id}
+showScreen('setup');
+
+$('startBtn').onclick=startGame;
+$('againBtn').onclick=startGame;
+$('setupBtn').onclick=()=>{S.tok++;clearTimer();showScreen('setup')};
+$('homeBtn').onclick=()=>{if(confirm('Go back to setup? The current game will be lost.')){S.tok++;clearTimer();showScreen('setup')}};
+$('soundBtn').onclick=()=>{S.sound=!S.sound;$('soundBtn').textContent=S.sound?'🔊':'🔇'};
+$('fsBtn').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()};
+$('nextBtn').onclick=()=>{onNext();$('nextBtn').blur()};
+
+function startGame(){
+  const inputs=[...$('names').children].slice(0,S.teamCount);
+  S.teams=inputs.map((inp,i)=>({name:inp.value.trim()||('Team '+(i+1)),score:0,col:COLS[i]}));
+  S.round=0;S.used=new Set();S.tok++;
+  $('cback').innerHTML=chairBack(true);$('cfront').innerHTML=chairFront();
+  buildTeams();showScreen('game');nextRound();
+}
+
+function buildTeams(){
+  const box=$('teams');box.innerHTML='';
+  S.teams.forEach((t,i)=>{
+    const el=document.createElement('div');el.className='team';el.id='team'+i;el.style.setProperty('--c',t.col);
+    el.innerHTML='<div class="chair" id="chair'+i+'"><div class="inner"><div class="face back">'+chairBack(false)+'</div><div class="face front">'+chairFront()+'</div></div></div>'+
+      '<div class="tinfo"><div class="tname"></div><div class="tscore"><b>0</b> pts</div><button class="buzz">BUZZ<kbd>'+(i+1)+'</kbd></button></div>';
+    el.querySelector('.tname').textContent=t.name;
+    el.addEventListener('click',()=>buzz(i));
+    box.appendChild(el);
+  });
+}
+
+function updateTeams(){
+  S.teams.forEach((t,i)=>{
+    const el=$('team'+i);
+    el.querySelector('.tscore b').textContent=t.score;
+    const locked=S.locked.has(i);
+    el.classList.toggle('locked',locked);
+    el.classList.toggle('off',S.phase!=='clues'||locked);
+    el.querySelector('.buzz').firstChild.textContent=locked?'LOCKED OUT':'BUZZ';
+  });
+}
+
+function updatePips(){
+  const now=S.phase==='reveal'?(6-S.shown):(S.shown?6-S.shown:5);
+  $('pips').innerHTML='';
+  for(let v=5;v>=1;v--){
+    const d=document.createElement('div');d.className='pip'+(v===now&&S.phase!=='reveal'?' now':'')+(v>now?' gone':'');d.textContent=v;
+    $('pips').appendChild(d);
+  }
+}
+
+function updateNext(){
+  const b=$('nextBtn');
+  if(S.phase==='clues'){b.disabled=false;b.textContent=S.shown<5?'Next clue ▶':'Nobody knows – reveal ▶'}
+  else if(S.phase==='reveal'){b.disabled=false;b.textContent=S.round>=S.rounds?'See results ▶':'Next round ▶'}
+  else{b.disabled=true;b.textContent=S.shown<5?'Next clue ▶':'Nobody knows – reveal ▶'}
+}
+
+function setBand(html){$('band').innerHTML=html}
+
+/* ---------- timer ---------- */
+function clearTimer(){clearTimeout(S.timeout);S.timeout=null;const bar=$('timerbar');if(bar){bar.style.transition='none';bar.style.width='100%'}}
+function startTimer(){
+  clearTimer();
+  $('timer').classList.toggle('hidden',!S.auto);
+  if(!S.auto)return;
+  const bar=$('timerbar');
+  bar.style.transition='none';bar.style.width='100%';void bar.offsetWidth;
+  bar.style.transition='width '+S.auto+'s linear';bar.style.width='0%';
+  S.timeout=setTimeout(()=>{if(S.phase==='clues')onNext()},S.auto*1000);
+}
+
+/* ---------- rounds ---------- */
+function nextRound(){
+  S.tok++;clearTimer();
+  S.round++;
+  S.cur=buildRound(S.level,S.used);S.used.add(S.cur.target);
+  S.shown=0;S.locked=new Set();S.wrong=new Set();S.buzzer=null;S.phase='wait';
+  resetChair($('cchair'));S.teams.forEach((t,i)=>resetChair($('chair'+i)));
+  $('numplate').textContent=S.cur.target;
+  $('roundLbl').textContent='Round '+S.round+' of '+S.rounds;
+  const r=RANGE[S.level];
+  $('rangeLbl').textContent='The contestant is a whole number from '+r[0]+' to '+r[1];
+  const list=$('cluelist');list.innerHTML='';
+  for(let i=0;i<5;i++){
+    const row=document.createElement('div');row.className='clue';
+    row.innerHTML='<div class="n">'+(i+1)+'</div><div class="t"></div>';
+    list.appendChild(row);
+  }
+  $('timer').classList.toggle('hidden',!S.auto);
+  setBand('<div class="msg">The contestant takes their seat…<small>Their back is to you. Listen to the clues!</small></div>');
+  updatePips();updateTeams();updateNext();
+  later(()=>{S.phase='clues';revealClue()},900);
+}
+
+function revealClue(){
+  if(S.shown>=5)return;
+  const row=$('cluelist').children[S.shown];
+  row.querySelector('.t').textContent=S.cur.clues[S.shown].text;
+  row.classList.add('on');
+  S.shown++;
+  sfx.clue();
+  setBand('<div class="msg">Buzz in when you think you know!<small>Worth <b style="color:var(--gold)">'+(6-S.shown)+'</b> point'+(6-S.shown===1?'':'s')+' right now &ndash; but a wrong pick locks you out.</small></div>');
+  updatePips();updateTeams();updateNext();
+  startTimer();
+}
+
+function onNext(){
+  if(S.screen!=='game')return;
+  if(S.phase==='clues'){if(S.shown<5)revealClue();else finishRound(null)}
+  else if(S.phase==='reveal'){if(S.round>=S.rounds)showFinal();else nextRound()}
+}
+
+/* ---------- buzz & choice ---------- */
+function buzz(i){
+  if(S.phase!=='clues'||S.locked.has(i))return;
+  S.phase='choice';S.buzzer=i;clearTimer();
+  $('chair'+i).classList.add('spun');
+  sfx.buzz();later(()=>sfx.spin(),150);
+  updateTeams();updateNext();
+  setBand('<div class="msg"><b style="color:'+S.teams[i].col+'"></b><span id="bn"></span> buzzed!<small>Chair spinning…</small></div>');
+  $('band').querySelector('b').textContent=S.teams[i].name;
+  $('bn').textContent='';
+  later(showChoice,1300);
+}
+
+function showChoice(){
+  if(S.phase!=='choice')return;
+  S.opts=makeOptions(S.cur,S.shown,S.level,S.wrong);
+  const t=S.teams[S.buzzer];
+  const b=$('band');
+  b.innerHTML='<div class="choicehead"><span><b id="cn"></b>, make your choice!</span><button id="cancelBtn">Cancel buzz <kbd>Esc</kbd></button></div><div class="cards" id="cards"></div>';
+  $('cn').textContent=t.name;$('cn').style.color=t.col;
+  $('cancelBtn').onclick=cancelBuzz;
+  S.opts.forEach((v,i)=>{
+    const c=document.createElement('button');c.className='card';c.style.animationDelay=(i*.1)+'s';
+    c.innerHTML='<span class="k">'+'ABCD'[i]+'</span>'+v;
+    c.onclick=()=>pick(i);
+    $('cards').appendChild(c);
+  });
+}
+
+function cancelBuzz(){
+  if(S.phase!=='choice')return;
+  S.tok++;
+  $('chair'+S.buzzer).classList.remove('spun');
+  S.buzzer=null;S.phase='clues';
+  setBand('<div class="msg">Buzz cancelled &ndash; back to the clues.<small>Worth '+(6-S.shown)+' point'+(6-S.shown===1?'':'s')+' right now.</small></div>');
+  updateTeams();updateNext();startTimer();
+}
+
+function pick(i){
+  if(S.phase!=='choice'||!$('cards'))return;
+  const cards=[...$('cards').children];
+  if(cards.some(c=>c.disabled))return;
+  const v=S.opts[i],who=S.buzzer;
+  cards.forEach(c=>c.disabled=true);
+  if(v===S.cur.target){
+    cards[i].classList.add('right');
+    later(()=>finishRound(who),800);
+  }else{
+    cards[i].classList.add('wrong');
+    S.wrong.add(v);S.locked.add(who);S.phase='wait';
+    sfx.no();updateTeams();updateNext();
+    later(()=>{
+      if(S.locked.size>=S.teams.length){finishRound(null);return}
+      S.phase='clues';
+      setBand('<div class="msg"><span id="lo"></span> locked out!<small>Everyone else is still in. Worth '+(6-S.shown)+' point'+(6-S.shown===1?'':'s')+'.</small></div>');
+      $('lo').textContent=S.teams[who].name+' are';
+      updateTeams();updateNext();startTimer();
+    },1400);
+  }
+}
+
+function finishRound(winner){
+  S.tok++;clearTimer();
+  S.phase='reveal';
+  // reveal any clues not yet shown
+  [...$('cluelist').children].forEach((row,i)=>{
+    if(!row.classList.contains('on')){row.querySelector('.t').textContent=S.cur.clues[i].text;row.classList.add('late')}
+  });
+  $('cchair').classList.add('spun');
+  const n=S.cur.target;
+  if(winner!==null){
+    const pts=6-S.shown;
+    S.teams[winner].score+=pts;
+    setBand('<div class="msg"><b id="wn"></b> chose correctly &ndash; <span style="color:var(--gold)">+'+pts+' point'+(pts===1?'':'s')+'</span>!<small>The contestant was <b>'+n+'</b>.</small></div>');
+    $('wn').textContent=S.teams[winner].name;$('wn').style.color=S.teams[winner].col;
+    sfx.ok();setTimeout(confetti,500);
+    updateTeams();
+    const sc=$('team'+winner).querySelector('.tscore b');sc.classList.remove('pop');void sc.offsetWidth;sc.classList.add('pop');
+  }else{
+    setBand('<div class="msg">Nobody found me!<small>The contestant was <b>'+n+'</b>. All the clues are shown above.</small></div>');
+    sfx.walk();updateTeams();
+  }
+  updatePips();updateNext();
+}
+
+/* ---------- final ---------- */
+function showFinal(){
+  S.tok++;clearTimer();
+  const sorted=S.teams.map((t,i)=>({...t,i})).sort((a,b)=>b.score-a.score);
+  const top=sorted[0].score;
+  const winners=sorted.filter(t=>t.score===top);
+  $('finalH').textContent=winners.length>1?'It’s a tie!':sorted[0].name+' win the show!';
+  const rank=$('rank');rank.innerHTML='';
+  sorted.forEach((t,k)=>{
+    const d=document.createElement('div');d.style.setProperty('--c',t.col);d.style.borderLeftColor=t.col;
+    const medal=t.score===top?'🏆':(k+1)+'.';
+    d.innerHTML='<em style="font-style:normal;width:3.4rem">'+medal+'</em><span></span><b>'+t.score+'</b>';
+    d.querySelector('span').textContent=t.name;
+    rank.appendChild(d);
+  });
+  showScreen('final');
+  sfx.ok();setTimeout(confetti,300);setTimeout(confetti,1400);
+}
+
+function confetti(){
+  const cols=['#ffcf4a','#9b5cff','#17c3b2','#ff9f1c','#ff5fa8','#ffffff'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');c.className='conf';
+    c.style.left=Math.random()*100+'vw';c.style.background=cols[i%cols.length];
+    c.style.animationDuration=(2+Math.random()*2.5)+'s';c.style.animationDelay=(Math.random()*.6)+'s';
+    document.body.appendChild(c);setTimeout(()=>c.remove(),5500);
+  }
+}
+
+/* ---------- keyboard ---------- */
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(S.screen!=='game')return;
+  if(e.key===' '||e.key==='Enter'){e.preventDefault();onNext();return}
+  if(e.key==='Escape'){cancelBuzz();return}
+  if(/^[1-4]$/.test(e.key)){const i=+e.key-1;if(i<S.teams.length)buzz(i);return}
+  const k='abcd'.indexOf(e.key.toLowerCase());
+  if(k>=0&&S.phase==='choice')pick(k);
+});
+})();
+</script>
+</body>
+</html>
