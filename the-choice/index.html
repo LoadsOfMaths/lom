@@ -64,6 +64,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
 .face svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 .4rem .6rem rgba(0,0,0,.45))}
 .team,.chair{--c2:color-mix(in srgb,var(--c) 58%,#000)}
 .c1{fill:var(--c)}.c2{fill:var(--c2)}.hl{fill:rgba(255,255,255,.15)}.cush{fill:rgba(255,255,255,.22)}.leg{fill:#2a2450}.shd{fill:rgba(0,0,0,.35)}
+.numplate.txt.sm{font-size:1.75rem}
 .numplate.txt{font-size:2.1rem;line-height:1.1;width:14.5rem;min-width:0;padding:.6rem .6rem;top:8%}
 .numplate{position:absolute;left:50%;top:2%;transform:translateX(-50%);background:linear-gradient(#ffe38a,#f2b632);color:#2a1a00;
  font-weight:900;font-size:5.6rem;line-height:1.1;padding:.2rem 1.4rem;border-radius:1.2rem;box-shadow:0 .5rem 1.2rem rgba(0,0,0,.5);min-width:8rem;text-align:center}
@@ -76,6 +77,9 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
 .clue{display:flex;align-items:center;gap:1.2rem;border-radius:1rem;padding:0 1.2rem;background:rgba(255,255,255,.05);border:.12rem dashed rgba(255,255,255,.12);min-height:0}
 .clue .n{width:2.8rem;height:2.8rem;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.5rem;background:rgba(255,255,255,.12);flex:none}
 .clue .t{font-size:2.3rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.0}
+.cluelist.six .clue .t{font-size:2rem}
+.cluelist.six .clue .t.long{font-size:1.6rem}
+.cluelist.six .clue .n{width:2.4rem;height:2.4rem;font-size:1.3rem}
 .clue .t.long{font-size:1.85rem;white-space:normal;line-height:1.12}
 .clue.on{background:linear-gradient(90deg,rgba(255,207,74,.22),rgba(255,207,74,.06));border:.12rem solid rgba(255,207,74,.55);animation:slideIn .45s ease-out}
 .clue.on .n{background:var(--gold);color:#2a1a00}
@@ -159,7 +163,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
     <div class="seg" data-key="auto"><button data-v="0" class="on">When I click</button><button data-v="10">Every 10 s</button><button data-v="20">Every 20 s</button></div>
   </div>
   <div class="rules">A mystery number or shape sits in the chair with its back to you. Clues appear one at a time. Buzz when you think you know &ndash; your chair spins, then pick the answer from four cards.
-  The earlier you buzz, the more points (5 down to 1) &ndash; but a wrong pick locks your team out of the round.</div>
+  The earlier you buzz, the more points &ndash; but a wrong pick locks your team out of the round. Watch out for the occasional bonus brain-teaser clue: it makes the round worth one point more.</div>
   <button class="bigbtn" id="startBtn">Start the show</button>
 </div>
 
@@ -294,6 +298,7 @@ const SH2=[
  {name:'Kite',min:1,sides:4,poly:1,fam:'quad',eq:'pairs2',ra:0,par:0,ls:1,rot:1,sum:360,x:['qDiagPerp','qNotBis','qAdj']},
  {name:'Trapezium',min:1,sides:4,poly:1,fam:'quad',eq:'none',ra:0,par:1,ls:0,rot:1,sum:360,x:['qNotBis']},
  {name:'Isosceles trapezium',min:2,sides:4,poly:1,fam:'quad',eq:'pair1',ra:0,par:1,ls:1,rot:1,sum:360,x:['qDiagEq','qNotBis']},
+ {name:'Arrowhead',min:3,sides:4,poly:1,fam:'quad',eq:'pairs2',ra:0,par:0,ls:1,rot:1,sum:360,concave:1,x:['qNotBis','qAdj']},
  {name:'Regular pentagon',min:1,sides:5,poly:1,reg:1,eq:'all',ra:0,par:0,ls:5,rot:5,sum:540,ia:108,x:[]},
  {name:'Regular hexagon',min:1,sides:6,poly:1,reg:1,eq:'all',ra:0,par:3,ls:6,rot:6,sum:720,ia:120,x:[]},
  {name:'Regular heptagon',min:3,sides:7,poly:1,reg:1,eq:'all',ra:0,par:0,ls:7,rot:7,sum:900,x:[]},
@@ -316,6 +321,7 @@ function keys2D(s){
   if(s.curved){K.add('curved');K.add('diam')}
   if(s.circle)K.add('circum');
   if(s.reg)K.add('reg');
+  if(s.concave){K.add('concave');K.add('reflex')}else if(s.poly)K.add('convex');
   if(s.eq){
     if(s.eq==='all')K.add('allEq');
     if(s.eq==='pair1')K.add('pair1');
@@ -435,6 +441,9 @@ const CAT2={},CAT3={};
   [108,120,135,144].forEach(v=>r('ia'+v,'Each of my interior angles is '+v+'°',3,'ang'));
   r('allAcute','All my angles are acute',2,'ang');
   r('hyp','I have a hypotenuse',2,'ang');
+  r('concave','I’m a concave polygon',3,'form');
+  r('reflex','I have a reflex angle',3,'form');
+  r('convex','I’m a convex polygon',3,'form');
   r('qOpp','I’m a quadrilateral with equal opposite sides',2,'q');
   r('qOppAng','I’m a quadrilateral with equal opposite angles',2,'q');
   r('qDiagBis','I’m a quadrilateral and my diagonals bisect each other',2,'q');
@@ -484,6 +493,36 @@ const CAT2={},CAT3={};
   r('volBH','My volume is base area × height',3,'vol');
 })();
 
+/* Obscure "brain-teaser" clues: each fits exactly one shape. When one is used it is an extra, sixth clue
+   placed early (clue 1 or 2), so the round is worth up to 6 points. */
+const OBS={
+ 'Equilateral triangle':[{t:'A UK give way sign is shaped like me',m:1}],
+ 'Right-angled triangle':[{t:'Two of my angles add up to 90°',m:1}],
+ 'Square':[{t:'A chessboard is made of 64 of me',m:1}],
+ 'Rhombus':[{t:'The diamonds on a playing card are shaped like me',m:1}],
+ 'Kite':[{t:'I can fly, if I’m made of paper and string',m:1}],
+ 'Arrowhead':[{t:'At least one of my diagonals lies outside me',m:3}],
+ 'Regular hexagon':[{t:'Bees build their honeycomb from me',m:1}],
+ 'Regular octagon':[{t:'A UK stop sign is shaped like me',m:1}],
+ 'Circle':[{t:'Of all shapes with the same perimeter, I enclose the most area',m:2}],
+ 'Cube':[{t:'A standard die is shaped like me',m:1}],
+ 'Cuboid':[{t:'A brick is shaped like me',m:1}],
+ 'Cylinder':[{t:'A tin of baked beans is shaped like me',m:1}],
+ 'Cone':[{t:'A party hat is shaped like me',m:1}],
+ 'Sphere':[{t:'Any triangle drawn on my surface has angles that add up to more than 180°',m:2}],
+ 'Hemisphere':[{t:'A cereal bowl is roughly shaped like me',m:1}],
+ 'Tetrahedron':[{t:'I would make a good shape for a tea bag',m:1}],
+ 'Triangular prism':[{t:'A Toblerone bar is shaped like me',m:1}],
+ 'Square-based pyramid':[{t:'The Great Pyramid of Giza is shaped like me',m:1}],
+ 'Hexagonal prism':[{t:'A classic hexagonal pencil is shaped like me',m:1}],
+ 'Octahedron':[{t:'I’m two square-based pyramids joined base to base',m:2}],
+ 'Dodecahedron':[{t:'A 12-sided die is shaped like me',m:3}],
+ 'Icosahedron':[{t:'A 20-sided die is shaped like me',m:3}]
+};
+function obPool(t,lvl){
+  return (OBS[t.name]||[]).filter(o=>o.m<=lvl).map(o=>({type:'obscure',text:o.t,ob:1,test:x=>x===t}));
+}
+
 function keyPool(t,cat,lvl){
   const P=[];
   for(const key in cat){
@@ -502,11 +541,12 @@ function makeDomain(topic,lvl){
   if(topic==='num')return numDomain(lvl);
   const is2=topic==='2d';
   const list=(is2?SH2:SH3).filter(s=>s.min<=lvl);
-  return{topic,cands:list,pool:t=>keyPool(t,is2?CAT2:CAT3,lvl),label:x=>x.name,txt:true,
+  return{topic,cands:list,pool:t=>keyPool(t,is2?CAT2:CAT3,lvl),ob:t=>obPool(t,lvl),label:x=>x.name,txt:true,
     intro:is2?'The contestant is a 2D shape':'The contestant is a 3D solid'};
 }
 
 /* ---------- round builder ---------- */
+let OB_CHANCE=0.5;
 function buildRound(dom,used){
   const all=dom.cands,N=all.length;
   for(let attempt=0;attempt<900;attempt++){
@@ -528,7 +568,13 @@ function buildRound(dom,used){
       if(!best){ok=false;break}
       chosen.push(best.c);tc[best.c.type]=(tc[best.c.type]||0)+1;cur=best.nx;
     }
-    if(ok&&cur.length===1&&cur[0]===target)return{target,clues:chosen};
+    if(ok&&cur.length===1&&cur[0]===target){
+      if(dom.ob&&Math.random()<OB_CHANCE){
+        const o=dom.ob(target);
+        if(o.length)chosen.splice(Math.random()<.5?0:1,0,o[Math.floor(Math.random()*o.length)]);
+      }
+      return{target,clues:chosen};
+    }
   }
   throw new Error('Could not build a round');
 }
@@ -551,7 +597,7 @@ function makeOptions(cur,shown,dom,wrong){
 const $=id=>document.getElementById(id);
 const COLS=['#9b5cff','#17c3b2','#ff9f1c','#ff5fa8'];
 const S={topic:'num',dom:null,mixQ:[],teamCount:2,level:2,rounds:8,auto:0,sound:true,teams:[],round:0,used:new Set(),cur:null,
-  shown:0,phase:'idle',buzzer:null,locked:new Set(),wrong:new Set(),opts:[],tok:0,timeout:null};
+  n:5,shown:0,phase:'idle',buzzer:null,locked:new Set(),wrong:new Set(),opts:[],tok:0,timeout:null};
 
 const NS='http://www.w3.org/2000/svg';
 function chairBack(q){return '<svg viewBox="0 0 100 120" xmlns="'+NS+'">'+
@@ -673,10 +719,11 @@ function updateTeams(){
   });
 }
 
+function pts(){return S.n+1-S.shown}
 function updatePips(){
-  const now=S.phase==='reveal'?(6-S.shown):(S.shown?6-S.shown:5);
+  const now=S.phase==='reveal'?pts():(S.shown?pts():S.n);
   $('pips').innerHTML='';
-  for(let v=5;v>=1;v--){
+  for(let v=S.n;v>=1;v--){
     const d=document.createElement('div');d.className='pip'+(v===now&&S.phase!=='reveal'?' now':'')+(v>now?' gone':'');d.textContent=v;
     $('pips').appendChild(d);
   }
@@ -684,9 +731,9 @@ function updatePips(){
 
 function updateNext(){
   const b=$('nextBtn');
-  if(S.phase==='clues'){b.disabled=false;b.textContent=S.shown<5?'Next clue ▶':'Nobody knows – reveal ▶'}
+  if(S.phase==='clues'){b.disabled=false;b.textContent=S.shown<S.n?'Next clue ▶':'Nobody knows – reveal ▶'}
   else if(S.phase==='reveal'){b.disabled=false;b.textContent=S.round>=S.rounds?'See results ▶':'Next round ▶'}
-  else{b.disabled=true;b.textContent=S.shown<5?'Next clue ▶':'Nobody knows – reveal ▶'}
+  else{b.disabled=true;b.textContent=S.shown<S.n?'Next clue ▶':'Nobody knows – reveal ▶'}
 }
 
 function setBand(html){$('band').innerHTML=html}
@@ -710,15 +757,17 @@ function nextRound(){
   let tp=S.topic;
   if(tp==='mix'){if(!S.mixQ.length)S.mixQ=shuffle(TOPICS.slice());tp=S.mixQ.pop()}
   S.dom=makeDomain(tp,S.level);
-  S.cur=buildRound(S.dom,S.used);S.used.add(S.cur.target);
+  S.cur=buildRound(S.dom,S.used);S.used.add(S.cur.target);S.n=S.cur.clues.length;
   S.shown=0;S.locked=new Set();S.wrong=new Set();S.buzzer=null;S.phase='wait';
   resetChair($('cchair'));S.teams.forEach((t,i)=>resetChair($('chair'+i)));
   $('numplate').textContent=S.dom.label(S.cur.target);
   $('numplate').classList.toggle('txt',S.dom.txt);
+  $('numplate').classList.toggle('sm',S.dom.txt&&S.dom.label(S.cur.target).length>16);
   $('roundLbl').textContent='Round '+S.round+' of '+S.rounds;
   $('rangeLbl').textContent=S.dom.intro;
   const list=$('cluelist');list.innerHTML='';
-  for(let i=0;i<5;i++){
+  list.style.gridTemplateRows='repeat('+S.n+',1fr)';list.classList.toggle('six',S.n>5);
+  for(let i=0;i<S.n;i++){
     const row=document.createElement('div');row.className='clue';
     row.innerHTML='<div class="n">'+(i+1)+'</div><div class="t"></div>';
     list.appendChild(row);
@@ -732,20 +781,20 @@ function nextRound(){
 function setClue(row,txt){const t=row.querySelector('.t');t.textContent=txt;t.classList.toggle('long',txt.length>46)}
 
 function revealClue(){
-  if(S.shown>=5)return;
+  if(S.shown>=S.n)return;
   const row=$('cluelist').children[S.shown];
   setClue(row,S.cur.clues[S.shown].text);
   row.classList.add('on');
   S.shown++;
   sfx.clue();
-  setBand('<div class="msg">Buzz in when you think you know!<small>Worth <b style="color:var(--gold)">'+(6-S.shown)+'</b> point'+(6-S.shown===1?'':'s')+' right now &ndash; but a wrong pick locks you out.</small></div>');
+  setBand('<div class="msg">Buzz in when you think you know!<small>Worth <b style="color:var(--gold)">'+pts()+'</b> point'+(pts()===1?'':'s')+' right now &ndash; but a wrong pick locks you out.</small></div>');
   updatePips();updateTeams();updateNext();
   startTimer();
 }
 
 function onNext(){
   if(S.screen!=='game')return;
-  if(S.phase==='clues'){if(S.shown<5)revealClue();else finishRound(null)}
+  if(S.phase==='clues'){if(S.shown<S.n)revealClue();else finishRound(null)}
   else if(S.phase==='reveal'){if(S.round>=S.rounds)showFinal();else nextRound()}
 }
 
@@ -785,7 +834,7 @@ function cancelBuzz(){
   S.tok++;
   $('chair'+S.buzzer).classList.remove('spun');
   S.buzzer=null;S.phase='clues';
-  setBand('<div class="msg">Buzz cancelled &ndash; back to the clues.<small>Worth '+(6-S.shown)+' point'+(6-S.shown===1?'':'s')+' right now.</small></div>');
+  setBand('<div class="msg">Buzz cancelled &ndash; back to the clues.<small>Worth '+pts()+' point'+(pts()===1?'':'s')+' right now.</small></div>');
   updateTeams();updateNext();startTimer();
 }
 
@@ -805,7 +854,7 @@ function pick(i){
     later(()=>{
       if(S.locked.size>=S.teams.length){finishRound(null);return}
       S.phase='clues';
-      setBand('<div class="msg"><span id="lo"></span> locked out!<small>Everyone else is still in. Worth '+(6-S.shown)+' point'+(6-S.shown===1?'':'s')+'.</small></div>');
+      setBand('<div class="msg"><span id="lo"></span> locked out!<small>Everyone else is still in. Worth '+pts()+' point'+(pts()===1?'':'s')+'.</small></div>');
       $('lo').textContent=S.teams[who].name+' are';
       updateTeams();updateNext();startTimer();
     },1400);
@@ -822,9 +871,9 @@ function finishRound(winner){
   $('cchair').classList.add('spun');
   const n=S.dom.label(S.cur.target);
   if(winner!==null){
-    const pts=6-S.shown;
-    S.teams[winner].score+=pts;
-    setBand('<div class="msg"><b id="wn"></b> chose correctly &ndash; <span style="color:var(--gold)">+'+pts+' point'+(pts===1?'':'s')+'</span>!<small>The contestant was <b>'+n+'</b>.</small></div>');
+    const pt=pts();
+    S.teams[winner].score+=pt;
+    setBand('<div class="msg"><b id="wn"></b> chose correctly &ndash; <span style="color:var(--gold)">+'+pt+' point'+(pt===1?'':'s')+'</span>!<small>The contestant was <b>'+n+'</b>.</small></div>');
     $('wn').textContent=S.teams[winner].name;$('wn').style.color=S.teams[winner].col;
     sfx.ok();setTimeout(confetti,500);
     updateTeams();
