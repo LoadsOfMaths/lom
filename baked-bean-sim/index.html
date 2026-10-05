@@ -71,8 +71,8 @@ h1{margin:0;font-family:"Super Bouncer","Arial Rounded MT Bold","Trebuchet MS",s
 .cardhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
 .cardhead h2{margin:0}
 label{display:block;font-size:14px;font-weight:700;margin:0 0 10px}
-input[type=number],select{font:inherit;font-size:18px;width:100%;padding:8px 10px;border:2px solid var(--line);border-radius:10px;margin-top:4px;background:#fff;color:var(--ink)}
-input[type=number]:focus,select:focus{outline:none;border-color:var(--b)}
+input[type=number],input[type=text],select{font:inherit;font-size:18px;width:100%;padding:8px 10px;border:2px solid var(--line);border-radius:10px;margin-top:4px;background:#fff;color:var(--ink)}
+input[type=number]:focus,input[type=text]:focus,select:focus{outline:none;border-color:var(--b)}
 .hint{font-size:12.5px;color:#5b6978;margin:4px 0 0}
 .btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px}
 .btnrow label{margin:0;flex:1;min-width:110px}
@@ -129,6 +129,41 @@ input[type=number]:focus,select:focus{outline:none;border-color:var(--b)}
  h1{font-size:25px}
  .chartwrap{aspect-ratio:4/3}
 }
+body[data-mode=random]{--bg:linear-gradient(160deg,#0f5f6b,#0a3a45);--head:#fff}
+body[data-ctx=calcN]{--bg:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px) 0 0/28px 28px,#1d2f58;--head:#fff}
+body[data-ctx=calcB]{--bg:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px) 0 0/28px 28px,#3b2a63;--head:#fff}
+.rnd{display:flex;flex-direction:column;gap:14px;max-width:1500px;margin:0 auto;padding:6px 18px 24px}
+.rtop{display:grid;grid-template-columns:minmax(300px,440px) 1fr;gap:14px;align-items:start}
+.rowline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.rowline .lbl{font-size:14px;font-weight:700}
+.gridscroll{max-height:56vh;overflow:auto;background:#fbfdff;border:2px solid var(--line);border-radius:10px;padding:8px 12px;position:relative}
+#rGrid{font-family:"Courier New",monospace;font-weight:700;white-space:nowrap;width:max-content}
+.rw{display:flex;align-items:baseline;line-height:1.6}
+.rw .rn{flex:0 0 auto;width:4.2em;color:#7b8a99;text-align:right;padding-right:.9em;font-weight:600;font-size:.8em}
+.rw .blk{margin-right:.9em;white-space:nowrap}
+.rw.ruler{position:sticky;top:-8px;background:#fbfdff;color:#9aa8b6;z-index:2;font-weight:600;border-bottom:1px solid var(--line);font-size:.8em}
+.d,.t{display:inline-block;width:.62em;text-align:center}
+.d{cursor:pointer;border-radius:3px}
+.d:hover{background:#ffe9d6}
+.d.start{outline:2px dashed var(--o);background:#fff3e8}
+.d.skip{color:#9aa8b6;text-decoration:underline dotted}
+.d.h0{background:#ffd2b0;color:#6e2a00}
+.d.h1{background:#bcd4f5;color:#0f2f66}
+.d.cur{box-shadow:0 0 0 2px #1f2a37}
+.rlist{display:flex;flex-wrap:wrap;gap:8px;max-height:300px;overflow:auto;align-content:flex-start;min-height:60px}
+.chip2{border-radius:10px;padding:4px 10px;text-align:center;min-width:64px}
+.chip2 small{display:block;font-size:11px;opacity:.75;font-weight:700}
+.chip2 b{display:block;font-size:22px;font-family:"Courier New",monospace}
+.chip2.h0{background:#ffd2b0;color:#6e2a00}
+.chip2.h1{background:#bcd4f5;color:#0f2f66}
+.chip2.cur{box-shadow:0 0 0 3px #1f2a37}
+.calcChart{display:block;width:100%;height:340px}
+.resbig{font-size:21px;line-height:1.35}
+.resbig b{font-size:30px;color:#b4531a}
+.ressub{font-size:16px;color:#5b6978;margin:2px 0 8px}
+.callout.warn{background:#fdecea;border-left:5px solid #c0392b;border-radius:8px;padding:9px 12px;font-size:14.5px;margin-top:8px}
+.working{background:#eef4fb;border-left:5px solid var(--b);border-radius:8px;padding:9px 12px;font-size:14.5px;line-height:1.6;margin-top:8px}
+@media (max-width:900px){.rnd{padding:6px 10px 20px}.rtop{grid-template-columns:1fr}.calcChart{height:290px}.gridscroll{max-height:50vh}}
 </style>
 </head>
 <body data-mode="beans" data-ctx="beans">
@@ -139,6 +174,8 @@ input[type=number]:focus,select:focus{outline:none;border-color:var(--b)}
   <button role="tab" data-group="geometric"><b>Geometric</b><small>Cereal toys · Spinner</small></button>
   <button role="tab" data-group="binomial"><b>Binomial</b><small>Coin flips · Netball</small></button>
   <button role="tab" data-group="poisson"><b>Poisson</b><small>Popcorn · Phones</small></button>
+  <button role="tab" data-group="random"><b>Random</b><small>Digit grid</small></button>
+  <button role="tab" data-group="calc"><b>Calculator</b><small>Normal · Binomial</small></button>
  </nav>
 </header>
 <div class="ctxwrap"><div class="seg" id="ctxSeg"></div></div>
@@ -434,6 +471,103 @@ input[type=number]:focus,select:focus{outline:none;border-color:var(--b)}
   <div class="card"><h2>📋 Records</h2><div class="tiles" id="tilesP"></div></div>
  </div>
 </main>
+<!-- RANDOM DIGITS -->
+<main class="rnd" id="random" hidden>
+ <div class="rtop">
+  <div class="card">
+   <div class="cardhead"><h2>🔢 Random digits</h2><button class="btn or" id="rRegen">🔄 Regenerate</button></div>
+   <div class="grid2">
+    <label>Starting digit k<input id="rK" type="number" min="1" step="1" value="13" inputmode="numeric"></label>
+    <label>Skip r digits (0 to 9)<select id="rR"></select></label>
+   </div>
+   <div class="rowline"><span class="lbl">Block size n</span><div class="seg" id="rN"><button data-n="1">1 digit</button><button data-n="2" class="on">2 digits</button><button data-n="3">3 digits</button></div></div>
+   <div class="rowline"><span class="lbl">Digits per row</span><div class="seg" id="rW"><button data-w="50" class="on">50</button><button data-w="100">100</button></div></div>
+   <p class="hint" id="rHint"></p>
+   <div class="btnrow"><button class="btn or big" id="rNext">NEXT ▶</button><button class="btn" id="rAll">Show all</button><button class="btn ghost" id="rReset">↺ Start again</button></div>
+  </div>
+  <div class="card">
+   <div class="cardhead"><h2>📝 Blocks found</h2><span class="hint" id="rCount" style="margin:0"></span></div>
+   <div class="rlist" id="rList"></div>
+  </div>
+ </div>
+ <div class="card">
+  <div class="gridscroll" id="rScroll"><div id="rGrid"></div></div>
+  <p class="hint">Tap any digit to make it the starting digit. The dotted digits are the ones skipped.</p>
+ </div>
+</main>
+
+<!-- DISTRIBUTION CALCULATOR: NORMAL -->
+<main class="layout" id="calcNorm" hidden>
+ <div class="col">
+  <div class="card">
+   <h2>🔔 Normal distribution</h2>
+   <div class="seg" id="cnMode"><button data-m="prob" class="on">Probability</button><button data-m="rev">Reverse</button></div>
+   <div class="grid2" style="margin-top:12px">
+    <label>Mean μ<input id="cnMean" type="text" inputmode="decimal" value="100"></label>
+    <label>Standard deviation σ<input id="cnSd" type="text" inputmode="decimal" value="15"></label>
+   </div>
+   <div id="cnProbBox">
+    <div class="seg" id="cnType"><button data-t="between" class="on">Between</button><button data-t="below">Below</button><button data-t="above">Above</button></div>
+    <div class="grid2" style="margin-top:12px">
+     <label id="cnLoL">Lower value a<input id="cnLo" type="text" inputmode="decimal" value="85"></label>
+     <label id="cnHiL">Upper value b<input id="cnHi" type="text" inputmode="decimal" value="115"></label>
+    </div>
+   </div>
+   <div id="cnRevBox" hidden>
+    <div class="seg" id="cnRType"><button data-t="left">Left</button><button data-t="right">Right</button><button data-t="sym" class="on">Middle</button></div>
+    <label style="margin-top:12px">Probability<input id="cnP" type="text" inputmode="decimal" value="0.95"></label>
+    <p class="hint" id="cnRHint"></p>
+   </div>
+  </div>
+ </div>
+ <div class="col">
+  <div class="card"><canvas id="cnChart" class="calcChart"></canvas></div>
+  <div class="card"><h2>🧮 Result</h2><div id="cnRes"></div></div>
+ </div>
+</main>
+
+<!-- DISTRIBUTION CALCULATOR: BINOMIAL -->
+<main class="layout" id="calcBin" hidden>
+ <div class="col">
+  <div class="card">
+   <h2>📊 Binomial distribution</h2>
+   <div class="seg" id="cbMode"><button data-m="prob" class="on">Probability</button><button data-m="rev">Reverse</button></div>
+   <div class="grid2" style="margin-top:12px">
+    <label>Probability of success p<input id="cbP" type="text" inputmode="decimal" value="0.4"></label>
+    <label>Number of trials N<input id="cbN" type="text" inputmode="numeric" value="30"></label>
+   </div>
+   <div id="cbProbBox">
+    <label>Target
+     <select id="cbType">
+      <option value="lt">Less than (X &lt; k)</option>
+      <option value="le" selected>No more than (X ≤ k)</option>
+      <option value="eq">Equal to (X = k)</option>
+      <option value="ge">At least (X ≥ k)</option>
+      <option value="gt">More than (X &gt; k)</option>
+     </select>
+    </label>
+    <label>Number of successes k<input id="cbK" type="text" inputmode="numeric" value="15"></label>
+   </div>
+   <div id="cbRevBox" hidden>
+    <label>Find k
+     <select id="cbRType">
+      <option value="lower">Lower tail: largest k with P(X ≤ k) ≤ α</option>
+      <option value="upper">Upper tail: smallest k with P(X ≥ k) ≤ α</option>
+      <option value="pct">Smallest k with P(X ≤ k) ≥ q</option>
+     </select>
+    </label>
+    <label><span id="cbPL">Probability α (for example 0.05)</span><input id="cbProb" type="text" inputmode="decimal" value="0.05"></label>
+   </div>
+   <label class="chk"><input type="checkbox" id="cbApprox"> <span>Show the normal approximation</span></label>
+   <p class="hint" id="cbCond"></p>
+  </div>
+ </div>
+ <div class="col">
+  <div class="card"><canvas id="cbChart" class="calcChart"></canvas></div>
+  <div class="card"><h2>🧮 Result</h2><div id="cbRes"></div></div>
+ </div>
+</main>
+
 <div id="toast"></div>
 
 <script>
@@ -443,9 +577,27 @@ const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll
 
 /* ---------- maths helpers ---------- */
 function randn(){let u=0;while(u===0)u=Math.random();const v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
- const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
-const Phi=z=>0.5*(1+erf(z/Math.SQRT2));
+function erfcCF(x){let f=x;for(let k=70;k>=1;k--)f=x+(k/2)/f;return Math.exp(-x*x)/Math.sqrt(Math.PI)/f;}
+function erf(x){
+ const ax=Math.abs(x);
+ if(ax<2.5){let sum=x,term=x;const x2=x*x;for(let n=1;n<100;n++){term*=-x2/n;const t=term/(2*n+1);sum+=t;if(Math.abs(t)<1e-17*Math.abs(sum))break;}return 2/Math.sqrt(Math.PI)*sum;}
+ return x<0?-(1-erfcCF(ax)):1-erfcCF(ax);
+}
+function erfc(x){if(x>=2.5)return erfcCF(x);if(x<=-2.5)return 2-erfcCF(-x);return 1-erf(x);}
+const Phi=z=>0.5*erfc(-z/Math.SQRT2);
+function invPhi(p){
+ if(p<=0)return -Infinity;if(p>=1)return Infinity;
+ const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00],
+  b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01],
+  c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00],
+  d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+ let x,q,r;
+ if(p<0.02425){q=Math.sqrt(-2*Math.log(p));x=(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+ else if(p<=1-0.02425){q=p-0.5;r=q*q;x=(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+ else{q=Math.sqrt(-2*Math.log(1-p));x=-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+ for(let i=0;i<3;i++){const e=Phi(x)-p,u=e*Math.sqrt(2*Math.PI)*Math.exp(x*x/2);x=x-u/(1+x*u/2);}
+ return x;
+}
 const pdf=(x,m,s)=>Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));
 const NICE=[0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,200,500,1000,2000,5000,10000];
 function nearestNice(raw){let best=NICE[0],bd=1e9;for(const n of NICE){const d=Math.abs(Math.log(n/raw));if(d<bd){bd=d;best=n;}}return best;}
@@ -1623,11 +1775,293 @@ syncPoisInputs();
 /* ======================================================
    wiring
    ====================================================== */
-const GROUPS={normal:['beans','matches'],geometric:['cereal','spinner'],binomial:['coin','netball'],poisson:['popcorn','phone']};
+/* ======================================================
+   RANDOM DIGITS
+   ====================================================== */
+const RND={W:50,total:1500,d:[],k:13,n:2,r:3,found:0,spans:[],touched:[],built:false};
+let dirtyK=true;
+function rGen(){RND.d=[];for(let i=0;i<RND.total;i++)RND.d.push(Math.floor(Math.random()*10));}
+function rBlocks(){const out=[],{k,n,r,total}=RND;for(let s=k;s+n-1<=total;s+=n+r)out.push(s);return out;}
+function rBuild(){
+ const W=RND.W,rows=Math.ceil(RND.total/W);
+ let ruler='';
+ for(let i=0;i<W;i++){if(i%10===0)ruler+=(i?'</span>':'')+'<span class="blk">';ruler+='<span class="t">'+(((i%10)+1)%10)+'</span>';}
+ ruler+='</span>';
+ let h='<div class="rw ruler"><span class="rn"></span>'+ruler+'</div>';
+ for(let r=0;r<rows;r++){
+  let s='<div class="rw"><span class="rn">'+(r*W+1)+'</span>';
+  for(let j=0;j<W;j++){const i=r*W+j;if(j%10===0)s+=(j?'</span>':'')+'<span class="blk">';s+='<span class="d" data-i="'+i+'">'+RND.d[i]+'</span>';}
+  h+=s+'</span></div>';
+ }
+ $('#rGrid').innerHTML=h;
+ RND.spans=Array.from($('#rGrid').querySelectorAll('.d'));RND.touched=[];
+ rFit();rMark();
+}
+function rFit(){
+ const sc=$('#rScroll');if(!sc||!sc.clientWidth)return;
+ const avail=sc.clientWidth-28,em=4.2+RND.W*0.62+(RND.W/10)*0.9;
+ $('#rGrid').style.fontSize=Math.max(avail<400?13:9,Math.min(18,avail/em))+'px';
+}
+function rMark(){
+ const S=RND.spans;if(!S.length)return;
+ for(const i of RND.touched)S[i].className='d';
+ RND.touched=[];
+ const st=rBlocks(),m=RND.found,n=RND.n,r=RND.r;
+ for(let b=0;b<m;b++){
+  const s=st[b];
+  for(let j=0;j<n;j++){const i=s-1+j;S[i].className='d h'+(b%2)+(b===m-1?' cur':'');RND.touched.push(i);}
+  if(b<m-1)for(let j=0;j<r;j++){const i=s-1+n+j;if(i<S.length){S[i].className='d skip';RND.touched.push(i);}}
+ }
+ if(m===0&&RND.k>=1&&RND.k<=S.length){S[RND.k-1].className='d start';RND.touched.push(RND.k-1);}
+}
+function rRenderList(){
+ const st=rBlocks(),m=RND.found,n=RND.n;let h='';
+ for(let b=0;b<m;b++){
+  const s=st[b],dg=RND.d.slice(s-1,s-1+n).join('');
+  h+='<div class="chip2 h'+(b%2)+(b===m-1?' cur':'')+'"><small>#'+(b+1)+' · digit'+(n>1?'s ':' ')+(n>1?s+'–'+(s+n-1):s)+'</small><b>'+dg+'</b></div>';
+ }
+ $('#rList').innerHTML=m?h:'<p class="hint">Press NEXT to find the first block.</p>';
+ $('#rCount').textContent=m?m+' of '+st.length+' found':st.length+' blocks in the grid';
+ const L=$('#rList');L.scrollTop=L.scrollHeight;
+}
+function rHint(){
+ const st=rBlocks(),n=RND.n,r=RND.r,k=RND.k;
+ if(!st.length){$('#rHint').textContent='There are not enough digits left after digit '+k+'. Choose a smaller start.';return;}
+ const rng=s=>n>1?s+'–'+(s+n-1):String(s);
+ let t='Start at digit '+k+' and take '+(n===1?'1 digit':n+' digits')+' ('+rng(st[0])+')';
+ if(st.length>1)t+=', skip '+r+(r===1?' digit':' digits')+', then take '+rng(st[1]);
+ if(st.length>2)t+=', and keep repeating';
+ $('#rHint').textContent=t+'.';
+}
+function rReset(){RND.found=0;rMark();rRenderList();rHint();}
+function rScrollTo(s){
+ const el=RND.spans[s-1],sc=$('#rScroll');if(!el)return;
+ const ty=el.offsetTop,lx=el.offsetLeft;
+ const opt={behavior:'smooth'};
+ if(ty<sc.scrollTop+40||ty>sc.scrollTop+sc.clientHeight-30)opt.top=Math.max(0,ty-sc.clientHeight/2);
+ if(lx<sc.scrollLeft+40||lx>sc.scrollLeft+sc.clientWidth-50)opt.left=Math.max(0,lx-sc.clientWidth/2);
+ if(opt.top!==undefined||opt.left!==undefined)sc.scrollTo(opt);
+}
+function rNext(){
+ const st=rBlocks();
+ if(RND.found>=st.length){toast(st.length?'That is the end of the grid':'No blocks to find – choose a smaller start');return;}
+ RND.found++;rMark();rRenderList();rScrollTo(st[RND.found-1]);
+}
+function rEnter(){
+ if(!RND.built){
+  RND.built=true;
+  $('#rR').innerHTML=Array.from({length:10},(_,i)=>'<option value="'+i+'"'+(i===RND.r?' selected':'')+'>'+i+'</option>').join('');
+  rGen();rBuild();rReset();
+ }else{rFit();}
+}
+$('#rRegen').addEventListener('click',()=>{rGen();rBuild();rReset();toast('New random digits');});
+$('#rK').addEventListener('input',()=>{
+ let k=parseInt($('#rK').value,10);if(!(k>=1))return;
+ RND.k=Math.min(k,RND.total);rReset();
+});
+$('#rK').addEventListener('change',()=>{$('#rK').value=RND.k;});
+$('#rR').addEventListener('change',()=>{RND.r=+$('#rR').value;rReset();});
+$$('#rN button').forEach(b=>b.addEventListener('click',()=>{RND.n=+b.dataset.n;$$('#rN button').forEach(x=>x.classList.toggle('on',x===b));rReset();}));
+$$('#rW button').forEach(b=>b.addEventListener('click',()=>{RND.W=+b.dataset.w;$$('#rW button').forEach(x=>x.classList.toggle('on',x===b));rBuild();rReset();}));
+$('#rNext').addEventListener('click',rNext);
+$('#rAll').addEventListener('click',()=>{const st=rBlocks();RND.found=st.length;rMark();rRenderList();if(st.length)rScrollTo(st[0]);});
+$('#rReset').addEventListener('click',rReset);
+$('#rGrid').addEventListener('click',e=>{
+ const d=e.target.closest('.d');if(!d)return;
+ RND.k=+d.dataset.i+1;$('#rK').value=RND.k;rReset();
+});
+
+/* ======================================================
+   DISTRIBUTION CALCULATOR
+   ====================================================== */
+const CN={mode:'prob',type:'between',rtype:'sym'};
+const CB={mode:'prob',approx:false};
+function num(id){const v=$(id).value.trim().replace(/,/g,'');return v===''?NaN:Number(v);}
+function numP(id){let t=$(id).value.trim();const pc=t.endsWith('%');let v=t===''?NaN:Number(t.replace('%',''));if(pc)v/=100;return v;}
+const fnum=(v,d)=>String(parseFloat(v.toPrecision(d||6)));
+const z3=v=>v.toFixed(3).replace('-','−');
+const LT='&lt;',GT='&gt;';
+function syncCalcUI(){
+ $$('#cnMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===CN.mode));
+ $$('#cnType button').forEach(b=>b.classList.toggle('on',b.dataset.t===CN.type));
+ $$('#cnRType button').forEach(b=>b.classList.toggle('on',b.dataset.t===CN.rtype));
+ $('#cnProbBox').hidden=CN.mode!=='prob';$('#cnRevBox').hidden=CN.mode!=='rev';
+ $('#cnLoL').hidden=CN.type==='below';$('#cnHiL').hidden=CN.type==='above';
+ $('#cnRHint').textContent=CN.rtype==='left'?'Finds x so that the probability of being below x is p (left tail).':
+  CN.rtype==='right'?'Finds x so that the probability of being above x is p (right tail).':
+  'Finds the two values, equally far either side of the mean, that enclose a probability p in the middle.';
+ $$('#cbMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===CB.mode));
+ $('#cbProbBox').hidden=CB.mode!=='prob';$('#cbRevBox').hidden=CB.mode!=='rev';
+ $('#cbPL').textContent=$('#cbRType').value==='pct'?'Probability q (for example 0.9)':'Probability α (for example 0.05)';
+}
+function calcMsg(el,t){el.innerHTML='<div class="callout warn">'+t+'</div>';}
+
+/* ---- normal ---- */
+function drawNormalShade(cv,o){
+ const {ctx,w,h}=setupCanvas(cv);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+ if(!o)return;
+ const small=w<520,mg={l:16,r:16,t:small?56:62,b:small?54:62},pw=w-mg.l-mg.r,ph=h-mg.t-mg.b;
+ const m=o.mean,s=o.sd;
+ let x0=m-4*s,x1=m+4*s;
+ for(const mk of o.marks){x0=Math.min(x0,mk.x-0.6*s);x1=Math.max(x1,mk.x+0.6*s);}
+ const peak=1/(s*Math.sqrt(2*Math.PI)),X=x=>mg.l+(x-x0)/(x1-x0)*pw,Y=y=>mg.t+ph-y/(peak*1.08)*ph;
+ const sa=Math.max(o.A,x0),sb=Math.min(o.B,x1);
+ if(sb>sa){
+  ctx.beginPath();ctx.moveTo(X(sa),Y(0));
+  for(let i=0;i<=240;i++){const x=sa+(sb-sa)*i/240;ctx.lineTo(X(x),Y(pdf(x,m,s)));}
+  ctx.lineTo(X(sb),Y(0));ctx.closePath();ctx.fillStyle='rgba(244,123,63,.6)';ctx.fill();
+ }
+ ctx.strokeStyle='#1c4f93';ctx.lineWidth=3;ctx.beginPath();
+ for(let i=0;i<=300;i++){const x=x0+(x1-x0)*i/300;i?ctx.lineTo(X(x),Y(pdf(x,m,s))):ctx.moveTo(X(x),Y(pdf(x,m,s)));}
+ ctx.stroke();
+ ctx.strokeStyle='#243241';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mg.l,Y(0));ctx.lineTo(mg.l+pw,Y(0));ctx.stroke();
+ ctx.setLineDash([3,4]);ctx.strokeStyle='#8fa3bd';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(m),Y(0));ctx.lineTo(X(m),Y(peak));ctx.stroke();ctx.setLineDash([]);
+ ctx.textAlign='center';ctx.textBaseline='top';
+ for(let k=-4;k<=4;k++){
+  const x=m+k*s;if(x<x0-1e-9||x>x1+1e-9)continue;
+  if(small&&k%2)continue;
+  ctx.strokeStyle='#243241';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(x),Y(0));ctx.lineTo(X(x),Y(0)+6);ctx.stroke();
+  ctx.fillStyle='#3b4a5a';ctx.font=(small?'11':'13')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillText(fnum(x,5),X(x),Y(0)+9);
+  ctx.fillStyle='#8895a4';ctx.font=(small?'10':'12')+'px "Trebuchet MS",Arial,sans-serif';
+  ctx.fillText(k===0?'mean':'z = '+(k<0?'−':'')+Math.abs(k),X(x),Y(0)+(small?24:27));
+ }
+ ctx.font='bold '+(small?'12':'14')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#243241';ctx.textAlign='right';ctx.textBaseline='bottom';
+ ctx.fillText('x',mg.l+pw,h-6);
+ o.marks.forEach((mk,i)=>{
+  const ly=mg.t-6-(i%2)*18;
+  ctx.setLineDash([6,4]);ctx.strokeStyle='#b4531a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X(mk.x),Y(0));ctx.lineTo(X(mk.x),ly+2);ctx.stroke();ctx.setLineDash([]);
+  ctx.font='bold '+(small?'12':'14')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#b4531a';ctx.textBaseline='bottom';
+  const tx=Math.min(w-36,Math.max(36,X(mk.x)));ctx.textAlign='center';ctx.fillText(mk.label,tx,ly);
+ });
+ if(o.title){ctx.font='bold '+(small?'15':'18')+'px "Trebuchet MS",Arial,sans-serif';ctx.fillStyle='#1c4f93';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(o.title,mg.l+2,6);}
+}
+function renderCalcN(){
+ const el=$('#cnRes'),cv=$('#cnChart');
+ const m=num('#cnMean'),s=num('#cnSd');
+ if(!isFinite(m)||!(s>0)){calcMsg(el,'Enter a mean and a positive standard deviation.');drawNormalShade(cv,null);return;}
+ let A=-Infinity,B=Infinity,marks=[],html='',title='';
+ if(CN.mode==='prob'){
+  const a=num('#cnLo'),b=num('#cnHi'),ty=CN.type;
+  const needA=ty!=='below',needB=ty!=='above';
+  if((needA&&!isFinite(a))||(needB&&!isFinite(b))){calcMsg(el,'Enter a number in each value box.');drawNormalShade(cv,null);return;}
+  if(ty==='between'&&!(a<b)){calcMsg(el,'The lower value a must be smaller than the upper value b.');drawNormalShade(cv,null);return;}
+  const za=(a-m)/s,zb=(b-m)/s;
+  const P=ty==='between'?Phi(zb)-Phi(za):ty==='below'?Phi(zb):Phi(-za);
+  A=needA?a:-Infinity;B=needB?b:Infinity;
+  if(needA)marks.push({x:a,label:'a = '+fnum(a)});
+  if(needB)marks.push({x:b,label:'b = '+fnum(b)});
+  const ev=ty==='between'?`P(${fnum(a)} ${LT} X ${LT} ${fnum(b)})`:ty==='below'?`P(X ${LT} ${fnum(b)})`:`P(X ${GT} ${fnum(a)})`;
+  let wk='<b>Standardise:</b> z = (x − μ) ÷ σ<br>';
+  if(needA)wk+=`z<sub>a</sub> = (${fnum(a)} − ${fnum(m)}) ÷ ${fnum(s)} = <b>${z3(za)}</b><br>`;
+  if(needB)wk+=`z<sub>b</sub> = (${fnum(b)} − ${fnum(m)}) ÷ ${fnum(s)} = <b>${z3(zb)}</b><br>`;
+  wk+=ty==='between'?`Area = Φ(${z3(zb)}) − Φ(${z3(za)})`:ty==='below'?`Area = Φ(${z3(zb)})`:`Area = 1 − Φ(${z3(za)})`;
+  html=`<div class="resbig">${ev} = <b>${pf(P)}</b></div><div class="ressub">${(P*100).toFixed(P<0.0001&&P>0?4:2)}% of the distribution</div><div class="working">${wk}</div>`;
+  title='Probability = '+pf(P);
+ }else{
+  const p=numP('#cnP');
+  if(!(p>0&&p<1)){calcMsg(el,'Enter a probability between 0 and 1 (you can also type a percentage such as 95%).');drawNormalShade(cv,null);return;}
+  const ty=CN.rtype;
+  if(ty==='left'){
+   const z=invPhi(p),x=m+s*z;A=-Infinity;B=x;marks=[{x,label:'x = '+fnum(x,5)}];
+   html=`<div class="resbig">P(X ${LT} x) = ${pf(p)} gives x = <b>${fnum(x,5)}</b></div><div class="working"><b>Critical z-value:</b> z = ${z.toFixed(4)}<br>x = μ + zσ = ${fnum(m)} + ${z.toFixed(4)} × ${fnum(s)}</div>`;
+  }else if(ty==='right'){
+   const z=-invPhi(p),x=m+s*z;A=x;B=Infinity;marks=[{x,label:'x = '+fnum(x,5)}];
+   html=`<div class="resbig">P(X ${GT} x) = ${pf(p)} gives x = <b>${fnum(x,5)}</b></div><div class="working"><b>Critical z-value:</b> z = ${z.toFixed(4)}<br>x = μ + zσ = ${fnum(m)} + ${z.toFixed(4)} × ${fnum(s)}</div>`;
+  }else{
+   const z=invPhi((1+p)/2),x1=m-s*z,x2=m+s*z;A=x1;B=x2;marks=[{x:x1,label:'a = '+fnum(x1,5)},{x:x2,label:'b = '+fnum(x2,5)}];
+   html=`<div class="resbig">P(a ${LT} X ${LT} b) = ${pf(p)} gives a = <b>${fnum(x1,5)}</b> and b = <b>${fnum(x2,5)}</b></div><div class="working"><b>Critical z-values:</b> z = ±${z.toFixed(4)}<br>a, b = μ ∓ zσ = ${fnum(m)} ∓ ${z.toFixed(4)} × ${fnum(s)}<br>Each tail holds ${pf((1-p)/2)}</div>`;
+  }
+  title='Probability = '+pf(p);
+ }
+ el.innerHTML=html;
+ drawNormalShade(cv,{mean:m,sd:s,A,B,marks,title});
+}
+
+/* ---- binomial ---- */
+function renderCalcB(){
+ const el=$('#cbRes'),cv=$('#cbChart');
+ const blank=t=>{calcMsg(el,t);drawChart(cv,{bins:[],x0:0,x1:1,xticks:[],xlabel:'',ylabel:'Probability',style:'bars',yfrac:true,vlines:[],empty:'Enter p and N'});$('#cbCond').textContent='';};
+ const p=num('#cbP'),Nn=num('#cbN');
+ if(!(p>0&&p<1)){blank('Enter a probability of success p between 0 and 1.');return;}
+ if(!(Number.isInteger(Nn)&&Nn>=1&&Nn<=1000)){blank('Enter a whole number of trials N from 1 to 1000.');return;}
+ const N=Nn,pm=binomPmf(N,p),cdf=new Array(N+1),suf=new Array(N+2);
+ let acc=0;for(let j=0;j<=N;j++){acc+=pm[j];cdf[j]=Math.min(1,acc);}
+ suf[N+1]=0;for(let j=N;j>=0;j--)suf[j]=suf[j+1]+pm[j];
+ const LE=k=>k<0?0:k>=N?1:cdf[k],GE=k=>k<=0?1:k>N?0:suf[k];
+ const mu=N*p,sd=Math.sqrt(N*p*(1-p)),q=1-p,ok=mu>5&&N*q>5;
+ $('#cbCond').innerHTML=`Normal approximation needs Np ${GT} 5 and N(1−p) ${GT} 5.<br>Np = ${fnum(mu)} ${mu>5?'✓':'✗'}, N(1−p) = ${fnum(N*q)} ${N*q>5?'✓':'✗'} – ${ok?'suitable':'not suitable'}.`;
+ $('#cbApprox').disabled=!ok;$('#cbApprox').checked=CB.approx&&ok;
+ const eff=CB.approx&&ok;
+ const sym={lt:'<',le:'≤',eq:'=',ge:'≥',gt:'>'};
+ let hi=()=>false,html='',vlines=[],kShow=null;
+ if(CB.mode==='prob'){
+  const k=num('#cbK'),ty=$('#cbType').value;
+  if(!Number.isInteger(k)||k<0){blank('Enter k as a whole number, 0 or more.');return;}
+  kShow=k;
+  const test={lt:j=>j<k,le:j=>j<=k,eq:j=>j===k,ge:j=>j>=k,gt:j=>j>k}[ty];hi=test;
+  const exact={lt:LE(k-1),le:LE(k),eq:k>N?0:pm[k],ge:GE(k),gt:GE(k+1)}[ty];
+  const ev=`P(X ${ty==='lt'?LT:ty==='gt'?GT:sym[ty]} ${k})`;
+  html=`<div class="resbig">${ev} = <b>${pf(exact)}</b></div><div class="ressub">${(exact*100).toFixed(exact<0.0001&&exact>0?4:2)}%${k>N?' (k is larger than N)':''}</div>`;
+  html+=`<div class="working">Mean = Np = ${fnum(mu)}<br>Standard deviation = √(Np(1−p)) = ${sd.toFixed(4)}</div>`;
+  if(CB.approx&&!ok)html+=`<div class="callout warn">The normal approximation is not suitable here: it needs Np ${GT} 5 and N(1−p) ${GT} 5.</div>`;
+  if(eff){
+   const lo_=k-0.5,hi_=k+0.5,Z=v=>(v-mu)/sd;
+   let ap,cc,zs;
+   if(ty==='le'){ap=Phi(Z(hi_));cc=`P(Y ${LT} ${hi_})`;zs=[hi_];}
+   else if(ty==='lt'){ap=Phi(Z(lo_));cc=`P(Y ${LT} ${lo_})`;zs=[lo_];}
+   else if(ty==='ge'){ap=1-Phi(Z(lo_));cc=`P(Y ${GT} ${lo_})`;zs=[lo_];}
+   else if(ty==='gt'){ap=1-Phi(Z(hi_));cc=`P(Y ${GT} ${hi_})`;zs=[hi_];}
+   else{ap=Phi(Z(hi_))-Phi(Z(lo_));cc=`P(${lo_} ${LT} Y ${LT} ${hi_})`;zs=[lo_,hi_];}
+   vlines=zs.map(v=>({x:v,label:fnum(v),color:'#b4531a',dash:[6,4]}));
+   html+=`<div class="working"><b>Normal approximation:</b> Y ~ N(μ = ${fnum(mu)}, σ² = ${fnum(N*p*q)})<br>With the continuity correction, ${ev} ≈ ${cc}<br>`+
+    zs.map(v=>`z = (${v} − ${fnum(mu)}) ÷ ${sd.toFixed(4)} = ${z3(Z(v))}`).join('<br>')+
+    `<br>Approximation = <b>${pf(ap)}</b> (exact ${pf(exact)}, difference ${pf(Math.abs(ap-exact))})</div>`;
+  }
+ }else{
+  const a=numP('#cbProb'),rt=$('#cbRType').value;
+  if(!(a>0&&a<1)){blank('Enter a probability between 0 and 1.');return;}
+  let k=null;
+  if(rt==='lower'){for(let j=0;j<=N;j++){if(cdf[j]<=a)k=j;else break;}}
+  else if(rt==='upper'){for(let j=0;j<=N;j++){if(GE(j)<=a){k=j;break;}}}
+  else{for(let j=0;j<=N;j++){if(cdf[j]>=a){k=j;break;}}}
+  if(k===null){
+   html=`<div class="callout warn">No value of k works: ${rt==='lower'?`even P(X ≤ 0) = ${pf(cdf[0])} is bigger than ${pf(a)}`:rt==='upper'?`even P(X ≥ ${N}) = ${pf(GE(N))} is bigger than ${pf(a)}`:'the probabilities never reach '+pf(a)}.</div>`;
+  }else{
+   kShow=k;
+   if(rt==='lower'){hi=j=>j<=k;html=`<div class="resbig">Largest k with P(X ≤ k) ≤ ${pf(a)}: <b>k = ${k}</b></div><div class="working">P(X ≤ ${k}) = ${pf(cdf[k])}<br>${k<N?`P(X ≤ ${k+1}) = ${pf(cdf[k+1])}, which is too big`:'k is the largest possible value'}<br><b>Critical region:</b> X ≤ ${k}</div>`;}
+   else if(rt==='upper'){hi=j=>j>=k;html=`<div class="resbig">Smallest k with P(X ≥ k) ≤ ${pf(a)}: <b>k = ${k}</b></div><div class="working">P(X ≥ ${k}) = ${pf(GE(k))}<br>${k>0?`P(X ≥ ${k-1}) = ${pf(GE(k-1))}, which is too big`:''}<br><b>Critical region:</b> X ≥ ${k}</div>`;}
+   else{hi=j=>j<=k;html=`<div class="resbig">Smallest k with P(X ≤ k) ≥ ${pf(a)}: <b>k = ${k}</b></div><div class="working">P(X ≤ ${k}) = ${pf(cdf[k])}<br>${k>0?`P(X ≤ ${k-1}) = ${pf(cdf[k-1])}, which is too small`:''}</div>`;}
+  }
+ }
+ // chart
+ let lo=0,hiX=N;
+ if(N>50){lo=Math.max(0,Math.floor(mu-4.2*sd));hiX=Math.min(N,Math.ceil(mu+4.2*sd));}
+ if(kShow!==null&&kShow>=0&&kShow<=N){lo=Math.min(lo,kShow);hiX=Math.max(hiX,kShow);}
+ const bins=[];for(let j=lo;j<=hiX;j++)bins.push({a:j-0.5,b:j+0.5,count:pm[j],hi:hi(j)});
+ let curve=null;
+ if(eff){curve=[];const x0=lo-0.5,x1=hiX+0.5;for(let i=0;i<=240;i++){const x=x0+(x1-x0)*i/240;curve.push([x,pdf(x,mu,sd)]);}}
+ drawChart(cv,{bins,x0:lo-0.5,x1:hiX+0.5,xticks:makeTicks(lo-0.5,hiX+0.5,niceStep(hiX-lo+1,10),true),
+  xlabel:'Number of successes X  (N = '+N+', p = '+fnum(p)+')',ylabel:'Probability',style:'bars',curve,curveDots:false,vlines,yfrac:true});
+ el.innerHTML=html;
+}
+function renderCalc(){
+ if(document.body.dataset.ctx==='calcB')renderCalcB();else renderCalcN();
+}
+['#cnMean','#cnSd','#cnLo','#cnHi','#cnP','#cbP','#cbN','#cbK','#cbProb'].forEach(id=>$(id).addEventListener('input',()=>{dirtyK=true;}));
+['#cbType','#cbRType'].forEach(id=>$(id).addEventListener('change',()=>{syncCalcUI();dirtyK=true;}));
+$('#cbApprox').addEventListener('change',e=>{CB.approx=e.target.checked;dirtyK=true;});
+$$('#cnMode button').forEach(b=>b.addEventListener('click',()=>{CN.mode=b.dataset.m;syncCalcUI();dirtyK=true;}));
+$$('#cnType button').forEach(b=>b.addEventListener('click',()=>{CN.type=b.dataset.t;syncCalcUI();dirtyK=true;}));
+$$('#cnRType button').forEach(b=>b.addEventListener('click',()=>{CN.rtype=b.dataset.t;syncCalcUI();dirtyK=true;}));
+$$('#cbMode button').forEach(b=>b.addEventListener('click',()=>{CB.mode=b.dataset.m;
+ if(CB.mode==='rev'&&$('#cbProb').value.trim()==='')$('#cbProb').value='0.05';
+ syncCalcUI();dirtyK=true;}));
+
+const GROUPS={normal:['beans','matches'],geometric:['cereal','spinner'],binomial:['coin','netball'],poisson:['popcorn','phone'],random:['random'],calc:['calcN','calcB']};
 const CINFO={beans:{icon:'🥫',name:'Baked Beans'},matches:{icon:'🔥',name:'Matchboxes'},cereal:{icon:'🥣',name:'Cereal Toys'},spinner:{icon:'🎡',name:'Spinner'},
- coin:{icon:'🪙',name:'Coin Flips'},netball:{icon:'🏐',name:'Netball'},popcorn:{icon:'🍿',name:'Popcorn'},phone:{icon:'📱',name:'Phone notifications'}};
-const MODE_OF={beans:'beans',matches:'matches',cereal:'cereal',spinner:'spinner',coin:'binom',netball:'binom',popcorn:'poisson',phone:'poisson'};
-const lastCtx={normal:'beans',geometric:'cereal',binomial:'coin',poisson:'popcorn'};
+ coin:{icon:'🪙',name:'Coin Flips'},random:{icon:'🔢',name:'Random digits'},calcN:{icon:'🔔',name:'Normal'},calcB:{icon:'📊',name:'Binomial'},netball:{icon:'🏐',name:'Netball'},popcorn:{icon:'🍿',name:'Popcorn'},phone:{icon:'📱',name:'Phone notifications'}};
+const MODE_OF={beans:'beans',matches:'matches',cereal:'cereal',spinner:'spinner',coin:'binom',netball:'binom',popcorn:'poisson',phone:'poisson',random:'random',calcN:'calc',calcB:'calc'};
+const lastCtx={normal:'beans',geometric:'cereal',binomial:'coin',poisson:'popcorn',random:'random',calc:'calcN'};
 function groupOf(c){for(const g in GROUPS)if(GROUPS[g].indexOf(c)>=0)return g;return 'normal';}
 function openContext(c){
  const g=groupOf(c);lastCtx[g]=c;
@@ -1643,10 +2077,14 @@ function openContext(c){
  $('#normal').hidden=!(mode==='beans'||mode==='matches');
  $('#cereal').hidden=mode!=='cereal';$('#spinner').hidden=mode!=='spinner';
  $('#binom').hidden=mode!=='binom';$('#poisson').hidden=mode!=='poisson';
+ $('#random').hidden=mode!=='random';$('#calcNorm').hidden=c!=='calcN';$('#calcBin').hidden=c!=='calcB';
+ $('.ctxwrap').hidden=GROUPS[g].length<2;
  if(mode==='poisson'){if(ps.ctx!==c)setPoisCtx(c);else syncPoisInputs();}
  else if(mode==='binom'){if(bs.ctx!==c)setBinomCtx(c);else syncBinomInputs();}
  else if(mode==='cereal'){renderCereal();}
  else if(mode==='spinner'){syncSpinInputs();}
+ else if(mode==='random'){rEnter();}
+ else if(mode==='calc'){syncCalcUI();dirtyK=true;}
  else{const cfg=MODES[mode];if(!cur().geo)rebuild(cur(),cfg);syncInputs();updateAll();}
  dirtyChart=true;dirtyC=true;dirtyB=true;dirtyCoins=true;dirtyP=true;dirtyS=true;
 }
@@ -1688,7 +2126,7 @@ $('#btnClearC').addEventListener('click',()=>{cs.results=[];cs.auto=false;setAut
 $$('#segStyleC button').forEach(b=>b.addEventListener('click',()=>{cs.style=b.dataset.s;$$('#segStyleC button').forEach(x=>x.classList.toggle('on',x===b));dirtyC=true;}));
 $('#chkTheoryC').addEventListener('change',e=>{cs.theory=e.target.checked;updateTilesC();dirtyC=true;});
 
-window.addEventListener('resize',()=>{dirtyChart=true;dirtyC=true;dirtyB=true;dirtyP=true;dirtyS=true;});
+window.addEventListener('resize',()=>{dirtyChart=true;dirtyC=true;dirtyB=true;dirtyP=true;dirtyS=true;dirtyK=true;rFit();});
 
 let lastT=performance.now();
 function frame(t){
@@ -1722,6 +2160,10 @@ function frame(t){
   }
   if(sp.anim)drawWheel();
   if(dirtyS){dirtyS=false;renderSpin();}
+ }else if(mode==='random'){
+  /* static page */
+ }else if(mode==='calc'){
+  if(dirtyK){dirtyK=false;renderCalc();}
  }else if(mode!=='cereal'){
   const st=cur();
   if(running){
