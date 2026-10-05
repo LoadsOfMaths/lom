@@ -19,7 +19,8 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
 #setup{align-items:center;justify-content:center;gap:1.2rem}
 .logo{font-size:7rem;font-weight:900;letter-spacing:.5rem;color:var(--gold);text-shadow:0 0 2rem rgba(255,207,74,.45),0 .3rem 0 #8a5a00}
 .tag{font-size:1.9rem;opacity:.8;margin-top:-.6rem}
-.setupcard{background:var(--panel);border:.15rem solid var(--line);border-radius:1.6rem;padding:1.6rem 2.4rem;width:70rem;display:grid;grid-template-columns:15rem 1fr;gap:1rem 1.5rem;align-items:center}
+.setupcard{background:var(--panel);border:.15rem solid var(--line);border-radius:1.6rem;padding:1.6rem 2.4rem;width:70rem;display:grid;grid-template-columns:15rem minmax(0,1fr);gap:1rem 1.5rem;align-items:center}
+.setupcard>*{min-width:0}
 .setupcard label{font-size:1.6rem;font-weight:700;color:var(--gold)}
 .seg{display:flex;gap:.6rem}
 .seg button{flex:1;background:rgba(255,255,255,.1);border:.15rem solid transparent;border-radius:.9rem;padding:.6rem .8rem;font-size:1.6rem;font-weight:700;line-height:1.2}
@@ -63,6 +64,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
 .face svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 .4rem .6rem rgba(0,0,0,.45))}
 .team,.chair{--c2:color-mix(in srgb,var(--c) 58%,#000)}
 .c1{fill:var(--c)}.c2{fill:var(--c2)}.hl{fill:rgba(255,255,255,.15)}.cush{fill:rgba(255,255,255,.22)}.leg{fill:#2a2450}.shd{fill:rgba(0,0,0,.35)}
+.numplate.txt{font-size:2.1rem;line-height:1.1;width:14.5rem;min-width:0;padding:.6rem .6rem;top:8%}
 .numplate{position:absolute;left:50%;top:2%;transform:translateX(-50%);background:linear-gradient(#ffe38a,#f2b632);color:#2a1a00;
  font-weight:900;font-size:5.6rem;line-height:1.1;padding:.2rem 1.4rem;border-radius:1.2rem;box-shadow:0 .5rem 1.2rem rgba(0,0,0,.5);min-width:8rem;text-align:center}
 
@@ -74,6 +76,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
 .clue{display:flex;align-items:center;gap:1.2rem;border-radius:1rem;padding:0 1.2rem;background:rgba(255,255,255,.05);border:.12rem dashed rgba(255,255,255,.12);min-height:0}
 .clue .n{width:2.8rem;height:2.8rem;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.5rem;background:rgba(255,255,255,.12);flex:none}
 .clue .t{font-size:2.3rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.0}
+.clue .t.long{font-size:1.85rem;white-space:normal;line-height:1.12}
 .clue.on{background:linear-gradient(90deg,rgba(255,207,74,.22),rgba(255,207,74,.06));border:.12rem solid rgba(255,207,74,.55);animation:slideIn .45s ease-out}
 .clue.on .n{background:var(--gold);color:#2a1a00}
 .clue.on .t{opacity:1}
@@ -96,6 +99,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
  font-size:3.8rem;font-weight:900;animation:cardIn .5s both;transition:transform .15s}
 .card:hover{transform:translateY(-.25rem)}
 .card .k{position:absolute;left:.8rem;top:.3rem;font-size:1.2rem;color:var(--gold);font-weight:700}
+.card.txt{font-size:1.9rem;line-height:1.1;padding:0 .8rem;width:17rem}
 .card.right{background:linear-gradient(#35d07f,#168a52);border-color:#c8ffe2;transform:scale(1.07)}
 .card.wrong{background:#4a1d3a;opacity:.5;text-decoration:line-through;border-color:#8a3a5a}
 .card:disabled{cursor:default}
@@ -135,24 +139,26 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
 <!-- ======== SETUP ======== -->
 <div id="setup" class="screen">
   <div class="logo">THE CHOICE</div>
-  <div class="tag">Blind auditions for number detectives</div>
+  <div class="tag">Blind auditions for maths detectives</div>
   <div class="setupcard">
+    <label>Topic</label>
+    <div class="seg" data-key="topic"><button data-v="num" class="on">Numbers</button><button data-v="2d">2D shapes</button><button data-v="3d">3D solids</button><button data-v="mix">Mixed</button></div>
     <label>Teams</label>
     <div class="seg" data-key="teamCount"><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div>
     <label>Team names</label>
     <div class="names" id="names"></div>
     <label>Level</label>
     <div class="seg" data-key="level">
-      <button data-v="1">Warm-up<small>numbers 1–50</small></button>
-      <button data-v="2" class="on">Standard<small>numbers 1–100</small></button>
-      <button data-v="3">Tough<small>numbers 1–200</small></button>
+      <button data-v="1">Warm-up<small id="lv1"></small></button>
+      <button data-v="2" class="on">Standard<small id="lv2"></small></button>
+      <button data-v="3">Tough<small id="lv3"></small></button>
     </div>
     <label>Rounds</label>
     <div class="seg" data-key="rounds"><button data-v="5">5</button><button data-v="8" class="on">8</button><button data-v="10">10</button></div>
     <label>Clues appear</label>
     <div class="seg" data-key="auto"><button data-v="0" class="on">When I click</button><button data-v="10">Every 10 s</button><button data-v="20">Every 20 s</button></div>
   </div>
-  <div class="rules">A mystery number sits in the chair with its back to you. Clues appear one at a time. Buzz when you think you know &ndash; your chair spins, then pick the number from four cards.
+  <div class="rules">A mystery number or shape sits in the chair with its back to you. Clues appear one at a time. Buzz when you think you know &ndash; your chair spins, then pick the answer from four cards.
   The earlier you buzz, the more points (5 down to 1) &ndash; but a wrong pick locks your team out of the round.</div>
   <button class="bigbtn" id="startBtn">Start the show</button>
 </div>
@@ -220,6 +226,7 @@ const dsum=n=>String(n).split('').reduce((a,d)=>a+ +d,0);
 const dprod=n=>String(n).split('').reduce((a,d)=>a*d,1);
 const nfac=n=>{let c=0;for(let i=1;i<=n;i++)if(n%i===0)c++;return c};
 
+/* ---------- topic: numbers ---------- */
 function genPool(n,lvl,lo,hi){
   const P=[];
   const add=(type,text,test)=>{if(test(n))P.push({type,text,test});};
@@ -265,17 +272,250 @@ function genPool(n,lvl,lo,hi){
   }
   return P;
 }
+function numDomain(lvl){
+  const lo=RANGE[lvl][0],hi=RANGE[lvl][1],cands=[];
+  for(let x=lo;x<=hi;x++)cands.push(x);
+  return{topic:'num',cands,pool:t=>genPool(t,lvl,lo,hi),label:x=>String(x),txt:false,
+    intro:'The contestant is a whole number from '+lo+' to '+hi};
+}
 
-function buildRound(lvl,used){
-  const lo=RANGE[lvl][0],hi=RANGE[lvl][1];
-  const all=[];for(let x=lo;x<=hi;x++)all.push(x);
-  for(let attempt=0;attempt<800;attempt++){
-    const target=lo+Math.floor(Math.random()*(hi-lo+1));
-    if(used.has(target))continue;
-    const pool=genPool(target,lvl,lo,hi);
+/* ---------- topics: 2D shapes and 3D solids ---------- */
+/* Each shape carries a set of property keys. A clue is "the target has key K"; a candidate fits a clue
+   only if it has K too. Conventions are the usual KS3 ones (a "kite" is a kite, not a square, etc.). */
+const SH2=[
+ {name:'Equilateral triangle',min:1,sides:3,poly:1,fam:'tri',reg:1,eq:'all',ra:0,par:0,ls:3,rot:3,sum:180,ia:60,acute:1,x:[]},
+ {name:'Isosceles triangle',min:1,sides:3,poly:1,fam:'tri',eq:'pair1',ra:0,par:0,ls:1,rot:1,sum:180,x:[]},
+ {name:'Scalene triangle',min:2,sides:3,poly:1,fam:'tri',eq:'none',ra:0,par:0,ls:0,rot:1,sum:180,x:[]},
+ {name:'Right-angled triangle',min:1,sides:3,poly:1,fam:'tri',eq:'none',ra:1,par:0,ls:0,rot:1,sum:180,hyp:1,x:[]},
+ {name:'Square',min:1,sides:4,poly:1,fam:'quad',reg:1,eq:'all',ra:4,par:2,ls:4,rot:4,sum:360,ia:90,x:['qOpp','qOppAng','qDiagBis','qDiagPerp','qDiagEq','qBisAng','qAdj','qPara']},
+ {name:'Rectangle',min:1,sides:4,poly:1,fam:'quad',eq:'pairs2',ra:4,par:2,ls:2,rot:2,sum:360,ia:90,x:['qOpp','qOppAng','qDiagBis','qDiagEq','qPara']},
+ {name:'Rhombus',min:1,sides:4,poly:1,fam:'quad',eq:'all',ra:0,par:2,ls:2,rot:2,sum:360,x:['qOpp','qOppAng','qDiagBis','qDiagPerp','qBisAng','qAdj','qPara']},
+ {name:'Parallelogram',min:1,sides:4,poly:1,fam:'quad',eq:'pairs2',ra:0,par:2,ls:0,rot:2,sum:360,x:['qOpp','qOppAng','qDiagBis','qPara']},
+ {name:'Kite',min:1,sides:4,poly:1,fam:'quad',eq:'pairs2',ra:0,par:0,ls:1,rot:1,sum:360,x:['qDiagPerp','qNotBis','qAdj']},
+ {name:'Trapezium',min:1,sides:4,poly:1,fam:'quad',eq:'none',ra:0,par:1,ls:0,rot:1,sum:360,x:['qNotBis']},
+ {name:'Isosceles trapezium',min:2,sides:4,poly:1,fam:'quad',eq:'pair1',ra:0,par:1,ls:1,rot:1,sum:360,x:['qDiagEq','qNotBis']},
+ {name:'Regular pentagon',min:1,sides:5,poly:1,reg:1,eq:'all',ra:0,par:0,ls:5,rot:5,sum:540,ia:108,x:[]},
+ {name:'Regular hexagon',min:1,sides:6,poly:1,reg:1,eq:'all',ra:0,par:3,ls:6,rot:6,sum:720,ia:120,x:[]},
+ {name:'Regular heptagon',min:3,sides:7,poly:1,reg:1,eq:'all',ra:0,par:0,ls:7,rot:7,sum:900,x:[]},
+ {name:'Regular octagon',min:1,sides:8,poly:1,reg:1,eq:'all',ra:0,par:4,ls:8,rot:8,sum:1080,ia:135,x:[]},
+ {name:'Regular decagon',min:3,sides:10,poly:1,reg:1,eq:'all',ra:0,par:5,ls:10,rot:10,sum:1440,ia:144,x:[]},
+ {name:'Circle',min:1,sides:0,curved:1,circle:1,ls:'inf',rot:'inf',x:[]},
+ {name:'Semicircle',min:2,sides:1,curved:1,ls:1,rot:1,x:[]}
+];
+function keys2D(s){
+  const K=new Set(s.x);
+  if(s.poly)K.add('poly');
+  if(s.fam)K.add(s.fam);
+  if(s.sides>=3)K.add('s'+s.sides);
+  if(s.sides===0)K.add('noStraight');
+  if(s.sides===1)K.add('s1');
+  if(s.poly){
+    [3,4,5,6,7].forEach(t=>{if(s.sides>t)K.add('more'+t)});
+    [4,5,6,7,8].forEach(t=>{if(s.sides<t)K.add('fewer'+t)});
+  }
+  if(s.curved){K.add('curved');K.add('diam')}
+  if(s.circle)K.add('circum');
+  if(s.reg)K.add('reg');
+  if(s.eq){
+    if(s.eq==='all')K.add('allEq');
+    if(s.eq==='pair1')K.add('pair1');
+    if(s.eq==='pairs2')K.add('pairs2');
+    if(s.eq==='none')K.add('noEq'); else K.add('eqAny');
+  }
+  if(s.ra!==undefined){
+    if(s.ra===0)K.add('ra0');
+    if(s.ra===1)K.add('ra1');
+    if(s.ra===4)K.add('ra4');
+    if(s.ra>0)K.add('raAny');
+  }
+  if(s.par!==undefined){K.add('par'+s.par);if(s.par>0)K.add('parAny')}
+  if(s.ls!==undefined){
+    if(s.ls==='inf'){K.add('lsInf');K.add('lsAny');K.add('lsGt2')}
+    else{K.add('ls'+s.ls);if(s.ls>=1)K.add('lsAny');if(s.ls>2)K.add('lsGt2')}
+  }
+  if(s.rot!==undefined){
+    if(s.rot==='inf'){K.add('rotInf');K.add('rotAny')}
+    else if(s.rot===1)K.add('rot1');
+    else{K.add('rot'+s.rot);K.add('rotAny')}
+  }
+  if(s.sum)K.add('sum'+s.sum);
+  if(s.ia)K.add('ia'+s.ia);
+  if(s.acute)K.add('allAcute');
+  if(s.hyp)K.add('hyp');
+  return K;
+}
+SH2.forEach(s=>{s.k=keys2D(s)});
+
+const SH3=[
+ {name:'Cube',min:1,F:6,E:12,V:8,flat:1,allSq:1,sq:1,allSame:1,platonic:1,unif:1,par:1},
+ {name:'Cuboid',min:1,F:6,E:12,V:8,flat:1,rectNotSq:1,unif:1,par:1},
+ {name:'Cylinder',min:1,F:3,E:2,V:0,curved:1,circ:2,unif:1,rolls:1,pi:1,par:1},
+ {name:'Cone',min:1,F:2,E:1,V:1,curved:1,circ:1,apex:1,rolls:1,pi:1},
+ {name:'Sphere',min:1,F:1,E:0,V:0,curved:1,rolls:1,pi:1},
+ {name:'Hemisphere',min:1,F:2,E:1,V:0,curved:1,circ:1,rolls:1,pi:1},
+ {name:'Square-based pyramid',min:1,F:5,E:8,V:5,flat:1,tri:1,sq:1,apex:1,pyr:1},
+ {name:'Tetrahedron',min:1,F:4,E:6,V:4,flat:1,tri:1,allTri:1,allSame:1,platonic:1,apex:1,pyr:1},
+ {name:'Triangular prism',min:1,F:5,E:9,V:6,flat:1,tri:1,rectNotSq:1,unif:1,par:1},
+ {name:'Pentagonal prism',min:1,F:7,E:15,V:10,flat:1,pent:1,rectNotSq:1,unif:1,par:1},
+ {name:'Hexagonal prism',min:1,F:8,E:18,V:12,flat:1,hex:1,rectNotSq:1,unif:1,par:1},
+ {name:'Pentagonal pyramid',min:2,F:6,E:10,V:6,flat:1,tri:1,pent:1,apex:1,pyr:1},
+ {name:'Hexagonal pyramid',min:2,F:7,E:12,V:7,flat:1,tri:1,hex:1,apex:1,pyr:1},
+ {name:'Octahedron',min:2,F:8,E:12,V:6,flat:1,tri:1,allTri:1,allSame:1,platonic:1,par:1},
+ {name:'Dodecahedron',min:3,F:12,E:30,V:20,flat:1,pent:1,allPent:1,allSame:1,platonic:1,par:1},
+ {name:'Icosahedron',min:3,F:20,E:30,V:12,flat:1,tri:1,allTri:1,allSame:1,platonic:1,par:1}
+];
+function keys3D(s){
+  const K=new Set();
+  K.add('F'+s.F);K.add('E'+s.E);K.add('V'+s.V);
+  [3,4,5,6,7,8].forEach(t=>{if(s.F>t)K.add('Fgt'+t)});
+  [3,4,5,6,7,8,9].forEach(t=>{if(s.F<t)K.add('Flt'+t)});
+  [1,6,9,12,15].forEach(t=>{if(s.E>t)K.add('Egt'+t)});
+  [2,6,9,12,15,18].forEach(t=>{if(s.E<t)K.add('Elt'+t)});
+  [1,4,6,8,10].forEach(t=>{if(s.V>t)K.add('Vgt'+t)});
+  [2,5,6,8,10,12].forEach(t=>{if(s.V<t)K.add('Vlt'+t)});
+  if(s.flat){K.add('allFlat');K.add('poly3')}
+  if(s.curved)K.add('curved');
+  ['tri','sq','rectNotSq','pent','hex','allSq','allTri','allPent','allSame','apex','pyr','par','rolls','platonic','pi'].forEach(f=>{if(s[f])K.add(f)});
+  if(s.circ>0)K.add('circFace');
+  if(s.circ===2)K.add('twoCirc');
+  if(s.circ===1)K.add('oneCirc');
+  if(s.unif){K.add('unif');K.add('volBH')}
+  if(s.apex)K.add('vol3');
+  return K;
+}
+SH3.forEach(s=>{s.k=keys3D(s)});
+
+/* clue catalogues: key -> {t:text, m:minimum level, ty:type, n:{t,m} optional "not" version} */
+const CAT2={},CAT3={};
+(function(){
+  const C=CAT2,W={3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',10:'ten'};
+  const r=(k,t,m,ty,n)=>{C[k]={t:t,m:m,ty:ty,n:n}};
+  r('poly','I’m a polygon',1,'fam',{t:'I’m not a polygon',m:1});
+  r('tri','I’m a triangle',1,'fam',{t:'I’m not a triangle',m:1});
+  r('quad','I’m a quadrilateral',1,'fam',{t:'I’m not a quadrilateral',m:1});
+  [3,4,5,6,7,8,10].forEach(n=>r('s'+n,'I have '+W[n]+' sides',1,'sides'));
+  [3,4,5,6,7].forEach(t=>r('more'+t,'I’m a polygon with more than '+W[t]+' sides',1,'sides'));
+  [4,5,6,7,8].forEach(t=>r('fewer'+t,'I’m a polygon with fewer than '+W[t]+' sides',1,'sides'));
+  r('curved','I have a curved edge',1,'curve');
+  r('noStraight','I have no straight sides',1,'curve');
+  r('s1','I have one straight side',2,'curve');
+  r('diam','I have a diameter',1,'curve');
+  r('circum','I have a circumference',1,'curve');
+  r('reg','I’m a regular polygon',1,'reg',{t:'I’m not a regular polygon',m:1});
+  r('allEq','All my sides are equal',1,'eq');
+  r('pair1','I have exactly one pair of equal sides',1,'eq');
+  r('pairs2','My sides come in two pairs of different lengths',2,'eq');
+  r('noEq','None of my sides are equal',2,'eq');
+  r('eqAny','At least two of my sides are equal',2,'eq');
+  r('ra0','I have no right angles',1,'ra');
+  r('ra1','I have exactly one right angle',1,'ra');
+  r('ra4','I have four right angles',1,'ra');
+  r('raAny','I have at least one right angle',1,'ra');
+  r('par0','I’m a polygon with no parallel sides',1,'par');
+  r('par1','I have exactly one pair of parallel sides',1,'par');
+  r('par2','I have exactly two pairs of parallel sides',1,'par');
+  r('par3','I have exactly three pairs of parallel sides',2,'par');
+  r('par4','I have exactly four pairs of parallel sides',2,'par');
+  r('par5','I have exactly five pairs of parallel sides',3,'par');
+  r('parAny','I have at least one pair of parallel sides',1,'par',{t:'I have no parallel sides',m:1});
+  r('ls0','I have no lines of symmetry',1,'ls');
+  r('ls1','I have exactly one line of symmetry',1,'ls');
+  [2,3,4,5,6,7,8,10].forEach(n=>r('ls'+n,'I have exactly '+n+' lines of symmetry',1,'ls'));
+  r('lsInf','I have infinitely many lines of symmetry',1,'ls');
+  r('lsAny','I have at least one line of symmetry',1,'ls');
+  r('lsGt2','I have more than two lines of symmetry',1,'ls');
+  r('rot1','I have no rotational symmetry',2,'rot');
+  [2,3,4,5,6,7,8,10].forEach(n=>r('rot'+n,'I have rotational symmetry of order '+n,2,'rot'));
+  r('rotAny','My rotational symmetry has order 2 or more',2,'rot');
+  r('rotInf','I look the same after any rotation about my centre',2,'rot');
+  r('sum180','My interior angles add up to 180°',2,'ang');
+  r('sum360','My interior angles add up to 360°',2,'ang');
+  [540,720,900,1080,1440].forEach(v=>r('sum'+v,'My interior angles add up to '+v+'°',3,'ang'));
+  [60,90].forEach(v=>r('ia'+v,'Each of my interior angles is '+v+'°',2,'ang'));
+  [108,120,135,144].forEach(v=>r('ia'+v,'Each of my interior angles is '+v+'°',3,'ang'));
+  r('allAcute','All my angles are acute',2,'ang');
+  r('hyp','I have a hypotenuse',2,'ang');
+  r('qOpp','I’m a quadrilateral with equal opposite sides',2,'q');
+  r('qOppAng','I’m a quadrilateral with equal opposite angles',2,'q');
+  r('qDiagBis','I’m a quadrilateral and my diagonals bisect each other',2,'q');
+  r('qDiagPerp','I’m a quadrilateral and my diagonals cross at right angles',2,'q');
+  r('qDiagEq','I’m a quadrilateral and my diagonals are equal in length',3,'q');
+  r('qNotBis','I’m a quadrilateral and my diagonals do not bisect each other',3,'q');
+  r('qBisAng','I’m a quadrilateral and my diagonals bisect my angles',3,'q');
+  r('qAdj','I’m a quadrilateral with two pairs of equal adjacent sides',3,'q');
+  r('qPara','I’m a type of parallelogram',3,'q');
+})();
+(function(){
+  const C=CAT3;
+  const r=(k,t,m,ty,n)=>{C[k]={t:t,m:m,ty:ty,n:n}};
+  const pl=(n,w)=>n===0?'no '+w+'s':n+' '+w+(n===1?'':'s');
+  r('allFlat','All my faces are flat',1,'surf');
+  r('curved','I have a curved surface',1,'surf');
+  r('poly3','I’m a polyhedron',2,'surf');
+  [1,2,3,4,5,6,7,8,12,20].forEach(n=>r('F'+n,'I have '+pl(n,'face'),1,'faces'));
+  [3,4,5,6,7,8].forEach(t=>r('Fgt'+t,'I have more than '+t+' faces',1,'faces'));
+  [3,4,5,6,7,8,9].forEach(t=>r('Flt'+t,'I have fewer than '+t+' faces',1,'faces'));
+  [0,1,2,6,8,9,10,12,15,18,30].forEach(n=>r('E'+n,'I have '+pl(n,'edge'),1,'edges'));
+  [1,6,9,12,15].forEach(t=>r('Egt'+t,'I have more than '+t+' edge'+(t===1?'':'s'),1,'edges'));
+  [2,6,9,12,15,18].forEach(t=>r('Elt'+t,'I have fewer than '+t+' edges',1,'edges'));
+  [0,1,4,5,6,7,8,10,12,20].forEach(n=>r('V'+n,'I have '+(n===0?'no vertices':n===1?'1 vertex':n+' vertices'),1,'verts'));
+  [1,4,6,8,10].forEach(t=>r('Vgt'+t,'I have more than '+t+' vert'+(t===1?'ex':'ices'),1,'verts'));
+  [2,5,6,8,10,12].forEach(t=>r('Vlt'+t,'I have fewer than '+t+' vertices',1,'verts'));
+  r('tri','Some of my faces are triangles',1,'fshape',{t:'None of my faces are triangles',m:2});
+  r('sq','At least one of my faces is a square',1,'fshape');
+  r('rectNotSq','Some of my faces are rectangles that are not squares',1,'fshape');
+  r('pent','I have a pentagonal face',1,'fshape');
+  r('hex','I have a hexagonal face',1,'fshape');
+  r('circFace','I have a circular face',1,'fshape');
+  r('twoCirc','I have two circular faces',1,'fshape');
+  r('oneCirc','I have exactly one circular face',1,'fshape');
+  r('allSq','All my faces are squares',1,'fshape');
+  r('allTri','All my faces are triangles',1,'fshape');
+  r('allPent','All my faces are pentagons',1,'fshape');
+  r('allSame','All my faces are identical',2,'fshape');
+  r('apex','I come to a point (an apex)',1,'form',{t:'I don’t come to a point',m:2});
+  r('pyr','I’m a pyramid',1,'form');
+  r('unif','My cross-section is the same all the way through',2,'form');
+  r('par','I have pairs of parallel faces',2,'form');
+  r('rolls','I can roll',1,'form');
+  r('platonic','I’m one of the five regular solids',3,'form');
+  r('pi','My volume formula contains π',3,'vol');
+  r('vol3','My volume is ⅓ × base area × height',3,'vol');
+  r('volBH','My volume is base area × height',3,'vol');
+})();
+
+function keyPool(t,cat,lvl){
+  const P=[];
+  for(const key in cat){
+    const c=cat[key];
+    if(t.k.has(key)){
+      if(c.m<=lvl)P.push({type:c.ty,text:c.t,test:x=>x.k.has(key)});
+    }else if(c.n&&c.n.m<=lvl){
+      P.push({type:c.ty+'-not',text:c.n.t,test:x=>!x.k.has(key)});
+    }
+  }
+  return P;
+}
+
+const TOPICS=['num','2d','3d'];
+function makeDomain(topic,lvl){
+  if(topic==='num')return numDomain(lvl);
+  const is2=topic==='2d';
+  const list=(is2?SH2:SH3).filter(s=>s.min<=lvl);
+  return{topic,cands:list,pool:t=>keyPool(t,is2?CAT2:CAT3,lvl),label:x=>x.name,txt:true,
+    intro:is2?'The contestant is a 2D shape':'The contestant is a 3D solid'};
+}
+
+/* ---------- round builder ---------- */
+function buildRound(dom,used){
+  const all=dom.cands,N=all.length;
+  for(let attempt=0;attempt<900;attempt++){
+    const target=all[Math.floor(Math.random()*N)];
+    if(used.has(target)&&attempt<600)continue;
+    const pool=dom.pool(target);
     let cur=all,chosen=[],tc={},ok=true;
     for(let step=1;step<=5;step++){
-      const desired=Math.pow(all.length,1-step/5);
+      const desired=Math.pow(N,1-step/5);
       let best=null,bs=1e9;
       for(const c of pool){
         if(chosen.includes(c))continue;
@@ -293,24 +533,24 @@ function buildRound(lvl,used){
   throw new Error('Could not build a round');
 }
 
-/* Four cards: the answer plus the three numbers that fit the most clues shown so far. */
-function makeOptions(cur,shown,lvl,wrong){
-  const lo=RANGE[lvl][0],hi=RANGE[lvl][1];
+/* Four cards: the answer plus the three candidates that fit the most clues shown so far. */
+function makeOptions(cur,shown,dom,wrong){
   const tests=cur.clues.slice(0,shown).map(c=>c.test);
   const arr=[];
-  for(let x=lo;x<=hi;x++){
-    if(x===cur.target||wrong.has(x))continue;
-    arr.push({x,m:tests.filter(t=>t(x)).length,r:Math.random()});
-  }
+  dom.cands.forEach(x=>{
+    if(x===cur.target||wrong.has(x))return;
+    arr.push({x:x,m:tests.filter(t=>t(x)).length,r:Math.random()});
+  });
   arr.sort((a,b)=>b.m-a.m||a.r-b.r);
-  return [cur.target].concat(arr.slice(0,3).map(o=>o.x)).sort((a,b)=>a-b);
+  const out=[cur.target].concat(arr.slice(0,3).map(o=>o.x));
+  return dom.txt?out.sort((a,b)=>a.name<b.name?-1:1):out.sort((a,b)=>a-b);
 }
 /*LOGIC_END*/
 
 /* ---------------- UI ---------------- */
 const $=id=>document.getElementById(id);
 const COLS=['#9b5cff','#17c3b2','#ff9f1c','#ff5fa8'];
-const S={teamCount:2,level:2,rounds:8,auto:0,sound:true,teams:[],round:0,used:new Set(),cur:null,
+const S={topic:'num',dom:null,mixQ:[],teamCount:2,level:2,rounds:8,auto:0,sound:true,teams:[],round:0,used:new Set(),cur:null,
   shown:0,phase:'idle',buzzer:null,locked:new Set(),wrong:new Set(),opts:[],tok:0,timeout:null};
 
 const NS='http://www.w3.org/2000/svg';
@@ -373,11 +613,23 @@ document.querySelectorAll('.seg').forEach(seg=>{
   seg.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');S[seg.dataset.key]=+b.dataset.v;
+    b.classList.add('on');S[seg.dataset.key]=isNaN(+b.dataset.v)?b.dataset.v:+b.dataset.v;
     if(seg.dataset.key==='teamCount')renderNames();
+    if(seg.dataset.key==='topic')levelLabels();
   });
 });
 renderNames();
+function levelLabels(){
+  [1,2,3].forEach(l=>{
+    let t;
+    if(S.topic==='num')t='numbers '+RANGE[l][0]+'–'+RANGE[l][1];
+    else if(S.topic==='2d')t=makeDomain('2d',l).cands.length+' shapes';
+    else if(S.topic==='3d')t=makeDomain('3d',l).cands.length+' solids';
+    else t='all three topics';
+    $('lv'+l).textContent=t;
+  });
+}
+levelLabels();
 
 function showScreen(id){['setup','game','final'].forEach(s=>$(s).classList.toggle('hidden',s!==id));S.screen=id}
 showScreen('setup');
@@ -393,7 +645,7 @@ $('nextBtn').onclick=()=>{onNext();$('nextBtn').blur()};
 function startGame(){
   const inputs=[...$('names').children].slice(0,S.teamCount);
   S.teams=inputs.map((inp,i)=>({name:inp.value.trim()||('Team '+(i+1)),score:0,col:COLS[i]}));
-  S.round=0;S.used=new Set();S.tok++;
+  S.round=0;S.used=new Set();S.mixQ=[];S.tok++;
   $('cback').innerHTML=chairBack(true);$('cfront').innerHTML=chairFront();
   buildTeams();showScreen('game');nextRound();
 }
@@ -455,13 +707,16 @@ function startTimer(){
 function nextRound(){
   S.tok++;clearTimer();
   S.round++;
-  S.cur=buildRound(S.level,S.used);S.used.add(S.cur.target);
+  let tp=S.topic;
+  if(tp==='mix'){if(!S.mixQ.length)S.mixQ=shuffle(TOPICS.slice());tp=S.mixQ.pop()}
+  S.dom=makeDomain(tp,S.level);
+  S.cur=buildRound(S.dom,S.used);S.used.add(S.cur.target);
   S.shown=0;S.locked=new Set();S.wrong=new Set();S.buzzer=null;S.phase='wait';
   resetChair($('cchair'));S.teams.forEach((t,i)=>resetChair($('chair'+i)));
-  $('numplate').textContent=S.cur.target;
+  $('numplate').textContent=S.dom.label(S.cur.target);
+  $('numplate').classList.toggle('txt',S.dom.txt);
   $('roundLbl').textContent='Round '+S.round+' of '+S.rounds;
-  const r=RANGE[S.level];
-  $('rangeLbl').textContent='The contestant is a whole number from '+r[0]+' to '+r[1];
+  $('rangeLbl').textContent=S.dom.intro;
   const list=$('cluelist');list.innerHTML='';
   for(let i=0;i<5;i++){
     const row=document.createElement('div');row.className='clue';
@@ -474,10 +729,12 @@ function nextRound(){
   later(()=>{S.phase='clues';revealClue()},900);
 }
 
+function setClue(row,txt){const t=row.querySelector('.t');t.textContent=txt;t.classList.toggle('long',txt.length>46)}
+
 function revealClue(){
   if(S.shown>=5)return;
   const row=$('cluelist').children[S.shown];
-  row.querySelector('.t').textContent=S.cur.clues[S.shown].text;
+  setClue(row,S.cur.clues[S.shown].text);
   row.classList.add('on');
   S.shown++;
   sfx.clue();
@@ -507,7 +764,7 @@ function buzz(i){
 
 function showChoice(){
   if(S.phase!=='choice')return;
-  S.opts=makeOptions(S.cur,S.shown,S.level,S.wrong);
+  S.opts=makeOptions(S.cur,S.shown,S.dom,S.wrong);
   const t=S.teams[S.buzzer];
   const b=$('band');
   b.innerHTML='<div class="choicehead"><span><b id="cn"></b>, make your choice!</span><button id="cancelBtn">Cancel buzz <kbd>Esc</kbd></button></div><div class="cards" id="cards"></div>';
@@ -515,7 +772,9 @@ function showChoice(){
   $('cancelBtn').onclick=cancelBuzz;
   S.opts.forEach((v,i)=>{
     const c=document.createElement('button');c.className='card';c.style.animationDelay=(i*.1)+'s';
-    c.innerHTML='<span class="k">'+'ABCD'[i]+'</span>'+v;
+    const k=document.createElement('span');k.className='k';k.textContent='ABCD'[i];
+    c.appendChild(k);c.appendChild(document.createTextNode(S.dom.label(v)));
+    if(S.dom.txt)c.classList.add('txt');
     c.onclick=()=>pick(i);
     $('cards').appendChild(c);
   });
@@ -558,10 +817,10 @@ function finishRound(winner){
   S.phase='reveal';
   // reveal any clues not yet shown
   [...$('cluelist').children].forEach((row,i)=>{
-    if(!row.classList.contains('on')){row.querySelector('.t').textContent=S.cur.clues[i].text;row.classList.add('late')}
+    if(!row.classList.contains('on')){setClue(row,S.cur.clues[i].text);row.classList.add('late')}
   });
   $('cchair').classList.add('spun');
-  const n=S.cur.target;
+  const n=S.dom.label(S.cur.target);
   if(winner!==null){
     const pts=6-S.shown;
     S.teams[winner].score+=pts;
