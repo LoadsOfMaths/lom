@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reserve Records – Sorting Decimals</title>
+<title>Wildlife Line-Up – Sorting Decimals</title>
 <style>
 :root{--forest:#1f3d2b;--moss:#3f6b45;--parch:#f4eedb;--card:#fffdf4;--edge:#cdbf98;--ink:#22303a;--amber:#e0a526;--orange:#c4501f;--blue:#2a5676;--zero:#17805f;--zerobg:#d9f1e4;--bad:#c0392b}
 *{box-sizing:border-box}
@@ -48,16 +48,17 @@ main{display:grid;grid-template-columns:minmax(300px,430px) minmax(440px,620px);
 .area{position:absolute;left:58px;right:118px;top:0;bottom:0}
 .num{position:absolute;top:50%;transform:translateY(-50%);left:12px;white-space:nowrap;
  font-family:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","Courier New",monospace;font-weight:700;font-size:var(--fs);line-height:1;
- transition:left .9s ease}
-.al .num{left:calc(50% - (var(--il) + .5) * 1ch)}
+ transition:left .25s ease}
+.num.slow{transition:left 1.1s ease}
+.num.dragging{transition:none}
 .num .pt{color:var(--orange)}
-.num.nodot .pt{display:none}
-.al .num.nodot .pt{display:inline;opacity:.3}
-.al .num .f{color:var(--blue)}
+.num.nodot .pt{opacity:.3}
+.col:not([data-m=raw]) .num .f{color:var(--blue)}
 .z b{color:var(--zero);background:var(--zerobg);border-radius:4px;font-weight:700;animation:pop .5s ease both}
 @keyframes pop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
-.guide{position:absolute;top:-6px;bottom:-6px;left:calc(58px + (100% - 176px)/2);width:0;border-left:3px dashed rgba(196,80,31,.55);z-index:6;pointer-events:none;opacity:0;transition:opacity .8s}
-.al .guide{opacity:1}
+.guide{position:absolute;top:-6px;bottom:-6px;left:calc(58px + (100% - 176px)/2);width:0;margin-left:-1.5px;border-left:3px dashed rgba(196,80,31,.6);z-index:6;pointer-events:none;transition:border-color .15s}
+.guide.near{border-left-color:var(--zero);border-left-style:solid}
+[data-m=raw] .guide::before{content:"decimal point line";position:absolute;top:-24px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--orange);color:#fff;font-weight:700;font-size:.8rem;padding:2px 10px;border-radius:999px;letter-spacing:.03em}
 .unit{position:absolute;right:62px;top:50%;transform:translateY(-50%);font-weight:700;color:#6b7a70;font-size:1.1rem}
 .arr{position:absolute;right:10px;top:6px;bottom:6px;width:42px;display:none;flex-direction:column;gap:4px}
 .arr button{flex:1;border:0;border-radius:8px;background:var(--moss);color:#fff;font-size:1rem;cursor:pointer;padding:0}
@@ -67,6 +68,10 @@ main{display:grid;grid-template-columns:minmax(300px,430px) minmax(440px,620px);
 [data-m=sort] .grip{display:block}
 [data-m=sort] .card{cursor:grab;touch-action:none}
 [data-m=pick] .card{cursor:pointer}
+[data-m=raw] .card:not(.placed){cursor:grab;touch-action:pan-y}
+[data-m=raw] .card.placed{border-color:#2e9d62;background:#f3fbf5}
+.card.jig{animation:jig .55s ease}
+@keyframes jig{0%{transform:none}18%{transform:translateX(-8px) rotate(-1.4deg)}38%{transform:translateX(7px) rotate(1.2deg)}58%{transform:translateX(-5px) rotate(-.8deg)}78%{transform:translateX(3px)}100%{transform:none}}
 [data-m=pick] .card:hover{transform:translateY(-3px);border-color:var(--amber);box-shadow:0 0 0 4px rgba(224,165,38,.35)}
 .badge{position:absolute;top:-11px;right:62px;background:var(--amber);color:#3a2a00;font-weight:800;font-size:.8rem;padding:2px 10px;border-radius:999px;display:none;letter-spacing:.05em}
 .card.median{border-color:var(--amber);background:#fff7d6;box-shadow:0 0 0 5px rgba(224,165,38,.5)}
@@ -89,7 +94,7 @@ dialog menu{display:flex;gap:10px;justify-content:flex-end;padding:0;margin:14px
 </head>
 <body>
 <header>
-  <h1>Reserve Records<small>Sorting decimals – find the median</small></h1>
+  <h1>Wildlife Line-Up<small>Sorting decimals – find the median</small></h1>
   <span class="pill" id="score">Correct: 0 / 0</span>
   <span class="pill" id="streak">Streak: 0</span>
   <button class="hb" id="bNew">New set</button>
@@ -109,7 +114,6 @@ dialog menu{display:flex;gap:10px;justify-content:flex-end;padding:0;margin:14px
     <p class="story" id="story"></p>
     <div class="steps" id="steps" aria-live="polite"></div>
     <div class="actions">
-      <button class="btn go" id="bAlign">Line up the decimal points</button>
       <button class="btn alt" id="bZeros">Add zeros</button>
       <button class="btn go" id="bDone">I've sorted them ✔</button>
       <button class="btn alt" id="bBack">← Back to sorting</button>
@@ -260,18 +264,64 @@ const ORD=['1st','2nd','3rd','4th','5th','6th','7th'];
 const PRAISE=['Excellent fieldwork!','Spot on, researcher!','Peer review passed!','Brilliant sorting!','Top-notch data handling!'];
 const G=12;
 let S={level:2,n:5,grp:'all'};
-try{Object.assign(S,JSON.parse(localStorage.getItem('rr_settings')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('wl_settings')||'{}'))}catch(e){}
 let score=0,total=0,streak=0,last=-1;
-let P=null,order=[],mode='raw',aligned=false,padded=false,maxdp=0,drag=null,H=74;
+let P=null,order=[],mode='raw',padded=false,maxdp=0,drag=null,xd=null,H=74,areaW=300,ch=20,token=0,allDone=false,demoOn=false,hint=false,demoTimer=null;
 const $=id=>document.getElementById(id);
 const col=$('col');
 
 function calcH(){H=Math.max(52,Math.min(80,Math.floor((innerHeight-300)/S.n)-G))}
 function step(){return H+G}
+function geom(){
+  areaW=Math.max(120,col.clientWidth-180);
+  const fs=Math.max(18,Math.min(Math.round(H*0.5),Math.floor(areaW/5.2)));
+  col.style.setProperty('--fs',fs+'px');
+  let pr=col.querySelector('.probe');
+  if(!pr){pr=document.createElement('span');pr.className='num probe';pr.style.cssText='visibility:hidden;left:-999px;transition:none';pr.textContent='0000000000';col.appendChild(pr)}
+  ch=pr.offsetWidth/10||fs*.6;
+}
 function sizes(){
   col.style.height=((order.length||S.n)*step()-G)+'px';
-  col.style.setProperty('--fs',Math.round(H*0.5)+'px');
   order.forEach(c=>c.el.style.height=H+'px');
+  geom();
+}
+function numW(c){return (c.int.length+1+(padded?maxdp:c.frac.length))*ch}
+function target(c){return areaW/2-(c.int.length+.5)*ch}
+function setLeft(c,x){c.left=x;c.num.style.left=x+'px'}
+function fit(){order.forEach(c=>setLeft(c,c.placed?target(c):Math.max(0,Math.min(areaW-numW(c),c.left))))}
+function near(c){return Math.abs(c.left-target(c))<=ch*0.5+2}
+function jig(c){c.el.classList.remove('jig');void c.el.offsetWidth;c.el.classList.add('jig');
+  c.el.addEventListener('animationend',()=>c.el.classList.remove('jig'),{once:true})}
+function lock(c){c.placed=true;c.busy=false;c.el.classList.add('placed');jig(c)}
+function checkDone(tok){
+  if(tok!==token||allDone||!order.every(c=>c.placed))return;
+  allDone=true;ui();
+  setTimeout(()=>{if(tok===token&&mode==='raw'){mode='sort';ui()}},1300);
+}
+function demo(tok){
+  if(tok!==token||mode!=='raw')return;
+  const c=order[0];
+  c.num.classList.add('slow');setLeft(c,target(c));
+  setTimeout(()=>{if(tok!==token)return;c.num.classList.remove('slow');lock(c);demoOn=false;ui();checkDone(tok)},1300);
+}
+function xdown(ev,c){
+  if(c.placed||c.busy)return;
+  c.el.setPointerCapture(ev.pointerId);
+  xd={c:c,x:ev.clientX,left:c.left,moved:false};
+  c.el.classList.add('drag');c.num.classList.add('dragging');
+}
+function xmove(ev){
+  const c=xd.c,dx=ev.clientX-xd.x;
+  if(Math.abs(dx)>3)xd.moved=true;
+  setLeft(c,Math.max(0,Math.min(areaW-numW(c),xd.left+dx)));
+  const g=col.querySelector('.guide');if(g)g.classList.toggle('near',near(c));
+}
+function xup(){
+  const c=xd.c,moved=xd.moved;xd=null;
+  c.el.classList.remove('drag');c.num.classList.remove('dragging');
+  const g=col.querySelector('.guide');if(g)g.classList.remove('near');
+  if(near(c)){setLeft(c,target(c));lock(c);ui();checkDone(token)}
+  else if(moved){c.miss=(c.miss||0)+1;if(c.miss>=2&&!hint){hint=true;ui()}}
 }
 function layout(skip){order.forEach((c,i)=>{if(c!==skip)c.el.style.top=(i*step())+'px'})}
 
@@ -291,7 +341,7 @@ function newPuzzle(){
   const asc=[...cards].sort((a,b)=>a.v-b.v);
   do{for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]]}}
   while(cards.every((c,i)=>c===asc[i]));
-  P=e;order=cards;aligned=false;padded=false;mode='raw';
+  P=e;order=cards;padded=false;mode='raw';token++;allDone=false;demoOn=true;hint=false;xd=null;clearTimeout(demoTimer);
   $('sico').textContent=e.ico;$('sname').textContent=e.sp;$('smeas').textContent=e.meas;
   $('sunit').textContent='All readings are in '+UNIT[e.u];
   $('story').innerHTML=WORDS[S.n]+' readings of '+e.meas+' have come in from the '+SITE[e.grp]+'. Find the <b>median</b> '+e.meas+'.';
@@ -307,18 +357,24 @@ function newPuzzle(){
     el.addEventListener('pointermove',ev=>mv(ev));
     el.addEventListener('pointerup',up);
     el.addEventListener('pointercancel',up);
+    c.num=el.querySelector('.num');c.left=0;c.placed=false;c.busy=false;c.miss=0;
     col.appendChild(el);
   });
   calcH();sizes();layout();
+  order.forEach(c=>{
+    const w=numW(c),t=target(c);let x,g=0;
+    do{x=4+Math.random()*Math.max(1,areaW-w-8)}while(Math.abs(x-t)<ch*1.5&&g++<40);
+    setLeft(c,x);
+  });
+  order[0].busy=true;
   void col.offsetHeight;col.classList.remove('init');
   ui();
+  const tok=token;demoTimer=setTimeout(()=>demo(tok),1000);
 }
 
 function ui(){
   col.dataset.m=mode;
-  col.classList.toggle('al',aligned);
   $('topLab').style.visibility=$('botLab').style.visibility=(mode==='raw')?'hidden':'visible';
-  $('bAlign').style.display=mode==='raw'?'':'none';
   $('bZeros').style.display=mode==='sort'?'':'none';
   $('bZeros').disabled=padded;
   $('bDone').style.display=mode==='sort'?'':'none';
@@ -332,7 +388,12 @@ function ui(){
     c.el.querySelector('.dn').disabled=(i===order.length-1);
   });
   let t='';
-  if(mode==='raw')t='<b>Step 1</b> – The readings are all jumbled up. Line up the decimal points so digits with the same place value sit in the same column.';
+  if(mode==='raw'){
+    const done=order.filter(c=>c.placed).length;
+    if(allDone)t='<b>All lined up!</b> Every digit now sits in the right place-value column.';
+    else if(demoOn)t='<b>Step 1</b> – Watch the first card: its decimal point slides onto the dashed line.';
+    else t='<b>Step 1</b> – Your turn! Drag each number sideways until its <b>decimal point</b> sits on the dashed line. ('+done+' of '+order.length+' lined up)'+(hint?'<br><i>Hint: find the orange point in the number – that is the bit that goes on the line. A whole number’s point is just after its last digit (shown faintly).</i>':'');
+  }
   else if(mode==='sort')t=padded?'Every reading now has '+maxdp+' decimal place'+(maxdp===1?'':'s')+', so you can compare them digit by digit. Slide the cards into order – <b>smallest at the top</b>. Press “I’ve sorted them” when you’re happy.':'<b>Step 2</b> – The decimal points are lined up. Add zeros so every reading has '+maxdp+' decimal place'+(maxdp===1?'':'s')+' (this doesn’t change their value), then slide the cards into order: drag a card or use its arrows. <b>Smallest at the top.</b>';
   else if(mode==='pick')t='<b>Which reading is the median?</b> It’s the middle value of the sorted list. Click the card you think it is.';
   else t='';
@@ -346,12 +407,14 @@ function move(c,d){
   order.splice(oi,1);order.splice(ni,0,c);layout();ui();
 }
 function down(ev,c){
+  if(mode==='raw'){xdown(ev,c);return}
   if(mode!=='sort'||ev.target.closest('button'))return;
   c.el.setPointerCapture(ev.pointerId);
   drag={c:c,y:ev.clientY,top:order.indexOf(c)*step()};
   c.el.classList.add('drag');
 }
 function mv(ev){
+  if(xd){xmove(ev);return}
   if(!drag)return;
   const max=(order.length-1)*step();
   const top=Math.max(0,Math.min(max,drag.top+ev.clientY-drag.y));
@@ -360,6 +423,7 @@ function mv(ev){
   if(ni!==oi){order.splice(oi,1);order.splice(ni,0,drag.c);layout(drag.c)}
 }
 function up(){
+  if(xd){xup();return}
   if(!drag)return;
   drag.c.el.classList.remove('drag');drag=null;layout();ui();
 }
@@ -372,7 +436,7 @@ function pick(c){
   const wasSorted=order.every((x,i)=>x===sorted[i]);
   const ok=c.v===med.v;
   total++;if(ok){score++;streak++}else streak=0;
-  mode='result';aligned=true;padded=true;
+  mode='result';padded=true;
   order=sorted;layout();
   order.forEach(x=>{
     x.el.classList.remove('median','wrong','dim');
@@ -410,7 +474,6 @@ function confetti(){
   document.body.appendChild(box);setTimeout(()=>box.remove(),5000);
 }
 
-$('bAlign').onclick=()=>{aligned=true;mode='sort';ui()};
 $('bZeros').onclick=()=>{padded=true;ui()};
 $('bDone').onclick=()=>{mode='pick';ui()};
 $('bBack').onclick=()=>{mode='sort';ui()};
@@ -427,11 +490,11 @@ dlg.addEventListener('close',()=>{
     S.level=+document.querySelector('input[name=level]:checked').value;
     S.n=+document.querySelector('input[name=n]:checked').value;
     S.grp=$('grp').value;
-    try{localStorage.setItem('rr_settings',JSON.stringify(S))}catch(e){}
+    try{localStorage.setItem('wl_settings',JSON.stringify(S))}catch(e){}
     newPuzzle();
   }
 });
-addEventListener('resize',()=>{calcH();sizes();layout()});
+addEventListener('resize',()=>{calcH();sizes();fit();layout()});
 score_();newPuzzle();
 })();
 </script>

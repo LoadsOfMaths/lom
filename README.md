@@ -28,7 +28,6 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Penguins & Icebergs | `penguins-and-icebergs/` |
 | Potato | `potato/` |
 | Recite Pi | `recite-pi/` |
-| Reserve Records | `reserve-records/` |
 | Sports Day | `sports-day/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
 | The Choice | `the-choice/` |
@@ -36,6 +35,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Toast | `toast/` |
 | Trio | `trio/` |
 | Whale Watching | `whale-watching/` |
+| Wildlife Line-Up | `wildlife-line-up/` |
 
 ## Updating a game
 
