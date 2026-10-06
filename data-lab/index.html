@@ -225,6 +225,22 @@
   .crow .enm{flex:1}
   .crow .rm{width:40px;height:40px;border:0;border-radius:8px;background:#fde8e8;color:#b91c1c;font-size:1.1rem;cursor:pointer;flex:none}
   .crow .rm:disabled{opacity:.35;cursor:not-allowed}
+  /* Spearman sub-tab */
+  .spgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;align-items:start}
+  @media (max-width:900px){.spgrid{grid-template-columns:1fr}}
+  .spwrap{overflow-x:auto}
+  .sptab{width:100%;border-collapse:collapse}
+  .sptab th{background:#eef3fa;padding:5px 6px;text-align:center;color:var(--navy);font-size:.8rem;line-height:1.2}
+  .sptab td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:center;font-size:1.1rem;font-weight:700;color:var(--navy);white-space:nowrap}
+  .sptab tr.cur td{background:#fff3c4}
+  .sptab tr.tot td{border-top:2px solid var(--navy)}
+  .sptab .abox.sm{min-width:50px;min-height:32px;font-size:1.05rem;padding:1px 4px;border-width:2px}
+  .fcell{display:inline-flex;align-items:center;gap:2px}
+  .sptab .lifebelt.sm{font-size:1rem;padding:1px 2px}
+  .sform{background:#eef3fa;border-radius:10px;padding:8px 14px;font-size:1.25rem;font-weight:700;color:var(--navy);display:inline-block;margin:6px 0}
+  .sform .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 4px;font-size:1.05rem}
+  .sform .frac span:first-child{border-bottom:2px solid var(--navy);padding:0 6px}
+  .subseg{padding:8px 16px}
   /* celebration */
   #confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
   #overlay{position:fixed;inset:0;background:rgba(18,53,91,.45);display:none;align-items:center;justify-content:center;z-index:40}
@@ -465,6 +481,8 @@
     </div>
   </section>
   <section class="panel" id="p-biv">
+    <div class="card subseg"><span class="seg" id="bvSubSeg"><button data-v="sc" class="on">Scatter graph</button><button data-v="sp">Spearman's rank</button></span> <span style="color:var(--muted);font-size:.9rem;margin-left:8px">Spearman's rank is a GCSE Statistics extension</span></div>
+    <div id="bvScatter">
     <div class="card">
       <div class="row">
         <label class="f">Context
@@ -488,6 +506,37 @@
           <div id="bTable"></div>
         </div>
         <div id="bBody"></div>
+      </div>
+    </div>
+    </div>
+    <div id="bvSpear" style="display:none">
+      <div class="card">
+        <div class="row">
+          <label class="f">Context
+            <select id="spContext"></select>
+          </label>
+          <label class="f">Number of pairs
+            <select id="spN"><option value="rand" selected>Random (6–10)</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select>
+          </label>
+          <label class="f">Correlation
+            <select id="spCorr"><option value="rand" selected>Random</option><option value="sp">Strong positive</option><option value="wp">Weak positive</option><option value="no">No correlation</option><option value="wn">Weak negative</option><option value="sn">Strong negative</option></select>
+          </label>
+          <label class="chk" style="align-self:flex-end"><input type="checkbox" id="spTies"> Include tied values</label>
+          <button class="btn go" id="spGen" style="align-self:flex-end">Generate data</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 id="spTitle"></h2>
+        <div class="spgrid">
+          <div>
+            <div class="lbl">The data</div>
+            <div class="spwrap" id="spTable"></div>
+          </div>
+          <div>
+            <div class="pills" id="spSteps"></div>
+            <div id="spBody"></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -837,7 +886,7 @@
     confetti();
   }
   $("keep").addEventListener("click",closeOverlay);
-  $("again").addEventListener("click",function(){if(curTab==="disc")dGenerate();else if(curTab==="sft")sGenerate();else if(curTab==="gdisc")gGenerate();else if(curTab==="cont")cGenerate();else if(curTab==="biv")bGenerate();else generate()});
+  $("again").addEventListener("click",function(){if(curTab==="disc")dGenerate();else if(curTab==="sft")sGenerate();else if(curTab==="gdisc")gGenerate();else if(curTab==="cont")cGenerate();else if(curTab==="biv"){if(bvSub==="sp")spGenerate();else bGenerate()}else generate()});
 
   var cv=$("confetti"),cx=cv.getContext("2d"),parts=[],raf=null,endAt=0;
   function confetti(){
@@ -1322,7 +1371,7 @@
     var gd=GUIDES[curTab],isD=curTab==="disc";
     if(isD?!curF():!(gd&&gd.active()))return;
     var tk=isD?typeKey:gd.typeKey,ck=isD?checkField:gd.check;
-    if(/^[0-9]$/.test(e.key)||e.key===".")tk(e.key);
+    if(/^[0-9]$/.test(e.key)||e.key==="."||(e.key==="-"&&curTab==="biv"&&bvSub==="sp"))tk(e.key);
     else if(e.key==="Backspace"){e.preventDefault();tk("back")}
     else if(e.key==="Enter"){e.preventDefault();ck()}
   });
@@ -1388,7 +1437,7 @@
   }
   function applyFF(){
     $("ffTally").style.display=OPT.ff?"":"none";
-    renderStep();ftS.render();ftG.render();ftC.render();hRender();kRender();bxRender();slRender();bRender();
+    renderStep();ftS.render();ftG.render();ftC.render();hRender();kRender();bxRender();slRender();bRender();spRender();
   }
   $("optFF").addEventListener("change",function(){OPT.ff=this.checked;saveOpts();applyFF()});
   $("optMistakes").addEventListener("change",function(){OPT.mistakes=this.checked;saveOpts();renderStep()});
@@ -3266,6 +3315,7 @@
     BCTX.forEach(function(c,i){var o=document.createElement("option");o.value=i;o.textContent=c.title;sel.appendChild(o)});
     if(B.ctx>=BCTX.length)B.ctx=0;
     sel.value=B.ctx;
+    refreshSpSelect();
   }
   function bGenerate(){
     clearTimeout(B.tm);closeOverlay();
@@ -3420,7 +3470,7 @@
     if(B.msg)h+="<div class='fmsg "+B.msg.type+"'>"+B.msg.text+"</div>";
     $("bBody").innerHTML=h;
   }
-  function bActive(){return curTab==="biv"&&B.step===3&&!B.est.ok}
+  function bActive(){return curTab==="biv"&&bvSub==="sc"&&B.step===3&&!B.est.ok}
   function bKey(k){
     if(!bActive())return;
     var f=B.est;
@@ -3581,7 +3631,336 @@
   $("bCorr").addEventListener("change",function(){B.corr=this.value;bGenerate()});
   $("bOut").addEventListener("change",function(){B.outlier=this.checked;bGenerate()});
   $("bGen").addEventListener("click",bGenerate);
-  GUIDES.biv={active:bActive,typeKey:bKey,check:function(){if(B.step===3&&!B.est.ok)bCheckEst()}};
+  GUIDES.biv={active:function(){return bvSub==="sp"?!!spAct():bActive()},typeKey:function(k){if(bvSub==="sp")spKey(k);else bKey(k)},check:function(){if(bvSub==="sp")spCheck();else if(B.step===3&&!B.est.ok)bCheckEst()}};
+
+  /* ---------- Bivariate sub-tabs ---------- */
+  var bvSub="sc";
+  seg("bvSubSeg","data-v",function(v){
+    bvSub=v;
+    $("bvScatter").style.display=v==="sc"?"":"none";
+    $("bvSpear").style.display=v==="sp"?"":"none";
+    if(v==="sp")spRender();
+  });
+
+  /* ---------- Spearman's rank correlation coefficient (Bivariate sub-tab) ---------- */
+  var SP={ctx:0,nsel:"rand",corr:"rand",ties:false,pts:[],n:0,rx:[],ry:[],d:[],dd:[],sd:0,rs:0,cls:"no",tieX:false,tieY:false,
+    step:0,done:[],fl:[],F:{},help:false,msg:null,celebrated:false};
+  var SPNAMES=["Rank x","Rank y","Find d","Find d²","Σd²","Calculate rₛ","Interpret"];
+  var SPTITLE=["Rank the x values","Rank the y values","Find the differences, d","Square each difference","Add up the d² column","Calculate Spearman's rank coefficient","Interpret the result"];
+  var SPWHY={sp:"The two rankings agree closely: a high x tends to go with a high y.",
+    wp:"The two rankings tend to agree, but not closely.",
+    no:"There is no clear link between the two rankings.",
+    wn:"The two rankings tend to be opposite, but not closely.",
+    sn:"The two rankings are nearly opposite: a high x tends to go with a low y."};
+  function spRank(a){
+    return a.map(function(v){
+      var lt=0,eq=0;
+      a.forEach(function(w){if(w<v-1e-9)lt++;else if(Math.abs(w-v)<1e-9)eq++});
+      return lt+(eq+1)/2;
+    });
+  }
+  function spRs(p){
+    var n=p.length,rx=spRank(p.map(function(q){return q.x})),ry=spRank(p.map(function(q){return q.y})),s=0,i;
+    for(i=0;i<n;i++)s+=(rx[i]-ry[i])*(rx[i]-ry[i]);
+    return 1-6*s/(n*(n*n-1));
+  }
+  function spMax(a){
+    var m=0;
+    a.forEach(function(v){var c=0;a.forEach(function(w){if(Math.abs(w-v)<1e-9)c++});if(c>m)m=c});
+    return m;
+  }
+  function spClass(r){var a=Math.abs(r);if(a<0.3)return "no";return (a>=0.7?"s":"w")+(r>0?"p":"n")}
+  function spR2(v){return (Math.round(v*100)/100).toFixed(2).replace("-","−")}
+  function spShow(v){return String(v).replace("-","−")}
+  function spRnd(n){return Math.floor(Math.random()*n)}
+  function spCalc(){
+    var n=SP.pts.length,s=0;
+    SP.n=n;
+    SP.rx=spRank(SP.pts.map(function(p){return p.x}));
+    SP.ry=spRank(SP.pts.map(function(p){return p.y}));
+    SP.d=SP.rx.map(function(r,i){return cRound(r-SP.ry[i],4)});
+    SP.dd=SP.d.map(function(d){return cRound(d*d,4)});
+    SP.dd.forEach(function(v){s+=v});
+    SP.sd=cRound(s,4);
+    SP.rs=1-6*SP.sd/(n*(n*n-1));
+    SP.cls=spClass(SP.rs);
+    SP.tieX=SP.rx.some(function(r){return r%1!==0});
+    SP.tieY=SP.ry.some(function(r){return r%1!==0});
+  }
+  function spGenerate(){
+    closeOverlay();
+    var c=BCTX[SP.ctx],kind=SP.corr,i,tries=0,cand=[],ok,inBand;
+    if(kind==="rand")kind=["sp","wp","no","wn","sn"][spRnd(5)];
+    var bands={sp:[0.8,0.98],wp:[0.4,0.6],no:[-0.15,0.15],wn:[-0.6,-0.4],sn:[-0.98,-0.8]},band=bands[kind];
+    var n=SP.nsel==="rand"?6+spRnd(5):+SP.nsel;
+    var xs=c.xmax-c.xmin,ys=c.ymax-c.ymin,xm=(c.xmin+c.xmax)/2,ym=(c.ymin+c.ymax)/2;
+    var gx=Math.floor(xs/c.xr+1e-9)+1,gy=Math.floor(ys/c.yr+1e-9)+1;
+    if(!SP.ties)n=Math.min(n,gx,gy);
+    n=Math.max(3,n);
+    var grid=[];
+    for(i=0;i<gx;i++)grid.push(cRound(c.xmin+i*c.xr,6));
+    do{
+      tries++;
+      var g=grid.slice().sort(function(){return Math.random()-0.5}),r0=band[0]+Math.random()*(band[1]-band[0]);
+      cand=[];
+      for(i=0;i<n;i++)cand.push({x:i<g.length?g[i]:grid[spRnd(grid.length)],y:0});
+      cand.forEach(function(p){
+        var zx=(p.x-xm)/(xs/Math.sqrt(12)),zy=r0*zx+Math.sqrt(Math.max(0,1-r0*r0))*bGauss(),y=ym+zy*(ys/3.5);
+        p.y=Math.max(c.ymin,Math.min(c.ymax,Math.round(y/c.yr)*c.yr));
+      });
+      ok=spMax(cand.map(function(p){return p.y}))<=1&&(n>g.length||spMax(cand.map(function(p){return p.x}))<=1);
+      if(ok&&SP.ties){
+        var tx=Math.random()<0.5,ty=!tx||Math.random()<0.4,a=spRnd(n),b,a2,b2;
+        do{b=spRnd(n)}while(b===a);
+        if(tx)cand[b].x=cand[a].x;
+        if(ty){
+          a2=spRnd(n);
+          do{b2=spRnd(n)}while(b2===a2||(tx&&((a2===a&&b2===b)||(a2===b&&b2===a))));
+          cand[b2].y=cand[a2].y;
+        }
+      }
+      var r=spRs(cand);
+      inBand=r>=band[0]-1e-9&&r<=band[1]+1e-9;
+    }while(!(ok&&inBand)&&tries<4000);
+    SP.pts=cand.map(function(p){return {x:p.x,y:p.y}});
+    SP.step=0;SP.done=SPNAMES.map(function(){return false});SP.fl=SPNAMES.map(function(){return null});
+    SP.F={};SP.help=false;SP.msg=null;SP.celebrated=false;
+    spCalc();
+    $("spTitle").textContent=c.desc.replace(/\{n\}/g,SP.n);
+    spRender();
+  }
+  function spMk(key,exp,neg){return {key:key,exp:exp,v:"",ok:false,neg:!!neg,step:0}}
+  function spEnsure(s){
+    if(s>=6||SP.fl[s])return;
+    var L=[],i,n=SP.n,w6=6*SP.sd,wn=n*(n*n-1);
+    if(s===0)for(i=0;i<n;i++)L.push(spMk("rx:"+i,SP.rx[i]));
+    else if(s===1)for(i=0;i<n;i++)L.push(spMk("ry:"+i,SP.ry[i]));
+    else if(s===2)for(i=0;i<n;i++)L.push(spMk("d:"+i,SP.d[i],true));
+    else if(s===3)for(i=0;i<n;i++)L.push(spMk("dd:"+i,SP.dd[i]));
+    else if(s===4)L.push(spMk("sd",SP.sd));
+    else L=[spMk("w6",w6),spMk("wn",wn),spMk("wf",w6/wn),spMk("wr",SP.rs,true)];
+    L.forEach(function(f){f.step=s;SP.F[f.key]=f});
+    SP.fl[s]={f:L,i:0};
+  }
+  function spAct(){
+    var s=SP.step;
+    if(s>=6||SP.done[s])return null;
+    spEnsure(s);
+    var fl=SP.fl[s],f=fl.f[fl.i];
+    return f&&!f.ok?f:null;
+  }
+  function spExpStr(f){return (f.key==="wf"||f.key==="wr")?String(cRound(f.exp,2)):String(cRound(f.exp,4))}
+  function spBox(key){
+    var f=SP.F[key];if(!f)return "";
+    if(f.ok)return "<span class='abox sm ok'>"+spShow(f.v)+"</span>";
+    var live=f.step===SP.step&&!SP.done[SP.step],fl=SP.fl[SP.step],act=live&&fl&&fl.f[fl.i]===f;
+    return "<span class='fcell'><span class='abox sm"+(act?" active":"")+"'"+(live?" data-spf='"+key+"'":"")+">"+spShow(f.v)+"</span>"+
+      (act?"<button class='lifebelt sm' data-sph='"+key+"' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>":"")+"</span>";
+  }
+  function spTable(){
+    var c=BCTX[SP.ctx],n=SP.n,i,h,a=spAct(),curRow=a&&a.key.indexOf(":")>0?+a.key.split(":")[1]:-1,
+        cx=!!SP.fl[0],cy=!!SP.fl[1],cd=!!SP.fl[2],cq=!!SP.fl[3];
+    h="<table class='sptab'><tr><th>#</th><th>"+esc(c.xn)+(c.xu?"<br>("+esc(c.xu)+")":"")+"<br><i>x</i></th><th>"+esc(c.yn)+(c.yu?"<br>("+esc(c.yu)+")":"")+"<br><i>y</i></th>";
+    if(cx)h+="<th>Rank<br>of <i>x</i></th>";
+    if(cy)h+="<th>Rank<br>of <i>y</i></th>";
+    if(cd)h+="<th><i>d</i></th>";
+    if(cq)h+="<th><i>d</i>²</th>";
+    h+="</tr>";
+    for(i=0;i<n;i++){
+      h+="<tr class='"+(i===curRow?"cur":"")+"'><td>"+(i+1)+"</td><td>"+SP.pts[i].x+"</td><td>"+SP.pts[i].y+"</td>";
+      if(cx)h+="<td>"+spBox("rx:"+i)+"</td>";
+      if(cy)h+="<td>"+spBox("ry:"+i)+"</td>";
+      if(cd)h+="<td>"+spBox("d:"+i)+"</td>";
+      if(cq)h+="<td>"+spBox("dd:"+i)+"</td>";
+      h+="</tr>";
+    }
+    if(SP.fl[4])h+="<tr class='tot'><td colspan='"+(3+(cx?1:0)+(cy?1:0)+(cd?1:0))+"' style='text-align:right'>Σ<i>d</i>² =</td><td>"+spBox("sd")+"</td></tr>";
+    return h+"</table>";
+  }
+  function spPills(){
+    var h="";
+    SPNAMES.forEach(function(nm,i){
+      var locked=i>0&&!SP.done[i-1];
+      h+="<button class='pill"+(SP.step===i?" active":"")+(SP.done[i]?" done":"")+(locked&&!SP.done[i]?" locked":"")+"' data-sps='"+i+"'>"+(SP.done[i]?"✓ ":(i+1)+" ")+nm+"</button>";
+    });
+    return h;
+  }
+  function spKeypad(f){
+    var h="<div class='kp' style='margin-top:10px'>";
+    ["7","8","9","4","5","6","1","2","3",".","0","back"].forEach(function(k){h+="<button data-k='"+k+"'>"+(k==="back"?"⌫":k)+"</button>"});
+    if(f.neg)h+="<button data-k='-' style='grid-column:span 3;font-size:1.2rem'>− (minus sign)</button>";
+    return h+"<button class='wide' data-k='enter'>Check ✓</button></div>";
+  }
+  function spSorted(col){
+    var vals=SP.pts.map(function(p){return p[col]}).sort(numAsc),h="<div class='lbl'>The <i>"+col+"</i> values in order, smallest first, with their positions</div><div class='numrow sorted'>";
+    vals.forEach(function(v,i){h+="<span class='nchip static'>"+v+"<span class='pos'>"+(i+1)+"</span></span>"});
+    return h+"</div>";
+  }
+  function spFFBar(){return (SP.done[SP.step])?"":ffBar(false,true)}
+  function spBody(){
+    var s=SP.step,done=SP.done[s],c=BCTX[SP.ctx],n=SP.n,rsT="r<sub>s</sub>",h="<div class='stepin'><h3>Step "+(s+1)+" – "+SPTITLE[s]+"</h3>",a;
+    if(s===0||s===1){
+      var col=s===0?"x":"y",nm=(s===0?c.xn:c.yn).toLowerCase(),tied=s===0?SP.tieX:SP.tieY;
+      h+="<p>Spearman's rank correlation coefficient, "+rsT+", checks how well two <b>rankings</b> agree. First rank the <b>"+esc(nm)+"</b> (<i>"+col+"</i>) values. <b>Rank 1</b> goes to the <b>smallest</b> value and rank "+n+" to the largest.</p>";
+      if(tied)h+="<div class='warn'>⚠ Two of these values are <b>equal</b> (a <b>tie</b>). They share the ranks they would have taken, and each gets the <b>average</b>. For example, two values tied for 3rd and 4th place both get rank <b>3.5</b>.</div>";
+      if(!done){
+        h+="<p>Tap a box in the table and type the rank for each row.</p>";
+        h+="<button class='btn sec' data-spa='help' style='padding:6px 14px;font-size:.95rem'>"+(SP.help?"Hide":"Show")+" the values in order</button>";
+        if(SP.help)h+=spSorted(col);
+      }else h+="<p class='okmsg'>✓ All the <i>"+col+"</i> values are ranked.</p>";
+    }else if(s===2){
+      h+="<p><b>d</b> is the <b>difference</b> between the two ranks in each row: <b>d = rank of <i>x</i> − rank of <i>y</i></b>. It can be negative, so use the minus button.</p>";
+      if(done)h+="<p class='okmsg'>✓ All the differences are found. Notice that they add up to 0.</p>";
+    }else if(s===3){
+      h+="<p>Now <b>square</b> each difference (multiply it by itself). Squaring makes every answer positive, and rows where the rankings disagree a lot give big values.</p>";
+      if(done)h+="<p class='okmsg'>✓ Every <i>d</i>² is found.</p>";
+    }else if(s===4){
+      h+="<p><b>Σd²</b> means <i>the sum of the d² column</i>. Add up all "+n+" numbers.</p>";
+      if(done)h+="<p class='okmsg'>✓ Σ<i>d</i>² = "+fmt(SP.sd)+"</p>";
+    }else if(s===5){
+      h+="<div class='sform'>"+rsT+" = 1 − <span class='frac'><span>6Σ<i>d</i>²</span><span><i>n</i>(<i>n</i>² − 1)</span></span></div>";
+      h+="<p>Here <i>n</i> = <b>"+n+"</b> (the number of pairs) and Σ<i>d</i>² = <b>"+fmt(SP.sd)+"</b>. Round to 2 decimal places if you need to.</p>";
+      h+="<div class='frow'><span class='flab' style='min-width:215px'>6 × Σ<i>d</i>² =</span>"+spBox("w6")+"</div>";
+      h+="<div class='frow'><span class='flab' style='min-width:215px'><i>n</i>(<i>n</i>² − 1) =</span>"+spBox("wn")+"</div>";
+      h+="<div class='frow'><span class='flab' style='min-width:215px'>6Σ<i>d</i>² ÷ <i>n</i>(<i>n</i>² − 1) =</span>"+spBox("wf")+"</div>";
+      h+="<div class='frow'><span class='flab' style='min-width:215px'>"+rsT+" = 1 − (your last answer) =</span>"+spBox("wr")+"</div>";
+      if(done)h+="<p class='okmsg'>✓ "+rsT+" = "+spR2(SP.rs)+"</p>";
+    }else{
+      h+="<p>"+rsT+" = <b>"+spR2(SP.rs)+"</b>. Its value is always between <b>−1</b> and <b>+1</b>. Close to +1 means the rankings agree (positive correlation), close to −1 means they are opposite (negative correlation) and close to 0 means there is no link.</p>";
+      h+="<p style='color:var(--muted);font-size:.95rem'>As a guide: beyond ±0.7 is strong, between ±0.3 and ±0.7 is weak, and within ±0.3 is no correlation.</p>";
+      if(!done){
+        h+="<p><b>What does this value tell you?</b></p><div class='bvopts'>"+["sp","wp","no","wn","sn"].map(function(k){return "<button data-spq='"+k+"'>"+CLSNAME[k].replace(" correlation","")+"</button>"}).join("")+"</div>";
+      }else{
+        h+="<p class='okmsg'>✓ "+CLSNAME[SP.cls]+". "+SPWHY[SP.cls]+"</p>";
+        h+="<div class='warn' style='background:#e8f5ec;border-color:var(--green)'><b>Summary:</b> "+rsT+" = "+spR2(SP.rs)+" · "+CLSNAME[SP.cls]+"</div>";
+      }
+    }
+    a=spAct();
+    if(a)h+=spKeypad(a);
+    h+=spFFBar();
+    if(SP.msg)h+="<div class='fmsg "+SP.msg.type+"'>"+SP.msg.text+"</div>";
+    if(done){
+      if(s<6)h+="<div style='margin-top:10px'><button class='btn go' data-spa='next'>Next: "+SPNAMES[s+1]+" →</button></div>";
+      else h+="<div style='margin-top:10px'><button class='btn go' data-spa='again'>New data</button></div>";
+    }
+    return h+"</div>";
+  }
+  function spRender(){
+    if(!SP.pts.length)return;
+    spEnsure(SP.step);
+    $("spSteps").innerHTML=spPills();
+    $("spTable").innerHTML=spTable();
+    $("spBody").innerHTML=spBody();
+  }
+  function spFinish(s){
+    SP.done[s]=true;SP.msg=null;
+    spRender();
+    if(SP.done.every(function(x){return x})&&!SP.celebrated)spCelebrate();
+  }
+  function spCelebrate(){
+    SP.celebrated=true;
+    $("celSub").textContent="You've calculated and interpreted Spearman's rank correlation coefficient.";
+    $("modeText").textContent="rₛ = "+spR2(SP.rs)+" · "+CLSNAME[SP.cls];
+    $("thinkText").textContent="Think: what would rₛ = +1 tell you about the two rankings? Does a strong correlation prove that one thing causes the other?";
+    showOv();confetti();
+  }
+  function spOK(f,val){
+    if(f.key==="wf"||f.key==="wr")return Math.abs(val-f.exp)<=0.0055;
+    return Math.abs(val-f.exp)<1e-6;
+  }
+  function spHint(f,val){
+    var p=f.key.split(":"),k=p[0],i=+p[1],pt,col,v,lt,eq,tail=(f.tries>=2?" Tap 🛟 if you are stuck.":"");
+    if(k==="rx"||k==="ry"){
+      col=k==="rx"?"x":"y";pt=SP.pts[i];v=pt[col];lt=0;eq=0;
+      SP.pts.forEach(function(q){if(q[col]<v-1e-9)lt++;else if(Math.abs(q[col]-v)<1e-9)eq++});
+      if(eq>1)return "Not quite – "+v+" appears more than once, so it is tied. Work out which ranks the tied values would share, then give each the average."+tail;
+      return "Not quite – rank 1 is the smallest. Count how many values are smaller than "+v+", then add 1."+tail;
+    }
+    if(k==="d")return (Math.abs(Math.abs(val)-Math.abs(f.exp))<1e-9&&f.exp!==0?"Right size, but check the sign – ":"Not quite – ")+"<i>d</i> = rank of <i>x</i> − rank of <i>y</i> for this row."+tail;
+    if(k==="dd")return "Not quite – multiply <i>d</i> by itself. A negative number squared is positive."+tail;
+    if(k==="sd")return "Not quite – add up every number in the <i>d</i>² column."+tail;
+    if(k==="w6")return "Not quite – multiply Σ<i>d</i>² by 6."+tail;
+    if(k==="wn")return "Not quite – work out <i>n</i>² first, take away 1, then multiply by <i>n</i>."+tail;
+    if(k==="wf")return Math.abs(val-f.exp)<0.02?"Nearly! Check your rounding.":"Not quite – divide your 6Σ<i>d</i>² answer by your <i>n</i>(<i>n</i>² − 1) answer."+tail;
+    return Math.abs(val-f.exp)<0.02?"Nearly! Check your rounding (2 decimal places).":"Not quite – take your fraction away from 1. The answer can be negative."+tail;
+  }
+  function spCheck(){
+    var f=spAct();if(!f)return;
+    var val=parseFloat(f.v);
+    if(f.v===""||isNaN(val)){SP.msg={type:"bad",text:"Type your answer first."};spRender();return}
+    if(!spOK(f,val)){f.tries=(f.tries||0)+1;SP.msg={type:"bad",text:spHint(f,val)};f.v="";spRender();return}
+    f.ok=true;
+    var fl=SP.fl[SP.step],nx=-1,k;
+    for(k=1;k<=fl.f.length;k++){var j=(fl.i+k)%fl.f.length;if(!fl.f[j].ok){nx=j;break}}
+    if(nx<0){spFinish(SP.step);return}
+    fl.i=nx;SP.msg={type:"good",text:"✓ Correct!"};spRender();
+  }
+  function spKey(k){
+    var f=spAct();if(!f)return;
+    if(k==="enter"){spCheck();return}
+    if(k==="back")f.v=f.v.slice(0,-1);
+    else if(k==="-"||k==="−"){if(f.neg)f.v=f.v.charAt(0)==="-"?f.v.slice(1):"-"+f.v}
+    else if(k==="."){if(f.v.indexOf(".")<0&&f.v.length<8)f.v+=((f.v===""||f.v==="-")?"0.":".")}
+    else if(/^[0-9]$/.test(k)&&f.v.length<8)f.v+=k;
+    SP.msg=null;spRender();
+  }
+  function spFocus(key){
+    var fl=SP.fl[SP.step],f=SP.F[key];
+    if(!fl||!f||f.ok||f.step!==SP.step)return;
+    fl.i=fl.f.indexOf(f);SP.msg=null;spRender();
+  }
+  function spPick(k){
+    if(k===SP.cls){spFinish(6);return}
+    var dir=function(q){return q==="no"?0:(q[1]==="p"?1:-1)};
+    SP.msg={type:"bad",text:dir(k)!==dir(SP.cls)?"Look at the sign of "+"r<sub>s</sub>"+": positive means the rankings agree, negative means they are opposite, and close to zero means no link.":"The direction is right, but check the strength: close to ±1 is strong, around ±0.5 is weak."};
+    spRender();
+  }
+  function spFF(){
+    var s=SP.step;
+    if(SP.done[s])return;
+    SP.msg=null;
+    if(s<6){
+      spEnsure(s);
+      SP.fl[s].f.forEach(function(f){if(!f.ok){f.v=spExpStr(f);f.ok=true}});
+    }
+    spFinish(s);
+  }
+  function spHandle(e){
+    var b=e.target.closest("[data-ff],[data-spa],[data-k],[data-spf],[data-sph],[data-spq],[data-sps]");if(!b)return;
+    if(b.getAttribute("data-ff")){spFF();return}
+    var a=b.getAttribute("data-spa"),k=b.getAttribute("data-k"),f=b.getAttribute("data-spf"),h=b.getAttribute("data-sph"),q=b.getAttribute("data-spq"),st=b.getAttribute("data-sps");
+    if(a){
+      if(a==="next"){SP.step=Math.min(6,SP.step+1);SP.msg=null;SP.help=false;spRender()}
+      else if(a==="help"){SP.help=!SP.help;spRender()}
+      else if(a==="again")spGenerate();
+    }else if(k!==null){
+      if(k==="enter")spCheck();else spKey(k);
+    }else if(h!==null){
+      var fl=SP.fl[SP.step],ff=SP.F[h];
+      if(fl&&ff&&!ff.ok){ff.v=spExpStr(ff);fl.i=fl.f.indexOf(ff);SP.msg=null;spRender()}
+    }else if(f!==null)spFocus(f);
+    else if(q!==null)spPick(q);
+    else if(st!==null){
+      var i=+st;
+      if(i>0&&!SP.done[i-1]){SP.msg={type:"bad",text:"Finish the earlier steps first."};spRender();return}
+      SP.step=i;SP.msg=null;SP.help=false;spRender();
+    }
+  }
+  $("spBody").addEventListener("click",spHandle);
+  $("spTable").addEventListener("click",spHandle);
+  $("spSteps").addEventListener("click",spHandle);
+  $("spContext").addEventListener("change",function(){SP.ctx=+this.value;spGenerate()});
+  $("spN").addEventListener("change",function(){SP.nsel=this.value;spGenerate()});
+  $("spCorr").addEventListener("change",function(){SP.corr=this.value;spGenerate()});
+  $("spTies").addEventListener("change",function(){SP.ties=this.checked;spGenerate()});
+  $("spGen").addEventListener("click",spGenerate);
+  function refreshSpSelect(){
+    var sel=$("spContext");sel.innerHTML="";
+    BCTX.forEach(function(c,i){var o=document.createElement("option");o.value=i;o.textContent=c.title;sel.appendChild(o)});
+    if(SP.ctx>=BCTX.length)SP.ctx=0;
+    sel.value=SP.ctx;
+  }
+
 
   /* ----- settings for bivariate contexts ----- */
   function saveBiv(){
@@ -3623,8 +4002,8 @@
       if(!c.yn.trim())c.yn="y";
     });
     saveBiv();refreshBSelect();
-    if(bDirty==="struct")bGenerate();
-    else if(bDirty){$("bTitle").textContent=BCTX[B.ctx].desc.replace(/\{n\}/g,B.pts.length);bRender()}
+    if(bDirty==="struct"){bGenerate();spGenerate()}
+    else if(bDirty){$("bTitle").textContent=BCTX[B.ctx].desc.replace(/\{n\}/g,B.pts.length);bRender();$("spTitle").textContent=BCTX[SP.ctx].desc.replace(/\{n\}/g,SP.n);spRender()}
     bDirty=null;
   }
   $("bctxRows").addEventListener("input",function(e){
@@ -3775,6 +4154,7 @@
   cGenerate();
   refreshBSelect();
   bGenerate();
+  spGenerate();
   generate();
 })();
 </script>
