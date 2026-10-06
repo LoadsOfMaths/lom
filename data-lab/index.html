@@ -481,7 +481,7 @@
     </div>
   </section>
   <section class="panel" id="p-biv">
-    <div class="card subseg"><span class="seg" id="bvSubSeg"><button data-v="sc" class="on">Scatter graph</button><button data-v="sp">Spearman's rank</button></span> <span style="color:var(--muted);font-size:.9rem;margin-left:8px">Spearman's rank is a GCSE Statistics extension</span></div>
+    <div class="card subseg"><span class="seg" id="bvSubSeg"><button data-v="sc" class="on">Scatter graph</button><button data-v="sp">Spearman's rank</button><button data-v="pm">Pearson's PMCC</button></span> <span style="color:var(--muted);font-size:.9rem;margin-left:8px">Spearman's rank and Pearson's PMCC are GCSE Statistics extensions</span></div>
     <div id="bvScatter">
     <div class="card">
       <div class="row">
@@ -508,6 +508,35 @@
         <div id="bBody"></div>
       </div>
     </div>
+    </div>
+    <div id="bvPearson" style="display:none">
+      <div class="card">
+        <div class="row">
+          <label class="f">Context
+            <select id="pmContext"></select>
+          </label>
+          <label class="f">Number of points
+            <select id="pmN"><option value="rand" selected>Random (6–8)</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select>
+          </label>
+          <label class="f">Correlation
+            <select id="pmCorr"><option value="rand" selected>Random</option><option value="sp">Strong positive</option><option value="wp">Weak positive</option><option value="no">No correlation</option><option value="wn">Weak negative</option><option value="sn">Strong negative</option></select>
+          </label>
+          <button class="btn go" id="pmGen" style="align-self:flex-end">Generate data</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 id="pmTitle"></h2>
+        <div class="spgrid">
+          <div>
+            <div class="lbl">The data</div>
+            <div class="spwrap" id="pmTable"></div>
+          </div>
+          <div>
+            <div class="pills" id="pmSteps"></div>
+            <div id="pmBody"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="bvSpear" style="display:none">
       <div class="card">
@@ -886,7 +915,7 @@
     confetti();
   }
   $("keep").addEventListener("click",closeOverlay);
-  $("again").addEventListener("click",function(){if(curTab==="disc")dGenerate();else if(curTab==="sft")sGenerate();else if(curTab==="gdisc")gGenerate();else if(curTab==="cont")cGenerate();else if(curTab==="biv"){if(bvSub==="sp")spGenerate();else bGenerate()}else generate()});
+  $("again").addEventListener("click",function(){if(curTab==="disc")dGenerate();else if(curTab==="sft")sGenerate();else if(curTab==="gdisc")gGenerate();else if(curTab==="cont")cGenerate();else if(curTab==="biv"){if(bvSub==="sp")spGenerate();else if(bvSub==="pm")pmGenerate();else bGenerate()}else generate()});
 
   var cv=$("confetti"),cx=cv.getContext("2d"),parts=[],raf=null,endAt=0;
   function confetti(){
@@ -1371,7 +1400,7 @@
     var gd=GUIDES[curTab],isD=curTab==="disc";
     if(isD?!curF():!(gd&&gd.active()))return;
     var tk=isD?typeKey:gd.typeKey,ck=isD?checkField:gd.check;
-    if(/^[0-9]$/.test(e.key)||e.key==="."||(e.key==="-"&&curTab==="biv"&&bvSub==="sp"))tk(e.key);
+    if(/^[0-9]$/.test(e.key)||e.key==="."||(e.key==="-"&&curTab==="biv"&&(bvSub==="sp"||bvSub==="pm")))tk(e.key);
     else if(e.key==="Backspace"){e.preventDefault();tk("back")}
     else if(e.key==="Enter"){e.preventDefault();ck()}
   });
@@ -1437,7 +1466,7 @@
   }
   function applyFF(){
     $("ffTally").style.display=OPT.ff?"":"none";
-    renderStep();ftS.render();ftG.render();ftC.render();hRender();kRender();bxRender();slRender();bRender();spRender();
+    renderStep();ftS.render();ftG.render();ftC.render();hRender();kRender();bxRender();slRender();bRender();spRender();pmRender();
   }
   $("optFF").addEventListener("change",function(){OPT.ff=this.checked;saveOpts();applyFF()});
   $("optMistakes").addEventListener("change",function(){OPT.mistakes=this.checked;saveOpts();renderStep()});
@@ -3315,7 +3344,7 @@
     BCTX.forEach(function(c,i){var o=document.createElement("option");o.value=i;o.textContent=c.title;sel.appendChild(o)});
     if(B.ctx>=BCTX.length)B.ctx=0;
     sel.value=B.ctx;
-    refreshSpSelect();
+    refreshSpSelect();refreshPmSelect();
   }
   function bGenerate(){
     clearTimeout(B.tm);closeOverlay();
@@ -3631,7 +3660,7 @@
   $("bCorr").addEventListener("change",function(){B.corr=this.value;bGenerate()});
   $("bOut").addEventListener("change",function(){B.outlier=this.checked;bGenerate()});
   $("bGen").addEventListener("click",bGenerate);
-  GUIDES.biv={active:function(){return bvSub==="sp"?!!spAct():bActive()},typeKey:function(k){if(bvSub==="sp")spKey(k);else bKey(k)},check:function(){if(bvSub==="sp")spCheck();else if(B.step===3&&!B.est.ok)bCheckEst()}};
+  GUIDES.biv={active:function(){return bvSub==="sp"?!!spAct():bvSub==="pm"?!!pmAct():bActive()},typeKey:function(k){if(bvSub==="sp")spKey(k);else if(bvSub==="pm")pmKey(k);else bKey(k)},check:function(){if(bvSub==="sp")spCheck();else if(bvSub==="pm")pmCheck();else if(B.step===3&&!B.est.ok)bCheckEst()}};
 
   /* ---------- Bivariate sub-tabs ---------- */
   var bvSub="sc";
@@ -3639,7 +3668,9 @@
     bvSub=v;
     $("bvScatter").style.display=v==="sc"?"":"none";
     $("bvSpear").style.display=v==="sp"?"":"none";
+    $("bvPearson").style.display=v==="pm"?"":"none";
     if(v==="sp")spRender();
+    if(v==="pm")pmRender();
   });
 
   /* ---------- Spearman's rank correlation coefficient (Bivariate sub-tab) ---------- */
@@ -3962,6 +3993,283 @@
   }
 
 
+
+  /* ---------- Pearson's PMCC (Bivariate sub-tab) ---------- */
+  var PM={ctx:0,nsel:"rand",corr:"rand",pts:[],n:0,xx:[],yy:[],xy:[],tx:0,ty:0,txx:0,tyy:0,txy:0,Sxx:0,Syy:0,Sxy:0,p1:0,p2:0,r:0,cls:"no",neg:false,
+    step:0,done:[],fl:[],F:{},msg:null,celebrated:false};
+  var PMNAMES=["x²","y²","xy","Totals","Sxx, Syy, Sxy","Calculate r","Interpret"];
+  var PMTITLE=["Square each x","Square each y","Multiply x by y for each row","Add up the columns","Find Sxx, Syy and Sxy","Calculate the correlation coefficient, r","Interpret the result"];
+  function pmCalc(){
+    var n=PM.pts.length,i,p;
+    PM.n=n;PM.tx=0;PM.ty=0;PM.txx=0;PM.tyy=0;PM.txy=0;PM.xx=[];PM.yy=[];PM.xy=[];
+    for(i=0;i<n;i++){
+      p=PM.pts[i];
+      PM.xx.push(cRound(p.x*p.x,6));PM.yy.push(cRound(p.y*p.y,6));PM.xy.push(cRound(p.x*p.y,6));
+      PM.tx+=p.x;PM.ty+=p.y;PM.txx+=PM.xx[i];PM.tyy+=PM.yy[i];PM.txy+=PM.xy[i];
+    }
+    PM.tx=cRound(PM.tx,6);PM.ty=cRound(PM.ty,6);PM.txx=cRound(PM.txx,6);PM.tyy=cRound(PM.tyy,6);PM.txy=cRound(PM.txy,6);
+    PM.Sxx=PM.txx-PM.tx*PM.tx/n;PM.Syy=PM.tyy-PM.ty*PM.ty/n;PM.Sxy=PM.txy-PM.tx*PM.ty/n;
+    PM.p1=PM.Sxx*PM.Syy;PM.p2=Math.sqrt(PM.p1);PM.r=PM.Sxy/PM.p2;PM.cls=spClass(PM.r);
+  }
+  function pmGenerate(){
+    closeOverlay();
+    var c=BCTX[PM.ctx],kind=PM.corr,i,tries=0,cand=[];
+    if(kind==="rand")kind=["sp","wp","no","wn","sn"][spRnd(5)];
+    var bands={sp:[0.8,0.98],wp:[0.4,0.6],no:[-0.15,0.15],wn:[-0.6,-0.4],sn:[-0.98,-0.8]},band=bands[kind];
+    var n=PM.nsel==="rand"?6+spRnd(3):+PM.nsel;
+    var xs=c.xmax-c.xmin,ys=c.ymax-c.ymin,xm=(c.xmin+c.xmax)/2,ym=(c.ymin+c.ymax)/2;
+    var gx=Math.floor(xs/c.xr+1e-9)+1,grid=[];
+    n=Math.max(4,Math.min(n,gx));
+    for(i=0;i<gx;i++)grid.push(cRound(c.xmin+i*c.xr,6));
+    var ok;
+    do{
+      tries++;
+      var g=grid.slice().sort(function(){return Math.random()-0.5}),r0=band[0]+Math.random()*(band[1]-band[0]);
+      cand=[];
+      for(i=0;i<n;i++)cand.push({x:g[i],y:0});
+      cand.forEach(function(p){
+        var zx=(p.x-xm)/(xs/Math.sqrt(12)),zy=r0*zx+Math.sqrt(Math.max(0,1-r0*r0))*bGauss(),y=ym+zy*(ys/3.5);
+        p.y=Math.max(c.ymin,Math.min(c.ymax,Math.round(y/c.yr)*c.yr));
+      });
+      var st=bStats(cand);
+      ok=st.r>=band[0]-1e-9&&st.r<=band[1]+1e-9;
+    }while(!ok&&tries<4000);
+    PM.pts=cand;
+    PM.neg=c.xmin<0||c.ymin<0;
+    PM.step=0;PM.done=PMNAMES.map(function(){return false});PM.fl=PMNAMES.map(function(){return null});
+    PM.F={};PM.msg=null;PM.celebrated=false;
+    pmCalc();
+    $("pmTitle").textContent=c.desc.replace(/\{n\}/g,PM.n);
+    pmRender();
+  }
+  function pmMk(key,exp,neg,abs,rel){return {key:key,exp:exp,v:"",ok:false,neg:!!neg,abs:abs,rel:rel||0,step:0,tries:0}}
+  function pmEnsure(s){
+    if(s>=6||PM.fl[s])return;
+    var L=[],i,n=PM.n,ex=function(v){return Number.isInteger(v)?1e-6:0.0055},ng=PM.neg;
+    if(s===0)for(i=0;i<n;i++)L.push(pmMk("xx:"+i,PM.xx[i],false,ex(PM.xx[i])));
+    else if(s===1)for(i=0;i<n;i++)L.push(pmMk("yy:"+i,PM.yy[i],false,ex(PM.yy[i])));
+    else if(s===2)for(i=0;i<n;i++)L.push(pmMk("xy:"+i,PM.xy[i],ng,ex(PM.xy[i])));
+    else if(s===3)L=[pmMk("tx",PM.tx,ng,ex(PM.tx)),pmMk("ty",PM.ty,ng,ex(PM.ty)),pmMk("txx",PM.txx,false,ex(PM.txx)),pmMk("tyy",PM.tyy,false,ex(PM.tyy)),pmMk("txy",PM.txy,ng,ex(PM.txy))];
+    else if(s===4)L=[pmMk("Sxx",PM.Sxx,false,0.0055),pmMk("Syy",PM.Syy,false,0.0055),pmMk("Sxy",PM.Sxy,true,0.0055)];
+    else L=[pmMk("p1",PM.p1,false,0.0055,0.005),pmMk("p2",PM.p2,false,0.0055,0.0025),pmMk("r",PM.r,true,0.0105)];
+    L.forEach(function(f){f.step=s;PM.F[f.key]=f});
+    PM.fl[s]={f:L,i:0};
+  }
+  function pmAct(){
+    var s=PM.step;
+    if(s>=6||PM.done[s])return null;
+    pmEnsure(s);
+    var fl=PM.fl[s],f=fl.f[fl.i];
+    return f&&!f.ok?f:null;
+  }
+  function pmExpStr(f){return Number.isInteger(f.exp)?String(f.exp):String(cRound(f.exp,2))}
+  function pmBox(key){
+    var f=PM.F[key];if(!f)return "";
+    if(f.ok)return "<span class='abox sm ok'>"+spShow(f.v)+"</span>";
+    var live=f.step===PM.step&&!PM.done[PM.step],fl=PM.fl[PM.step],act=live&&fl&&fl.f[fl.i]===f;
+    return "<span class='fcell'><span class='abox sm"+(act?" active":"")+"'"+(live?" data-pmf='"+key+"'":"")+">"+spShow(f.v)+"</span>"+
+      (act?"<button class='lifebelt sm' data-pmh='"+key+"' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>":"")+"</span>";
+  }
+  function pmTable(){
+    var c=BCTX[PM.ctx],n=PM.n,i,h,a=pmAct(),curRow=a&&a.key.indexOf(":")>0?+a.key.split(":")[1]:-1,
+        c1=!!PM.fl[0],c2=!!PM.fl[1],c3=!!PM.fl[2],tot=!!PM.fl[3];
+    h="<table class='sptab'><tr><th>#</th><th>"+esc(c.xn)+(c.xu?"<br>("+esc(c.xu)+")":"")+"<br><i>x</i></th><th>"+esc(c.yn)+(c.yu?"<br>("+esc(c.yu)+")":"")+"<br><i>y</i></th>";
+    if(c1)h+="<th><i>x</i>²</th>";
+    if(c2)h+="<th><i>y</i>²</th>";
+    if(c3)h+="<th><i>xy</i></th>";
+    h+="</tr>";
+    for(i=0;i<n;i++){
+      h+="<tr class='"+(i===curRow?"cur":"")+"'><td>"+(i+1)+"</td><td>"+PM.pts[i].x+"</td><td>"+PM.pts[i].y+"</td>";
+      if(c1)h+="<td>"+pmBox("xx:"+i)+"</td>";
+      if(c2)h+="<td>"+pmBox("yy:"+i)+"</td>";
+      if(c3)h+="<td>"+pmBox("xy:"+i)+"</td>";
+      h+="</tr>";
+    }
+    if(tot){
+      h+="<tr class='tot'><td>Σ</td><td>"+pmBox("tx")+"</td><td>"+pmBox("ty")+"</td>";
+      if(c1)h+="<td>"+pmBox("txx")+"</td>";
+      if(c2)h+="<td>"+pmBox("tyy")+"</td>";
+      if(c3)h+="<td>"+pmBox("txy")+"</td>";
+      h+="</tr>";
+    }
+    return h+"</table>";
+  }
+  function pmPills(){
+    var h="";
+    PMNAMES.forEach(function(nm,i){
+      var locked=i>0&&!PM.done[i-1];
+      h+="<button class='pill"+(PM.step===i?" active":"")+(PM.done[i]?" done":"")+(locked&&!PM.done[i]?" locked":"")+"' data-pms='"+i+"'>"+(PM.done[i]?"✓ ":(i+1)+" ")+nm+"</button>";
+    });
+    return h;
+  }
+  function pmKeypad(f){
+    var h="<div class='kp' style='margin-top:10px'>";
+    ["7","8","9","4","5","6","1","2","3",".","0","back"].forEach(function(k){h+="<button data-k='"+k+"'>"+(k==="back"?"⌫":k)+"</button>"});
+    if(f.neg)h+="<button data-k='-' style='grid-column:span 3;font-size:1.2rem'>− (minus sign)</button>";
+    return h+"<button class='wide' data-k='enter'>Check ✓</button></div>";
+  }
+  function pmN(v){return String(cRound(v,2))}
+  function pmBody(){
+    var s=PM.step,done=PM.done[s],n=PM.n,h="<div class='stepin'><h3>Step "+(s+1)+" – "+PMTITLE[s]+"</h3>",a,
+        lab=function(t){return "<span class='flab' style='min-width:250px'>"+t+"</span>"};
+    if(s===0){
+      h+="<p><b>Pearson's product moment correlation coefficient</b> (PMCC), <i>r</i>, measures how close the points on a scatter graph are to a <b>straight line</b>. It is always between <b>−1</b> and <b>+1</b>. We build it from sums, using a table. First <b>square</b> each <i>x</i> value.</p>";
+      if(!done)h+="<p>Tap a box in the table and type the answer for each row.</p>";else h+="<p class='okmsg'>✓ All the <i>x</i>² values are found.</p>";
+    }else if(s===1){
+      h+="<p>Now <b>square</b> each <i>y</i> value.</p>";
+      if(done)h+="<p class='okmsg'>✓ All the <i>y</i>² values are found.</p>";
+    }else if(s===2){
+      h+="<p>Next <b>multiply</b> <i>x</i> by <i>y</i> in each row."+(PM.neg?" Use the minus button for negative answers.":"")+"</p>";
+      if(done)h+="<p class='okmsg'>✓ All the <i>xy</i> values are found.</p>";
+    }else if(s===3){
+      h+="<p>Add up each column. <b>Σ</b> means <i>the sum of</i>. Fill in the bottom row of the table: Σ<i>x</i>, Σ<i>y</i>, Σ<i>x</i>², Σ<i>y</i>² and Σ<i>xy</i>.</p>";
+      if(done)h+="<p class='okmsg'>✓ All the totals are found.</p>";
+    }else if(s===4){
+      h+="<p>These three quantities measure how spread out the data is. Give answers to 2 decimal places if you need to.</p>";
+      h+="<div class='sform' style='font-size:1.05rem;line-height:1.7'>S<sub>xx</sub> = Σ<i>x</i>² − (Σ<i>x</i>)² ÷ <i>n</i><br>S<sub>yy</sub> = Σ<i>y</i>² − (Σ<i>y</i>)² ÷ <i>n</i><br>S<sub>xy</sub> = Σ<i>xy</i> − (Σ<i>x</i> × Σ<i>y</i>) ÷ <i>n</i></div>";
+      h+="<p style='color:var(--muted);font-size:.95rem'><i>n</i> = "+n+" · Σ<i>x</i> = "+fmt(PM.tx)+" · Σ<i>y</i> = "+fmt(PM.ty)+" · Σ<i>x</i>² = "+fmt(PM.txx)+" · Σ<i>y</i>² = "+fmt(PM.tyy)+" · Σ<i>xy</i> = "+fmt(PM.txy)+"</p>";
+      h+="<div class='frow'>"+lab("S<sub>xx</sub> =")+pmBox("Sxx")+"</div>";
+      h+="<div class='frow'>"+lab("S<sub>yy</sub> =")+pmBox("Syy")+"</div>";
+      h+="<div class='frow'>"+lab("S<sub>xy</sub> =")+pmBox("Sxy")+"</div>";
+      if(done)h+="<p class='okmsg'>✓ S<sub>xx</sub> = "+pmN(PM.Sxx)+", S<sub>yy</sub> = "+pmN(PM.Syy)+", S<sub>xy</sub> = "+pmN(PM.Sxy)+"</p>";
+    }else if(s===5){
+      h+="<div class='sform'><i>r</i> = <span class='frac'><span>S<sub>xy</sub></span><span>√(S<sub>xx</sub> × S<sub>yy</sub>)</span></span></div>";
+      h+="<p style='color:var(--muted);font-size:.95rem'>S<sub>xx</sub> = "+pmN(PM.Sxx)+" · S<sub>yy</sub> = "+pmN(PM.Syy)+" · S<sub>xy</sub> = "+pmN(PM.Sxy)+"</p>";
+      h+="<div class='frow'>"+lab("S<sub>xx</sub> × S<sub>yy</sub> =")+pmBox("p1")+"</div>";
+      h+="<div class='frow'>"+lab("√(S<sub>xx</sub> × S<sub>yy</sub>) =")+pmBox("p2")+"</div>";
+      h+="<div class='frow'>"+lab("<i>r</i> = S<sub>xy</sub> ÷ (your last answer) =")+pmBox("r")+"</div>";
+      if(done)h+="<p class='okmsg'>✓ <i>r</i> = "+spR2(PM.r)+"</p>";
+    }else{
+      h+="<p><i>r</i> = <b>"+spR2(PM.r)+"</b>. The closer <i>r</i> is to <b>+1</b>, the closer the points are to a straight line sloping up; the closer to <b>−1</b>, the closer to a straight line sloping down; and near <b>0</b> there is no linear relationship.</p>";
+      h+="<p style='color:var(--muted);font-size:.95rem'>As a guide: beyond ±0.7 is strong, between ±0.3 and ±0.7 is weak, and within ±0.3 is no correlation.</p>";
+      if(!done){
+        h+="<p><b>What does this value tell you?</b></p><div class='bvopts'>"+["sp","wp","no","wn","sn"].map(function(k){return "<button data-pmq='"+k+"'>"+CLSNAME[k].replace(" correlation","")+"</button>"}).join("")+"</div>";
+      }else{
+        h+="<p class='okmsg'>✓ "+CLSNAME[PM.cls]+". "+CLSWHY[PM.cls]+"</p>";
+        h+="<div class='warn' style='background:#e8f5ec;border-color:var(--green)'><b>Summary:</b> <i>r</i> = "+spR2(PM.r)+" · "+CLSNAME[PM.cls]+"</div>";
+      }
+    }
+    a=pmAct();
+    if(a)h+=pmKeypad(a);
+    if(!done)h+=ffBar(false,true);
+    if(PM.msg)h+="<div class='fmsg "+PM.msg.type+"'>"+PM.msg.text+"</div>";
+    if(done){
+      if(s<6)h+="<div style='margin-top:10px'><button class='btn go' data-pma='next'>Next: "+PMNAMES[s+1]+" →</button></div>";
+      else h+="<div style='margin-top:10px'><button class='btn go' data-pma='again'>New data</button></div>";
+    }
+    return h+"</div>";
+  }
+  function pmRender(){
+    if(!PM.pts.length)return;
+    pmEnsure(PM.step);
+    $("pmSteps").innerHTML=pmPills();
+    $("pmTable").innerHTML=pmTable();
+    $("pmBody").innerHTML=pmBody();
+  }
+  function pmFinish(s){
+    PM.done[s]=true;PM.msg=null;
+    pmRender();
+    if(PM.done.every(function(x){return x})&&!PM.celebrated)pmCelebrate();
+  }
+  function pmCelebrate(){
+    PM.celebrated=true;
+    $("celSub").textContent="You've calculated and interpreted Pearson's correlation coefficient.";
+    $("modeText").textContent="r = "+spR2(PM.r)+" · "+CLSNAME[PM.cls];
+    $("thinkText").textContent="Think: what would the scatter graph look like for this data? Does a strong correlation prove that one thing causes the other?";
+    showOv();confetti();
+  }
+  function pmOK(f,val){return Math.abs(val-f.exp)<=Math.max(f.abs,f.rel*Math.abs(f.exp))}
+  function pmHint(f,val){
+    var k=f.key.split(":")[0],tail=(f.tries>=2?" Tap 🛟 if you are stuck.":"");
+    switch(k){
+      case "xx":return "Not quite – square <i>x</i> (multiply it by itself)."+tail;
+      case "yy":return "Not quite – square <i>y</i> (multiply it by itself)."+tail;
+      case "xy":return "Not quite – multiply <i>x</i> by <i>y</i> for this row."+tail;
+      case "tx":return "Not quite – add up every number in the <i>x</i> column."+tail;
+      case "ty":return "Not quite – add up every number in the <i>y</i> column."+tail;
+      case "txx":return "Not quite – add up every number in the <i>x</i>² column."+tail;
+      case "tyy":return "Not quite – add up every number in the <i>y</i>² column."+tail;
+      case "txy":return "Not quite – add up every number in the <i>xy</i> column."+tail;
+      case "Sxx":return "Not quite – work out (Σ<i>x</i>)² ÷ <i>n</i> first, then take it away from Σ<i>x</i>²."+tail;
+      case "Syy":return "Not quite – work out (Σ<i>y</i>)² ÷ <i>n</i> first, then take it away from Σ<i>y</i>²."+tail;
+      case "Sxy":return "Not quite – work out (Σ<i>x</i> × Σ<i>y</i>) ÷ <i>n</i> first, then take it away from Σ<i>xy</i>. It can be negative."+tail;
+      case "p1":return "Not quite – multiply your S<sub>xx</sub> answer by your S<sub>yy</sub> answer."+tail;
+      case "p2":return "Not quite – use the square root button on your calculator on your last answer."+tail;
+      default:return Math.abs(val-f.exp)<0.03?"Nearly! Check your rounding (2 decimal places).":"Not quite – divide S<sub>xy</sub> by your square root answer. <i>r</i> must be between −1 and +1."+tail;
+    }
+  }
+  function pmCheck(){
+    var f=pmAct();if(!f)return;
+    var val=parseFloat(f.v);
+    if(f.v===""||isNaN(val)){PM.msg={type:"bad",text:"Type your answer first."};pmRender();return}
+    if(!pmOK(f,val)){f.tries++;PM.msg={type:"bad",text:pmHint(f,val)};f.v="";pmRender();return}
+    f.ok=true;
+    var fl=PM.fl[PM.step],nx=-1,k;
+    for(k=1;k<=fl.f.length;k++){var j=(fl.i+k)%fl.f.length;if(!fl.f[j].ok){nx=j;break}}
+    if(nx<0){pmFinish(PM.step);return}
+    fl.i=nx;PM.msg={type:"good",text:"✓ Correct!"};pmRender();
+  }
+  function pmKey(k){
+    var f=pmAct();if(!f)return;
+    if(k==="enter"){pmCheck();return}
+    if(k==="back")f.v=f.v.slice(0,-1);
+    else if(k==="-"||k==="−"){if(f.neg)f.v=f.v.charAt(0)==="-"?f.v.slice(1):"-"+f.v}
+    else if(k==="."){if(f.v.indexOf(".")<0&&f.v.length<15)f.v+=((f.v===""||f.v==="-")?"0.":".")}
+    else if(/^[0-9]$/.test(k)&&f.v.length<15)f.v+=k;
+    PM.msg=null;pmRender();
+  }
+  function pmPick(k){
+    if(k===PM.cls){pmFinish(6);return}
+    var dir=function(q){return q==="no"?0:(q[1]==="p"?1:-1)};
+    PM.msg={type:"bad",text:dir(k)!==dir(PM.cls)?"Look at the sign of <i>r</i>: positive means the points slope up, negative means they slope down, and close to zero means no linear relationship.":"The direction is right, but check the strength: close to ±1 is strong, around ±0.5 is weak."};
+    pmRender();
+  }
+  function pmFF(){
+    var s=PM.step;
+    if(PM.done[s])return;
+    PM.msg=null;
+    if(s<6){
+      pmEnsure(s);
+      PM.fl[s].f.forEach(function(f){if(!f.ok){f.v=pmExpStr(f);f.ok=true}});
+    }
+    pmFinish(s);
+  }
+  function pmHandle(e){
+    var b=e.target.closest("[data-ff],[data-pma],[data-k],[data-pmf],[data-pmh],[data-pmq],[data-pms]");if(!b)return;
+    if(b.getAttribute("data-ff")){pmFF();return}
+    var a=b.getAttribute("data-pma"),k=b.getAttribute("data-k"),f=b.getAttribute("data-pmf"),h=b.getAttribute("data-pmh"),q=b.getAttribute("data-pmq"),st=b.getAttribute("data-pms");
+    if(a){
+      if(a==="next"){PM.step=Math.min(6,PM.step+1);PM.msg=null;pmRender()}
+      else if(a==="again")pmGenerate();
+    }else if(k!==null){
+      if(k==="enter")pmCheck();else pmKey(k);
+    }else if(h!==null){
+      var fl=PM.fl[PM.step],ff=PM.F[h];
+      if(fl&&ff&&!ff.ok){ff.v=pmExpStr(ff);fl.i=fl.f.indexOf(ff);PM.msg=null;pmRender()}
+    }else if(f!==null){
+      var fl2=PM.fl[PM.step],f2=PM.F[f];
+      if(fl2&&f2&&!f2.ok&&f2.step===PM.step){fl2.i=fl2.f.indexOf(f2);PM.msg=null;pmRender()}
+    }else if(q!==null)pmPick(q);
+    else if(st!==null){
+      var i=+st;
+      if(i>0&&!PM.done[i-1]){PM.msg={type:"bad",text:"Finish the earlier steps first."};pmRender();return}
+      PM.step=i;PM.msg=null;pmRender();
+    }
+  }
+  $("pmBody").addEventListener("click",pmHandle);
+  $("pmTable").addEventListener("click",pmHandle);
+  $("pmSteps").addEventListener("click",pmHandle);
+  $("pmContext").addEventListener("change",function(){PM.ctx=+this.value;pmGenerate()});
+  $("pmN").addEventListener("change",function(){PM.nsel=this.value;pmGenerate()});
+  $("pmCorr").addEventListener("change",function(){PM.corr=this.value;pmGenerate()});
+  $("pmGen").addEventListener("click",pmGenerate);
+  function refreshPmSelect(){
+    var sel=$("pmContext");sel.innerHTML="";
+    BCTX.forEach(function(c,i){var o=document.createElement("option");o.value=i;o.textContent=c.title;sel.appendChild(o)});
+    if(PM.ctx>=BCTX.length)PM.ctx=0;
+    sel.value=PM.ctx;
+  }
+
   /* ----- settings for bivariate contexts ----- */
   function saveBiv(){
     try{
@@ -4002,8 +4310,8 @@
       if(!c.yn.trim())c.yn="y";
     });
     saveBiv();refreshBSelect();
-    if(bDirty==="struct"){bGenerate();spGenerate()}
-    else if(bDirty){$("bTitle").textContent=BCTX[B.ctx].desc.replace(/\{n\}/g,B.pts.length);bRender();$("spTitle").textContent=BCTX[SP.ctx].desc.replace(/\{n\}/g,SP.n);spRender()}
+    if(bDirty==="struct"){bGenerate();spGenerate();pmGenerate()}
+    else if(bDirty){$("bTitle").textContent=BCTX[B.ctx].desc.replace(/\{n\}/g,B.pts.length);bRender();$("spTitle").textContent=BCTX[SP.ctx].desc.replace(/\{n\}/g,SP.n);spRender();$("pmTitle").textContent=BCTX[PM.ctx].desc.replace(/\{n\}/g,PM.n);pmRender()}
     bDirty=null;
   }
   $("bctxRows").addEventListener("input",function(e){
@@ -4155,6 +4463,7 @@
   refreshBSelect();
   bGenerate();
   spGenerate();
+  pmGenerate();
   generate();
 })();
 </script>
