@@ -173,6 +173,18 @@
   .slkey{background:#eef3fa;border-radius:10px;padding:6px 12px;display:inline-block;color:var(--navy);font-weight:700;margin-bottom:4px}
   .ffbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:10px;border-top:2px dashed var(--line)}
   .ffbar .ff{font-size:.95rem;padding:7px 14px}
+  .qcard{background:#eef5ff;border:2px solid #c7d9f5;border-radius:12px;padding:12px 16px;margin:10px 0}
+  .qtext{font-size:1.3rem;font-weight:700;color:var(--navy);line-height:1.35}
+  .kqrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .qunit{font-size:1.2rem;font-weight:700;color:var(--navy)}
+  .qyn{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+  .qyn .btn{font-size:1.2rem;padding:12px 26px}
+  .xhrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0}
+  .btn.sec.xhbtn{display:inline-flex;align-items:center;gap:8px}
+  .btn.sec.xhbtn.on{background:#dc2626;color:#fff}
+  .xhval{font-weight:800;font-size:1.15rem;color:#b91c1c;font-variant-numeric:tabular-nums}
+  .xhhint{color:var(--muted);font-size:.95rem}
+  body.xh-on .cfsvg,body.xh-on .hchart,body.xh-on .bxsvg,body.xh-on .bvsvg{touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
   .bvsvg{width:100%;height:auto;display:block;background:#fff;border:2px solid var(--line);border-radius:12px;touch-action:none;user-select:none;-webkit-user-select:none}
   .bvtab{border-collapse:collapse;width:100%}
   .bvtab th{background:#eef3fa;padding:6px 10px;text-align:center;color:var(--navy);font-size:.9rem}
@@ -761,11 +773,14 @@
   /* ---------- fast-forward buttons ---------- */
   function ffBar(ground,step){
     if(!OPT.ff||(!ground&&!step))return "";
-    return "<div class='ffbar'>"+
-      (ground?"<button class='btn sec ff' data-ff='ground' title='Does the working for you, but leaves the final answer or graph for the student'>⏩ Do the groundwork</button>":"")+
-      (step?"<button class='btn sec ff' data-ff='step' title='Completes everything in this step'>⏩ Complete this step</button>":"")+
-      "</div>";
+    return "<div class='ffbar'><button class='btn sec ff' data-ff='step' title='Completes everything in this step (no celebration)'>⏩ Complete this step</button></div>";
   }
+  /* while a fast-forward button is being handled, celebrations stay quiet:
+     the work just appears, as if "Keep looking" had been pressed */
+  var FFQ=false;
+  document.addEventListener("click",function(e){FFQ=!!(e.target&&e.target.closest&&e.target.closest("[data-ff]"))},true);
+  document.addEventListener("click",function(){FFQ=false});
+  function showOv(){if(FFQ)return;$("overlay").classList.add("show")}
 
   /* ---------- interaction ---------- */
   $("graph").addEventListener("click",function(e){
@@ -818,7 +833,7 @@
       : "There is more than one mode: "+names.join(" and ")+" (each has frequency "+f+").";
     $("thinkText").textContent="Think: could we work out a mean or a range for "+TOPICS[S.topic].title.toLowerCase()+"? Why not?";
     $("celSub").textContent="Your graph is spot on.";
-    $("overlay").classList.add("show");
+    showOv();
     confetti();
   }
   $("keep").addEventListener("click",closeOverlay);
@@ -826,6 +841,7 @@
 
   var cv=$("confetti"),cx=cv.getContext("2d"),parts=[],raf=null,endAt=0;
   function confetti(){
+    if(FFQ)return;
     cv.width=innerWidth;cv.height=innerHeight;parts=[];
     var cols=["#ef4444","#f59e0b","#16a34a","#2563eb","#a855f7","#ec4899","#0ea5e9"];
     for(var i=0;i<220;i++)parts.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.6,
@@ -1168,7 +1184,7 @@
     $("celSub").textContent="You've found the mean, median, mode and range.";
     $("modeText").textContent="Mean "+fmtMean(t.mean).replace(" (to 1 d.p.)","")+" · Median "+fmt(t.median)+" · "+modeShort()+" · Range "+t.range;
     $("thinkText").textContent="Think: which of these did you need the sorted data for?";
-    $("overlay").classList.add("show");
+    showOv();
     confetti();
   }
   function fieldOK(f,val){
@@ -1572,7 +1588,7 @@
       $("celSub").textContent=g?"You've estimated the mean and found the median "+noun+".":"You've found the mean and the median.";
       $("modeText").textContent=(g?"Estimated mean ≈ ":"Mean = ")+fmtMean(t.mean).replace(" (to 1 d.p.)","")+" · "+(g?"Median "+noun+" "+Q.rows[t.medRow].lab:"Median = "+fmt(Q.rows[t.medRow].x));
       $("thinkText").textContent=g?"Think: why is the mean from a grouped table only an estimate?":"Think: what does Σf tell us, and why do we divide by it?";
-      $("overlay").classList.add("show");confetti();
+      showOv();confetti();
     }
     function finish(s){
       Q.done[s]=true;Q.msg=null;render();
@@ -1921,7 +1937,7 @@
     $("celSub").textContent="You've built and read a stem and leaf diagram.";
     $("modeText").textContent="Median = "+F[5].exp[0]+" · Mode = "+F[3].exp.join(", ")+" · Range = "+F[2].exp[0];
     $("thinkText").textContent="Think: why must the leaves be in order, and why must a diagram always have a key?";
-    $("overlay").classList.add("show");confetti();
+    showOv();confetti();
   }
   function slKeypad(){
     var h="<div class='kp' style='margin-top:10px'>";
@@ -1979,7 +1995,7 @@
   }
   function slFFBar(){
     var sorted=slComplete()&&slAllSorted();
-    if(SL.step===0)return sorted?"":ffBar(true,true);
+    if(SL.step===0)return slComplete()?"":ffBar(true,true);
     if(SL.step===1)return sorted?"":ffBar(true,true);
     var open=slFields().filter(function(f){return !f.ok}).length;
     return open>1?ffBar(true,true):(open===1?ffBar(false,true):"");
@@ -2413,7 +2429,7 @@
       var placedN=H.placed.filter(Boolean).length,done=placedN===n;
       h+="<div class='stepin'><h3>Step 2 – Draw the bars</h3><p>Tap inside a class column at the height of its <b>frequency density</b>. The bars touch, because the classes have no gaps.</p></div>";
       h+="<div class='fdchips'>"+H.F.map(function(f,j){return "<span>"+hLab(j)+": <b>"+cNum(cRound(f.exp,2))+"</b></span>"}).join("")+"</div>";
-      h+=hChart();
+      h+=xhBar()+hChart();
       h+="<div class='row' style='margin-top:10px'>"+(done?"<button class='btn' data-ha='areas'>"+(H.areas?"Hide":"Show")+" bar areas</button><button class='btn go' data-ha='again'>New data</button>":"<button class='btn sec' data-ha='help'>🛟 Draw the next bar for me</button>")+"</div>";
       if(done&&H.areas)h+="<p>Area of a bar = class width × frequency density = <b>frequency</b>. The areas add up to <b>"+C.data.length+"</b>, the total frequency.</p>";
     }
@@ -2441,7 +2457,7 @@
     $("celSub").textContent="Your histogram is spot on.";
     $("modeText").textContent="Area of each bar = frequency";
     $("thinkText").textContent="Think: why do we plot frequency density instead of frequency when the class widths are different?";
-    $("overlay").classList.add("show");confetti();
+    showOv();confetti();
   }
   function hFFBar(){
     if(!hComplete())return "";
@@ -2507,11 +2523,11 @@
 
 
   /* ----- cumulative frequency (Continuous tab) ----- */
-  var K={step:0,F:[],placed:[],temp:null,joined:false,style:"smooth",celebrated:false,msg:null,tm:null};
+  var K={step:0,F:[],placed:[],temp:null,joined:false,style:"smooth",celebrated:false,msg:null,tm:null,q:null,lastType:""};
   function kCum(){var r=0;return C.freq.map(function(f){r+=f;return r})}
   function kReset(){
     clearTimeout(K.tm);
-    K.step=0;K.temp=null;K.joined=false;K.style="smooth";K.celebrated=false;K.msg=null;K.placed=[];K.F=[];
+    K.step=0;K.temp=null;K.joined=false;K.style="smooth";K.celebrated=false;K.msg=null;K.placed=[];K.F=[];K.q=null;K.lastType="";
     if(hComplete()){
       var cum=kCum(),i;
       for(i=0;i<cum.length;i++)K.F.push({v:"",ok:false,exp:cum[i]});
@@ -2520,8 +2536,9 @@
     kRender();
   }
   function kCur(){for(var i=0;i<K.F.length;i++)if(!K.F[i].ok)return i;return -1}
-  function kActive(){return C.view==="cf"&&hComplete()&&K.step===0&&kCur()>=0}
+  function kActive(){return C.view==="cf"&&hComplete()&&((K.step===0&&kCur()>=0)||(K.step===2&&!!K.q&&K.q.mode==="num"&&!K.q.done))}
   function kKey(k){
+    if(K.step===2){qKey(k);return}
     var f=K.F[kCur()];if(!f)return;
     if(k==="enter"){kCheck();return}
     if(k==="back")f.v=f.v.slice(0,-1);
@@ -2529,6 +2546,7 @@
     K.msg=null;kRender();
   }
   function kCheck(){
+    if(K.step===2){qCheck();return}
     var i=kCur(),f=K.F[i];if(!f)return;
     if(f.v===""){K.msg={type:"bad",text:"Type an answer first."};kRender();return}
     if(+f.v===f.exp){
@@ -2598,7 +2616,15 @@
       var tp=P[K.temp.j],ty=KV.T+ph-K.temp.v/sc.top*ph;
       h+="<circle cx='"+tp.x.toFixed(1)+"' cy='"+ty.toFixed(1)+"' r='6' fill='#f59e0b' stroke='#fff' stroke-width='1.5'/>";
     }
-    h+="<rect data-kp='1' x='"+KV.L+"' y='"+KV.T+"' width='"+pw+"' height='"+ph+"' fill='transparent'/>";
+    if(K.step===2&&K.q&&K.q.show&&K.q.g){
+      var gx=KV.L+(K.q.g.x-C.B[0])/(C.B[C.B.length-1]-C.B[0])*pw,gy=KV.T+ph-K.q.g.cf/sc.top*ph,halo=" paint-order='stroke' stroke='#fff' stroke-width='4' ";
+      h+="<line x1='"+KV.L+"' x2='"+gx.toFixed(1)+"' y1='"+gy.toFixed(1)+"' y2='"+gy.toFixed(1)+"' stroke='#15803d' stroke-width='2.5' stroke-dasharray='7 5'/>";
+      h+="<line x1='"+gx.toFixed(1)+"' x2='"+gx.toFixed(1)+"' y1='"+gy.toFixed(1)+"' y2='"+(KV.T+ph)+"' stroke='#15803d' stroke-width='2.5' stroke-dasharray='7 5'/>";
+      h+="<circle cx='"+gx.toFixed(1)+"' cy='"+gy.toFixed(1)+"' r='5' fill='#15803d'/>";
+      h+="<text x='"+(KV.L+6)+"' y='"+(gy-7).toFixed(1)+"' font-size='15' font-weight='800' fill='#15803d'"+halo+">"+cNum(cRound(K.q.g.cf,1))+"</text>";
+      h+="<text x='"+(gx+6).toFixed(1)+"' y='"+(KV.T+ph-8)+"' font-size='15' font-weight='800' fill='#15803d'"+halo+">"+cNum(cRound(K.q.g.x,2))+"</text>";
+    }
+    if(K.step===1)h+="<rect data-kp='1' x='"+KV.L+"' y='"+KV.T+"' width='"+pw+"' height='"+ph+"' fill='transparent'/>";
     h+="<text x='"+(KV.L+pw/2)+"' y='"+(KV.H-8)+"' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>"+esc(c.title)+" ("+esc(c.unit)+")</text>";
     h+="<text transform='translate(16 "+(KV.T+ph/2)+") rotate(-90)' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>Cumulative frequency</text>";
     return h+"</svg>";
@@ -2612,7 +2638,8 @@
     var el=$("cCF");if(!el||C.view!=="cf")return;
     if(!hComplete()){el.innerHTML="<div class='lockmsg'>Process the data first – tap <b>One by one</b> or <b>All at once</b>. Then we'll build the cumulative frequency table and graph.</div>";return}
     var n=K.F.length,cur=kCur(),i,h="<div class='pills'><button class='pill"+(K.step===0?" active":"")+(cur<0?" done":"")+"' data-ks='0'>"+(cur<0?"✓ ":"1 ")+"Cumulative frequency</button>"+
-      "<button class='pill"+(K.step===1?" active":"")+(K.joined?" done":"")+(cur>=0?" locked":"")+"' data-ks='1'>"+(K.joined?"✓ ":"2 ")+"Plot and join</button></div>";
+      "<button class='pill"+(K.step===1?" active":"")+(K.joined?" done":"")+(cur>=0?" locked":"")+"' data-ks='1'>"+(K.joined?"✓ ":"2 ")+"Plot and join</button>"+
+      "<button class='pill"+(K.step===2?" active":"")+(K.q&&K.q.done?" done":"")+(!K.joined?" locked":"")+"' data-ks='2'>3 Read the graph</button></div>";
     if(K.step===0){
       h+="<div class='stepin'><h3>Step 1 – Cumulative frequency</h3><p><b>Cumulative frequency</b> is a running total: how many values are <i>less than</i> each upper boundary. Before the first class there are 0 values.</p></div>";
       h+="<table class='gtab ft'><tr><th>Values</th><th class='gf'>Frequency<br>f</th><th class='gf'>Cumulative<br>frequency</th></tr>";
@@ -2627,20 +2654,22 @@
       h+="</table>";
       if(cur>=0)h+=kKeypad();
       else h+="<div style='margin-top:10px'><button class='btn go' data-ka='next'>Next: plot the points →</button></div>";
+    }else if(K.step===2){
+      h+=kReadHTML();
     }else{
       var cum=kCum(),pl=K.placed.filter(Boolean).length,all=pl===K.placed.length;
       h+="<div class='stepin'><h3>Step 2 – Plot and join</h3><p>Plot each point at the <b>upper boundary</b> of its class (that is where the running total is counted), at the height of its cumulative frequency. Tap the graph where the point goes. The first point is <b>("+cNum(C.B[0])+", 0)</b>.</p></div>";
       h+="<div class='fdchips'><span>("+cNum(C.B[0])+", <b>0</b>)</span>"+cum.map(function(v,j){return "<span>("+cNum(C.B[j+1])+", <b>"+v+"</b>)</span>"}).join("")+"</div>";
-      h+=kChart();
+      h+=xhBar()+kChart();
       h+="<div class='row' style='margin-top:10px'>";
       if(!all)h+="<button class='btn sec' data-ka='help'>🛟 Plot the next point for me</button>";
       else if(!K.joined)h+="<button class='btn go' data-ka='smooth'>Join with a smooth curve</button><button class='btn' data-ka='straight'>Join with straight lines</button>";
-      else h+="<button class='btn "+(K.style==="smooth"?"go":"")+"' data-ka='smooth'>Smooth curve</button><button class='btn "+(K.style==="straight"?"go":"")+"' data-ka='straight'>Straight lines</button><button class='btn sec' data-ka='again'>New data</button>";
+      else h+="<button class='btn "+(K.style==="smooth"?"go":"")+"' data-ka='smooth'>Smooth curve</button><button class='btn "+(K.style==="straight"?"go":"")+"' data-ka='straight'>Straight lines</button><button class='btn sec' data-ka='again'>New data</button><button class='btn go' data-ka='read'>Next: read the graph →</button>";
       h+="</div>";
       if(K.joined)h+="<p>The curve rises from 0 to <b>"+C.data.length+"</b>, the total frequency. Where it is steepest, the data is most concentrated.</p>";
     }
     h+=kFFBar();
-    if(K.msg)h+="<div class='fmsg "+K.msg.type+"'>"+K.msg.text+"</div>";
+    if(K.msg&&K.step!==2)h+="<div class='fmsg "+K.msg.type+"'>"+K.msg.text+"</div>";
     el.innerHTML=h;
   }
   function kPlace(j,v){
@@ -2662,10 +2691,11 @@
     $("celSub").textContent="Your cumulative frequency graph is spot on.";
     $("modeText").textContent="Total frequency = "+C.data.length+" · top of the curve at ("+cNum(C.B[C.B.length-1])+", "+C.data.length+")";
     $("thinkText").textContent="Think: how could we use this curve to estimate the median and the quartiles?";
-    $("overlay").classList.add("show");confetti();
+    showOv();confetti();
   }
   function kFFBar(){
     if(!hComplete())return "";
+    if(K.step===2)return "";
     if(K.step===0)return kCur()>=0?ffBar(true,true):"";
     if(K.placed.every(Boolean))return K.joined?"":ffBar(false,true);
     return ffBar(true,true);
@@ -2684,7 +2714,7 @@
   $("cCF").addEventListener("click",function(e){
     var t;
     if((t=e.target.closest("[data-ff]"))){kFF(t.getAttribute("data-ff"));return}
-    if((t=e.target.closest("[data-kp]"))){
+    if(K.step===1&&(t=e.target.closest("[data-kp]"))){
       var r=$("kSvg").getBoundingClientRect();if(!r.height)return;
       var sx=(e.clientX-r.left)/r.width*KV.W,sy=(e.clientY-r.top)/r.height*KV.H,P=kPts(),best=0,bd=1e9,sc=kScale(),ph=KV.H-KV.T-KV.B;
       P.forEach(function(p,j){var dd=Math.abs(p.x-sx);if(dd<bd){bd=dd;best=j}});
@@ -2693,20 +2723,190 @@
     if((t=e.target.closest("[data-kl]"))){
       var i=+t.getAttribute("data-kl");K.F[i].v=String(K.F[i].exp);K.F[i].ok=true;K.msg=kCur()<0?{type:"good",text:"✓ The cumulative frequencies are done."}:null;kRender();return;
     }
+    if((t=e.target.closest("[data-kq]"))){kqYN(t.getAttribute("data-kq")==="y");return}
     if((t=e.target.closest("[data-k]"))){kKey(t.getAttribute("data-k"));return}
     if((t=e.target.closest("[data-ks]"))){
       var s2=+t.getAttribute("data-ks");
-      if(s2===1&&kCur()>=0){K.msg={type:"bad",text:"Finish the cumulative frequencies first."};kRender();return}
-      K.step=s2;K.msg=null;kRender();return;
+      if(s2>=1&&kCur()>=0){K.msg={type:"bad",text:"Finish the cumulative frequencies first."};kRender();return}
+      if(s2===2&&!K.joined){K.msg={type:"bad",text:"Plot the points and join them into a curve first."};kRender();return}
+      K.step=s2;K.msg=null;if(s2===2&&!K.q)kqNew();kRender();return;
     }
     if((t=e.target.closest("[data-ka]"))){
       var a=t.getAttribute("data-ka");
       if(a==="next"){K.step=1;K.msg=null;kRender()}
+      else if(a==="read"){K.step=2;K.msg=null;if(!K.q)kqNew();kRender()}
+      else if(a==="qnew"){K.msg=null;kqNew();kRender()}
+      else if(a==="qshow"){kqShow()}
       else if(a==="help"){for(var j=0;j<K.placed.length;j++)if(!K.placed[j]){K.placed[j]=true;K.temp=null;K.msg=null;break}kRender()}
       else if(a==="smooth"||a==="straight"){K.style=a;K.joined=true;K.msg=null;kRender();kFinish()}
       else if(a==="again")cGenerate();
     }
   });
+
+
+  /* ----- reading the cumulative frequency graph (Continuous tab) ----- */
+  var KNAMES=["Aisha","Callum","Priya","Tom","Megan","Jack","Ellie","Ravi","Chloe","Owen","Fatima","Liam","Zainab","Ben","Holly","Mohammed","Imogen","Kiran"];
+  var KW={
+    "Heights":{item:"students",q:"height",lo:"shortest",hi:"tallest",be:"are",less:"shorter than",more:"taller than"},
+    "100 m times":{item:"runners",q:"time",lo:"fastest",hi:"slowest",be:"took",less:"less than",more:"more than"},
+    "Parcel masses":{item:"parcels",q:"mass",lo:"lightest",hi:"heaviest",be:"are",less:"lighter than",more:"heavier than"},
+    "Journey times":{item:"journeys",q:"time",lo:"shortest",hi:"longest",be:"took",less:"less than",more:"more than"},
+    "Leaf lengths":{item:"leaves",q:"length",lo:"shortest",hi:"longest",be:"are",less:"shorter than",more:"longer than"}
+  };
+  var KWG={item:"values",q:"value",lo:"lowest",hi:"highest",be:"are",less:"less than",more:"more than"};
+  function kMono(P){
+    var n=P.length,d=[],m=[],k;
+    for(k=0;k<n-1;k++)d.push((P[k+1].y-P[k].y)/(P[k+1].x-P[k].x));
+    m[0]=0;m[n-1]=0;
+    for(k=1;k<n-1;k++)m[k]=(d[k-1]*d[k]<=0)?0:(d[k-1]+d[k])/2;
+    for(k=0;k<n-1;k++){
+      if(d[k]===0){m[k]=0;m[k+1]=0;continue}
+      var a=m[k]/d[k],b=m[k+1]/d[k],q=a*a+b*b;
+      if(q>9){var t=3/Math.sqrt(q);m[k]=t*a*d[k];m[k+1]=t*b*d[k]}
+    }
+    return m;
+  }
+  function kNodes(){var cum=kCum();return C.B.map(function(b,j){return {x:b,y:j===0?0:cum[j-1]}})}
+  function kHerm(P,m,k,x){
+    var h=P[k+1].x-P[k].x,t=(x-P[k].x)/h,t2=t*t,t3=t2*t;
+    return (2*t3-3*t2+1)*P[k].y+(t3-2*t2+t)*h*m[k]+(-2*t3+3*t2)*P[k+1].y+(t3-t2)*h*m[k+1];
+  }
+  /* cumulative frequency read at x, and x read at a cumulative frequency, for a given joining style */
+  function kReadY(x,style){
+    var P=kNodes(),m=kMono(P),k;
+    for(k=0;k<P.length-2;k++)if(x<=P[k+1].x)break;
+    if(style==="straight")return P[k].y+(x-P[k].x)/(P[k+1].x-P[k].x)*(P[k+1].y-P[k].y);
+    return kHerm(P,m,k,x);
+  }
+  function kReadX(t,style){
+    var P=kNodes(),m=kMono(P),k,lo,hi,i;
+    for(k=0;k<P.length-2;k++)if(t<=P[k+1].y)break;
+    if(style==="straight"){
+      var dy=P[k+1].y-P[k].y;
+      return dy===0?P[k].x:P[k].x+(t-P[k].y)/dy*(P[k+1].x-P[k].x);
+    }
+    lo=P[k].x;hi=P[k+1].x;
+    for(i=0;i<50;i++){var mid=(lo+hi)/2;if(kHerm(P,m,k,mid)<t)lo=mid;else hi=mid}
+    return (lo+hi)/2;
+  }
+  function kRand(a){return a[Math.floor(Math.random()*a.length)]}
+  function kRange(){return C.B[C.B.length-1]-C.B[0]}
+  function kDpA(){var R=kRange();return R>=30?0:(R>=3?1:2)}
+  function kPickV(){
+    var R=kRange(),B0=C.B[0],steps=[0.1,0.2,0.5,1,2,5,10,20,50],st=steps[steps.length-1],i;
+    for(i=0;i<steps.length;i++)if(steps[i]>=R/16-1e-9){st=steps[i];break}
+    var lo=Math.ceil((B0+R*0.15)/st-1e-9),hi=Math.floor((B0+R*0.85)/st+1e-9);
+    return cRound((lo+Math.floor(Math.random()*(hi-lo+1)))*st,4);
+  }
+  function kqText(tpl,o){return tpl.replace(/\{(\w+)\}/g,function(_,k){return o[k]})}
+  function kqNew(){
+    var N=C.data.length,c=CCTX[C.ctx],w=KW[c.title]||KWG,R=kRange(),dpA=kDpA(),u=c.unit,i,tries,q=null;
+    var types=["quart","quart","pct","pct","claim","claim","count"].filter(function(t){return t!==K.lastType});
+    var type=kRand(types);
+    var tolX=Math.max(R*0.03,0.5*Math.pow(10,-dpA));
+    function numX(text,t,hint,label){
+      var a=kReadX(t,"straight"),b=kReadX(t,"smooth"),e=kReadX(t,K.style),lo=Math.min(a,b)-tolX,hi=Math.max(a,b)+tolX;
+      return {mode:"num",text:text,exp:cRound(e,dpA),lo:cRound(lo,4),hi:cRound(hi,4),unit:u,g:{x:e,cf:t},hint:hint,label:label,done:false,show:false,tries:0,f:{v:""},how:"Read across from cumulative frequency "+cNum(cRound(t,2))+" to the curve, then down to the x-axis."};
+    }
+    if(type==="quart"){
+      i=Math.floor(Math.random()*3);
+      var nm=["lower quartile","median","upper quartile"][i],div=["N ÷ 4","N ÷ 2","3 × N ÷ 4"][i],t=N*(i+1)/4;
+      q=numX("Use the graph to estimate the "+nm+".",t,"The "+nm+" is at cumulative frequency "+div+" = "+cNum(cRound(t,2))+".",nm);
+      q.ok="The "+nm+" is about "+cNum(q.exp)+" "+u+".";
+    }else if(type==="pct"){
+      var top=Math.random()<0.5,xs=[5,10,15,20,25,30,35,40],good=xs.filter(function(x){return Math.abs(N*x/100-Math.round(N*x/100))<1e-9});
+      var x=kRand(good.length>=3?good:xs),k=cRound(N*x/100,2),tt=top?cRound(N-k,2):k;
+      var o={x:x,item:w.item,q:w.q,lo:w.lo,hi:w.hi,be:w.be,less:w.less,more:w.more};
+      q=numX(kqText(top?"The {hi} {x}% of the {item} {be} {more} a certain {q}. Use the graph to estimate it.":"The {lo} {x}% of the {item} {be} {less} a certain {q}. Use the graph to estimate it.",o),tt,
+        x+"% of "+N+" is "+cNum(k)+", so "+(top?"the top "+x+"% starts after "+N+" − "+cNum(k)+" = "+cNum(tt)+" values.":"the bottom "+x+"% is the first "+cNum(k)+" values."),"cut-off");
+      q.ok="The cut-off is about "+cNum(q.exp)+" "+u+": "+(top?"the top "+x+"% are above this, so "+cNum(tt)+" values are below it.":"the bottom "+x+"% are below this ("+cNum(k)+" values).");
+      q.how="Work out "+x+"% of "+N+" = "+cNum(k)+(top?", then "+N+" − "+cNum(k)+" = "+cNum(tt)+". ":". ")+"Read across from cumulative frequency "+cNum(tt)+" to the curve, then down to the x-axis.";
+      type="pct";
+    }else if(type==="claim"){
+      for(tries=0;tries<80&&!q;tries++){
+        var v=kPickV(),more=Math.random()<0.5,truth=Math.random()<0.5,ya=kReadY(v,"straight"),yb=kReadY(v,"smooth");
+        var pa=100*(more?N-ya:ya)/N,pb=100*(more?N-yb:yb)/N,avg=(pa+pb)/2,p;
+        if(truth){p=Math.round(avg/5)*5;if(Math.abs(p-pa)>3||Math.abs(p-pb)>3)continue}
+        else{
+          var flip=Math.round((100-avg)/5)*5,sh=kRand([-30,-25,-20,-15,15,20,25,30]),cand=(Math.abs(flip-avg)>=15&&Math.random()<0.5)?flip:Math.round(avg/5)*5+sh;
+          p=cand;if(Math.abs(p-pa)<12||Math.abs(p-pb)<12)continue;
+        }
+        if(p<5||p>95)continue;
+        var e=kReadY(v,K.style),nm2=kRand(KNAMES),cf=cRound(e,0),below=cRound(100*e/N,0),above=cRound(100-100*e/N,0),cmp=more?w.more:w.less,pr=more?above:below;
+        q={mode:"yn",truth:truth,text:nm2+" says that "+p+"% of the "+w.item+" "+w.be+" "+cmp+" "+cNum(v)+" "+u+". Do you agree?",done:false,show:false,tries:0,g:{x:v,cf:e},
+          ok:"Reading up from "+cNum(v)+" "+u+" to the curve and across gives a cumulative frequency of about "+cNum(cf)+". So about "+cNum(cf)+" out of "+N+" values ("+below+"%) are less than "+cNum(v)+" "+u+", which means about "+above+"% are more than "+cNum(v)+" "+u+". "+
+            "About "+pr+"% are "+cmp+" "+cNum(v)+" "+u+", so "+nm2+" is "+(truth?"right.":"wrong ("+nm2+" claimed "+p+"%).")};
+      }
+      if(!q)type="count";
+    }
+    if(type==="count"){
+      var v2=kPickV(),ya2=kReadY(v2,"straight"),yb2=kReadY(v2,"smooth"),e2=kReadY(v2,K.style),tolC=Math.max(1,Math.ceil(0.03*N));
+      q={mode:"num",text:"Estimate how many "+w.item+" "+w.be+" "+w.less+" "+cNum(v2)+" "+u+".",exp:cRound(e2,0),lo:cRound(Math.min(ya2,yb2)-tolC,4),hi:cRound(Math.max(ya2,yb2)+tolC,4),unit:"",g:{x:v2,cf:e2},
+        hint:"Read up from "+cNum(v2)+" "+u+" to the curve, then across to the cumulative frequency axis.",label:"number",done:false,show:false,tries:0,f:{v:""},
+        how:"Read up from "+cNum(v2)+" "+u+" to the curve, then across to the cumulative frequency axis.",ok:"About "+cNum(cRound(e2,0))+" of the "+N+" "+w.item+" "+w.be+" "+w.less+" "+cNum(v2)+" "+u+"."};
+      type="count";
+    }
+    q.type=type;K.lastType=type;K.q=q;
+  }
+  function kqShow(){
+    var q=K.q;if(!q)return;
+    q.show=true;q.done=true;
+    if(q.mode==="num"){q.f.v=String(q.exp);K.msg={type:"good",text:q.ok+" "+q.how+" (Anything from "+cNum(q.lo)+" to "+cNum(q.hi)+(q.unit?" "+q.unit:"")+" would be accepted.)"}}
+    else K.msg={type:"good",text:q.ok};
+    kRender();
+  }
+  function qKey(k){
+    var q=K.q;if(!q||q.mode!=="num"||q.done)return;
+    if(k==="enter"){qCheck();return}
+    if(k==="back")q.f.v=q.f.v.slice(0,-1);
+    else if(k==="."){if(q.f.v.indexOf(".")<0)q.f.v+=(q.f.v===""?"0.":".")}
+    else if(/^[0-9]$/.test(k)&&q.f.v.length<7)q.f.v+=k;
+    K.msg=null;kRender();
+  }
+  function qCheck(){
+    var q=K.q;if(!q||q.mode!=="num"||q.done)return;
+    var v=parseFloat(q.f.v);
+    if(!isFinite(v)){K.msg={type:"bad",text:"Type an answer first."};kRender();return}
+    if(v>=q.lo-1e-9&&v<=q.hi+1e-9){
+      q.done=true;q.show=true;K.msg={type:"good",text:"✓ Well read. "+q.ok};
+    }else{
+      q.tries++;
+      K.msg={type:"bad",text:"Not quite – "+(v<q.exp?"that is a little low. ":"that is a little high. ")+q.hint+(q.tries>=2?" Tap 🛟 to see it on the graph.":"")};
+      q.f.v="";
+    }
+    kRender();
+  }
+  function kqYN(agree){
+    var q=K.q;if(!q||q.mode!=="yn"||q.done)return;
+    q.done=true;q.show=true;q.said=agree;
+    K.msg={type:agree===q.truth?"good":"bad",text:(agree===q.truth?"✓ Correct. ":"Not quite. ")+q.ok};
+    kRender();
+  }
+  function kqKeypad(){
+    var h="<div class='kp' style='margin-top:10px'>";
+    ["7","8","9","4","5","6","1","2","3","0",".","back"].forEach(function(k){h+="<button data-k='"+k+"'>"+(k==="back"?"⌫":k)+"</button>"});
+    return h+"<button class='wide' data-k='enter'>Check ✓</button></div>";
+  }
+  function kReadHTML(){
+    var q=K.q,h="<div class='stepin'><h3>Step 3 – Read the graph</h3><p>Use the curve to answer the question. Read across from a <b>cumulative frequency</b>, or up from a <b>value</b>, to the curve – then read the other axis. Estimates only need to be close.</p></div>";
+    if(!q)return h;
+    h+=xhBar()+kChart();
+    h+="<div class='qcard'><div class='qtext'>"+esc(q.text)+"</div>";
+    if(q.mode==="num"){
+      h+="<div class='kqrow'><span class='abox"+(q.done?" ok":" active")+"'>"+esc(q.f.v)+"</span>"+(q.unit?"<span class='qunit'>"+esc(q.unit)+"</span>":"")+
+        (q.done?"":"<button class='lifebelt' data-ka='qshow' title='Show me on the graph' aria-label='Show me on the graph'>🛟</button>")+"</div>";
+      if(K.msg)h+="<div class='fmsg "+K.msg.type+"'>"+K.msg.text+"</div>";
+      if(!q.done)h+=kqKeypad();
+    }else if(!q.done){
+      h+="<div class='qyn'><button class='btn go' data-kq='y'>✓ I agree</button><button class='btn' style='background:#b91c1c' data-kq='n'>✗ I disagree</button><button class='lifebelt' data-ka='qshow' title='Show me on the graph' aria-label='Show me on the graph'>🛟</button></div>";
+    }
+    if(q.mode==="yn"&&K.msg)h+="<div class='fmsg "+K.msg.type+"'>"+K.msg.text+"</div>";
+    h+="</div>";
+    h+="<div class='row' style='margin-top:6px'>";
+    h+="<button class='btn "+(q.done?"go":"sec")+"' data-ka='qnew'>Generate new question</button>"+
+      "<button class='btn sec' data-ka='again'>New data</button></div>";
+    return h;
+  }
 
   /* ----- box plot (Continuous tab) ----- */
   var BX={step:0,q:0,phase:"pos",f:{v:""},qv:[0,0,0],qpos:[0,0,0],plot:[false,false,false,false,false],temp:null,iqr:{v:"",ok:false},msg:null,celebrated:false,tm:null,mn:0,mx:0,dp:1};
@@ -2855,14 +3055,14 @@
         }
       }
       if(BX.q<3&&BX.phase==="pos")h+=bxKeypad()+"<div style='height:10px'></div>";
-      h+=bxCurveSVG();
+      h+=xhBar()+bxCurveSVG();
       if(BX.q>=3)h+="<div style='margin-top:10px'><button class='btn go' data-ba='next'>Next: draw the box plot →</button></div>";
     }else{
       var T=bxT(),np=bxNextPlot();
       h+="<div class='stepin'><h3>Step 2 – Draw the box plot</h3><p>A box plot needs five numbers. Tap the axis to mark each one in turn.</p></div>";
       h+="<div class='fdchips'>"+T.map(function(t,j){return "<span>"+PNAME[j]+": <b>"+cNum(t)+"</b></span>"}).join("")+"</div>";
       if(np>=0)h+="<div class='qrow'>Now tap the axis at the <b>"+PNAME[np]+"</b>, "+cNum(T[np])+". <button class='btn sec' data-ba='phelp'>🛟 Mark it for me</button></div>";
-      h+=bxBoxSVG();
+      h+=xhBar()+bxBoxSVG();
       if(np<0){
         h+="<p style='margin-top:10px'>The box covers the middle half of the data, from Q1 to Q3. The line inside the box is the median.</p>";
         h+="<div class='eq'>Interquartile range = Q3 − Q1 = "+cNum(BX.qv[2])+" − "+cNum(BX.qv[0])+" = "+(BX.iqr.ok?"<span class='abox sm ok'>"+BX.iqr.v+"</span>":bxBox(BX.iqr,"iqr"))+"</div>";
@@ -2880,7 +3080,7 @@
     $("celSub").textContent="Your box plot is spot on.";
     $("modeText").textContent="Median ≈ "+cNum(BX.qv[1])+" · IQR = "+cNum(cRound(BX.qv[2]-BX.qv[0],4));
     $("thinkText").textContent="Think: what fraction of the data lies inside the box? Why is the interquartile range a better measure of spread than the range?";
-    $("overlay").classList.add("show");confetti();
+    showOv();confetti();
   }
   function bxTapQ(sx){
     var pw=KV.W-KV.L-KV.R,B0=C.B[0],Bn=C.B[C.B.length-1],i=BX.q,v=B0+(sx-KV.L)/pw*(Bn-B0),exp=BX.qv[i];
@@ -3185,12 +3385,12 @@
     h+="</div>";
     if(B.step===0){
       h+="<div class='stepin'><h3>Step 1 – Plot the scatter graph</h3><p>Each row of the table is one point: "+esc(c.xn.toLowerCase())+" across (x) and "+esc(c.yn.toLowerCase())+" up (y). Tap the graph where a point belongs. You can plot them in any order.</p></div>";
-      h+=bSVG();
+      h+=xhBar()+bSVG();
       if(!bStepDone(0))h+="<div style='margin-top:10px'><button class='btn sec' data-ba='help'>🛟 Plot the next point for me</button></div>";
       else h+="<div style='margin-top:10px'><button class='btn go' data-ba='next'>Next: describe the correlation →</button></div>";
     }else if(B.step===1){
       h+="<div class='stepin'><h3>Step 2 – Describe the correlation</h3><p><b>Correlation</b> describes the relationship between the two variables. Look at the direction (does y go up or down as x increases?) and how closely the points follow a straight line.</p></div>";
-      h+=bSVG();
+      h+=xhBar()+bSVG();
       if(!B.descOk){
         h+="<div class='bvopts'>"+["sp","wp","no","wn","sn"].map(function(k){return "<button data-bd='"+k+"'>"+CLSNAME[k].replace(" correlation","")+"</button>"}).join("")+"</div>";
       }else{
@@ -3203,11 +3403,11 @@
       }
     }else if(B.step===2){
       h+="<div class='stepin'><h3>Step 3 – Line of best fit</h3><p>A <b>line of best fit</b> goes through the middle of the points, with about the same number above and below it. It should pass through the <b>mean point</b>, the green cross: ("+bFmt(B.mx)+", "+bFmt(B.my)+"). Drag the two blue handles to position your line, then press Check.</p></div>";
-      h+=bSVG();
+      h+=xhBar()+bSVG();
       h+="<div class='row' style='margin-top:10px'>"+(B.lineOK?"<button class='btn go' data-ba='next'>Next: use the line →</button>":"<button class='btn go' data-ba='checkline'>Check my line</button><button class='btn sec' data-ba='showline'>🛟 Show me the line</button>")+"</div>";
     }else{
       h+="<div class='stepin'><h3>Step 4 – Use the line</h3><p>Use the line of best fit to make predictions.</p></div>";
-      h+=bSVG();
+      h+=xhBar()+bSVG();
       h+="<div class='qrow'>Estimate the "+esc(c.yn.toLowerCase())+" when the "+esc(c.xn.toLowerCase())+" is <b>"+B.xe+(c.xu?" "+esc(c.xu):"")+"</b> (the amber line): "+
         (B.est.ok?"<span class='abox sm ok'>"+B.est.v+"</span>":"<span class='abox sm active'>"+B.est.v+"</span><button class='lifebelt sm' data-bl='1' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>")+"</div>";
       if(B.est.ok){
@@ -3245,7 +3445,7 @@
     $("celSub").textContent="You've analysed the scatter graph.";
     $("modeText").textContent=CLSNAME[B.cls];
     $("thinkText").textContent=B.cls==="no"?"Think: if two things have no correlation, can we use one to predict the other?":"Think: does correlation mean that one thing causes the other?";
-    $("overlay").classList.add("show");confetti();
+    showOv();confetti();
   }
   function bPlotTap(px,py){
     var sx=bInvX(px),sy=bInvY(py),ax=B.ax,ay=B.ay;
@@ -3447,6 +3647,111 @@
   });
   $("resetBctx").addEventListener("click",function(){
     BCTX=JSON.parse(JSON.stringify(BDEFAULTS));bDirty="struct";saveBiv();renderBSet();
+  });
+
+
+  /* ---------- crosshair with loupe (all graphs) ---------- */
+  var XH={on:false,fx:0.5,fy:0.5,id:"*",has:false,down:false,txt:""};
+  var XHIDS={kSvg:1,bxSvg1:1,hSvg:1,bSvg:1,bxSvg2:1};
+  var XHNS="http://www.w3.org/2000/svg";
+  function xhGeom(svg){
+    var id=svg.id,sc,a;
+    if(id==="kSvg"||id==="bxSvg1"){sc=kScale();return {W:KV.W,H:KV.H,L:KV.L,R:KV.R,T:KV.T,B:KV.B,x0:C.B[0],x1:C.B[C.B.length-1],y0:0,y1:sc.top}}
+    if(id==="hSvg"){sc=hScale();return {W:HV.W,H:HV.H,L:HV.L,R:HV.R,T:HV.T,B:HV.B,x0:C.B[0],x1:C.B[C.B.length-1],y0:0,y1:sc.top}}
+    if(id==="bSvg")return {W:BW.W,H:BW.H,L:BW.L,R:BW.R,T:BW.T,B:BW.B,x0:B.ax.lo,x1:B.ax.hi,y0:B.ay.lo,y1:B.ay.hi};
+    if(id==="bxSvg2"){a=bxAxis();return {W:BV.W,H:BV.H,L:BV.L,R:BV.R,T:BV.T,B:BV.B,x0:a.lo,x1:a.hi,y0:null,y1:null}}
+    return null;
+  }
+  function xhFmt(v,range){return String(cRound(v,Math.max(0,Math.ceil(-Math.log10(range/500)-1e-9))))}
+  function xhBar(){
+    return "<div class='xhrow'><button class='btn sec xhbtn"+(XH.on?" on":"")+"' data-xh='1' aria-pressed='"+XH.on+"' title='Drag over the graph to read values off the axes'>"+
+      "<svg viewBox='0 0 20 20' width='18' height='18' aria-hidden='true'><circle cx='10' cy='10' r='6.5' fill='none' stroke='currentColor' stroke-width='1.8'/><path d='M10 1v18M1 10h18' stroke='currentColor' stroke-width='1.8'/></svg>Crosshair</button>"+
+      "<span class='xhval' data-xhv>"+(XH.on?esc(XH.txt):"")+"</span>"+
+      "<span class='xhhint' data-xhh style='display:"+(XH.on?"":"none")+"'>Drag over the graph. Turn the crosshair off to tap or drag things on it.</span></div>";
+  }
+  function xhDecorate(svg){
+    if(!XH.on||!svg||!svg.id)return;
+    var c=svg.querySelector("#"+svg.id+"_c"),g=svg.querySelector("#"+svg.id+"_g"),fresh=!g;
+    if(!c){
+      c=document.createElementNS(XHNS,"g");c.setAttribute("id",svg.id+"_c");
+      while(svg.firstChild)c.appendChild(svg.firstChild);
+      svg.appendChild(c);
+    }
+    if(!g){
+      g=document.createElementNS(XHNS,"g");g.setAttribute("id",svg.id+"_g");g.setAttribute("pointer-events","none");
+      svg.appendChild(g);
+    }
+    if(fresh&&XH.has&&(XH.id==="*"||XH.id===svg.id))xhDraw(svg);
+  }
+  function xhDraw(svg){
+    var gm=xhGeom(svg),g=svg.querySelector("#"+svg.id+"_g");if(!gm||!g||!xhVisible(svg))return;
+    var pw=gm.W-gm.L-gm.R,ph=gm.H-gm.T-gm.B,px=gm.L+XH.fx*pw,py=gm.T+XH.fy*ph,two=gm.y0!==null,id=svg.id,red="#dc2626",h="",f=function(n){return n.toFixed(1)};
+    var xv=gm.x0+XH.fx*(gm.x1-gm.x0),yv=two?gm.y0+(1-XH.fy)*(gm.y1-gm.y0):null;
+    var xt=xhFmt(xv,gm.x1-gm.x0),yt=two?xhFmt(yv,gm.y1-gm.y0):"";
+    var dot="stroke='"+red+"' stroke-width='1.7' stroke-dasharray='1.5 5' stroke-linecap='round'";
+    h+="<line x1='"+f(px)+"' x2='"+f(px)+"' y1='"+f(two?py:gm.T)+"' y2='"+f(gm.T+ph)+"' "+dot+"/>";
+    if(two)h+="<line x1='"+gm.L+"' x2='"+f(px)+"' y1='"+f(py)+"' y2='"+f(py)+"' "+dot+"/><circle cx='"+f(px)+"' cy='"+f(py)+"' r='4.5' fill='none' stroke='"+red+"' stroke-width='1.7'/>";
+    var bw=xt.length*8.6+14,bx=Math.max(gm.L,Math.min(gm.W-gm.R-bw,px-bw/2)),by=gm.T+ph-26;
+    h+="<rect x='"+f(bx)+"' y='"+f(by)+"' width='"+f(bw)+"' height='21' rx='5' fill='"+red+"'/><text x='"+f(bx+bw/2)+"' y='"+f(by+15)+"' text-anchor='middle' font-size='14' font-weight='800' fill='#fff'>"+xt+"</text>";
+    if(two){
+      var bw2=yt.length*8.6+14,by2=Math.max(gm.T,Math.min(gm.T+ph-21,py-10.5));
+      h+="<rect x='"+(gm.L+4)+"' y='"+f(by2)+"' width='"+f(bw2)+"' height='21' rx='5' fill='"+red+"'/><text x='"+f(gm.L+4+bw2/2)+"' y='"+f(by2+15)+"' text-anchor='middle' font-size='14' font-weight='800' fill='#fff'>"+yt+"</text>";
+    }
+    var LR=Math.min(56,gm.H/2-6),off=LR+34,cd=[[-1,-1],[1,-1],[-1,1],[1,1]],lx=px,ly=py,k;
+    for(k=0;k<4;k++){lx=px+cd[k][0]*off;ly=py+cd[k][1]*off;if(lx-LR>=2&&lx+LR<=gm.W-2&&ly-LR>=2&&ly+LR<=gm.H-2)break}
+    if(k===4){lx=Math.max(LR+2,Math.min(gm.W-LR-2,px-off));ly=Math.max(LR+2,Math.min(gm.H-LR-2,py-off))}
+    var ref="#"+id+"_c";
+    h+="<defs><clipPath id='"+id+"_k'><circle cx='"+f(lx)+"' cy='"+f(ly)+"' r='"+LR+"'/></clipPath></defs>";
+    h+="<circle cx='"+f(lx)+"' cy='"+f(ly)+"' r='"+LR+"' fill='#fff'/>";
+    h+="<g clip-path='url(#"+id+"_k)'><use href='"+ref+"' xlink:href='"+ref+"' transform='translate("+f(lx)+" "+f(ly)+") scale(3) translate("+f(-px)+" "+f(-py)+")'/>"+
+       "<line x1='"+f(lx-LR)+"' x2='"+f(lx+LR)+"' y1='"+f(ly)+"' y2='"+f(ly)+"' stroke='"+red+"' stroke-width='1.1'/><line x1='"+f(lx)+"' x2='"+f(lx)+"' y1='"+f(ly-LR)+"' y2='"+f(ly+LR)+"' stroke='"+red+"' stroke-width='1.1'/></g>";
+    h+="<circle cx='"+f(lx)+"' cy='"+f(ly)+"' r='"+LR+"' fill='none' stroke='#1b2a4a' stroke-width='3'/>";
+    g.innerHTML=h;
+    XH.txt="x = "+xt+(two?"   y = "+yt:"");
+    document.querySelectorAll("[data-xhv]").forEach(function(el){el.textContent=XH.txt});
+  }
+  function xhScan(){Object.keys(XHIDS).forEach(function(id){var s=document.getElementById(id);if(s)xhDecorate(s)})}
+  function xhClear(){
+    Object.keys(XHIDS).forEach(function(id){var g=document.querySelector("#"+id+"_g");if(g&&g.parentNode)g.parentNode.removeChild(g)});
+    document.querySelectorAll("[data-xhv]").forEach(function(el){el.textContent=""});
+  }
+  function xhVisible(el){
+    for(var n=el;n&&n.nodeType===1;n=n.parentNode){if(window.getComputedStyle(n).display==="none")return false}
+    return true;
+  }
+  function xhSvgOf(t){var s=t&&t.closest?t.closest("svg"):null;return s&&XHIDS[s.id]?s:null}
+  function xhMove(e,svg){
+    var gm=xhGeom(svg),r=svg.getBoundingClientRect();if(!gm||!r.width||!r.height)return;
+    var sx=(e.clientX-r.left)/r.width*gm.W,sy=(e.clientY-r.top)/r.height*gm.H;
+    XH.fx=Math.max(0,Math.min(1,(sx-gm.L)/(gm.W-gm.L-gm.R)));
+    XH.fy=Math.max(0,Math.min(1,(sy-gm.T)/(gm.H-gm.T-gm.B)));
+    XH.id=svg.id;XH.has=true;
+    xhDecorate(svg);xhDraw(svg);
+  }
+  document.addEventListener("pointerdown",function(e){
+    if(!XH.on)return;var s=xhSvgOf(e.target);if(!s)return;
+    e.stopPropagation();XH.down=true;
+    try{s.setPointerCapture(e.pointerId)}catch(x){}
+    xhMove(e,s);
+  },true);
+  document.addEventListener("pointermove",function(e){
+    if(!XH.on)return;var s=xhSvgOf(e.target);if(!s)return;
+    if(e.pointerType==="mouse"||e.pointerType===undefined||e.pointerType===""||XH.down){e.stopPropagation();xhMove(e,s)}
+  },true);
+  function xhUp(){XH.down=false}
+  document.addEventListener("pointerup",xhUp,true);
+  document.addEventListener("pointercancel",xhUp,true);
+  document.addEventListener("click",function(e){if(XH.on&&xhSvgOf(e.target))e.stopPropagation()},true);
+  document.addEventListener("click",function(e){
+    var b=e.target.closest?e.target.closest("[data-xh]"):null;if(!b)return;
+    XH.on=!XH.on;document.body.classList.toggle("xh-on",XH.on);
+    document.querySelectorAll("[data-xh]").forEach(function(x){x.classList.toggle("on",XH.on);x.setAttribute("aria-pressed",String(XH.on))});
+    document.querySelectorAll("[data-xhh]").forEach(function(x){x.style.display=XH.on?"":"none"});
+    if(XH.on){XH.fx=0.5;XH.fy=0.5;XH.id="*";XH.has=true;xhScan()}else{XH.has=false;xhClear()}
+  });
+  ["cHist","cCF","cBX","bBody"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&window.MutationObserver)new MutationObserver(function(){if(XH.on)xhScan()}).observe(el,{childList:true,subtree:true});
   });
 
   /* ---------- start ---------- */
