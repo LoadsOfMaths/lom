@@ -1836,7 +1836,7 @@
     {title:"Homework time",desc:"Minutes spent on homework last night by {n} students",min:0,max:89,width:15,unit:"minutes",axis:"Homework time (minutes)"},
     {title:"Words typed",desc:"Words typed in one minute by {n} students",min:10,max:59,width:10,unit:"words",axis:"Number of words typed"},
     {title:"Cars in the car park",desc:"Cars in the school car park on {n} different days",min:40,max:99,width:10,unit:"cars",axis:"Number of cars"},
-    {title:"Music tracks streamed",desc:"Music tracks streamed last week by {n} students",min:0,max:199,width:20,unit:"tracks",axis:"Number of tracks streamed"},
+    {title:"Songs streamed",desc:"Songs streamed last week by {n} students",min:0,max:199,width:20,unit:"songs",axis:"Number of songs streamed"},
     {title:"TV episodes streamed",desc:"TV episodes streamed last month by {n} students",min:0,max:59,width:10,unit:"episodes",axis:"Number of episodes streamed"},
     {title:"Films streamed",desc:"Films streamed last year by {n} students",min:0,max:49,width:10,unit:"films",axis:"Number of films streamed"}
   ];
@@ -1847,7 +1847,7 @@
     "Homework time":{item:"students",q:"time on homework",lo:"lowest",hi:"highest",be:"spent",less:"less than",more:"more than"},
     "Words typed":{item:"students",q:"number of words",lo:"lowest",hi:"highest",be:"typed",less:"fewer than",more:"more than"},
     "Cars in the car park":{item:"days",q:"number of cars",lo:"lowest",hi:"highest",be:"had",less:"fewer than",more:"more than"},
-    "Music tracks streamed":{item:"students",q:"number of tracks",lo:"lowest",hi:"highest",be:"streamed",less:"fewer than",more:"more than"},
+    "Songs streamed":{item:"students",q:"number of songs",lo:"lowest",hi:"highest",be:"streamed",less:"fewer than",more:"more than"},
     "TV episodes streamed":{item:"students",q:"number of episodes",lo:"lowest",hi:"highest",be:"streamed",less:"fewer than",more:"more than"},
     "Films streamed":{item:"students",q:"number of films",lo:"lowest",hi:"highest",be:"streamed",less:"fewer than",more:"more than"}
   };
@@ -1917,7 +1917,7 @@
     $("gData").innerHTML=h;$("gData").scrollTop=0;
     $("gCount").textContent="("+G.data.length+" values – scroll to see them all)";
     G.chips=$("gData").children;
-    G.bounds=[G.groups[0].lo-0.5].concat(G.groups.map(function(gr){return gr.hi+0.5}));
+    G.bounds=G.groups.map(function(gr){return gr.lo}).concat([G.groups[G.groups.length-1].hi+1]);
     ftG.load(G.groups.map(function(gr){return {lab:gr.label,x:(gr.lo+gr.hi)/2,f:0,lo:gr.lo,hi:gr.hi}}),"Group",false);
     gStatus("Tap <b>One by one</b> to read the first value, or <b>All at once</b> to process the whole list.","");
     gButtons();
@@ -2230,7 +2230,9 @@
     {title:"100 m times",desc:"Times taken by {n} runners to run 100 m",unit:"seconds",min:12,max:22,dp:1},
     {title:"Parcel masses",desc:"Masses of {n} parcels",unit:"kg",min:1,max:10,dp:1},
     {title:"Journey times",desc:"Journey times to school of {n} students",unit:"minutes",min:5,max:45,dp:1},
-    {title:"Leaf lengths",desc:"Lengths of {n} leaves from a hedge",unit:"mm",min:20,max:120,dp:1}
+    {title:"Leaf lengths",desc:"Lengths of {n} leaves from a hedge",unit:"mm",min:20,max:120,dp:1},
+    {title:"Chess move times",desc:"Times taken by world-class players to make {n} chess moves",unit:"minutes",min:0.1,max:40,dp:1},
+    {title:"Chess game times",desc:"Lengths of {n} chess games between world-class players",unit:"minutes",min:120,max:465,dp:0}
   ];
   var CDEFAULTS=JSON.parse(JSON.stringify(CCTX));
   var CNICE=[0.1,0.2,0.5,1,2,2.5,5,10,20,25,50,100];
@@ -2641,7 +2643,9 @@
     "100 m times":{item:"runners",q:"time",lo:"fastest",hi:"slowest",be:"took",less:"less than",more:"more than"},
     "Parcel masses":{item:"parcels",q:"mass",lo:"lightest",hi:"heaviest",be:"are",less:"lighter than",more:"heavier than"},
     "Journey times":{item:"journeys",q:"time",lo:"shortest",hi:"longest",be:"took",less:"less than",more:"more than"},
-    "Leaf lengths":{item:"leaves",q:"length",lo:"shortest",hi:"longest",be:"are",less:"shorter than",more:"longer than"}
+    "Leaf lengths":{item:"leaves",q:"length",lo:"shortest",hi:"longest",be:"are",less:"shorter than",more:"longer than"},
+    "Chess move times":{item:"moves",q:"time",lo:"quickest",hi:"slowest",be:"took",less:"less than",more:"more than"},
+    "Chess game times":{item:"games",q:"time",lo:"shortest",hi:"longest",be:"took",less:"less than",more:"more than"}
   };
   var KWG={item:"values",q:"value",lo:"lowest",hi:"highest",be:"are",less:"less than",more:"more than"};
   function makeCB(S){
@@ -3287,8 +3291,8 @@
     ticks:function(){return C.B.map(function(b){return {v:b,text:cNum(b)}})},
     plotNote:function(){return ""}
   });
-  /* Grouped tab: the values are whole numbers, so group 20–29 really runs from 19.5 to 29.5.
-     G.bounds holds those class boundaries and the cumulative frequency is plotted at them. */
+  /* Grouped tab: group 20–29 has class boundaries 20 ≤ x < 30, so G.bounds holds 20, 30, 40, …
+     and the cumulative frequency is plotted at the upper class boundaries. */
   var CBG=makeCB({
     pre:"g",cfId:"gCF",bxId:"gBX",noun:"group",
     B:function(){return G.bounds},freq:function(){return G.freq},data:function(){return G.data},view:function(){return G.view},
@@ -3297,11 +3301,11 @@
     axisLabel:function(){var c=GCTX[G.ctx];return c.axis||c.title},
     complete:function(){return G.data.length>0&&G.idx>=G.data.length},
     w:function(i){return cRound(G.bounds[i+1]-G.bounds[i],4)},again:function(){gGenerate()},
-    rowLab:function(j){return "x &lt; "+cNum(G.bounds[j]+0.5)},
-    ticks:function(){return G.groups.map(function(gr){return {v:gr.lo,text:String(gr.lo)}})},
+    rowLab:function(j){return "x &lt; "+cNum(G.bounds[j])},
+    ticks:function(){return G.bounds.map(function(b){return {v:b,text:cNum(b)}})},
     plotNote:function(){
-      var a=G.groups[0],b=G.groups[1]||G.groups[0],m=function(v){return cNum(v)};
-      return "<p>These values are whole numbers, so “less than "+b.lo+"” means "+a.hi+" or fewer. The group "+a.label+" really runs from "+m(a.lo-0.5)+" up to "+m(a.hi+0.5)+", so each point goes at the group's <b>upper class boundary</b>: "+m(a.hi+0.5)+", "+m(b.hi+0.5)+", … This is just to the left of the labelled value on the axis.</p>";
+      var a=G.groups[0],b=G.groups[1]||G.groups[0];
+      return "<p>The group "+a.label+" covers values from "+a.lo+" up to, but not including, "+(a.hi+1)+", so its <b>upper class boundary</b> is "+(a.hi+1)+". Plot each point at its group's upper class boundary: "+(a.hi+1)+", "+(b.hi+1)+", …</p>";
     }
   });
 
