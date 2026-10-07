@@ -418,13 +418,15 @@
           <div class="gstatus" id="gStatus"></div>
         </div>
         <div>
-          <div style="margin-bottom:10px"><span class="seg" id="gViewSeg"><button data-v="ft" class="on">Table &amp; mean</button><button data-v="sl">Stem and leaf</button></span></div>
+          <div style="margin-bottom:10px"><span class="seg" id="gViewSeg"><button data-v="ft" class="on">Table &amp; mean</button><button data-v="sl">Stem and leaf</button><button data-v="cf">Cumulative freq.</button><button data-v="bx">Box plot</button></span></div>
           <div id="gFT">
             <div class="pills" id="gSteps"></div>
             <div id="gTable"></div>
             <div id="gBody" style="margin-top:12px"></div>
           </div>
           <div id="gSL" style="display:none"></div>
+          <div id="gCF" style="display:none"></div>
+          <div id="gBX" style="display:none"></div>
         </div>
       </div>
     </div>
@@ -1466,7 +1468,7 @@
   }
   function applyFF(){
     $("ffTally").style.display=OPT.ff?"":"none";
-    renderStep();ftS.render();ftG.render();ftC.render();hRender();kRender();bxRender();slRender();bRender();spRender();pmRender();
+    renderStep();ftS.render();ftG.render();ftC.render();hRender();CBC.kRender();CBC.bxRender();CBG.kRender();CBG.bxRender();slRender();bRender();spRender();pmRender();
   }
   $("optFF").addEventListener("change",function(){OPT.ff=this.checked;saveOpts();applyFF()});
   $("optMistakes").addEventListener("change",function(){OPT.mistakes=this.checked;saveOpts();renderStep()});
@@ -1829,12 +1831,26 @@
 
   /* ---------- Grouped Frequency Table tab ---------- */
   var GCTX=[
-    {title:"Test marks",desc:"Marks (out of 100) of {n} students in a maths test",min:20,max:99,width:10},
-    {title:"Text messages",desc:"Text messages sent yesterday by {n} students",min:0,max:59,width:10},
-    {title:"Homework time",desc:"Minutes spent on homework last night by {n} students",min:0,max:89,width:15},
-    {title:"Words typed",desc:"Words typed in one minute by {n} students",min:10,max:59,width:10},
-    {title:"Cars in the car park",desc:"Cars in the school car park on {n} different days",min:40,max:99,width:10}
+    {title:"Test marks",desc:"Marks (out of 100) of {n} students in a maths test",min:20,max:99,width:10,unit:"marks",axis:"Test mark"},
+    {title:"Text messages",desc:"Text messages sent yesterday by {n} students",min:0,max:59,width:10,unit:"messages",axis:"Number of text messages"},
+    {title:"Homework time",desc:"Minutes spent on homework last night by {n} students",min:0,max:89,width:15,unit:"minutes",axis:"Homework time (minutes)"},
+    {title:"Words typed",desc:"Words typed in one minute by {n} students",min:10,max:59,width:10,unit:"words",axis:"Number of words typed"},
+    {title:"Cars in the car park",desc:"Cars in the school car park on {n} different days",min:40,max:99,width:10,unit:"cars",axis:"Number of cars"},
+    {title:"Music tracks streamed",desc:"Music tracks streamed last week by {n} students",min:0,max:199,width:20,unit:"tracks",axis:"Number of tracks streamed"},
+    {title:"TV episodes streamed",desc:"TV episodes streamed last month by {n} students",min:0,max:59,width:10,unit:"episodes",axis:"Number of episodes streamed"},
+    {title:"Films streamed",desc:"Films streamed last year by {n} students",min:0,max:49,width:10,unit:"films",axis:"Number of films streamed"}
   ];
+  /* wording for the cumulative frequency questions (like KW for the Continuous tab) */
+  var GWORDS={
+    "Test marks":{item:"students",q:"mark",lo:"lowest",hi:"highest",be:"scored",less:"less than",more:"more than"},
+    "Text messages":{item:"students",q:"number of messages",lo:"lowest",hi:"highest",be:"sent",less:"fewer than",more:"more than"},
+    "Homework time":{item:"students",q:"time on homework",lo:"lowest",hi:"highest",be:"spent",less:"less than",more:"more than"},
+    "Words typed":{item:"students",q:"number of words",lo:"lowest",hi:"highest",be:"typed",less:"fewer than",more:"more than"},
+    "Cars in the car park":{item:"days",q:"number of cars",lo:"lowest",hi:"highest",be:"had",less:"fewer than",more:"more than"},
+    "Music tracks streamed":{item:"students",q:"number of tracks",lo:"lowest",hi:"highest",be:"streamed",less:"fewer than",more:"more than"},
+    "TV episodes streamed":{item:"students",q:"number of episodes",lo:"lowest",hi:"highest",be:"streamed",less:"fewer than",more:"more than"},
+    "Films streamed":{item:"students",q:"number of films",lo:"lowest",hi:"highest",be:"streamed",less:"fewer than",more:"more than"}
+  };
   var GDEFAULTS=JSON.parse(JSON.stringify(GCTX));
   var GSTORE="statsgen.grp.v1",gDirty=null;
   var G={ctx:0,nsel:"rand",mode:"random",data:[],groups:[],idx:0,cur:-1,freq:[],chips:null,anim:null,busy:false};
@@ -1901,10 +1917,12 @@
     $("gData").innerHTML=h;$("gData").scrollTop=0;
     $("gCount").textContent="("+G.data.length+" values – scroll to see them all)";
     G.chips=$("gData").children;
+    G.bounds=[G.groups[0].lo-0.5].concat(G.groups.map(function(gr){return gr.hi+0.5}));
     ftG.load(G.groups.map(function(gr){return {lab:gr.label,x:(gr.lo+gr.hi)/2,f:0,lo:gr.lo,hi:gr.hi}}),"Group",false);
     gStatus("Tap <b>One by one</b> to read the first value, or <b>All at once</b> to process the whole list.","");
     gButtons();
     slReset();
+    CBG.kReset();CBG.bxReset();
   }
   function gAdvance(count,quiet){gAdvance0(count,quiet);slRender()}
   function gAdvance0(count,quiet){
@@ -1926,6 +1944,7 @@
       gStatus("✓ All "+n+" values processed – the frequencies add up to "+n+".","ok");
       ftG.setF(G.freq,-1);
       ftG.unlock();
+      CBG.kReset();CBG.bxReset();
     }else if(quiet){
       gStatus("Processing… "+G.idx+" of "+n+" values","");
     }else{
@@ -2117,12 +2136,16 @@
     G.view=v;
     $("gFT").style.display=v==="ft"?"":"none";
     $("gSL").style.display=v==="sl"?"":"none";
+    $("gCF").style.display=v==="cf"?"":"none";
+    $("gBX").style.display=v==="bx"?"":"none";
     if(v==="sl")slRender();
+    if(v==="cf")CBG.kRender();
+    if(v==="bx")CBG.bxRender();
   });
   GUIDES.gdisc={
-    active:function(){return G.view==="sl"?slActive():ftG.active()},
-    typeKey:function(k){if(G.view==="sl")slKey(k);else ftG.typeKey(k)},
-    check:function(){if(G.view==="sl")slCheck();else ftG.check()}
+    active:function(){return G.view==="sl"?slActive():G.view==="cf"?CBG.kActive():G.view==="bx"?CBG.bxActive():ftG.active()},
+    typeKey:function(k){if(G.view==="sl")slKey(k);else if(G.view==="cf")CBG.kKey(k);else if(G.view==="bx")CBG.bxKey(k);else ftG.typeKey(k)},
+    check:function(){if(G.view==="sl")slCheck();else if(G.view==="cf")CBG.kCheck();else if(G.view==="bx")CBG.bxCheck();else ftG.check()}
   };
 
   /* ----- settings for grouped contexts ----- */
@@ -2137,7 +2160,7 @@
       var s=JSON.parse(localStorage.getItem(GSTORE)||"null");
       if(Array.isArray(s)&&s.length>=1&&s.length<=10&&s.every(function(c){
         return c&&typeof c.title==="string"&&typeof c.desc==="string"&&isFinite(c.min)&&isFinite(c.max)&&isFinite(c.width)&&c.width>=1&&c.max-c.min>=2;
-      }))GCTX=s.map(function(c){return {title:clean(c.title),desc:clean(c.desc),min:+c.min,max:+c.max,width:+c.width}});
+      }))GCTX=s.map(function(c){return {title:clean(c.title),desc:clean(c.desc),min:+c.min,max:+c.max,width:+c.width,unit:typeof c.unit==="string"?clean(c.unit):"",axis:typeof c.axis==="string"?clean(c.axis):""}});
     }catch(e){}
   }
   function renderGSet(){
@@ -2149,7 +2172,9 @@
         "<input type='text' data-f='desc' data-i='"+i+"' maxlength='90' value=\""+esc(c.desc)+"\" aria-label='Description' placeholder='Description, e.g. Marks of {n} students'>"+
         "<div class='r3'><label>Smallest value <input type='number' data-f='min' data-i='"+i+"' value='"+c.min+"'></label>"+
         "<label>Largest value <input type='number' data-f='max' data-i='"+i+"' value='"+c.max+"'></label>"+
-        "<label>Group width <input type='number' data-f='width' data-i='"+i+"' value='"+c.width+"'></label></div></div>";
+        "<label>Group width <input type='number' data-f='width' data-i='"+i+"' value='"+c.width+"'></label></div>"+
+        "<div class='r3'><label>Unit <input type='text' data-f='unit' data-i='"+i+"' maxlength='12' value=\""+esc(c.unit||"")+"\" style='width:100px' placeholder='e.g. marks'></label>"+
+        "<label>Axis label <input type='text' data-f='axis' data-i='"+i+"' maxlength='40' value=\""+esc(c.axis||"")+"\" style='width:230px' placeholder='for graphs'></label></div></div>";
     });
     $("gctxRows").innerHTML=h;
     $("addGctx").disabled=GCTX.length>=10;
@@ -2163,6 +2188,8 @@
       if(Math.ceil((c.max-c.min+1)/c.width)>10)c.width=Math.ceil((c.max-c.min+1)/10);
       if(!c.title.trim())c.title="Context";
       if(!c.desc.trim())c.desc="Values of {n} items";
+      if(!(c.unit||"").trim())c.unit="units";
+      if(!(c.axis||"").trim())c.axis=c.title;
     });
     saveGrp();refreshGSelect();
     if(gDirty==="struct")gGenerate();
@@ -2172,7 +2199,7 @@
   $("gctxRows").addEventListener("input",function(e){
     var t=e.target,f=t.getAttribute("data-f");if(!f)return;
     var c=GCTX[+t.getAttribute("data-i")];
-    if(f==="title"||f==="desc"){c[f]=clean(t.value);if(gDirty!=="struct")gDirty="style"}
+    if(f==="title"||f==="desc"||f==="unit"||f==="axis"){c[f]=clean(t.value);if(gDirty!=="struct")gDirty="style"}
     else{
       var v=parseInt(t.value,10);if(isNaN(v))return;
       c[f]=Math.max(0,Math.min(5000,v));gDirty="struct";
@@ -2186,7 +2213,7 @@
   });
   $("addGctx").addEventListener("click",function(){
     if(GCTX.length>=10)return;
-    GCTX.push({title:"New context",desc:"Description of {n} values",min:0,max:59,width:10});
+    GCTX.push({title:"New context",desc:"Description of {n} values",min:0,max:59,width:10,unit:"units",axis:"New context"});
     gDirty="struct";saveGrp();renderGSet();
     var ins=$("gctxRows").querySelectorAll("input[data-f='title']");
     if(ins.length){var l=ins[ins.length-1];l.focus();l.select()}
@@ -2321,7 +2348,7 @@
     C.chips=$("cData").children;
     $("cWval").textContent=cWidthLabel();
     ftC.load(cRows(),c.title+", x ("+c.unit+")",complete);
-    hReset();kReset();bxReset();
+    hReset();CBC.kReset();CBC.bxReset();
     if(complete)cStatus("✓ All "+n+" values are in the table – the frequencies add up to "+n+".","ok");
     else cStatus("Tap <b>One by one</b> to read the first value, or <b>All at once</b> to process the whole list.","");
     cButtons();
@@ -2349,7 +2376,7 @@
       cStatus("✓ All "+n+" values processed – the frequencies add up to "+n+".","ok");
       ftC.setF(C.freq,-1);
       ftC.unlock();
-      hReset();kReset();bxReset();
+      hReset();CBC.kReset();CBC.bxReset();
     }else if(quiet){
       cStatus("Processing… "+C.idx+" of "+n+" values","");
     }else{
@@ -2590,23 +2617,52 @@
     $("cCF").style.display=v==="cf"?"":"none";
     $("cBX").style.display=v==="bx"?"":"none";
     if(v==="hist")hRender();
-    if(v==="cf")kRender();
-    if(v==="bx")bxRender();
+    if(v==="cf")CBC.kRender();
+    if(v==="bx")CBC.bxRender();
   });
   GUIDES.cont={
-    active:function(){return C.view==="hist"?hActive():C.view==="cf"?kActive():C.view==="bx"?bxActive():ftC.active()},
-    typeKey:function(k){if(C.view==="hist")hKey(k);else if(C.view==="cf")kKey(k);else if(C.view==="bx")bxKey(k);else ftC.typeKey(k)},
-    check:function(){if(C.view==="hist")hCheck();else if(C.view==="cf")kCheck();else if(C.view==="bx")bxCheck();else ftC.check()}
+    active:function(){return C.view==="hist"?hActive():C.view==="cf"?CBC.kActive():C.view==="bx"?CBC.bxActive():ftC.active()},
+    typeKey:function(k){if(C.view==="hist")hKey(k);else if(C.view==="cf")CBC.kKey(k);else if(C.view==="bx")CBC.bxKey(k);else ftC.typeKey(k)},
+    check:function(){if(C.view==="hist")hCheck();else if(C.view==="cf")CBC.kCheck();else if(C.view==="bx")CBC.bxCheck();else ftC.check()}
   };
 
 
-  /* ----- cumulative frequency (Continuous tab) ----- */
+  /* ----- cumulative frequency and box plot (Continuous and Grouped tabs) -----
+     makeCB builds one independent copy of both sections for a data source S:
+       pre, cfId, bxId, noun        - id prefix, container ids, "class" or "group"
+       B(), freq(), data(), view()  - boundaries, frequencies, raw values, current view
+       ctx(), words(), axisLabel()  - {title,unit,dp}, question wording, x-axis title
+       complete(), w(i), again()    - data processed?, class width, make new data
+       rowLab(j), ticks(), plotNote() - cf table row label, axis labels, extra step-2 text */
+  var XHIDS={hSvg:1,bSvg:1},XHGEO={};
+  var KNAMES=["Aisha","Callum","Priya","Tom","Megan","Jack","Ellie","Ravi","Chloe","Owen","Fatima","Liam","Zainab","Ben","Holly","Mohammed","Imogen","Kiran"];
+  var KW={
+    "Heights":{item:"students",q:"height",lo:"shortest",hi:"tallest",be:"are",less:"shorter than",more:"taller than"},
+    "100 m times":{item:"runners",q:"time",lo:"fastest",hi:"slowest",be:"took",less:"less than",more:"more than"},
+    "Parcel masses":{item:"parcels",q:"mass",lo:"lightest",hi:"heaviest",be:"are",less:"lighter than",more:"heavier than"},
+    "Journey times":{item:"journeys",q:"time",lo:"shortest",hi:"longest",be:"took",less:"less than",more:"more than"},
+    "Leaf lengths":{item:"leaves",q:"length",lo:"shortest",hi:"longest",be:"are",less:"shorter than",more:"longer than"}
+  };
+  var KWG={item:"values",q:"value",lo:"lowest",hi:"highest",be:"are",less:"less than",more:"more than"};
+  function makeCB(S){
+  /* x-axis labels: the class boundaries (Continuous) or the group lower limits (Grouped) */
+  function xTicksSVG(){
+    var pw=KV.W-KV.L-KV.R,ph=KV.H-KV.T-KV.B,B=S.B(),B0=B[0],Bn=B[B.length-1],lastX=-99,h="";
+    S.ticks().forEach(function(t){
+      var x=KV.L+(t.v-B0)/(Bn-B0)*pw;
+      if(x-lastX>=36){h+="<text x='"+x.toFixed(1)+"' y='"+(KV.T+ph+22)+"' text-anchor='middle' font-size='14' fill='#33415c'>"+t.text+"</text>";lastX=x}
+    });
+    return h;
+  }
+  XHIDS[S.pre+"kSvg"]=1;XHIDS[S.pre+"bxSvg1"]=1;XHIDS[S.pre+"bxSvg2"]=1;
+  XHGEO[S.pre+"kSvg"]=XHGEO[S.pre+"bxSvg1"]=function(){var sc=kScale(),B=S.B();return {W:KV.W,H:KV.H,L:KV.L,R:KV.R,T:KV.T,B:KV.B,x0:B[0],x1:B[B.length-1],y0:0,y1:sc.top}};
+  XHGEO[S.pre+"bxSvg2"]=function(){var a=bxAxis();return {W:BV.W,H:BV.H,L:BV.L,R:BV.R,T:BV.T,B:BV.B,x0:a.lo,x1:a.hi,y0:null,y1:null}};
   var K={step:0,F:[],placed:[],temp:null,joined:false,style:"smooth",celebrated:false,msg:null,tm:null,q:null,lastType:""};
-  function kCum(){var r=0;return C.freq.map(function(f){r+=f;return r})}
+  function kCum(){var r=0;return S.freq().map(function(f){r+=f;return r})}
   function kReset(){
     clearTimeout(K.tm);
     K.step=0;K.temp=null;K.joined=false;K.style="smooth";K.celebrated=false;K.msg=null;K.placed=[];K.F=[];K.q=null;K.lastType="";
-    if(hComplete()){
+    if(S.complete()){
       var cum=kCum(),i;
       for(i=0;i<cum.length;i++)K.F.push({v:"",ok:false,exp:cum[i]});
       for(i=0;i<=cum.length;i++)K.placed.push(false);
@@ -2614,7 +2670,7 @@
     kRender();
   }
   function kCur(){for(var i=0;i<K.F.length;i++)if(!K.F[i].ok)return i;return -1}
-  function kActive(){return C.view==="cf"&&hComplete()&&((K.step===0&&kCur()>=0)||(K.step===2&&!!K.q&&K.q.mode==="num"&&!K.q.done))}
+  function kActive(){return S.view()==="cf"&&S.complete()&&((K.step===0&&kCur()>=0)||(K.step===2&&!!K.q&&K.q.mode==="num"&&!K.q.done))}
   function kKey(k){
     if(K.step===2){qKey(k);return}
     var f=K.F[kCur()];if(!f)return;
@@ -2628,14 +2684,14 @@
     var i=kCur(),f=K.F[i];if(!f)return;
     if(f.v===""){K.msg={type:"bad",text:"Type an answer first."};kRender();return}
     if(+f.v===f.exp){
-      f.ok=true;K.msg=kCur()<0?{type:"good",text:"✓ The cumulative frequencies are done. The last one equals the total frequency, "+C.data.length+"."}:null;
+      f.ok=true;K.msg=kCur()<0?{type:"good",text:"✓ The cumulative frequencies are done. The last one equals the total frequency, "+S.data().length+"."}:null;
     }else{
-      K.msg={type:"bad",text:i===0?"Not quite – the first cumulative frequency is just the first frequency, "+C.freq[0]+".":"Not quite – add this class's frequency ("+C.freq[i]+") to the cumulative frequency above ("+K.F[i-1].exp+").",};f.v="";
+      K.msg={type:"bad",text:i===0?"Not quite – the first cumulative frequency is just the first frequency, "+S.freq()[0]+".":"Not quite – add this "+S.noun+"'s frequency ("+S.freq()[i]+") to the cumulative frequency above ("+K.F[i-1].exp+").",};f.v="";
     }
     kRender();
   }
   function kScale(){
-    var mx=C.data.length,raw=mx/6,mag=Math.pow(10,Math.floor(Math.log10(raw))),step=mag,m;
+    var mx=S.data().length,raw=mx/6,mag=Math.pow(10,Math.floor(Math.log10(raw))),step=mag,m;
     [1,2,5,10].some(function(q){step=q*mag;return step>=raw-1e-12});
     m=Math.round(step/mag);
     var div=(m===2||m===20)?4:5;
@@ -2643,10 +2699,10 @@
   }
   var KV={W:640,H:420,L:64,R:18,T:16,B:60};
   function kPts(){
-    var sc=kScale(),pw=KV.W-KV.L-KV.R,ph=KV.H-KV.T-KV.B,B0=C.B[0],Bn=C.B[C.B.length-1],cum=kCum(),pts=[];
-    for(var j=0;j<C.B.length;j++){
+    var sc=kScale(),pw=KV.W-KV.L-KV.R,ph=KV.H-KV.T-KV.B,B0=S.B()[0],Bn=S.B()[S.B().length-1],cum=kCum(),pts=[];
+    for(var j=0;j<S.B().length;j++){
       var cf=j===0?0:cum[j-1];
-      pts.push({j:j,x:KV.L+(C.B[j]-B0)/(Bn-B0)*pw,y:KV.T+ph-cf/sc.top*ph,cf:cf});
+      pts.push({j:j,x:KV.L+(S.B()[j]-B0)/(Bn-B0)*pw,y:KV.T+ph-cf/sc.top*ph,cf:cf});
     }
     return pts;
   }
@@ -2668,17 +2724,15 @@
     return out;
   }
   function kChart(){
-    var sc=kScale(),c=CCTX[C.ctx],pw=KV.W-KV.L-KV.R,ph=KV.H-KV.T-KV.B,P=kPts(),i,v,h="";
+    var sc=kScale(),c=S.ctx(),pw=KV.W-KV.L-KV.R,ph=KV.H-KV.T-KV.B,P=kPts(),i,v,h="";
     function Y(v){return KV.T+ph-v/sc.top*ph}
-    h+="<svg class='cfsvg' id='kSvg' viewBox='0 0 "+KV.W+" "+KV.H+"' role='img' aria-label='Cumulative frequency graph'>";
+    h+="<svg class='cfsvg' id='"+S.pre+"kSvg' viewBox='0 0 "+KV.W+" "+KV.H+"' role='img' aria-label='Cumulative frequency graph'>";
     for(v=0;v<=sc.top+1e-9;v+=sc.minor)h+="<line x1='"+KV.L+"' x2='"+(KV.W-KV.R)+"' y1='"+Y(v).toFixed(1)+"' y2='"+Y(v).toFixed(1)+"' stroke='#e6edf7' stroke-width='1'/>";
     for(v=0;v<=sc.top+1e-9;v+=sc.step)h+="<line x1='"+KV.L+"' x2='"+(KV.W-KV.R)+"' y1='"+Y(v).toFixed(1)+"' y2='"+Y(v).toFixed(1)+"' stroke='#b8c6dc' stroke-width='1.2'/><text x='"+(KV.L-8)+"' y='"+(Y(v)+5).toFixed(1)+"' text-anchor='end' font-size='14' fill='#33415c'>"+cNum(v)+"</text>";
     P.forEach(function(p){h+="<line x1='"+p.x.toFixed(1)+"' x2='"+p.x.toFixed(1)+"' y1='"+KV.T+"' y2='"+(KV.T+ph)+"' stroke='#d3dcea' stroke-width='1' stroke-dasharray='3 4'/>"});
     h+="<line x1='"+KV.L+"' x2='"+KV.L+"' y1='"+KV.T+"' y2='"+(KV.T+ph)+"' stroke='#1b2a4a' stroke-width='2'/><line x1='"+KV.L+"' x2='"+(KV.W-KV.R)+"' y1='"+(KV.T+ph)+"' y2='"+(KV.T+ph)+"' stroke='#1b2a4a' stroke-width='2'/>";
     var lastX=-99;
-    P.forEach(function(p){
-      if(p.x-lastX>=36){h+="<text x='"+p.x.toFixed(1)+"' y='"+(KV.T+ph+22)+"' text-anchor='middle' font-size='14' fill='#33415c'>"+cNum(C.B[p.j])+"</text>";lastX=p.x}
-    });
+    h+=xTicksSVG();
     if(K.joined){
       var placedP=P;
       if(K.style==="smooth")h+="<path d='"+kPath(placedP)+"' fill='none' stroke='#1d4ed8' stroke-width='3' stroke-linejoin='round'/>";
@@ -2695,7 +2749,7 @@
       h+="<circle cx='"+tp.x.toFixed(1)+"' cy='"+ty.toFixed(1)+"' r='6' fill='#f59e0b' stroke='#fff' stroke-width='1.5'/>";
     }
     if(K.step===2&&K.q&&K.q.show&&K.q.g){
-      var gx=KV.L+(K.q.g.x-C.B[0])/(C.B[C.B.length-1]-C.B[0])*pw,gy=KV.T+ph-K.q.g.cf/sc.top*ph,halo=" paint-order='stroke' stroke='#fff' stroke-width='4' ";
+      var gx=KV.L+(K.q.g.x-S.B()[0])/(S.B()[S.B().length-1]-S.B()[0])*pw,gy=KV.T+ph-K.q.g.cf/sc.top*ph,halo=" paint-order='stroke' stroke='#fff' stroke-width='4' ";
       h+="<line x1='"+KV.L+"' x2='"+gx.toFixed(1)+"' y1='"+gy.toFixed(1)+"' y2='"+gy.toFixed(1)+"' stroke='#15803d' stroke-width='2.5' stroke-dasharray='7 5'/>";
       h+="<line x1='"+gx.toFixed(1)+"' x2='"+gx.toFixed(1)+"' y1='"+gy.toFixed(1)+"' y2='"+(KV.T+ph)+"' stroke='#15803d' stroke-width='2.5' stroke-dasharray='7 5'/>";
       h+="<circle cx='"+gx.toFixed(1)+"' cy='"+gy.toFixed(1)+"' r='5' fill='#15803d'/>";
@@ -2703,7 +2757,7 @@
       h+="<text x='"+(gx+6).toFixed(1)+"' y='"+(KV.T+ph-8)+"' font-size='15' font-weight='800' fill='#15803d'"+halo+">"+cNum(cRound(K.q.g.x,2))+"</text>";
     }
     if(K.step===1)h+="<rect data-kp='1' x='"+KV.L+"' y='"+KV.T+"' width='"+pw+"' height='"+ph+"' fill='transparent'/>";
-    h+="<text x='"+(KV.L+pw/2)+"' y='"+(KV.H-8)+"' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>"+esc(c.title)+" ("+esc(c.unit)+")</text>";
+    h+="<text x='"+(KV.L+pw/2)+"' y='"+(KV.H-8)+"' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>"+esc(S.axisLabel())+"</text>";
     h+="<text transform='translate(16 "+(KV.T+ph/2)+") rotate(-90)' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>Cumulative frequency</text>";
     return h+"</svg>";
   }
@@ -2713,21 +2767,21 @@
     return h+"<button class='wide' data-k='enter'>Check ✓</button></div>";
   }
   function kRender(){
-    var el=$("cCF");if(!el||C.view!=="cf")return;
-    if(!hComplete()){el.innerHTML="<div class='lockmsg'>Process the data first – tap <b>One by one</b> or <b>All at once</b>. Then we'll build the cumulative frequency table and graph.</div>";return}
+    var el=$(S.cfId);if(!el||S.view()!=="cf")return;
+    if(!S.complete()){el.innerHTML="<div class='lockmsg'>Process the data first – tap <b>One by one</b> or <b>All at once</b>. Then we'll build the cumulative frequency table and graph.</div>";return}
     var n=K.F.length,cur=kCur(),i,h="<div class='pills'><button class='pill"+(K.step===0?" active":"")+(cur<0?" done":"")+"' data-ks='0'>"+(cur<0?"✓ ":"1 ")+"Cumulative frequency</button>"+
       "<button class='pill"+(K.step===1?" active":"")+(K.joined?" done":"")+(cur>=0?" locked":"")+"' data-ks='1'>"+(K.joined?"✓ ":"2 ")+"Plot and join</button>"+
       "<button class='pill"+(K.step===2?" active":"")+(K.q&&K.q.done?" done":"")+(!K.joined?" locked":"")+"' data-ks='2'>3 Read the graph</button></div>";
     if(K.step===0){
-      h+="<div class='stepin'><h3>Step 1 – Cumulative frequency</h3><p><b>Cumulative frequency</b> is a running total: how many values are <i>less than</i> each upper boundary. Before the first class there are 0 values.</p></div>";
+      h+="<div class='stepin'><h3>Step 1 – Cumulative frequency</h3><p><b>Cumulative frequency</b> is a running total: how many values are <i>less than</i> each upper boundary. Before the first "+S.noun+" there are 0 values.</p></div>";
       h+="<table class='gtab ft'><tr><th>Values</th><th class='gf'>Frequency<br>f</th><th class='gf'>Cumulative<br>frequency</th></tr>";
-      h+="<tr><td style='white-space:nowrap'>x &lt; "+cNum(C.B[0])+"</td><td class='gf'></td><td class='gf'><span class='abox sm ok'>0</span></td></tr>";
+      h+="<tr><td style='white-space:nowrap'>"+S.rowLab(0)+"</td><td class='gf'></td><td class='gf'><span class='abox sm ok'>0</span></td></tr>";
       for(i=0;i<n;i++){
         var f=K.F[i],cell;
         if(f.ok)cell="<span class='abox sm ok'>"+f.v+"</span>";
         else if(i===cur)cell="<span class='abox sm active'>"+f.v+"</span><button class='lifebelt sm' data-kl='"+i+"' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>";
         else cell="<span class='abox sm'></span>";
-        h+="<tr><td style='white-space:nowrap'>x &lt; "+cNum(C.B[i+1])+"</td><td class='gf'>"+C.freq[i]+"</td><td class='gf'>"+cell+"</td></tr>";
+        h+="<tr><td style='white-space:nowrap'>"+S.rowLab(i+1)+"</td><td class='gf'>"+S.freq()[i]+"</td><td class='gf'>"+cell+"</td></tr>";
       }
       h+="</table>";
       if(cur>=0)h+=kKeypad();
@@ -2736,15 +2790,15 @@
       h+=kReadHTML();
     }else{
       var cum=kCum(),pl=K.placed.filter(Boolean).length,all=pl===K.placed.length;
-      h+="<div class='stepin'><h3>Step 2 – Plot and join</h3><p>Plot each point at the <b>upper boundary</b> of its class (that is where the running total is counted), at the height of its cumulative frequency. Tap the graph where the point goes. The first point is <b>("+cNum(C.B[0])+", 0)</b>.</p></div>";
-      h+="<div class='fdchips'><span>("+cNum(C.B[0])+", <b>0</b>)</span>"+cum.map(function(v,j){return "<span>("+cNum(C.B[j+1])+", <b>"+v+"</b>)</span>"}).join("")+"</div>";
+      h+="<div class='stepin'><h3>Step 2 – Plot and join</h3><p>Plot each point at the <b>upper boundary</b> of its "+S.noun+" (that is where the running total is counted), at the height of its cumulative frequency. Tap the graph where the point goes. The first point is <b>("+cNum(S.B()[0])+", 0)</b>.</p>"+S.plotNote()+"</div>";
+      h+="<div class='fdchips'><span>("+cNum(S.B()[0])+", <b>0</b>)</span>"+cum.map(function(v,j){return "<span>("+cNum(S.B()[j+1])+", <b>"+v+"</b>)</span>"}).join("")+"</div>";
       h+=xhBar()+kChart();
       h+="<div class='row' style='margin-top:10px'>";
       if(!all)h+="<button class='btn sec' data-ka='help'>🛟 Plot the next point for me</button>";
       else if(!K.joined)h+="<button class='btn go' data-ka='smooth'>Join with a smooth curve</button><button class='btn' data-ka='straight'>Join with straight lines</button>";
       else h+="<button class='btn "+(K.style==="smooth"?"go":"")+"' data-ka='smooth'>Smooth curve</button><button class='btn "+(K.style==="straight"?"go":"")+"' data-ka='straight'>Straight lines</button><button class='btn sec' data-ka='again'>New data</button><button class='btn go' data-ka='read'>Next: read the graph →</button>";
       h+="</div>";
-      if(K.joined)h+="<p>The curve rises from 0 to <b>"+C.data.length+"</b>, the total frequency. Where it is steepest, the data is most concentrated.</p>";
+      if(K.joined)h+="<p>The curve rises from 0 to <b>"+S.data().length+"</b>, the total frequency. Where it is steepest, the data is most concentrated.</p>";
     }
     h+=kFFBar();
     if(K.msg&&K.step!==2)h+="<div class='fmsg "+K.msg.type+"'>"+K.msg.text+"</div>";
@@ -2753,13 +2807,13 @@
   function kPlace(j,v){
     var sc=kScale(),P=kPts();
     v=cRound(Math.max(0,Math.min(sc.top,Math.round(v/sc.minor)*sc.minor)),6);
-    var exp=P[j].cf,lab="("+cNum(C.B[j])+", "+exp+")";
-    if(K.placed[j]){K.msg={type:"bad",text:"There is already a point at "+cNum(C.B[j])+". Tap above another boundary."};kRender();return}
+    var exp=P[j].cf,lab="("+cNum(S.B()[j])+", "+exp+")";
+    if(K.placed[j]){K.msg={type:"bad",text:"There is already a point at "+cNum(S.B()[j])+". Tap above another boundary."};kRender();return}
     if(Math.abs(v-exp)<=sc.minor/2+1e-9){
       K.placed[j]=true;K.temp=null;K.msg={type:"good",text:"✓ Point plotted at "+lab+"."};kRender();
     }else{
       K.temp={j:j,v:v};
-      K.msg={type:"bad",text:"Not quite – the point above "+cNum(C.B[j])+" is too "+(v<exp?"low":"high")+". Its cumulative frequency is "+exp+"."};
+      K.msg={type:"bad",text:"Not quite – the point above "+cNum(S.B()[j])+" is too "+(v<exp?"low":"high")+". Its cumulative frequency is "+exp+"."};
       kRender();clearTimeout(K.tm);K.tm=setTimeout(function(){if(K.temp&&K.temp.j===j){K.temp=null;kRender()}},1200);
     }
   }
@@ -2767,12 +2821,12 @@
     if(K.celebrated||!K.joined)return;
     K.celebrated=true;
     $("celSub").textContent="Your cumulative frequency graph is spot on.";
-    $("modeText").textContent="Total frequency = "+C.data.length+" · top of the curve at ("+cNum(C.B[C.B.length-1])+", "+C.data.length+")";
+    $("modeText").textContent="Total frequency = "+S.data().length+" · top of the curve at ("+cNum(S.B()[S.B().length-1])+", "+S.data().length+")";
     $("thinkText").textContent="Think: how could we use this curve to estimate the median and the quartiles?";
     showOv();confetti();
   }
   function kFFBar(){
-    if(!hComplete())return "";
+    if(!S.complete())return "";
     if(K.step===2)return "";
     if(K.step===0)return kCur()>=0?ffBar(true,true):"";
     if(K.placed.every(Boolean))return K.joined?"":ffBar(false,true);
@@ -2789,11 +2843,11 @@
     if(kind==="step"){K.joined=true;K.style="smooth";kRender();kFinish();return}
     kRender();
   }
-  $("cCF").addEventListener("click",function(e){
+  $(S.cfId).addEventListener("click",function(e){
     var t;
     if((t=e.target.closest("[data-ff]"))){kFF(t.getAttribute("data-ff"));return}
     if(K.step===1&&(t=e.target.closest("[data-kp]"))){
-      var r=$("kSvg").getBoundingClientRect();if(!r.height)return;
+      var r=$(S.pre+"kSvg").getBoundingClientRect();if(!r.height)return;
       var sx=(e.clientX-r.left)/r.width*KV.W,sy=(e.clientY-r.top)/r.height*KV.H,P=kPts(),best=0,bd=1e9,sc=kScale(),ph=KV.H-KV.T-KV.B;
       P.forEach(function(p,j){var dd=Math.abs(p.x-sx);if(dd<bd){bd=dd;best=j}});
       kPlace(best,(KV.T+ph-sy)/ph*sc.top);return;
@@ -2817,21 +2871,12 @@
       else if(a==="qshow"){kqShow()}
       else if(a==="help"){for(var j=0;j<K.placed.length;j++)if(!K.placed[j]){K.placed[j]=true;K.temp=null;K.msg=null;break}kRender()}
       else if(a==="smooth"||a==="straight"){K.style=a;K.joined=true;K.msg=null;kRender();kFinish()}
-      else if(a==="again")cGenerate();
+      else if(a==="again")S.again();
     }
   });
 
 
-  /* ----- reading the cumulative frequency graph (Continuous tab) ----- */
-  var KNAMES=["Aisha","Callum","Priya","Tom","Megan","Jack","Ellie","Ravi","Chloe","Owen","Fatima","Liam","Zainab","Ben","Holly","Mohammed","Imogen","Kiran"];
-  var KW={
-    "Heights":{item:"students",q:"height",lo:"shortest",hi:"tallest",be:"are",less:"shorter than",more:"taller than"},
-    "100 m times":{item:"runners",q:"time",lo:"fastest",hi:"slowest",be:"took",less:"less than",more:"more than"},
-    "Parcel masses":{item:"parcels",q:"mass",lo:"lightest",hi:"heaviest",be:"are",less:"lighter than",more:"heavier than"},
-    "Journey times":{item:"journeys",q:"time",lo:"shortest",hi:"longest",be:"took",less:"less than",more:"more than"},
-    "Leaf lengths":{item:"leaves",q:"length",lo:"shortest",hi:"longest",be:"are",less:"shorter than",more:"longer than"}
-  };
-  var KWG={item:"values",q:"value",lo:"lowest",hi:"highest",be:"are",less:"less than",more:"more than"};
+  /* ----- reading the cumulative frequency graph ----- */
   function kMono(P){
     var n=P.length,d=[],m=[],k;
     for(k=0;k<n-1;k++)d.push((P[k+1].y-P[k].y)/(P[k+1].x-P[k].x));
@@ -2844,7 +2889,7 @@
     }
     return m;
   }
-  function kNodes(){var cum=kCum();return C.B.map(function(b,j){return {x:b,y:j===0?0:cum[j-1]}})}
+  function kNodes(){var cum=kCum();return S.B().map(function(b,j){return {x:b,y:j===0?0:cum[j-1]}})}
   function kHerm(P,m,k,x){
     var h=P[k+1].x-P[k].x,t=(x-P[k].x)/h,t2=t*t,t3=t2*t;
     return (2*t3-3*t2+1)*P[k].y+(t3-2*t2+t)*h*m[k]+(-2*t3+3*t2)*P[k+1].y+(t3-t2)*h*m[k+1];
@@ -2868,17 +2913,17 @@
     return (lo+hi)/2;
   }
   function kRand(a){return a[Math.floor(Math.random()*a.length)]}
-  function kRange(){return C.B[C.B.length-1]-C.B[0]}
+  function kRange(){return S.B()[S.B().length-1]-S.B()[0]}
   function kDpA(){var R=kRange();return R>=30?0:(R>=3?1:2)}
   function kPickV(){
-    var R=kRange(),B0=C.B[0],steps=[0.1,0.2,0.5,1,2,5,10,20,50],st=steps[steps.length-1],i;
+    var R=kRange(),B0=S.B()[0],steps=[0.1,0.2,0.5,1,2,5,10,20,50],st=steps[steps.length-1],i;
     for(i=0;i<steps.length;i++)if(steps[i]>=R/16-1e-9){st=steps[i];break}
     var lo=Math.ceil((B0+R*0.15)/st-1e-9),hi=Math.floor((B0+R*0.85)/st+1e-9);
     return cRound((lo+Math.floor(Math.random()*(hi-lo+1)))*st,4);
   }
   function kqText(tpl,o){return tpl.replace(/\{(\w+)\}/g,function(_,k){return o[k]})}
   function kqNew(){
-    var N=C.data.length,c=CCTX[C.ctx],w=KW[c.title]||KWG,R=kRange(),dpA=kDpA(),u=c.unit,i,tries,q=null;
+    var N=S.data().length,c=S.ctx(),w=S.words(),R=kRange(),dpA=kDpA(),u=c.unit,i,tries,q=null;
     var types=["quart","quart","pct","pct","claim","claim","count"].filter(function(t){return t!==K.lastType});
     var type=kRand(types);
     var tolX=Math.max(R*0.03,0.5*Math.pow(10,-dpA));
@@ -2986,38 +3031,38 @@
     return h;
   }
 
-  /* ----- box plot (Continuous tab) ----- */
+  /* ----- box plot ----- */
   var BX={step:0,q:0,phase:"pos",f:{v:""},qv:[0,0,0],qpos:[0,0,0],plot:[false,false,false,false,false],temp:null,iqr:{v:"",ok:false},msg:null,celebrated:false,tm:null,mn:0,mx:0,dp:1};
   var QNAME=["lower quartile (Q1)","median","upper quartile (Q3)"],QFRAC=["¼","½","¾"],QDIV=["N ÷ 4","N ÷ 2","3 × N ÷ 4"],PNAME=["lowest value","lower quartile (Q1)","median","upper quartile (Q3)","highest value"],PSHORT=["Lowest","Q1","Median","Q3","Highest"];
   function bxQuart(t){
     var cum=kCum(),prev=0,i;
     for(i=0;i<cum.length;i++){
-      if(t<=cum[i])return C.B[i]+(t-prev)/C.freq[i]*hW(i);
+      if(t<=cum[i])return S.B()[i]+(t-prev)/S.freq()[i]*S.w(i);
       prev=cum[i];
     }
-    return C.B[C.B.length-1];
+    return S.B()[S.B().length-1];
   }
   function bxReset(){
     clearTimeout(BX.tm);
     BX.step=0;BX.q=0;BX.phase="pos";BX.f={v:""};BX.plot=[false,false,false,false,false];BX.temp=null;BX.iqr={v:"",ok:false};BX.msg=null;BX.celebrated=false;
-    if(hComplete()){
-      var N=C.data.length,c=CCTX[C.ctx];
+    if(S.complete()){
+      var N=S.data().length,c=S.ctx();
       BX.dp=Math.max(1,c.dp);
       BX.qpos=[N/4,N/2,3*N/4];
       BX.qv=BX.qpos.map(function(t){return cRound(bxQuart(t),BX.dp)});
-      BX.mn=Math.min.apply(null,C.data);BX.mx=Math.max.apply(null,C.data);
+      BX.mn=Math.min.apply(null,S.data());BX.mx=Math.max.apply(null,S.data());
     }
     bxRender();
   }
   function bxT(){return [BX.mn,BX.qv[0],BX.qv[1],BX.qv[2],BX.mx]}
   function bxNextPlot(){for(var i=0;i<5;i++)if(!BX.plot[i])return i;return -1}
   function bxField(){
-    if(!hComplete())return null;
+    if(!S.complete())return null;
     if(BX.step===0&&BX.q<3&&BX.phase==="pos")return BX.f;
     if(BX.step===1&&bxNextPlot()<0&&!BX.iqr.ok)return BX.iqr;
     return null;
   }
-  function bxActive(){return C.view==="bx"&&!!bxField()}
+  function bxActive(){return S.view()==="bx"&&!!bxField()}
   function bxKey(k){
     var f=bxField();if(!f)return;
     if(k==="enter"){bxCheck();return}
@@ -3032,7 +3077,7 @@
     if(f.v===""||isNaN(val)){BX.msg={type:"bad",text:"Type an answer first."};bxRender();return}
     if(f===BX.f){
       if(Math.abs(val-BX.qpos[BX.q])<=0.005+1e-9){BX.phase="tap";BX.msg={type:"good",text:"✓ Correct – now use the curve."};BX.f={v:""}}
-      else{BX.msg={type:"bad",text:"Not quite – the "+QNAME[BX.q]+" is "+QFRAC[BX.q]+" of the way through, so work out "+QDIV[BX.q]+" (N = "+C.data.length+")."};f.v=""}
+      else{BX.msg={type:"bad",text:"Not quite – the "+QNAME[BX.q]+" is "+QFRAC[BX.q]+" of the way through, so work out "+QDIV[BX.q]+" (N = "+S.data().length+")."};f.v=""}
     }else{
       var exp=cRound(BX.qv[2]-BX.qv[0],4);
       if(Math.abs(val-exp)<=1e-6){f.ok=true;BX.msg={type:"good",text:"✓ The interquartile range is "+cNum(exp)+"."};bxRender();bxFinish();return}
@@ -3041,16 +3086,16 @@
     bxRender();
   }
   function bxCurveSVG(){
-    var sc=kScale(),c=CCTX[C.ctx],pw=KV.W-KV.L-KV.R,ph=KV.H-KV.T-KV.B,P=kPts(),v,i,h="",B0=C.B[0],Bn=C.B[C.B.length-1],N=C.data.length;
+    var sc=kScale(),c=S.ctx(),pw=KV.W-KV.L-KV.R,ph=KV.H-KV.T-KV.B,P=kPts(),v,i,h="",B0=S.B()[0],Bn=S.B()[S.B().length-1],N=S.data().length;
     function Y(v){return KV.T+ph-v/sc.top*ph}
     function X(v){return KV.L+(v-B0)/(Bn-B0)*pw}
-    h+="<svg class='cfsvg' id='bxSvg1' viewBox='0 0 "+KV.W+" "+KV.H+"' role='img' aria-label='Cumulative frequency curve'>";
+    h+="<svg class='cfsvg' id='"+S.pre+"bxSvg1' viewBox='0 0 "+KV.W+" "+KV.H+"' role='img' aria-label='Cumulative frequency curve'>";
     for(v=0;v<=sc.top+1e-9;v+=sc.minor)h+="<line x1='"+KV.L+"' x2='"+(KV.W-KV.R)+"' y1='"+Y(v).toFixed(1)+"' y2='"+Y(v).toFixed(1)+"' stroke='#e6edf7' stroke-width='1'/>";
     for(v=0;v<=sc.top+1e-9;v+=sc.step)h+="<line x1='"+KV.L+"' x2='"+(KV.W-KV.R)+"' y1='"+Y(v).toFixed(1)+"' y2='"+Y(v).toFixed(1)+"' stroke='#b8c6dc' stroke-width='1.2'/><text x='"+(KV.L-8)+"' y='"+(Y(v)+5).toFixed(1)+"' text-anchor='end' font-size='14' fill='#33415c'>"+cNum(v)+"</text>";
     P.forEach(function(p){h+="<line x1='"+p.x.toFixed(1)+"' x2='"+p.x.toFixed(1)+"' y1='"+KV.T+"' y2='"+(KV.T+ph)+"' stroke='#d3dcea' stroke-width='1' stroke-dasharray='3 4'/>"});
     h+="<line x1='"+KV.L+"' x2='"+KV.L+"' y1='"+KV.T+"' y2='"+(KV.T+ph)+"' stroke='#1b2a4a' stroke-width='2'/><line x1='"+KV.L+"' x2='"+(KV.W-KV.R)+"' y1='"+(KV.T+ph)+"' y2='"+(KV.T+ph)+"' stroke='#1b2a4a' stroke-width='2'/>";
     var lastX=-99;
-    P.forEach(function(p){if(p.x-lastX>=36){h+="<text x='"+p.x.toFixed(1)+"' y='"+(KV.T+ph+22)+"' text-anchor='middle' font-size='14' fill='#33415c'>"+cNum(C.B[p.j])+"</text>";lastX=p.x}});
+    h+=xTicksSVG();
     h+="<path d='"+kPath(P)+"' fill='none' stroke='#1d4ed8' stroke-width='3' stroke-linejoin='round'/>";
     P.forEach(function(p){h+="<circle cx='"+p.x.toFixed(1)+"' cy='"+p.y.toFixed(1)+"' r='3.5' fill='#c2410c'/>"});
     for(i=0;i<3;i++){
@@ -3066,7 +3111,7 @@
     }
     if(BX.temp&&BX.temp.kind==="q"){h+="<line x1='"+X(BX.temp.v).toFixed(1)+"' x2='"+X(BX.temp.v).toFixed(1)+"' y1='"+KV.T+"' y2='"+(KV.T+ph)+"' stroke='#f59e0b' stroke-width='3'/>"}
     if(BX.step===0&&BX.phase==="tap"&&BX.q<3)h+="<rect data-bq='1' x='"+KV.L+"' y='"+KV.T+"' width='"+pw+"' height='"+ph+"' fill='transparent'/>";
-    h+="<text x='"+(KV.L+pw/2)+"' y='"+(KV.H-8)+"' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>"+esc(c.title)+" ("+esc(c.unit)+")</text>";
+    h+="<text x='"+(KV.L+pw/2)+"' y='"+(KV.H-8)+"' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>"+esc(S.axisLabel())+"</text>";
     h+="<text transform='translate(16 "+(KV.T+ph/2)+") rotate(-90)' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>Cumulative frequency</text>";
     return h+"</svg>";
   }
@@ -3079,13 +3124,14 @@
     var a=cRound(Math.floor(lo/step+1e-9)*step,6),b=cRound(Math.ceil(hi/step-1e-9)*step,6);
     if(b<=hi)b=cRound(b+step,6);
     if(a>=lo)a=cRound(a-step,6);
+    if(a<0&&lo>=0)a=0;
     return {lo:a,hi:b,step:cRound(step,6),minor:cRound(step/div,6)};
   }
   function bxBoxSVG(){
-    var ax=bxAxis(),c=CCTX[C.ctx],pw=BV.W-BV.L-BV.R,ay=BV.H-BV.B,i,v,h="",T=bxT(),all=bxNextPlot()<0;
+    var ax=bxAxis(),c=S.ctx(),pw=BV.W-BV.L-BV.R,ay=BV.H-BV.B,i,v,h="",T=bxT(),all=bxNextPlot()<0;
     function X(v){return BV.L+(v-ax.lo)/(ax.hi-ax.lo)*pw}
     var my=BV.T+(ay-BV.T)/2,bh=54;
-    h+="<svg class='bxsvg' id='bxSvg2' viewBox='0 0 "+BV.W+" "+BV.H+"' role='img' aria-label='Box plot'>";
+    h+="<svg class='bxsvg' id='"+S.pre+"bxSvg2' viewBox='0 0 "+BV.W+" "+BV.H+"' role='img' aria-label='Box plot'>";
     for(v=ax.lo;v<=ax.hi+1e-9;v+=ax.minor){var mj=Math.abs(v/ax.step-Math.round(v/ax.step))<1e-6;
       h+="<line x1='"+X(v).toFixed(1)+"' x2='"+X(v).toFixed(1)+"' y1='"+BV.T+"' y2='"+ay+"' stroke='"+(mj?"#c7d3e6":"#edf1f8")+"' stroke-width='1'/>";
       if(mj)h+="<text x='"+X(v).toFixed(1)+"' y='"+(ay+20)+"' text-anchor='middle' font-size='14' fill='#33415c'>"+cNum(v)+"</text>";
@@ -3106,7 +3152,7 @@
     }
     if(BX.temp&&BX.temp.kind==="p")h+="<line x1='"+X(BX.temp.v).toFixed(1)+"' x2='"+X(BX.temp.v).toFixed(1)+"' y1='"+(my-bh/2)+"' y2='"+ay+"' stroke='#f59e0b' stroke-width='3'/>";
     if(!all)h+="<rect data-bp='1' x='"+BV.L+"' y='"+BV.T+"' width='"+pw+"' height='"+(ay-BV.T)+"' fill='transparent'/>";
-    h+="<text x='"+(BV.L+pw/2)+"' y='"+(BV.H-8)+"' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>"+esc(c.title)+" ("+esc(c.unit)+")</text>";
+    h+="<text x='"+(BV.L+pw/2)+"' y='"+(BV.H-8)+"' text-anchor='middle' font-size='15' font-weight='700' fill='#1b2a4a'>"+esc(S.axisLabel())+"</text>";
     return h+"</svg>";
   }
   function bxKeypad(){
@@ -3118,11 +3164,11 @@
     return "<span class='abox sm active'>"+f.v+"</span><button class='lifebelt sm' data-bl='"+key+"' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>";
   }
   function bxRender(){
-    var el=$("cBX");if(!el||C.view!=="bx")return;
-    if(!hComplete()){el.innerHTML="<div class='lockmsg'>Process the data first – tap <b>One by one</b> or <b>All at once</b>. Then we'll use a cumulative frequency curve to build a box plot.</div>";return}
+    var el=$(S.bxId);if(!el||S.view()!=="bx")return;
+    if(!S.complete()){el.innerHTML="<div class='lockmsg'>Process the data first – tap <b>One by one</b> or <b>All at once</b>. Then we'll use a cumulative frequency curve to build a box plot.</div>";return}
     var h="<div class='pills'><button class='pill"+(BX.step===0?" active":"")+(BX.q>=3?" done":"")+"' data-bs='0'>"+(BX.q>=3?"✓ ":"1 ")+"Quartiles from the curve</button>"+
       "<button class='pill"+(BX.step===1?" active":"")+(BX.iqr.ok?" done":"")+(BX.q<3?" locked":"")+"' data-bs='1'>"+(BX.iqr.ok?"✓ ":"2 ")+"Draw the box plot</button></div>";
-    var N=C.data.length,i;
+    var N=S.data().length,i;
     if(BX.step===0){
       h+="<div class='stepin'><h3>Step 1 – Quartiles from the curve</h3><p>The <b>median</b> is halfway through the data, the <b>lower quartile</b> is a quarter of the way through and the <b>upper quartile</b> is three-quarters of the way. Total frequency N = <b>"+N+"</b>. To estimate each one, find its position, go across from that height on the cumulative frequency axis to the curve, then <b>down</b> to read the value.</p></div>";
       for(i=0;i<3;i++){
@@ -3161,9 +3207,9 @@
     showOv();confetti();
   }
   function bxTapQ(sx){
-    var pw=KV.W-KV.L-KV.R,B0=C.B[0],Bn=C.B[C.B.length-1],i=BX.q,v=B0+(sx-KV.L)/pw*(Bn-B0),exp=BX.qv[i];
+    var pw=KV.W-KV.L-KV.R,B0=S.B()[0],Bn=S.B()[S.B().length-1],i=BX.q,v=B0+(sx-KV.L)/pw*(Bn-B0),exp=BX.qv[i];
     var cum=kCum(),k=0;while(k<cum.length-1&&BX.qpos[i]>cum[k])k++;
-    var tol=Math.max(0.035*(Bn-B0),0.4*hW(k));
+    var tol=Math.max(0.035*(Bn-B0),0.4*S.w(k));
     if(Math.abs(v-exp)<=tol){BX.q++;BX.phase="pos";BX.f={v:""};BX.temp=null;BX.msg={type:"good",text:"✓ Reading taken: "+QNAME[i]+" ≈ "+cNum(exp)+"."}}
     else{
       BX.temp={kind:"q",v:Math.max(B0,Math.min(Bn,v))};
@@ -3186,7 +3232,7 @@
     bxRender();
   }
   function bxFFBar(){
-    if(!hComplete())return "";
+    if(!S.complete())return "";
     if(BX.step===0)return BX.q<3?ffBar(true,true):"";
     if(bxNextPlot()>=0)return ffBar(true,true);
     return BX.iqr.ok?"":ffBar(false,true);
@@ -3202,11 +3248,11 @@
     if(kind==="step"){BX.iqr.v=cNum(cRound(BX.qv[2]-BX.qv[0],4));BX.iqr.ok=true;bxRender();bxFinish();return}
     bxRender();
   }
-  $("cBX").addEventListener("click",function(e){
+  $(S.bxId).addEventListener("click",function(e){
     var t,r;
     if((t=e.target.closest("[data-ff]"))){bxFF(t.getAttribute("data-ff"));return}
-    if((t=e.target.closest("[data-bq]"))){r=$("bxSvg1").getBoundingClientRect();if(!r.width)return;bxTapQ((e.clientX-r.left)/r.width*KV.W);return}
-    if((t=e.target.closest("[data-bp]"))){r=$("bxSvg2").getBoundingClientRect();if(!r.width)return;bxTapP((e.clientX-r.left)/r.width*BV.W);return}
+    if((t=e.target.closest("[data-bq]"))){r=$(S.pre+"bxSvg1").getBoundingClientRect();if(!r.width)return;bxTapQ((e.clientX-r.left)/r.width*KV.W);return}
+    if((t=e.target.closest("[data-bp]"))){r=$(S.pre+"bxSvg2").getBoundingClientRect();if(!r.width)return;bxTapP((e.clientX-r.left)/r.width*BV.W);return}
     if((t=e.target.closest("[data-bl]"))){
       var key=t.getAttribute("data-bl");
       if(key==="pos"){BX.phase="tap";BX.msg=null;BX.f={v:""}}
@@ -3224,9 +3270,41 @@
       if(a==="next"){BX.step=1;BX.msg=null;bxRender()}
       else if(a==="qhelp"){BX.q++;BX.phase="pos";BX.f={v:""};BX.temp=null;BX.msg=null;bxRender()}
       else if(a==="phelp"){var i=bxNextPlot();if(i>=0)BX.plot[i]=true;BX.temp=null;BX.msg=null;bxRender()}
-      else if(a==="again")cGenerate();
+      else if(a==="again")S.again();
     }
   });
+  return {kRender:kRender,kReset:kReset,kActive:kActive,kKey:kKey,kCheck:kCheck,bxRender:bxRender,bxReset:bxReset,bxActive:bxActive,bxKey:bxKey,bxCheck:bxCheck};
+}
+
+  var CBC=makeCB({
+    pre:"",cfId:"cCF",bxId:"cBX",noun:"class",
+    B:function(){return C.B},freq:function(){return C.freq},data:function(){return C.data},view:function(){return C.view},
+    ctx:function(){return CCTX[C.ctx]},
+    words:function(){return KW[CCTX[C.ctx].title]||KWG},
+    axisLabel:function(){var c=CCTX[C.ctx];return c.title+" ("+c.unit+")"},
+    complete:function(){return hComplete()},w:function(i){return hW(i)},again:function(){cGenerate()},
+    rowLab:function(j){return "x &lt; "+cNum(C.B[j])},
+    ticks:function(){return C.B.map(function(b){return {v:b,text:cNum(b)}})},
+    plotNote:function(){return ""}
+  });
+  /* Grouped tab: the values are whole numbers, so group 20–29 really runs from 19.5 to 29.5.
+     G.bounds holds those class boundaries and the cumulative frequency is plotted at them. */
+  var CBG=makeCB({
+    pre:"g",cfId:"gCF",bxId:"gBX",noun:"group",
+    B:function(){return G.bounds},freq:function(){return G.freq},data:function(){return G.data},view:function(){return G.view},
+    ctx:function(){var c=GCTX[G.ctx];return {title:c.title,unit:c.unit||"units",dp:1}},
+    words:function(){return GWORDS[GCTX[G.ctx].title]||KWG},
+    axisLabel:function(){var c=GCTX[G.ctx];return c.axis||c.title},
+    complete:function(){return G.data.length>0&&G.idx>=G.data.length},
+    w:function(i){return cRound(G.bounds[i+1]-G.bounds[i],4)},again:function(){gGenerate()},
+    rowLab:function(j){return "x &lt; "+cNum(G.bounds[j]+0.5)},
+    ticks:function(){return G.groups.map(function(gr){return {v:gr.lo,text:String(gr.lo)}})},
+    plotNote:function(){
+      var a=G.groups[0],b=G.groups[1]||G.groups[0],m=function(v){return cNum(v)};
+      return "<p>These values are whole numbers, so “less than "+b.lo+"” means "+a.hi+" or fewer. The group "+a.label+" really runs from "+m(a.lo-0.5)+" up to "+m(a.hi+0.5)+", so each point goes at the group's <b>upper class boundary</b>: "+m(a.hi+0.5)+", "+m(b.hi+0.5)+", … This is just to the left of the labelled value on the axis.</p>";
+    }
+  });
+
   /* ----- settings for continuous contexts ----- */
   function saveCnt(){
     try{
@@ -4339,14 +4417,12 @@
 
   /* ---------- crosshair with loupe (all graphs) ---------- */
   var XH={on:false,fx:0.5,fy:0.5,id:"*",has:false,down:false,txt:""};
-  var XHIDS={kSvg:1,bxSvg1:1,hSvg:1,bSvg:1,bxSvg2:1};
   var XHNS="http://www.w3.org/2000/svg";
   function xhGeom(svg){
     var id=svg.id,sc,a;
-    if(id==="kSvg"||id==="bxSvg1"){sc=kScale();return {W:KV.W,H:KV.H,L:KV.L,R:KV.R,T:KV.T,B:KV.B,x0:C.B[0],x1:C.B[C.B.length-1],y0:0,y1:sc.top}}
+    if(XHGEO[id])return XHGEO[id]();
     if(id==="hSvg"){sc=hScale();return {W:HV.W,H:HV.H,L:HV.L,R:HV.R,T:HV.T,B:HV.B,x0:C.B[0],x1:C.B[C.B.length-1],y0:0,y1:sc.top}}
     if(id==="bSvg")return {W:BW.W,H:BW.H,L:BW.L,R:BW.R,T:BW.T,B:BW.B,x0:B.ax.lo,x1:B.ax.hi,y0:B.ay.lo,y1:B.ay.hi};
-    if(id==="bxSvg2"){a=bxAxis();return {W:BV.W,H:BV.H,L:BV.L,R:BV.R,T:BV.T,B:BV.B,x0:a.lo,x1:a.hi,y0:null,y1:null}}
     return null;
   }
   function xhFmt(v,range){return String(cRound(v,Math.max(0,Math.ceil(-Math.log10(range/500)-1e-9))))}
@@ -4436,7 +4512,7 @@
     document.querySelectorAll("[data-xhh]").forEach(function(x){x.style.display=XH.on?"":"none"});
     if(XH.on){XH.fx=0.5;XH.fy=0.5;XH.id="*";XH.has=true;xhScan()}else{XH.has=false;xhClear()}
   });
-  ["cHist","cCF","cBX","bBody"].forEach(function(id){
+  ["cHist","cCF","cBX","gCF","gBX","bBody"].forEach(function(id){
     var el=document.getElementById(id);
     if(el&&window.MutationObserver)new MutationObserver(function(){if(XH.on)xhScan()}).observe(el,{childList:true,subtree:true});
   });
