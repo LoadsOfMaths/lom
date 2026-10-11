@@ -21,6 +21,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Heads or Tails | `heads-or-tails/` |
 | Higher or Lower | `higher-or-lower/` |
 | Jelly Bean Disco | `jelly-bean-disco/` |
+| Keep Left | `keep-left/` |
 | Loads of Frames | `loads-of-frames/` |
 | Lucky Duck | `lucky-duck/` |
 | Maze Munch Maths | `maze-munch-maths/` |

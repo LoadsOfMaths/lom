@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Keep Left</title>
+<style>
+:root{
+  --tar:#22262d; --tar2:#2d323a; --blue:#0b57a8; --red:#d4212a; --green:#1f9d55; --yellow:#f6c915;
+  --ink:#f4f5f7; --muted:#aab2bd;
+  --pw:min(90vw,1000px,112vh);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--tar);color:var(--ink);
+  font-family:"Segoe UI",Helvetica,Arial,sans-serif;
+  -webkit-user-select:none;user-select:none;overflow-x:hidden;
+}
+body::before{ /* dashed centre line of the road */
+  content:"";position:fixed;left:50%;top:0;bottom:0;width:10px;margin-left:-5px;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.07) 0 46px,transparent 46px 100px);
+}
+button{font-family:inherit;cursor:pointer}
+.screen{display:none;position:relative;min-height:100vh;min-height:100dvh;padding:14px 12px 34px;flex-direction:column;align-items:center;gap:12px}
+.screen.on{display:flex}
+
+/* ---------- signs ---------- */
+.sign{
+  background:var(--blue);color:#fff;border:4px solid #fff;outline:3px solid var(--blue);
+  border-radius:12px;padding:.45em 1.1em;font-weight:800;text-align:center;
+  box-shadow:0 6px 18px rgba(0,0,0,.45);max-width:94vw;
+}
+.sign.big{font-size:clamp(24px,5vw,56px);padding:.5em 1.2em}
+.sign.mid{font-size:clamp(20px,3.6vw,40px)}
+.sgn svg{display:block;width:clamp(84px,19vh,170px);height:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
+
+/* ---------- setup ---------- */
+.titlerow{display:flex;align-items:center;gap:16px;margin-top:4px}
+.titlerow svg{width:clamp(48px,9vw,90px);height:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+h1{margin:0;font-size:clamp(34px,7vw,72px);letter-spacing:.02em;text-align:center;line-height:1}
+h1 em{font-style:normal;color:#ffd92e}
+.tag{margin:0;color:var(--muted);text-align:center;font-size:clamp(14px,2.2vw,20px)}
+.panel{width:min(94vw,780px);background:var(--tar2);border:2px solid #3a414b;border-radius:14px;padding:12px 14px}
+.panel h2{margin:0 0 8px;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px}
+.lvl{display:flex;align-items:center;gap:10px;text-align:left;background:#262b32;color:var(--ink);border:3px solid #3a414b;border-radius:12px;padding:8px 10px}
+.lvl b{display:block;font-size:17px}
+.lvl small{color:var(--muted);font-size:13px}
+.lvl.on{border-color:#ffd92e;background:#303741}
+.badge{flex:0 0 40px;height:40px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;border:2px solid #111}
+.bl{background:#fff;color:#d4212a}
+.bp{background:#fff;color:#1f9d55}
+.bn{background:var(--blue);color:#fff;border-color:#fff;border-radius:50%}
+select{width:100%;font-size:18px;padding:10px;border-radius:10px;border:2px solid #3a414b;background:#1b1f25;color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.seg{font-size:18px;font-weight:700;padding:8px 20px;border-radius:10px;border:3px solid #3a414b;background:#262b32;color:var(--ink);margin-right:6px}
+.seg.on{border-color:#ffd92e;background:#303741}
+.toggle{display:flex;align-items:center;gap:10px;font-size:17px;cursor:pointer}
+.toggle input{display:none}
+.sw{width:52px;height:30px;border-radius:15px;background:#555d69;position:relative;transition:background .2s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle input:checked + .sw{background:var(--green)}
+.toggle input:checked + .sw::after{left:25px}
+.note{color:var(--muted);font-size:14px;margin:6px 0 0}
+#bests ol{margin:0;padding-left:22px}
+#bests li{font-variant-numeric:tabular-nums;font-size:16px;line-height:1.5}
+#bests .none{color:var(--muted);font-size:15px}
+.link{background:none;border:none;color:#8fc2ff;font-size:15px;text-decoration:underline;padding:6px}
+.go{font-size:clamp(22px,3.4vw,34px);font-weight:900;letter-spacing:.06em;padding:.5em 2em;border-radius:14px;border:4px solid #fff;background:var(--green);color:#fff;box-shadow:0 6px 0 #14683a,0 10px 20px rgba(0,0,0,.4)}
+.go:active{transform:translateY(4px);box-shadow:0 2px 0 #14683a}
+.go.alt{background:#37404c;box-shadow:0 6px 0 #232a33,0 10px 20px rgba(0,0,0,.4)}
+.lom{margin-top:auto;color:#6d7682;font-size:13px;letter-spacing:.12em;text-transform:uppercase;padding-top:14px}
+
+/* ---------- ready ---------- */
+#ready{justify-content:center}
+#readyInfo{color:var(--muted);font-size:clamp(15px,2.2vw,22px);text-align:center;margin:0;max-width:90vw}
+
+/* ---------- play ---------- */
+#play{align-items:center}
+.hud{width:var(--pw);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;position:relative}
+.hud small{display:block;color:var(--muted);font-size:clamp(11px,1.6vw,15px);letter-spacing:.08em;text-transform:uppercase}
+.hud .lv{display:flex;align-items:center;gap:8px;font-weight:700;font-size:clamp(13px,2vw,20px)}
+.hud .lv .badge{flex-basis:30px;height:30px;font-size:18px}
+.hud .clk{text-align:center}
+.hud .clk b{font-size:clamp(34px,6vw,64px);font-variant-numeric:tabular-nums;line-height:1}
+.hud .flt{text-align:right}
+.hud .flt b{font-size:clamp(26px,4.4vw,46px);line-height:1}
+.fpen{position:absolute;left:50%;top:100%;transform:translateX(-50%);font-weight:900;font-size:clamp(30px,6vw,64px);pointer-events:none;animation:floatup .95s ease-out forwards;z-index:5}
+.fpen.bad{color:#ff5b64;text-shadow:0 2px 0 #000}
+.fpen.good{color:#58e08c;text-shadow:0 2px 0 #000}
+@keyframes floatup{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-46px)}}
+.dots{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;width:var(--pw)}
+.dot{width:clamp(11px,1.6vw,16px);height:clamp(11px,1.6vw,16px);border-radius:50%;background:#3a414b;border:2px solid #3a414b}
+.dot.cur{border-color:#fff;background:#59606b}
+.dot.n{background:#6ea8ee;border-color:#6ea8ee}
+.dot.ok{background:#35c677;border-color:#35c677}
+.dot.bad{background:#ff4d57;border-color:#ff4d57}
+#stage{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:26vh}
+.plate{
+  position:relative;width:var(--pw);aspect-ratio:4.4/1;display:flex;align-items:stretch;
+  border-radius:calc(var(--pw)*.025);border:calc(var(--pw)*.006) solid #111;overflow:hidden;
+  box-shadow:0 10px 28px rgba(0,0,0,.55);font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;
+  touch-action:none;cursor:grab;
+}
+.plate.rear{background:linear-gradient(#ffd92e,#f0bb0c);color:#111}
+.plate.front{background:linear-gradient(#fff,#e6e9ec);color:#111}
+.plate .eu{flex:0 0 12%;background:#0b3d91;color:#fff;font-size:calc(var(--pw)*.04);display:flex;align-items:flex-end;justify-content:center;padding-bottom:.45em;font-weight:900}
+.plate .num{flex:1;display:flex;align-items:center;justify-content:center;font-size:calc(var(--pw)*.2);letter-spacing:.06em;line-height:1;padding-right:6%}
+.plate .st{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(var(--pw)*.12);font-weight:900;color:#fff;opacity:0;letter-spacing:.08em}
+.plate .st.k{background:rgba(11,87,168,.88)}
+.plate .st.s{background:rgba(212,33,42,.88)}
+.plate.enter{animation:plin .2s ease-out}
+@keyframes plin{from{opacity:0;transform:translateY(36px) scale(.96)}to{opacity:1;transform:none}}
+.plate.mini{--pw:150px;box-shadow:none;cursor:default;flex:0 0 auto}
+.btns{width:var(--pw);display:flex;justify-content:space-between;align-items:flex-end}
+.sgn{background:none;border:none;padding:4px;color:#fff;font-weight:900;letter-spacing:.1em;font-size:clamp(16px,2.6vw,28px);display:flex;flex-direction:column;align-items:center;gap:4px}
+.sgn:active svg{transform:scale(.93)}
+.keys{margin:0;color:var(--muted);font-size:14px;text-align:center}
+#flash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:4}
+#flash.bad{background:rgba(255,60,70,.42);animation:fl .5s ease-out}
+#flash.good{background:rgba(40,200,110,.25);animation:fl .35s ease-out}
+@keyframes fl{from{opacity:1}to{opacity:0}}
+
+/* ---------- result ---------- */
+/* ---------- driver awareness ---------- */
+#aware{justify-content:center;align-items:center}
+.aw{width:min(94vw,760px);display:flex;flex-direction:column;align-items:center;gap:14px}
+.aw .qsign svg{display:block;width:clamp(90px,16vh,150px);height:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
+.aw .q{font-size:clamp(20px,3.2vw,34px);font-weight:800;text-align:center;line-height:1.25}
+.opts{display:grid;gap:10px;width:100%}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;font-size:clamp(16px,2.4vw,24px);padding:12px 14px;border-radius:12px;border:3px solid #3a414b;background:#262b32;color:var(--ink);font-weight:600}
+.opt i{flex:0 0 36px;height:36px;border-radius:50%;background:#fff;color:#111;font-style:normal;font-weight:900;display:flex;align-items:center;justify-content:center}
+.opt.right{border-color:#35c677;background:#1d3a2b}
+.opt.wrong{border-color:#ff4d57;background:#3d2024}
+.opt.dim{opacity:.5}
+.opt:disabled{cursor:default;color:var(--ink)}
+.why{background:var(--tar2);border:2px solid #3a414b;border-radius:12px;padding:10px 14px;font-size:clamp(14px,2vw,19px);line-height:1.4;text-align:center;width:100%}
+#awOut{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+
+#result{align-items:center}
+.verdict{font-size:clamp(20px,3.6vw,36px);font-weight:800;text-align:center}
+.total{font-size:clamp(54px,12vw,120px);font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.brk{color:var(--muted);font-size:clamp(14px,2vw,20px);text-align:center}
+.rec{font-size:20px;font-weight:800;color:#ffd92e}
+.rv{display:flex;gap:12px;align-items:center;padding:8px 0;border-top:1px solid #3a414b}
+.rv:first-of-type{border-top:none}
+.rv .tx{font-size:15px;line-height:1.35}
+.rv .tx span{color:var(--muted)}
+.rv.bad b{color:#ff7a82}
+.rv.ok b{color:#58e08c}
+.rbtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+@media (max-width:520px){ .plate.mini{--pw:112px} }
+</style>
+</head>
+<body>
+
+<!-- SETTINGS -->
+<section class="screen on" id="setup">
+  <div class="titlerow"><span id="logoK"></span><h1>Keep <em>Left</em></h1><span id="logoS"></span></div>
+  <p class="tag">Keep it or skip it? Sort the number plates as fast as you can. Every fault adds time!</p>
+
+  <div class="panel"><h2>1 · Choose your licence</h2><div id="levels"></div></div>
+
+  <div class="panel"><h2>2 · Category</h2><select id="cat"></select></div>
+
+  <div class="panel">
+    <div class="row">
+      <div><span style="margin-right:8px;color:var(--muted)">Cards</span><button class="seg" data-n="10">10</button><button class="seg" data-n="20">20</button></div>
+      <label class="toggle"><input type="checkbox" id="instant" checked><span class="sw"></span> Instant feedback</label>
+      <label class="toggle"><input type="checkbox" id="bonus" checked><span class="sw"></span> Driver Awareness question</label>
+    </div>
+    <p class="note" id="penNote"></p>
+    <p class="note" id="bonusNote">After each round you can choose to answer a Highway Code question. Get it right and 5 seconds come off your time; get it wrong and 5 seconds are added. Only take it if you are sure!</p>
+  </div>
+
+  <div class="panel"><h2>Best times</h2><div id="bests"></div></div>
+
+  <button class="go" id="startBtn">START</button>
+  <div class="lom">LoadsOfMaths</div>
+</section>
+
+<!-- READY -->
+<section class="screen" id="ready">
+  <div class="sign mid" id="readyLvl"></div>
+  <div class="sign big" id="readySign"></div>
+  <p id="readyInfo"></p>
+  <button class="go" id="goBtn">GO!</button>
+  <div><button class="link" id="reroll">Different category</button><button class="link" id="backBtn">Back to settings</button></div>
+  <div class="lom">LoadsOfMaths</div>
+</section>
+
+<!-- PLAY -->
+<section class="screen" id="play">
+  <div class="hud" id="hud">
+    <div class="lv" id="lvlBadge"></div>
+    <div class="clk"><small id="clockLbl">Time</small><b id="clock">0.0s</b></div>
+    <div class="flt"><small>Faults</small><b id="faults">0</b></div>
+  </div>
+  <div class="sign mid" id="playSign"></div>
+  <div class="dots" id="dots"></div>
+  <div id="stage">
+    <div class="plate rear" id="plate"><span class="eu">UK</span><span class="num" id="num">0</span><div class="st k" id="stK">KEEP</div><div class="st s" id="stS">SKIP</div></div>
+  </div>
+  <div class="btns">
+    <button class="sgn" id="keepBtn" aria-label="Keep"></button>
+    <button class="sgn" id="skipBtn" aria-label="Skip"></button>
+  </div>
+  <p class="keys">← Keep &nbsp;·&nbsp; Skip → &nbsp;·&nbsp; or swipe the plate</p>
+  <button class="link" id="quit">Quit to settings</button>
+</section>
+
+<!-- DRIVER AWARENESS -->
+<section class="screen" id="aware"></section>
+
+<!-- RESULT -->
+<section class="screen" id="result"></section>
+
+<div id="flash"></div>
+
+<script>
+/* ================= data ================= */
+const LEVELS=[
+  {n:1,name:'Learner Driver',  pen:2,badge:'L',cls:'bl'},
+  {n:2,name:'Newly Qualified', pen:3,badge:'P',cls:'bp'},
+  {n:3,name:'Full Licence',    pen:4,badge:'3',cls:'bn'},
+  {n:4,name:'Advanced Driver', pen:5,badge:'4',cls:'bn'},
+  {n:5,name:'Master Driver',   pen:6,badge:'5',cls:'bn'}
+];
+const TRICKY_FRAC=[0,.3,.4,.5,.6,.7]; // share of Skip cards that are "near misses"
+
+/* ---------- number helpers ---------- */
+const range=(a,b)=>{const r=[];for(let i=a;i<=b;i++)r.push(i);return r};
+function gcd(a,b){while(b){[a,b]=[b,a%b]}return a}
+function isPrime(n){if(n<2)return false;for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true}
+function smallestFactor(n){for(let i=2;i*i<=n;i++)if(n%i===0)return i;return n}
+function iroot(n,p){let a=Math.floor(Math.pow(n,1/p));while(Math.pow(a+1,p)<=n)a++;while(Math.pow(a,p)>n)a--;return a}
+const isSq=n=>n>=1&&Math.pow(iroot(n,2),2)===n;
+const isCube=n=>n>=1&&Math.pow(iroot(n,3),3)===n;
+const tri=k=>k*(k+1)/2;
+function isTri(n){if(n<1)return false;let k=1;while(tri(k)<n)k++;return tri(k)===n}
+const isPow2=n=>n>=1&&(n&(n-1))===0;
+const FIB=[1,2,3,5,8,13,21,34,55,89,144,233,377,610,987];
+const isFib=n=>FIB.includes(n);
+function near(n,test,d){for(let i=-d;i<=d;i++){const m=n+i;if(i!==0&&m>=1&&test(m))return true}return false}
+const digits=n=>String(n).split('').map(Number);
+
+/* ---------- categories ---------- */
+const CATS=[];
+function add(c){c.tricky=c.tricky||(()=>false);CATS.push(c);return c}
+
+function mult(level,k,max){
+  const c=add({id:'m'+k,level,label:'Multiples of '+k,min:1,max,
+    test:n=>n%k===0,
+    tricky:n=>n%k!==0&&(gcd(n,k)>1||n%k===1||n%k===k-1),
+    why:(n,m)=>{
+      if((k===3||k===9)&&n>9){const d=digits(n),s=d.reduce((a,b)=>a+b,0);
+        return `Digits add up: ${d.join(' + ')} = ${s}, so ${n} ${s%k===0?'is':'is not'} a multiple of ${k}`}
+      return m?`${n} = ${k} × ${n/k}`:`${n} ÷ ${k} = ${Math.floor(n/k)} remainder ${n%k}`}
+  });
+  return c;
+}
+function squares(level,max){
+  add({id:'sq'+max,level,label:'Square numbers up to '+max,min:1,max,
+    test:isSq,tricky:n=>!isSq(n)&&near(n,isSq,2),
+    why:(n,m)=>{const r=iroot(n,2);return m?`${n} = ${r} × ${r}`:`${r}² = ${r*r} and ${r+1}² = ${(r+1)*(r+1)}, so ${n} falls between two squares`}});
+}
+function factors(level,N){
+  add({id:'f'+N,level,label:'Factors of '+N,min:1,max:N+Math.max(12,Math.round(N*.4)),
+    test:n=>N%n===0,tricky:n=>N%n!==0&&gcd(n,N)>1,
+    why:(n,m)=>m?`${n} × ${N/n} = ${N}`:(n>N?`${n} is bigger than ${N}`:`${N} ÷ ${n} = ${Math.floor(N/n)} remainder ${N%n}, so ${n} is not a factor`)});
+}
+function primes(level,rule,lo,hi,pmin,pmax){
+  const test=n=>isPrime(n)&&n>=lo&&n<=hi;
+  add({id:'p'+level+'_'+lo+'_'+hi,level,label:'Prime numbers '+rule,min:pmin,max:pmax,
+    test,
+    tricky:n=>!test(n)&&(n===1||isPrime(n)||(n%2===1&&n%5!==0)),
+    why:(n,m)=>{
+      if(m)return `${n} is prime: its only factors are 1 and ${n}`;
+      if(n===1)return '1 is not prime: it has only one factor';
+      if(isPrime(n))return `${n} is prime, but it is not ${rule}`;
+      const p=smallestFactor(n);return `${n} = ${p} × ${n/p}, so it is not prime`}});
+}
+
+// Level 1
+add({id:'even',level:1,label:'Even numbers',min:1,max:99,test:n=>n%2===0,why:(n,m)=>`${n} ends in ${n%10}, so it is ${m?'even':'odd'}`});
+add({id:'odd',level:1,label:'Odd numbers',min:1,max:99,test:n=>n%2===1,why:(n,m)=>`${n} ends in ${n%10}, so it is ${m?'odd':'even'}`});
+mult(1,5,100).why=(n,m)=>`${n} ends in ${n%10}${m?', so it is in the 5 times table':', so it is not a multiple of 5'}`;
+{const c=mult(1,10,120);c.tricky=n=>n%10!==0&&n%5===0;c.why=(n,m)=>`${n} ends in ${n%10}${m?', so it is a multiple of 10':', so it is not a multiple of 10'}`}
+mult(1,3,60);
+// Level 2
+[4,6,7,8,9].forEach(k=>mult(2,k,100));
+squares(2,100);
+factors(2,12);factors(2,20);
+// Level 3
+mult(3,11,132);mult(3,12,144);
+primes(3,'below 30',1,29,1,45);
+add({id:'cubes',level:3,label:'Cube numbers up to 1000',min:1,max:1000,test:isCube,
+  tricky:n=>!isCube(n)&&(isSq(n)||near(n,isCube,2)),
+  why:(n,m)=>{const r=iroot(n,3);return m?`${n} = ${r} × ${r} × ${r}`:`${r}³ = ${r**3} and ${r+1}³ = ${(r+1)**3}, so ${n} falls between two cubes`}});
+factors(3,24);factors(3,36);factors(3,48);
+// Level 4
+primes(4,'below 100',1,99,1,120);
+primes(4,'above 50',51,Infinity,30,150);
+mult(4,13,200);mult(4,15,200);
+add({id:'tri',level:4,label:'Triangular numbers',min:1,max:120,test:isTri,tricky:n=>!isTri(n)&&near(n,isTri,1),
+  why:(n,m)=>{
+    if(m){let k=1;while(tri(k)<n)k++;return `${n} = ${range(1,k).join(' + ')}`}
+    let a=1;while(tri(a+1)<n)a++;return `Triangular numbers go ${tri(a)}, ${tri(a+1)}, … so ${n} is skipped`}});
+squares(4,400);
+factors(4,60);factors(4,72);factors(4,100);
+// Level 5
+primes(5,'above 100',101,Infinity,80,250);
+mult(5,17,300);mult(5,19,300);
+add({id:'pow2',level:5,label:'Powers of 2',min:1,max:1100,test:isPow2,
+  tricky:n=>!isPow2(n)&&(near(n,isPow2,1)||(n%2===0&&[3,5,7].includes(n/(n&-n)))),
+  why:(n,m)=>{const k=Math.round(Math.log2(n));return m?`${n} = 2<sup>${k}</sup>`:`Powers of 2 go ${2**Math.floor(Math.log2(n))}, ${2**(Math.floor(Math.log2(n))+1)}, … so ${n} is skipped`}});
+add({id:'fib',level:5,label:'Fibonacci numbers',min:1,max:400,test:isFib,tricky:n=>!isFib(n)&&near(n,isFib,2),
+  why:(n,m)=>{
+    if(m){const i=FIB.indexOf(n);return i===0?'1 is in the sequence: 1, 1, 2, 3, 5, …':`${n} is in the sequence: …, ${FIB[i-1]}, ${n}, ${FIB[i+1]}, …`}
+    let i=0;while(FIB[i+1]<n)i++;return `The sequence goes …, ${FIB[i]}, ${FIB[i+1]}, … so ${n} is not in it`}});
+add({id:'sq3',level:5,label:'Square numbers that are multiples of 3',min:1,max:900,
+  test:n=>isSq(n)&&n%3===0,
+  tricky:n=>!(isSq(n)&&n%3===0)&&((isSq(n)&&n%3!==0)||(n%3===0&&near(n,isSq,3))),
+  why:(n,m)=>{
+    const sq=isSq(n),m3=n%3===0;
+    if(m)return `${n} = ${iroot(n,2)}² and ${n} = 3 × ${n/3}`;
+    if(sq)return `${n} = ${iroot(n,2)}² is a square, but it is not a multiple of 3`;
+    if(m3)return `${n} = 3 × ${n/3} is a multiple of 3, but it is not a square number`;
+    return `${n} is neither a square nor a multiple of 3`}});
+
+const catsFor=l=>CATS.filter(c=>c.level===l);
+
+/* ================= Driver Awareness questions (UK Highway Code) =================
+   a[0] is always the correct answer; options are shuffled when shown. */
+const QS=[
+{sign:"stop",q:"What must you do when you reach this sign?",a:["Stop at the line, even if the road looks clear","Slow down and carry on if it is clear","Stop only if other traffic is coming","Stop only if a pedestrian is waiting"],why:"A STOP sign means you must come to a complete stop at the line, then give way before you move off."},
+{sign:"giveway",q:"What does this sign mean?",a:["Give way to traffic on the major road","Stop at the line, then go","You have priority over other traffic","Reduce your speed to 20 mph"],why:"You must let traffic on the major road go first. You only need to stop if it is not clear."},
+{sign:"noentry",q:"What does this sign mean?",a:["No entry for vehicles","No parking at any time","No overtaking","Road closed ahead"],why:"A red circle with a white bar means no entry for vehicular traffic."},
+{sign:"nsl",q:"What does this sign mean?",a:["The national speed limit applies","The speed limit is 70 mph on every road","There is a minimum speed limit","No vehicles are allowed"],why:"The limit depends on the road and your vehicle. For a car it is 60 mph on a single carriageway and 70 mph on a dual carriageway or motorway."},
+{sign:"keepleft",q:"What does this blue sign mean?",a:["Keep left","Turn left only","The left lane is closed","Give way to traffic on the left"],why:"Blue circular signs give mandatory instructions. This one tells you to keep to the left of the sign."},
+{sign:"limit30",q:"What does a red-ringed circle with a number inside mean?",a:["A maximum speed limit","A minimum speed","A recommended speed","A speed camera ahead"],why:"Circles with a red ring give an order or a prohibition. With a number inside, it is the maximum speed in mph."},
+{q:"Which shape of road sign normally gives an order, such as a speed limit?",a:["Circular","Triangular","Rectangular","Diamond"],why:"Circles give orders, triangles give warnings and rectangles give information."},
+{q:"A triangular road sign with a red border normally gives:",a:["A warning","An order","Information about services","A parking instruction"],why:"Triangles warn you of a hazard ahead, so slow down and be ready."},
+{q:"What does a blue circular sign give you?",a:["A mandatory instruction you must follow","A warning of a hazard","A suggestion only","Directions to a car park"],why:"Blue circles tell you what you must do, such as turn left or keep left."},
+{q:"What is the national speed limit for a car on a single carriageway road?",a:["60 mph","50 mph","70 mph","40 mph"],why:"Cars: 60 mph on single carriageways, and 70 mph on dual carriageways and motorways, unless signs show a lower limit."},
+{q:"What is the maximum speed for a car on a motorway?",a:["70 mph","60 mph","80 mph","50 mph"],why:"70 mph is the maximum for cars on motorways, unless signs show a lower limit."},
+{q:"What is the national speed limit for a car on a dual carriageway?",a:["70 mph","60 mph","50 mph","80 mph"],why:"Cars can travel at up to 70 mph on a dual carriageway, unless signs show a lower limit."},
+{q:"In England, what is the speed limit on a road with street lights, unless signs show otherwise?",a:["30 mph","20 mph","40 mph","50 mph"],why:"Roads with street lighting are usually limited to 30 mph. Many have lower limits, so always look for signs."},
+{q:"What is the typical overall stopping distance for a car at 30 mph?",a:["23 metres (75 feet)","12 metres (40 feet)","36 metres (118 feet)","53 metres (175 feet)"],why:"Thinking distance plus braking distance at 30 mph is about 23 metres, roughly six car lengths."},
+{q:"What is the typical overall stopping distance for a car at 50 mph?",a:["53 metres (175 feet)","23 metres (75 feet)","36 metres (118 feet)","73 metres (240 feet)"],why:"At 50 mph it is about 53 metres, roughly 13 car lengths."},
+{q:"What is the typical overall stopping distance for a car at 70 mph?",a:["96 metres (315 feet)","53 metres (175 feet)","73 metres (240 feet)","120 metres (394 feet)"],why:"At 70 mph it is about 96 metres, roughly 24 car lengths."},
+{q:"In good conditions, what is the minimum time gap to leave behind the vehicle in front?",a:["2 seconds","1 second","Half a second","10 seconds"],why:"Use the two-second rule. Pick a fixed point and check that at least two seconds pass between the car ahead passing it and you reaching it."},
+{q:"How should you change your following gap in the rain?",a:["Double it to at least 4 seconds","Keep it at 2 seconds","Halve it to 1 second","Make it exactly 3 seconds"],why:"Stopping distances are at least doubled on wet roads, so leave a gap of at least four seconds."},
+{q:"On icy roads, stopping distances can be up to how many times greater?",a:["Ten times","Twice","Three times","Five times"],why:"Ice can make stopping distances up to ten times longer, so slow down and leave a much bigger gap."},
+{q:"What does red and amber showing together on a traffic light mean?",a:["Stop and wait for green","Get ready to go","Go if the junction is clear","Slow down and give way"],why:"Red and amber together still means stop. Do not move off until the green light shows."},
+{q:"What does a steady amber traffic light mean?",a:["Stop, unless you are too close to stop safely","Go if the road is clear","Speed up to clear the junction","Get ready to move off"],why:"Amber means stop at the stop line unless you have already crossed it or are so close that braking could cause an accident."},
+{q:"When might you use hazard warning lights while driving?",a:["On a motorway or unrestricted dual carriageway, to warn traffic behind of a hazard ahead","To say thank you to another driver","When parking on double yellow lines","When driving slowly through town"],why:"Hazard lights are for warning others of a hazard or obstruction, and must be switched off once you have passed it."},
+{q:"When should you switch off your front fog lights?",a:["When visibility improves","When it gets dark","When you join a motorway","Only at the end of your journey"],why:"Fog lights can dazzle others and hide your brake lights, so use them only when visibility is seriously reduced."},
+{q:"You should use dipped headlights in daylight when you cannot see further than about:",a:["100 metres (328 feet)","25 metres (82 feet)","200 metres (656 feet)","500 metres (1,640 feet)"],why:"Use headlights when visibility is seriously reduced, generally when you cannot see for more than 100 metres."},
+{q:"Why might you flash your headlights at another driver?",a:["To let them know you are there","To tell them to go ahead","To say thank you","To tell them to slow down"],why:"Flashing headlights should only tell others that you are there. It must never be used to give any other message."},
+{q:"In a built-up area, you must not use your horn between which times (unless another moving vehicle poses a danger)?",a:["11.30 pm and 7.00 am","10.00 pm and 6.00 am","Midnight and 5.00 am","9.00 pm and 8.00 am"],why:"Never use your horn aggressively, and do not use it in a built-up area at night unless there is a danger."},
+{q:"A driver is responsible for making sure passengers under what age wear seat belts or use the right child restraint?",a:["14","12","16","18"],why:"Drivers are responsible for passengers under 14. Anyone aged 14 or over is responsible for their own seat belt."},
+{q:"Children must use a car seat until they are 12 years old or reach what height, whichever comes first?",a:["135 centimetres","120 centimetres","150 centimetres","105 centimetres"],why:"A child car seat is needed until the 12th birthday or a height of 135 cm, whichever comes first."},
+{q:"What is the penalty for using a hand-held mobile phone while driving?",a:["6 penalty points and a £200 fine","3 penalty points and a £60 fine","A warning for a first offence","12 penalty points and a ban"],why:"It is also dangerous, because it takes your attention away from the road."},
+{q:"A newly qualified driver gets 6 or more penalty points within 2 years of passing the test. What happens?",a:["The licence is revoked","They pay a bigger fine and keep the licence","They only have to retake the theory test","Nothing happens until 12 points"],why:"New drivers lose their licence if they reach 6 points within two years of passing, and must reapply and pass both tests again."},
+{q:"What is the safest amount of alcohol to drink before driving?",a:["None","One small drink","Half a pint","Two units"],why:"Alcohol slows your reactions and affects your judgement. The only safe advice is not to drink if you are driving."},
+{q:"How often should you take a break on a long journey?",a:["At least 15 minutes after every two hours","A few minutes every four hours","Only when you feel tired","Only if you start yawning"],why:"Tiredness can kill. Plan regular breaks and stop in a safe place before you feel sleepy."},
+{q:"What is the minimum insurance cover you must have to drive legally on the road?",a:["Third party","Fully comprehensive","Theft only","Breakdown cover"],why:"Third-party insurance covers injury and damage you cause to others, and is the legal minimum."},
+{q:"A new car in Great Britain must have its first MOT test when it is how old?",a:["3 years","1 year","2 years","5 years"],why:"The first MOT test is due when the car reaches three years from its registration."},
+{q:"What is the legal minimum tyre tread depth for a car?",a:["1.6 mm","1.0 mm","2.5 mm","3.0 mm"],why:"The legal minimum is 1.6 mm across the central three-quarters of the tread, around the whole tyre."},
+{q:"The Highway Code says you must not park within how far of a junction?",a:["10 metres (32 feet)","3 metres (10 feet)","5 metres (16 feet)","20 metres (65 feet)"],why:"Parking near a junction blocks the view of other drivers and of pedestrians."},
+{q:"What do double yellow lines at the edge of the road mean?",a:["No waiting at any time, unless signs say otherwise","No waiting during working hours only","Parking is allowed for 20 minutes","Loading only"],why:"Double yellow lines mean no waiting at any time, unless there are signs that show otherwise."},
+{q:"What does a single yellow line at the edge of the road mean?",a:["Waiting is restricted at certain times, shown on nearby signs","No waiting at any time","Parking is free for everyone","No stopping at any time"],why:"Always check the nearby time plate to see when waiting is not allowed."},
+{q:"What do white zigzag lines beside a crossing mean?",a:["No parking, and no overtaking the vehicle nearest the crossing","Parking is allowed for 20 minutes","The crossing is out of use","Pedestrians have no priority here"],why:"Keeping the zigzag area clear lets drivers and pedestrians see each other."},
+{q:"Double white lines run down the middle of the road and the line nearest you is solid. What does this mean?",a:["You must not cross or straddle the lines, except in a few special cases","You may overtake if the road is clear","You may park on the right","The road is one way"],why:"The exceptions include turning into a side road or property, and passing a stationary vehicle, a slow cyclist or a horse when it is safe."},
+{q:"Which lane should you normally use on a three-lane motorway?",a:["The left lane","The middle lane","The right lane","Whichever is emptiest"],why:"Keep left unless you are overtaking, and move back to the left when it is safe."},
+{q:"On a conventional motorway, when should you use the hard shoulder?",a:["Only in an emergency","To overtake slow traffic","To check your phone","To take a short rest when tired"],why:"The hard shoulder is for emergencies only. If you feel tired, leave at the next exit or service area."},
+{q:"What does a red X above a motorway lane mean?",a:["Do not use that lane","Lane for emergency vehicles only","Speed camera ahead","Slow down to 40 mph"],why:"A red X means the lane is closed. Never drive in it."},
+{q:"On a motorway, which colour of reflective stud marks the left edge of the carriageway?",a:["Red","White","Amber","Green"],why:"Red studs mark the left edge. White studs mark lanes, amber studs mark the right edge by the central reservation, and green studs mark slip roads."},
+{q:"At a roundabout, you should normally give way to traffic approaching from:",a:["Your right","Your left","The vehicle behind you","Nobody, you have priority"],why:"Give priority to traffic already on the roundabout, which usually approaches from your right, unless signs or markings say otherwise."},
+{q:"On a single-track road, a passing place is on your left and you meet another vehicle. What should you do?",a:["Pull into the passing place","Reverse back to the start","Wait where you are","Sound your horn and drive on"],why:"Pull in on the left, or wait opposite a passing place on the right, so the other vehicle can pass. Never park in a passing place."},
+{q:"A school crossing patrol shows you a \"Stop - children\" sign. What must you do?",a:["Stop and wait until the sign is lowered","Slow down and pass carefully","Stop only if children are in the road","Sound your horn and carry on"],why:"You must stop, let the children cross, and wait until the patrol has returned to the pavement before moving off."},
+{q:"What does a flashing amber light mean at a pelican crossing?",a:["Give way to pedestrians on the crossing, and go if it is clear","Stop and wait for green","Speed up to clear the crossing","Pedestrians must wait"],why:"Pedestrians may still be crossing. You must give way to anyone on the crossing, and go only if it is clear."},
+{q:"Which crossing is used by pedestrians and cyclists together?",a:["Toucan","Zebra","Pelican","Pegasus"],why:"A toucan crossing is one where two can cross: pedestrians and cyclists."},
+{q:"Which crossing is designed for horse riders?",a:["Pegasus","Toucan","Zebra","Puffin"],why:"Pegasus crossings have push buttons set at a height that riders can reach."},
+{q:"An ambulance with flashing blue lights and a siren is behind you. What should you do?",a:["Pull in to the left when it is safe, and stop if necessary","Speed up to get out of the way","Stay where you are and brake hard","Pull in to the right and stop"],why:"Stay calm, check your mirrors and make room safely. Do not break the law to let it through."},
+{q:"When should you NOT overtake?",a:["Approaching a bend where you cannot see ahead","On a long, straight road with a clear view","On a dual carriageway when the right-hand lane is clear","On a motorway to pass a slower vehicle"],why:"Only overtake when you can see far enough ahead to complete the move safely."},
+{q:"What is the minimum space to leave when overtaking a cyclist at up to 30 mph?",a:["1.5 metres (5 feet)","0.5 metres (1.5 feet)","1 metre (3 feet)","3 metres (10 feet)"],why:"Give cyclists at least 1.5 metres at speeds up to 30 mph, and more room at higher speeds."},
+{q:"What is the minimum room to leave when passing a horse, and how fast should you go?",a:["At least 2 metres (6.5 feet) at no more than 10 mph","At least 1 metre (3 feet) at 20 mph","At least 1.5 metres (5 feet) at 30 mph","Any distance if you sound your horn"],why:"Pass horses wide and slowly, and avoid revving your engine or sounding your horn."}
+];
+const BONUS_MS=5000;
+let QBAG=[];
+function nextQ(){if(!QBAG.length)QBAG=shuffle(QS.map((_,i)=>i));return QS[QBAG.pop()]}
+
+/* ================= deck building ================= */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const pick=(arr,k)=>shuffle(arr.slice()).slice(0,Math.max(0,k));
+
+function buildDeck(cat,size){
+  const pool=range(cat.min,cat.max);
+  const yes=pool.filter(cat.test),no=pool.filter(n=>!cat.test(n));
+  const lo=Math.ceil(size*.4),hi=Math.floor(size*.6);
+  let K=lo+Math.floor(Math.random()*(hi-lo+1));
+  K=Math.min(K,yes.length);
+  if(size-K>no.length)K=size-no.length;
+  const M=size-K;
+  const trickyNo=no.filter(cat.tricky);
+  const T=Math.min(Math.round(M*TRICKY_FRAC[cat.level]),trickyNo.length);
+  let chosen=pick(trickyNo,T);
+  const rest=no.filter(n=>!chosen.includes(n));
+  chosen=chosen.concat(pick(rest.filter(n=>!cat.tricky(n)),M-chosen.length));
+  if(chosen.length<M)chosen=chosen.concat(pick(rest.filter(n=>!chosen.includes(n)),M-chosen.length));
+  return shuffle(pick(yes,K).map(n=>({n,m:true})).concat(chosen.map(n=>({n,m:false}))));
+}
+
+function fmt(ms){const s=ms/1000;if(s<60)return s.toFixed(1)+'s';const m=Math.floor(s/60);return m+':'+(s-m*60).toFixed(1).padStart(4,'0')}
+
+/* ================= app ================= */
+const el={};
+let S={level:1,cat:'random',size:10,instant:true,bonus:true};
+let G=null,lastCat=null,drag=null;
+
+const keepSvg=()=>`<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#0b57a8" stroke="#fff" stroke-width="3"/><g transform="rotate(45 50 50)" fill="#fff"><rect x="44" y="22" width="12" height="38"/><polygon points="30,56 70,56 50,82"/></g></svg>`;
+const skipSvg=()=>`<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#d4212a" stroke="#fff" stroke-width="3"/><rect x="20" y="41" width="60" height="18" rx="2" fill="#fff"/></svg>`;
+
+const SIGNS={
+  stop:()=>`<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M30 4H70L96 30V70L70 96H30L4 70V30Z" fill="#d4212a" stroke="#fff" stroke-width="3"/><text x="50" y="60" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="26" fill="#fff">STOP</text></svg>`,
+  giveway:()=>`<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,92 6,14 94,14" fill="#fff" stroke="#d4212a" stroke-width="9" stroke-linejoin="round"/><text x="50" y="40" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="11" fill="#111">GIVE WAY</text></svg>`,
+  noentry:skipSvg,
+  nsl:()=>`<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#fff" stroke="#111" stroke-width="4"/><line x1="26" y1="74" x2="74" y2="26" stroke="#111" stroke-width="9"/></svg>`,
+  keepleft:keepSvg,
+  limit30:()=>`<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="#fff" stroke="#d4212a" stroke-width="10"/><text x="50" y="64" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="38" fill="#111">30</text></svg>`
+};
+
+function loadSettings(){try{const s=JSON.parse(localStorage.getItem('kos-settings')||'null');if(s)S=Object.assign(S,s)}catch(e){}
+  if(!catsFor(S.level).length)S.level=1;
+  if(S.cat!=='random'&&!catsFor(S.level).some(c=>c.id===S.cat))S.cat='random'}
+function saveSettings(){try{localStorage.setItem('kos-settings',JSON.stringify(S))}catch(e){}}
+function loadBests(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return[]}}
+function addBest(key,t,f){const a=loadBests(key);a.push({t,f,d:Date.now()});a.sort((x,y)=>x.t-y.t);const top=a.slice(0,5);
+  const rank=top.findIndex(x=>x.t===t&&x.f===f);try{localStorage.setItem(key,JSON.stringify(top))}catch(e){}return rank}
+const bkey=(level,size,cat)=>`kos|${level}|${size}|${cat}`;
+
+function show(id){['setup','ready','play','aware','result'].forEach(s=>el[s].classList.toggle('on',s===id));window.scrollTo(0,0)}
+const lvl=()=>LEVELS[S.level-1];
+
+/* ---------- settings screen ---------- */
+function renderSetup(){
+  el.levels.innerHTML=LEVELS.map(l=>`<button class="lvl${l.n===S.level?' on':''}" data-l="${l.n}"><span class="badge ${l.cls}">${l.badge}</span><span><b>${l.name}</b><small>Level ${l.n} · +${l.pen}s per fault</small></span></button>`).join('');
+  el.cat.innerHTML=`<option value="random">Surprise me (random from this level)</option>`+catsFor(S.level).map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  el.cat.value=S.cat;
+  document.querySelectorAll('.seg').forEach(b=>b.classList.toggle('on',+b.dataset.n===S.size));
+  el.instant.checked=S.instant;
+  el.bonus.checked=S.bonus;
+  el.bonusNote.style.display=S.bonus?'':'none';
+  el.penNote.textContent=`Fault penalty at this level: +${lvl().pen} seconds for every wrong card (kept when it should be skipped, or skipped when it should be kept).`;
+  renderBests();
+}
+function renderBests(){
+  const a=loadBests(bkey(S.level,S.size,S.cat));
+  el.bests.innerHTML=a.length?`<ol>${a.map(x=>`<li>${fmt(x.t)} <span style="color:var(--muted)">(${x.f} fault${x.f===1?'':'s'})</span></li>`).join('')}</ol><button class="link" id="clearBests">Clear</button>`
+    :`<div class="none">No times yet for this setting. Set the first one!</div>`;
+  const cb=document.getElementById('clearBests');
+  if(cb)cb.onclick=()=>{if(confirm('Clear the best times for this setting?')){try{localStorage.removeItem(bkey(S.level,S.size,S.cat))}catch(e){}renderBests()}};
+}
+
+/* ---------- start / ready ---------- */
+function chooseCat(){
+  const list=catsFor(S.level);
+  if(S.cat!=='random')return list.find(c=>c.id===S.cat);
+  let c;do{c=list[Math.floor(Math.random()*list.length)]}while(list.length>1&&c.id===lastCat);
+  lastCat=c.id;return c;
+}
+function prepare(){
+  const cat=chooseCat();
+  G={cat,level:S.level,pen:lvl().pen,size:S.size,instant:S.instant,cards:buildDeck(cat,S.size),
+     idx:0,faults:0,answers:[],locked:true,t0:0,elapsed:0,timer:null,key:bkey(S.level,S.size,S.cat),
+     bonusOn:S.bonus,bonusMs:0,qRes:null,qDone:false};
+  el.readyLvl.textContent=`${lvl().name} · Level ${lvl().n}`;
+  el.readySign.textContent=cat.label;
+  el.readyInfo.textContent=`${S.size} cards · +${G.pen}s for every wrong card · ${S.instant?'instant feedback on':'faults revealed at the end'}${S.bonus?' · optional Driver Awareness question (±5s)':''}`;
+  el.reroll.style.display=S.cat==='random'?'':'none';
+  show('ready');
+}
+function go(){
+  el.lvlBadge.innerHTML=`<span class="badge ${lvl().cls}">${lvl().badge}</span><span>${lvl().name}</span>`;
+  el.playSign.textContent=G.cat.label;
+  el.clockLbl.textContent=G.instant?'Time + penalties':'Time';
+  el.faults.textContent='0';el.clock.textContent='0.0s';
+  el.dots.innerHTML=G.cards.map(()=>'<span class="dot"></span>').join('');
+  show('play');
+  G.t0=performance.now();
+  G.timer=setInterval(tick,100);
+  showCard();
+}
+function tick(){
+  if(!G||!G.t0)return;
+  const el0=performance.now()-G.t0;
+  el.clock.textContent=fmt(el0+(G.instant?G.faults*G.pen*1000:0));
+}
+function showCard(){
+  const c=G.cards[G.idx];
+  el.num.textContent=c.n;
+  el.plate.className='plate '+(Math.random()<.5?'rear':'front');
+  el.plate.style.transition='none';el.plate.style.transform='';el.plate.style.opacity='';
+  void el.plate.offsetWidth;
+  el.plate.classList.add('enter');
+  el.stK.style.opacity=el.stS.style.opacity=0;
+  [...el.dots.children].forEach((d,i)=>{if(i===G.idx)d.classList.add('cur')});
+  G.locked=false;
+}
+
+/* ---------- deciding ---------- */
+function floatMsg(text,cls){
+  const f=document.createElement('div');f.className='fpen '+cls;f.textContent=text;el.hud.appendChild(f);setTimeout(()=>f.remove(),1000);
+}
+function flash(cls){el.flash.className='';void el.flash.offsetWidth;el.flash.className=cls}
+function decide(choice){
+  if(!G||G.locked||!el.play.classList.contains('on'))return;
+  G.locked=true;
+  const c=G.cards[G.idx],said=choice==='keep',ok=said===c.m;
+  G.answers.push({n:c.n,m:c.m,said,ok});
+  if(!ok)G.faults++;
+  const dot=el.dots.children[G.idx];dot.classList.remove('cur');
+  dot.classList.add(G.instant?(ok?'ok':'bad'):'n');
+  if(G.instant){
+    el.faults.textContent=G.faults;
+    flash(ok?'good':'bad');
+    floatMsg(ok?'✓':`+${G.pen}s`,ok?'good':'bad');
+    tick();
+  }
+  G.idx++;
+  if(G.idx>=G.cards.length){G.elapsed=performance.now()-G.t0;clearInterval(G.timer);G.timer=null}
+  const dir=said?-1:1;
+  (said?el.stK:el.stS).style.opacity=1;
+  el.plate.style.transition='transform .24s ease-in,opacity .24s';
+  el.plate.style.transform=`translateX(${dir*Math.max(innerWidth,600)}px) rotate(${dir*22}deg)`;
+  el.plate.style.opacity='0';
+  setTimeout(()=>{if(G.idx>=G.cards.length)endRound();else showCard()},250);
+}
+
+/* ---------- Driver Awareness bonus ---------- */
+function endRound(){if(G.bonusOn)showAwareOffer();else finish()}
+
+function showAwareOffer(){
+  const t=G.elapsed+G.faults*G.pen*1000;
+  el.aware.innerHTML=`<div class="aw">
+    <div class="sign mid">Driver Awareness</div>
+    <div class="verdict">${G.instant?'Time so far: '+fmt(t):'Driving time: '+fmt(G.elapsed)}</div>
+    <p class="brk">Answer one Highway Code question.<br><b style="color:#58e08c">Right: 5 seconds off your time.</b> &nbsp; <b style="color:#ff7a82">Wrong: 5 seconds added.</b><br>Only take it if you are sure!</p>
+    <div class="rbtns"><button class="go" id="awYes">TAKE THE QUESTION</button><button class="go alt" id="awNo">NO THANKS</button></div>
+  </div>`;
+  show('aware');
+  document.getElementById('awYes').onclick=showQuestion;
+  document.getElementById('awNo').onclick=finish;
+}
+
+function showQuestion(){
+  const q=nextQ();
+  const opts=shuffle(q.a.map((t,i)=>({t,ok:i===0})));
+  G.q=q;G.qDone=false;
+  el.aware.innerHTML=`<div class="aw">
+    <div class="sign mid">Driver Awareness</div>
+    ${q.sign?`<div class="qsign">${SIGNS[q.sign]()}</div>`:''}
+    <div class="q">${q.q}</div>
+    <div class="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}"><i>${'ABCD'[i]}</i><span>${o.t}</span></button>`).join('')}</div>
+    <div id="awOut"></div>
+  </div>`;
+  show('aware');
+  const btns=[...el.aware.querySelectorAll('.opt')];
+  btns.forEach(b=>b.onclick=()=>{
+    if(G.qDone)return;G.qDone=true;
+    const i=+b.dataset.i,ok=opts[i].ok;
+    G.bonusMs=ok?BONUS_MS:-BONUS_MS;
+    G.qRes={ok,correct:q.a[0]};
+    btns.forEach((x,j)=>{x.disabled=true;if(opts[j].ok)x.classList.add('right');else if(j===i)x.classList.add('wrong');else x.classList.add('dim')});
+    document.getElementById('awOut').innerHTML=`<div class="why"><b>${ok?'Correct! 5 seconds off.':'Not this time. 5 seconds added.'}</b> ${q.why}</div><button class="go" id="awNext">SEE MY RESULT</button>`;
+    document.getElementById('awNext').onclick=finish;
+    document.getElementById('awNext').scrollIntoView({block:'nearest'});
+  });
+}
+
+/* ---------- result ---------- */
+function finish(){
+  const penMs=G.faults*G.pen*1000,bonusMs=G.bonusMs||0,total=Math.max(0,G.elapsed+penMs-bonusMs);
+  const rank=addBest(G.key,total,G.faults);
+  const f=G.faults,s=G.size;
+  const verdict=f===0?'Clean licence. No faults!':f<=Math.floor(s/5)?`Pass with ${f} minor fault${f===1?'':'s'}`:`Fail with ${f} faults. Back to the test centre!`;
+  const bad=G.answers.map((a,i)=>({...a,i})).filter(a=>!a.ok),good=G.answers.map((a,i)=>({...a,i})).filter(a=>a.ok);
+  const row=a=>`<div class="rv ${a.ok?'ok':'bad'}"><div class="plate mini ${a.n%2?'rear':'front'}"><span class="eu">UK</span><span class="num">${a.n}</span></div>
+    <div class="tx"><b>${a.ok?'Correct':'Fault'}</b> · you ${a.said?'kept':'skipped'} it${a.ok?'':`, but it should be ${a.m?'kept':'skipped'}`}<br><span>${G.cat.why(a.n,a.m)}</span></div></div>`;
+  const recLine=rank===0?'New best time!':rank>0?`That's number ${rank+1} on the leaderboard!`:'';
+  const bests=loadBests(G.key);
+  el.result.innerHTML=`
+    <div class="sign mid">Journey complete</div>
+    <div class="verdict">${verdict}</div>
+    <div class="total">${fmt(total)}</div>
+    <div class="brk">Driving time ${fmt(G.elapsed)} + ${f} fault${f===1?'':'s'} × ${G.pen}s = ${fmt(penMs)} penalty${bonusMs>0?` − ${fmt(bonusMs)} Driver Awareness bonus`:bonusMs<0?` + ${fmt(-bonusMs)} Driver Awareness penalty`:''}</div>
+    ${G.qRes?`<div class="brk">Driver Awareness question: ${G.qRes.ok?'correct, 5 seconds off!':'wrong, 5 seconds added. The answer was: '+G.qRes.correct}</div>`:''}
+    ${recLine?`<div class="rec">${recLine}</div>`:''}
+    <div class="panel"><h2>${LEVELS[G.level-1].name} · ${G.cat.label}</h2>
+      ${f?`<h2 style="margin-top:6px;color:#ff9aa0">Faults (${f})</h2>${bad.map(row).join('')}`:'<div class="none" style="color:var(--muted)">Not a single fault to show.</div>'}
+      <button class="link" id="showGood">Show the ${good.length} correct card${good.length===1?'':'s'}</button>
+      <div id="goodList" style="display:none">${good.map(row).join('')}</div>
+    </div>
+    <div class="panel"><h2>Best times (${G.size} cards${S.cat==='random'?', this level':', this category'})</h2>
+      <ol style="margin:0;padding-left:22px;font-variant-numeric:tabular-nums">${bests.map((x,i)=>`<li${i===rank?' style="color:#ffd92e;font-weight:800"':''}>${fmt(x.t)} <span style="color:var(--muted)">(${x.f} fault${x.f===1?'':'s'})</span></li>`).join('')}</ol></div>
+    <div class="rbtns"><button class="go" id="again">DRIVE AGAIN</button><button class="go alt" id="toSet">SETTINGS</button></div>
+    <div class="lom">LoadsOfMaths</div>`;
+  show('result');
+  document.getElementById('showGood').onclick=e=>{const g=document.getElementById('goodList');const o=g.style.display==='none';g.style.display=o?'block':'none';e.target.textContent=o?'Hide the correct cards':`Show the ${good.length} correct card${good.length===1?'':'s'}`};
+  document.getElementById('again').onclick=prepare;
+  document.getElementById('toSet').onclick=()=>{renderSetup();show('setup')};
+}
+
+function quit(){if(G&&G.timer)clearInterval(G.timer);G=null;renderSetup();show('setup')}
+
+/* ================= init ================= */
+function init(){
+  ['setup','ready','play','aware','result','bonus','bonusNote','levels','cat','bests','penNote','startBtn','readyLvl','readySign','readyInfo','goBtn','reroll','backBtn',
+   'playSign','lvlBadge','clock','clockLbl','faults','dots','hud','plate','num','stK','stS','keepBtn','skipBtn','quit','flash','instant']
+   .forEach(id=>el[id]=document.getElementById(id));
+  document.getElementById('logoK').innerHTML=keepSvg();
+  document.getElementById('logoS').innerHTML=skipSvg();
+  el.keepBtn.innerHTML=keepSvg()+'<span>KEEP</span>';
+  el.skipBtn.innerHTML=skipSvg()+'<span>SKIP</span>';
+  loadSettings();renderSetup();
+
+  el.levels.addEventListener('click',e=>{const b=e.target.closest('.lvl');if(!b)return;S.level=+b.dataset.l;S.cat='random';saveSettings();renderSetup()});
+  el.cat.addEventListener('change',()=>{S.cat=el.cat.value;saveSettings();renderBests()});
+  document.querySelectorAll('.seg').forEach(b=>b.addEventListener('click',()=>{S.size=+b.dataset.n;saveSettings();renderSetup()}));
+  el.instant.addEventListener('change',()=>{S.instant=el.instant.checked;saveSettings()});
+  el.bonus.addEventListener('change',()=>{S.bonus=el.bonus.checked;el.bonusNote.style.display=S.bonus?'':'none';saveSettings()});
+  el.startBtn.onclick=prepare;
+  el.goBtn.onclick=go;
+  el.reroll.onclick=prepare;
+  el.backBtn.onclick=()=>{renderSetup();show('setup')};
+  el.keepBtn.onclick=()=>decide('keep');
+  el.skipBtn.onclick=()=>decide('skip');
+  el.quit.onclick=quit;
+
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='SELECT')return;
+    const k=e.key;
+    if(el.play.classList.contains('on')){
+      if(k==='ArrowLeft'||k==='a'||k==='A'||k==='k'||k==='K'){e.preventDefault();decide('keep')}
+      else if(k==='ArrowRight'||k==='d'||k==='D'||k==='s'||k==='S'){e.preventDefault();decide('skip')}
+    }else if(el.ready.classList.contains('on')){
+      if(k==='Enter'||k===' '){e.preventDefault();go()}
+    }else if(el.aware.classList.contains('on')){
+      const n='1234'.indexOf(k)>=0?'1234'.indexOf(k):'abcd'.indexOf(k.toLowerCase());
+      const opt=n>=0&&k.length===1?el.aware.querySelectorAll('.opt')[n]:null;
+      if(opt){e.preventDefault();opt.click()}
+      else if(k==='Enter'||k===' '){e.preventDefault();const b=document.getElementById('awNext')||document.getElementById('awYes');if(b)b.click()}
+    }
+  });
+
+  // swipe / drag
+  const p=el.plate;
+  p.addEventListener('pointerdown',e=>{
+    if(!G||G.locked)return;
+    drag={x:e.clientX,dx:0};p.setPointerCapture(e.pointerId);
+    p.style.transition='none';p.classList.remove('enter');
+  });
+  p.addEventListener('pointermove',e=>{
+    if(!drag)return;
+    drag.dx=e.clientX-drag.x;
+    p.style.transform=`translateX(${drag.dx}px) rotate(${drag.dx/30}deg)`;
+    const a=Math.min(1,Math.abs(drag.dx)/140);
+    el.stK.style.opacity=drag.dx<0?a:0;el.stS.style.opacity=drag.dx>0?a:0;
+  });
+  const end=()=>{
+    if(!drag)return;
+    const dx=drag.dx;drag=null;
+    if(Math.abs(dx)>Math.min(110,innerWidth*.2)){decide(dx<0?'keep':'skip')}
+    else{p.style.transition='transform .2s';p.style.transform='';el.stK.style.opacity=el.stS.style.opacity=0}
+  };
+  p.addEventListener('pointerup',end);
+  p.addEventListener('pointercancel',end);
+}
+if(typeof document!=='undefined')init();
+</script>
+</body>
+</html>
