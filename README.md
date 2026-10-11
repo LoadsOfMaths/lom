@@ -15,6 +15,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Data Lab | `data-lab/` |
 | Dice Games | `dice-games/` |
 | Erno | `erno/` |
+| Fraction Blaster | `fraction-blaster/` |
 | Fraction Fight Night | `fraction-fight-night/` |
 | Heads or Tails | `heads-or-tails/` |
 | Higher or Lower | `higher-or-lower/` |
