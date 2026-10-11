@@ -175,9 +175,9 @@ h1{color:var(--gold);text-shadow:0 4px 0 rgba(0,0,0,.45)}
 }
 
 /* ---- Special ones: a pig face in Pig, a cartoon eye in Snake Eyes ---- */
-html[data-game=pig] .die.one,html[data-game=snake] .die.one,.gameCard[data-game=snake] .die.one{container-type:inline-size}
-html[data-game=pig] .die.one .pip.on{background:none;display:grid;place-items:center;width:100%;aspect-ratio:auto;margin:0;font-size:22cqw;line-height:1;transform:scale(2.9)}
-html[data-game=pig] .die.one .pip.on::before{content:"\1F437";font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+html[data-game=pig] .die.one,html[data-game=snake] .die.one,.gameCard[data-game=snake] .die.one,.gameCard[data-game=pig] .die.one{container-type:inline-size}
+html[data-game=pig] .die.one .pip.on,.gameCard[data-game=pig] .die.one .pip.on{background:none;display:grid;place-items:center;width:100%;aspect-ratio:auto;margin:0;font-size:22cqw;line-height:1;transform:scale(2.9)}
+html[data-game=pig] .die.one .pip.on::before,.gameCard[data-game=pig] .die.one .pip.on::before{content:"\1F437";font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 html[data-game=snake] .die.one .pip.on,.gameCard[data-game=snake] .die.one .pip.on{
   width:80%;box-sizing:border-box;border:1.8cqw solid #1d1a17;transform:scale(2.15);
   background:radial-gradient(circle at 38% 36%,#fff 0 7%,transparent 8%),radial-gradient(circle at 50% 50%,#111 0 44%,#fff 46%)}
@@ -185,7 +185,7 @@ html[data-game=snake] .die.one .pip.on,.gameCard[data-game=snake] .die.one .pip.
 /* ---- Compact layout (phones, either way up): controls pinned, play area scrolls if needed ---- */
 @media (max-width:700px),(max-height:480px){
   #game{height:100vh;height:100dvh;bottom:auto;padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom));overflow:hidden}
-  #game .arena{flex:1 1 0;min-height:0;width:100%;overflow-y:auto;padding-top:24px;justify-content:safe center;gap:4px}
+  #game .arena{flex:1 1 0;min-height:0;width:100%;overflow-y:auto;padding-top:40px;justify-content:safe center;gap:4px}
   #game .controls{flex:0 0 auto;width:100%;flex-wrap:nowrap;gap:10px;margin:6px 0 4px}
   #game .controls .bigBtn{flex:1 1 0;min-width:0;white-space:nowrap}
   #game .controls .bigBtn.hidden{display:none}
@@ -207,7 +207,7 @@ html[data-game=snake] .die.one .pip.on,.gameCard[data-game=snake] .die.one .pip.
   /* 10,000: all six dice on one row, slim scoreboard */
   html[data-game=tenk] #game{--ds:min(64px,calc((100vw - 40px - 30px)/6))}
   html[data-game=tenk] #game .diceRow{flex-wrap:nowrap;gap:6px;row-gap:6px}
-  html[data-game=tenk] #game .arena{justify-content:flex-start;gap:6px;padding:26px 12px 6px}
+  html[data-game=tenk] #game .arena{justify-content:flex-start;gap:6px;padding:44px 12px 6px}
   html[data-game=tenk] #game .diceRow{min-height:0;padding-bottom:20px}
   html[data-game=tenk] #game .scoreboard{display:flex;flex-direction:column;gap:3px}
   html[data-game=tenk] #game .team{flex-direction:row;align-items:center;padding:3px 8px;gap:8px;border-width:2px;border-radius:10px}
@@ -229,7 +229,7 @@ html[data-game=snake] .die.one .pip.on,.gameCard[data-game=snake] .die.one .pip.
 @media (max-height:480px){
   #game .controls{margin:2px 0}
   html[data-game=tenk] #game .diceRow{min-height:0;padding-bottom:20px}
-  html[data-game=tenk] #game .arena{gap:4px;padding:24px 12px 4px}
+  html[data-game=tenk] #game .arena{gap:4px;padding:40px 12px 4px}
   html[data-game=tenk] #game .combos{max-height:34vh;overflow-y:auto}
 }
 
@@ -288,7 +288,7 @@ html[data-game=snake] .die.one .pip.on,.gameCard[data-game=snake] .die.one .pip.
   <h1>Dice Games</h1>
   <p class="tagline">Roll, risk it… or stash your treasure!</p>
   <div class="cards">
-    <button class="gameCard" data-game="pig"><h2>🐷 Pig</h2><div class="dice" data-faces="6"></div></button>
+    <button class="gameCard" data-game="pig"><h2>🐷 Pig</h2><div class="dice" data-faces="1"></div></button>
     <button class="gameCard" data-game="snake"><h2>🐍 Snake Eyes</h2><div class="dice" data-faces="1,1"></div></button>
     <button class="gameCard" data-game="tenk"><h2>🎲 10,000</h2><div class="dice" data-faces="1,2,3,4,5,6" data-small></div></button>
   </div>
