@@ -35,6 +35,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | The Choice | `the-choice/` |
 | Times Tables Quiz | `times-tables-quiz/` |
 | Toast | `toast/` |
+| Triangle Tangle | `triangle-tangle/` |
 | Trio | `trio/` |
 | Whale Watching | `whale-watching/` |
 | Wildlife Line-Up | `wildlife-line-up/` |
