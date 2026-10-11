@@ -78,6 +78,13 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
 .tile{position:relative;flex:none;width:var(--ts);height:var(--ts);border-radius:calc(var(--ts)*.11);border:3px solid #1c2733;background:linear-gradient(160deg,#fdfaf0,#dfe8ee);
   font-family:var(--mono);font-weight:800;font-size:calc(var(--ts)*.4);line-height:1;color:#1c2733;display:grid;place-items:center;padding:0;box-shadow:0 5px 0 #1c2733,0 10px 14px rgba(0,0,0,.25);transition:transform .12s,box-shadow .12s,background .2s}
 .tile.d4{font-size:calc(var(--ts)*.31)}
+.frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.05}
+.frac .fn{padding:0 .18em .1em;border-bottom:.085em solid currentColor;min-width:1.1em;text-align:center}
+.frac .fd{padding-top:.12em;min-width:1.1em;text-align:center}
+.set select.wide{width:auto;min-width:200px;font-size:16px}
+.set.dim{opacity:.45}
+.minibtns{display:flex;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
+.minibtns .btn{font-size:15px;padding:7px 14px}
 .tile::before{content:"";position:absolute;inset:calc(var(--ts)*.05);border-radius:calc(var(--ts)*.07);border:2px dashed rgba(28,39,51,.25)}
 .tile .tab{position:absolute;top:-11px;left:10px;background:#ffc548;color:#1c2733;border:2px solid #1c2733;border-radius:6px;font:700 clamp(10px,calc(var(--ts)*.09),13px)/1.35 var(--mono);padding:0 7px}
 @media (hover:hover){.tile:hover:not(:disabled){transform:translateY(-4px);box-shadow:0 9px 0 #1c2733,0 16px 18px rgba(0,0,0,.3)}}
@@ -225,8 +232,14 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   <div class="set"><label for="sClean">Include CLEAN cards (no imposter)</label><input type="checkbox" id="sClean"></div>
   <div class="set"><label for="sPct">Chance of a CLEAN card: <b id="pctOut"></b>%</label><input type="range" id="sPct" min="0" max="50" step="5"></div>
   <h4>Rules that can appear</h4>
+  <div class="minibtns"><button class="btn" id="allRules">All rules</button><button class="btn" id="onlyFrac">Only equivalent fractions</button></div>
   <div class="fams" id="fams"></div>
   <p class="note">A rule only appears from its own level upwards. If every rule available at a level is switched off, all of them are used.</p>
+  <h4>Equivalent fractions</h4>
+  <div class="set"><label for="sDec">Also show a decimal or percentage</label>
+    <select id="sDec" class="wide"><option value="none">Never</option><option value="dec">A decimal</option><option value="pct">A percentage</option><option value="either">Decimal or percentage</option></select></div>
+  <div class="set" id="decRow"><label for="sDecPct">Chance a card includes one: <b id="decOut"></b>%</label><input type="range" id="sDecPct" min="0" max="100" step="10"></div>
+  <p class="note">A card never shows more than one decimal or percentage. It is either equal to the fractions, or it is the imposter. Only used when &ldquo;Equivalent fractions&rdquo; is ticked above.</p>
   <div class="foot"><button class="btn ghost" id="reset">Reset to defaults</button><button class="btn primary" id="close" style="font-size:18px;padding:10px 26px">Done</button></div>
 </div></div>
 
@@ -245,6 +258,88 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   const sample = (a, k) => shuffle(a).slice(0, k);
   const FIB = [1, 2]; while (FIB[FIB.length - 1] < 1600) FIB.push(FIB[FIB.length - 1] + FIB[FIB.length - 2]);
+
+
+  /* ---------- equivalent fractions ---------- */
+  const gcd = (a, b) => { while (b) { const t = a % b; a = b; b = t; } return a; };
+  const range = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
+  const EQ = {
+    qs:   { 1: [2, 3, 4, 5, 10], 2: [2, 3, 4, 5, 6, 7, 8, 10], 3: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20],
+            4: range(2, 20).concat([25]), 5: range(2, 30), 6: range(2, 40) },
+    kmax: { 1: 12, 2: 15, 3: 20, 4: 30, 5: 40, 6: 50 }
+  };
+  // value of a decimal/percentage slot is held in thousandths (0.6 -> 600) so everything stays exact
+  const decText = v => { let t = (v / 1000).toFixed(3).replace(/0+$/, ''); return t.endsWith('.') ? t.slice(0, -1) : t; };
+  const pctText = v => (v % 10 === 0 ? String(v / 10) : (v / 10).toFixed(1)) + '%';
+  function decoyFrac(p, q, ks, lv, cap, taken) {
+    const types = lv <= 2 ? ['mismatch', 'add', 'pm1'] : lv === 3 ? ['mismatch', 'add', 'pm1', 'pm1'] : ['pm1', 'pm1', 'pm1', 'mismatch', 'add'];
+    for (let t = 0; t < 80; t++) {
+      const type = pick(types), k = pick(ks);
+      let n, d;
+      if (type === 'mismatch') { const k2 = pick(ks); if (k2 === k) continue; n = p * k; d = q * k2; }
+      else if (type === 'add') { const a = rnd(1, 6); n = p + a; d = q + a; }
+      else { n = p * k; d = q * k;
+        const v = rnd(0, 3);
+        if (v === 0) n += pick([-1, 1]); else if (v === 1) d += pick([-1, 1]); else if (v === 2) { const e = pick([-1, 1]); n += e; d += e; } else n += pick([-2, 2]); }
+      if (n < 1 || d < 2 || n >= d || d > cap) continue;
+      if (n * q === p * d) continue;                       // equivalent after all
+      if (taken.has(n + '/' + d)) continue;
+      return [n, d];
+    }
+    return null;
+  }
+  function genEqFrac(lv, o, size, wantClean, cleanOption, L) {
+    const cap = L.max, mode = o.decMode || 'none';
+    const chance = o.decChance == null ? 40 : o.decChance;
+    const useSlot = mode !== 'none' && Math.random() * 100 < chance;
+    const slotKind = !useSlot ? null : mode === 'either' ? pick(['dec', 'pct']) : mode;
+    const pool = [];
+    for (const q of EQ.qs[lv]) for (let p = 1; p < q; p++)
+      if (gcd(p, q) === 1 && (!useSlot || (1000 % q === 0 && (lv > 2 || 100 % q === 0)))) pool.push([p, q]);
+    if (!pool.length) return null;
+    const [p, q] = pick(pool);
+    const slotImp = !wantClean && useSlot && Math.random() < 0.35;
+    const slotMember = useSlot && !slotImp ? 1 : 0;
+    const members = wantClean ? size : size - 1;
+    const fracMembers = members - slotMember;
+    const impFrac = !wantClean && !slotImp ? 1 : 0;
+    const ks = range(lv <= 2 ? 1 : 2, EQ.kmax[lv]).filter(k => q * k <= cap);
+    if (ks.length < fracMembers || ks.length < 2) return null;
+    const items = {}, keys = [], taken = new Set();
+    sample(ks, fracMembers).forEach(k => {
+      const n = p * k, d = q * k, key = n + '/' + d;
+      items[key] = { kind: 'frac', n, d }; keys.push(key); taken.add(key);
+    });
+    const v1000 = p * 1000 / q;
+    let impKey = null, why = null;
+    if (slotMember) {
+      const key = slotKind === 'dec' ? decText(v1000) : pctText(v1000);
+      items[key] = { kind: slotKind, text: key, v1000 }; keys.push(key);
+    }
+    if (impFrac) {
+      const d = decoyFrac(p, q, ks, lv, cap, taken);
+      if (!d) return null;
+      const [n, dd] = d, g = gcd(n, dd);
+      impKey = n + '/' + dd; items[impKey] = { kind: 'frac', n, d: dd }; keys.push(impKey);
+      why = g === 1 ? `${n}/${dd} is already in its simplest form, and that isn’t ${p}/${q}.`
+                    : `${n}/${dd} simplifies to ${n / g}/${dd / g}, not ${p}/${q}.`;
+    }
+    if (slotImp) {
+      const c0 = [v1000 + 100, v1000 - 100, v1000 + 50, v1000 - 50, v1000 + 10, v1000 - 10, v1000 + 200, v1000 - 200, 1000 - v1000,
+                  v1000 % 10 === 0 ? v1000 / 10 : 0].filter(x => x > 0 && x < 1000 && x !== v1000 && (lv > 3 || x % 10 === 0));
+      if (!c0.length) return null;
+      const c = pick(c0), g = gcd(c, 1000);
+      impKey = slotKind === 'dec' ? decText(c) : pctText(c);
+      items[impKey] = { kind: slotKind, text: impKey, v1000: c }; keys.push(impKey);
+      why = `${impKey} = ${c / g}/${1000 / g}, not ${p}/${q}.`;
+    }
+    if (new Set(keys).size !== keys.length) return null;
+    const eq = 1000 % q === 0 ? ` = ${decText(v1000)} = ${pctText(v1000)}` : '';
+    return {
+      level: lv, ruleName: 'Equivalent fractions', ruleReveal: `Equivalent fractions: all equal ${p}/${q}${eq}`,
+      family: 'eqfrac', numbers: shuffle(keys), imposter: impKey, clean: wantClean, cleanOption, why, items, fallback: false
+    };
+  }
 
   /* ---------- levels & families ---------- */
   const LEVELS = [
@@ -266,7 +361,8 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
     { id: 'pow2',       label: 'Powers of 2',                   min: 3 },
     { id: 'fib',        label: 'Fibonacci numbers',             min: 4 },
     { id: 'multk',      label: 'k more than a multiple of n',   min: 5 },
-    { id: 'primek',     label: 'k more / less than a prime',    min: 6 }
+    { id: 'primek',     label: 'k more / less than a prime',    min: 6 },
+    { id: 'eqfrac',     label: 'Equivalent fractions',          min: 1 }
   ];
   const P = {
     mult:    { 1: [2, 3, 4, 5, 10], 2: [3, 4, 5, 6, 7, 8, 9], 3: [6, 7, 8, 9, 11, 12, 13, 14, 15],
@@ -378,8 +474,14 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
     for (let att = 0; att < 5000; att++) {
       const fallback = att >= 3500;
       let size = rnd(lo, hi);
+      const fam = pick(fams);
+      if (fam.id === 'eqfrac') {
+        const card = genEqFrac(levelNo, o, Math.max(3, size - Math.floor(Math.max(0, att - 300) / 150)), wantClean, cleanOption, L);
+        if (card) return card;
+        continue;
+      }
       if (att > 800) size = Math.min(12, size + Math.floor((att - 800) / 800));
-      const rule = randRule(pick(fams).id, levelNo);
+      const rule = randRule(fam.id, levelNo);
       const uni = []; for (let n = 1; n <= L.max; n++) if (rule.valid(n)) uni.push(n);
       const pool = uni.filter(rule.test);
       const need = wantClean ? size : size - 1;
@@ -410,9 +512,11 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
 'use strict';
 (function(){
   const $ = id => document.getElementById(id);
-  const DEF = { minN:4, maxN:8, sorted:true, rounds:10, showAll:false, cleanOn:true, cleanPct:20, fams:{} };
+  const DEF = { minN:4, maxN:8, sorted:true, rounds:10, showAll:false, cleanOn:true, cleanPct:20, fams:{ eqfrac:false }, decMode:'either', decChance:40 };
   let S = JSON.parse(JSON.stringify(DEF));
   try { const raw = localStorage.getItem('numberForensics.v1'); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e){}
+  if (!S.fams || typeof S.fams !== 'object') S.fams = {};
+  if (S.fams.eqfrac === undefined) S.fams.eqfrac = false;   // opt-in: only appears once a teacher ticks it
   const save = () => { try { localStorage.setItem('numberForensics.v1', JSON.stringify(S)); } catch(e){} };
 
   /* ---------- decorative background ---------- */
@@ -470,7 +574,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   }
 
   function opts(){
-    return { families: S.fams, minN: S.minN, maxN: S.maxN, sorted: S.sorted, cleanOn: S.cleanOn, cleanPct: S.cleanPct };
+    return { families: S.fams, minN: S.minN, maxN: S.maxN, sorted: S.sorted, cleanOn: S.cleanOn, cleanPct: S.cleanPct, decMode: S.decMode, decChance: S.decChance };
   }
   function start(level){
     G = { level, i: 0, score: 0, streak: 0, best: 0, total: +S.rounds, card: null, sel: undefined, done: false, results: [] };
@@ -494,20 +598,32 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
     const rv = $('ruleVal');
     if (L.showRule || S.showAll){ rv.className = 'val'; rv.textContent = c.ruleName; }
     else { rv.className = 'val redacted'; rv.textContent = 'XXXXXXXXXXXXXXXXXXXX'; }
+    const noun = c.family === 'eqfrac' ? 'value' : 'number', shown = L.showRule || S.showAll;
     $('prompt').textContent = c.cleanOption
-      ? 'One number may be the imposter. Tap it, then submit your finding. If every number fits, declare the card CLEAN.'
-      : (L.showRule || S.showAll ? 'One number does not obey the rule. Tap the imposter, then submit your finding.'
-                                 : 'Work out the hidden rule. One number does not obey it. Tap the imposter, then submit.');
-    G.btns = c.numbers.map((n, k) => {
-      const b = document.createElement('button'); b.className = 'tile' + (String(n).length >= 4 ? ' d4' : ''); b.dataset.n = n;
-      b.innerHTML = `<span class="tab">${String.fromCharCode(65 + k)}</span>${n}`;
-      b.onclick = () => choose(n);
+      ? `One ${noun} may be the imposter. Tap it, then submit your finding. If every ${noun} fits, declare the card CLEAN.`
+      : (shown ? `One ${noun} does not obey the rule. Tap the imposter, then submit your finding.`
+               : `Work out the hidden rule. One ${noun} does not obey it. Tap the imposter, then submit.`);
+    G.keys = c.numbers.map(String); G.impK = c.imposter == null ? null : String(c.imposter);
+    G.btns = G.keys.map((key, k) => {
+      const b = document.createElement('button'); b.className = 'tile' + (!c.items && key.length >= 4 ? ' d4' : ''); b.dataset.n = key;
+      b.innerHTML = `<span class="tab">${String.fromCharCode(65 + k)}</span>${tileInner(c, key)}`;
+      b.onclick = () => choose(key);
       return b;
     });
     layoutTiles();
     const cb = $('cleanBtn'); cb.classList.toggle('hidden', !c.cleanOption); cb.disabled = false; cb.className = 'btn cleanbtn' + (c.cleanOption ? '' : ' hidden');
     $('submit').disabled = true; $('submit').classList.remove('hidden');
     $('verdict').classList.add('hidden');
+  }
+  function tileInner(c, key){
+    const it = c.items && c.items[key];
+    if (!it) return key;
+    if (it.kind === 'frac'){
+      const L = Math.max(String(it.n).length, String(it.d).length), f = L <= 2 ? .30 : L === 3 ? .24 : .19;
+      return `<span class="frac" style="font-size:calc(var(--ts)*${f})"><span class="fn">${it.n}</span><span class="fd">${it.d}</span></span>`;
+    }
+    const L = it.text.length, f = L <= 3 ? .40 : L === 4 ? .31 : L === 5 ? .25 : .21;
+    return `<span style="font-size:calc(var(--ts)*${f})">${it.text}</span>`;
   }
   /* Pick the largest tile size that fits the screen, then spread the tiles evenly over the rows (4+3, not 6+1). */
   function layoutTiles(){
@@ -516,7 +632,8 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
     const n = G.btns.length, W = t.clientWidth || 300;
     const maxTs = innerWidth >= 1800 ? 180 : 150, minTs = 64;
     const availH = Math.max(170, innerHeight - (innerWidth < 760 ? 520 : (innerHeight < 520 ? 250 : 440)));
-    const T = (innerHeight < 520 || innerWidth < 760) ? 60 : maxTs;   // smallest tile we're happy with when using fewer rows
+    let T = (innerHeight < 520 || innerWidth < 760) ? 60 : maxTs;   // smallest tile we're happy with when using fewer rows
+    if (G.card && G.card.items) T = Math.max(T, innerHeight < 520 ? 76 : 88);   // stacked fractions need more room
     const gapFor = c => Math.round(Math.max(10, Math.min(24, c * .17)));
     let ts = 0, g = 10, per = n, found = false;
     // 1) fewest rows whose tiles are still a comfortable size and fit the height
@@ -556,7 +673,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
     sync();
   }
   function sync(){
-    document.querySelectorAll('.tile').forEach(b => b.classList.toggle('sel', G.sel !== undefined && G.sel !== 'clean' && +b.dataset.n === G.sel));
+    document.querySelectorAll('.tile').forEach(b => b.classList.toggle('sel', G.sel !== undefined && G.sel !== 'clean' && b.dataset.n === G.sel));
     $('cleanBtn').classList.toggle('sel', G.sel === 'clean');
     $('submit').disabled = G.sel === undefined;
   }
@@ -565,27 +682,29 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
     if (G.done || G.sel === undefined) return;
     G.done = true;
     const c = G.card;
-    const right = c.clean ? G.sel === 'clean' : G.sel === c.imposter;
+    const right = c.clean ? G.sel === 'clean' : G.sel === G.impK;
     if (right){ G.score++; G.streak++; G.best = Math.max(G.best, G.streak); } else G.streak = 0;
     G.results.push(right);
     // reveal
-    $('ruleVal').className = 'val revealed'; $('ruleVal').textContent = c.ruleName;
+    $('ruleVal').className = 'val revealed'; $('ruleVal').textContent = c.ruleReveal || c.ruleName;
     document.querySelectorAll('.tile').forEach(b => {
-      const n = +b.dataset.n; b.disabled = true; b.classList.remove('sel');
+      const n = b.dataset.n; b.disabled = true; b.classList.remove('sel');
       if (c.clean) b.classList.add('ok');
-      else if (n === c.imposter){ b.classList.add('imp'); b.insertAdjacentHTML('beforeend', '<span class="stamp">IMPOSTER</span>'); }
+      else if (n === G.impK){ b.classList.add('imp'); b.insertAdjacentHTML('beforeend', '<span class="stamp">IMPOSTER</span>'); }
       else b.classList.add('ok');
-      if (G.sel === n && n !== c.imposter) b.classList.add('wrong');
+      if (G.sel === n && n !== G.impK) b.classList.add('wrong');
     });
     const cb = $('cleanBtn'); cb.classList.remove('sel'); cb.disabled = true; if (c.clean) cb.classList.add('ok');
     $('submit').classList.add('hidden');
     const v = $('verdict'); v.classList.remove('hidden', 'good', 'bad'); v.classList.add(right ? 'good' : 'bad');
     $('vHead').textContent = right ? (c.clean ? 'Card is clean — case solved' : 'Imposter identified — case solved') : 'Finding rejected';
     let msg;
-    if (c.clean) msg = right ? `Every number fits the rule “${c.ruleName}”. Nobody to arrest on this one.`
-                             : `This card was CLEAN. Every number fits the rule “${c.ruleName}”.`;
+    const noun = c.family === 'eqfrac' ? 'value' : 'number';
+    const ruleLine = c.ruleReveal ? c.ruleReveal + '.' : `Rule: “${c.ruleName}”.`;
+    if (c.clean) msg = right ? `Every ${noun} fits the rule. ${ruleLine} Nobody to arrest on this one.`
+                             : `This card was CLEAN. Every ${noun} fits the rule. ${ruleLine}`;
     else msg = (right ? '' : (G.sel === 'clean' ? 'There was an imposter. ' : `${G.sel} fits the rule. `)) +
-               `The imposter is ${c.imposter}. ${c.why} Rule: “${c.ruleName}”.`;
+               `The imposter is ${G.impK}. ${c.why} ${ruleLine}`;
     $('vText').textContent = msg;
     $('next').textContent = G.i >= G.total ? 'Close the case ▶' : 'Next case ▶';
     head();
@@ -628,6 +747,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   function loadUI(){
     $('sMin').value = S.minN; $('sMax').value = S.maxN; $('sSort').checked = S.sorted; $('sRounds').value = S.rounds;
     $('sShow').checked = S.showAll; $('sClean').checked = S.cleanOn; $('sPct').value = S.cleanPct; $('pctOut').textContent = S.cleanPct;
+    $('sDec').value = S.decMode; $('sDecPct').value = S.decChance; $('decOut').textContent = S.decChance; $('decRow').classList.toggle('dim', S.decMode === 'none');
     buildFams();
   }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, isNaN(v) ? a : v));
@@ -636,9 +756,12 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
     if (S.minN > S.maxN) S.maxN = S.minN;
     S.sorted = $('sSort').checked; S.rounds = +$('sRounds').value; S.showAll = $('sShow').checked;
     S.cleanOn = $('sClean').checked; S.cleanPct = +$('sPct').value; $('pctOut').textContent = S.cleanPct;
+    S.decMode = $('sDec').value; S.decChance = +$('sDecPct').value; $('decOut').textContent = S.decChance; $('decRow').classList.toggle('dim', S.decMode === 'none');
     save();
   }
-  ['sMin','sMax','sSort','sRounds','sShow','sClean','sPct'].forEach(id => $(id).addEventListener('input', readUI));
+  ['sMin','sMax','sSort','sRounds','sShow','sClean','sPct','sDec','sDecPct'].forEach(id => $(id).addEventListener('input', readUI));
+  $('allRules').onclick = () => { NF.FAMILIES.forEach(f => S.fams[f.id] = true); save(); buildFams(); };
+  $('onlyFrac').onclick = () => { NF.FAMILIES.forEach(f => S.fams[f.id] = (f.id === 'eqfrac')); save(); buildFams(); };
   $('setBtn').onclick = () => { loadUI(); $('modal').classList.remove('hidden'); };
   $('close').onclick = () => { readUI(); loadUI(); $('modal').classList.add('hidden'); };
   $('modal').addEventListener('click', e => { if (e.target === $('modal')) $('close').onclick(); });
