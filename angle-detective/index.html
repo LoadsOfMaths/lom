@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Angle Detective</title>
+<style>
+:root{
+  --night:#1a1033; --plum:#3d1d63; --pink:#ff5fa2; --pinkd:#d63a80; --gold:#ffd34d;
+  --paper:#fff6e3; --ink:#241440; --blue:#6ec3ff; --green:#2bb673; --red:#e5484d;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;color:#fff;
+  background:linear-gradient(180deg,#160b2e 0%,#35195a 55%,#6a2a7a 100%);
+  background-attachment:fixed;overflow-x:hidden;
+}
+#skyline{position:fixed;left:0;bottom:0;width:100%;height:36vh;z-index:0;pointer-events:none}
+.moon{position:fixed;top:5vh;right:7vw;width:12vh;height:12vh;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#fffbe6,#ffe9a8);box-shadow:0 0 60px 20px rgba(255,233,168,.25);z-index:0}
+.beam{position:fixed;left:50%;bottom:0;width:60vw;height:100vh;transform-origin:bottom center;
+  background:linear-gradient(0deg,rgba(255,240,180,.0),rgba(255,240,180,.10));
+  clip-path:polygon(48% 100%,52% 100%,100% 0,0 0);z-index:0;pointer-events:none;animation:sweep 9s ease-in-out infinite alternate}
+@keyframes sweep{from{transform:translateX(-50%) rotate(-22deg)}to{transform:translateX(-50%) rotate(22deg)}}
+.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:2vh 3vw 3vh}
+.screen.active{display:flex;flex-direction:column}
+h1,h2{font-family:Georgia,"Times New Roman",serif;margin:0}
+.btn{font:inherit;font-weight:800;border:0;border-radius:14px;padding:.7em 1.3em;cursor:pointer;
+  background:var(--pink);color:#fff;box-shadow:0 5px 0 var(--pinkd);transition:transform .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--pinkd)}
+.btn.gold{background:var(--gold);color:var(--ink);box-shadow:0 5px 0 #c9a21c}
+.btn.ghost{background:rgba(255,255,255,.14);box-shadow:0 5px 0 rgba(0,0,0,.3)}
+.btn.big{font-size:clamp(20px,3vh,30px)}
+.btn.small{font-size:clamp(14px,2vh,18px);padding:.5em 1em}
+
+/* title */
+#title{align-items:center;justify-content:center;text-align:center}
+.titlerow{display:flex;align-items:flex-end;justify-content:center;gap:3vw;width:100%}
+.titlerow svg{height:48vh;width:auto;flex:none}
+.titlebox{max-width:46vw}
+.kicker{letter-spacing:.35em;text-transform:uppercase;color:var(--gold);font-weight:700;font-size:clamp(12px,2vh,20px)}
+#title h1{font-size:clamp(42px,10vh,110px);line-height:.95;color:var(--pink);text-shadow:0 4px 0 #6b1d49,0 0 40px rgba(255,95,162,.45);font-style:italic;margin:1vh 0}
+.subtitle{font-size:clamp(16px,2.8vh,28px);margin:1vh 0 3vh;color:#ffe9f3}
+
+/* levels */
+#levels h2{font-size:clamp(28px,5vh,54px);color:var(--gold);text-align:center;margin:1vh 0 .5vh}
+#levels .lead{text-align:center;opacity:.9;font-size:clamp(14px,2.3vh,22px);margin-bottom:2vh}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6vw;max-width:1300px;margin:0 auto;width:100%}
+.card{background:rgba(255,246,227,.96);color:var(--ink);border-radius:18px;padding:1.6vh 1.4vw;text-align:left;cursor:pointer;
+  border:0;font:inherit;box-shadow:0 6px 0 rgba(0,0,0,.35);position:relative;transition:transform .1s}
+.card:hover{transform:translateY(-4px) rotate(-.4deg)}
+.card .num{position:absolute;top:-1.2vh;right:1vw;background:var(--pink);color:#fff;font-weight:900;border-radius:999px;
+  width:clamp(34px,5vh,50px);height:clamp(34px,5vh,50px);display:flex;align-items:center;justify-content:center;font-size:clamp(16px,2.6vh,26px);box-shadow:0 3px 0 var(--pinkd)}
+.card h3{margin:0 0 .4vh;font-family:Georgia,serif;font-size:clamp(17px,2.9vh,28px);padding-right:3.5vw}
+.card p{margin:0;font-size:clamp(13px,2.1vh,19px);opacity:.85}
+.card .best{margin-top:1vh;font-weight:800;font-size:clamp(12px,1.9vh,17px);color:var(--pinkd)}
+.opts{text-align:center;margin-top:2.5vh}
+.opts label{margin:.4vh .5vw}
+.opts label{display:inline-flex;gap:.6em;align-items:center;background:rgba(255,255,255,.12);padding:.6em 1.2em;border-radius:999px;font-size:clamp(14px,2.2vh,20px);cursor:pointer}
+.opts input{width:1.3em;height:1.3em;accent-color:var(--pink)}
+
+/* game */
+.topbar{display:flex;align-items:center;gap:2vw;margin-bottom:3.2vh}
+.topbar .ttl{font-family:Georgia,serif;font-weight:700;font-size:clamp(16px,3vh,30px);color:var(--gold);flex:1}
+.pips{display:flex;gap:.5vw}
+.pips span{width:clamp(14px,2.4vh,26px);height:clamp(14px,2.4vh,26px);border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.35)}
+.pips span.cur{border-color:var(--gold);box-shadow:0 0 12px var(--gold)}
+.pips span.full{background:var(--gold);border-color:var(--gold)}
+.pips span.part{background:var(--pink);border-color:var(--pink)}
+.pips span.none{background:#8c7aa8}
+.score{font-size:clamp(14px,2.4vh,24px);white-space:nowrap}
+.score b{color:var(--gold);font-size:1.25em}
+.main{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:2.2vw;flex:1;align-items:start}
+.evidence{position:relative;background:var(--paper);border-radius:10px;padding:1.2vh 1vw;
+  background-image:linear-gradient(rgba(36,20,64,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(36,20,64,.07) 1px,transparent 1px);
+  background-size:26px 26px;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:rotate(-.5deg);color:var(--ink)}
+.evidence::before{content:"";position:absolute;top:-14px;left:8%;width:22px;height:54px;border:4px solid #9aa0b5;border-radius:12px;transform:rotate(8deg)}
+.evidence .tag{position:absolute;top:-2.4vh;right:2%;background:var(--pinkd);color:#fff;font-weight:900;letter-spacing:.12em;
+  padding:.3em .9em;border-radius:6px;font-size:clamp(11px,1.8vh,17px);transform:rotate(2deg);box-shadow:0 3px 0 rgba(0,0,0,.3)}
+#sceneBox svg{display:block;width:100%;height:auto;max-height:72vh}
+.lbl{font-size:22px;font-weight:800;fill:#241440;stroke:#fff6e3;stroke-width:5px;paint-order:stroke;text-anchor:middle;dominant-baseline:central;font-family:"Trebuchet MS",Arial,sans-serif}
+.lblw{font-size:20px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:central;font-family:"Trebuchet MS",Arial,sans-serif}
+.side{display:flex;flex-direction:column;gap:1.4vh}
+.detective{display:flex;align-items:flex-end;gap:1vw}
+.detective svg{height:clamp(90px,16vh,170px);width:auto;flex:none}
+.bubble{position:relative;background:#fff;color:var(--ink);border-radius:16px;padding:.8em 1.1em;font-weight:700;font-size:clamp(14px,2.3vh,22px);flex:1;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.bubble::before{content:"";position:absolute;left:-12px;bottom:18px;border:10px solid transparent;border-right-color:#fff;border-left:0}
+.q{font-family:Georgia,serif;font-size:clamp(18px,3vh,30px);color:var(--gold);font-weight:700}
+.answer{background:#120a26;border:3px solid var(--pink);border-radius:14px;font-size:clamp(30px,6vh,64px);font-weight:900;text-align:center;
+  padding:.1em .4em;margin:.8vh 0 1.2vh;min-height:1.4em;letter-spacing:.05em}
+.answer.shake,.reason.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:.9vh .8vw}
+.keys button{font:inherit;font-weight:900;font-size:clamp(22px,3.8vh,40px);height:clamp(50px,8vh,86px);border:0;border-radius:14px;cursor:pointer;
+  background:#fff6e3;color:var(--ink);box-shadow:0 5px 0 #b9ab8c}
+.keys button:active{transform:translateY(4px);box-shadow:0 1px 0 #b9ab8c}
+.keys .go{background:var(--green);color:#fff;box-shadow:0 5px 0 #1b7d4f;font-size:clamp(16px,2.8vh,28px)}
+.keys .del{background:#e9dcc0}
+#reasons{display:grid;gap:1vh;margin-top:1vh}
+.reason{font:inherit;font-weight:800;text-align:left;border:0;border-radius:14px;cursor:pointer;color:var(--ink);background:#fff6e3;
+  padding:.8em 1.1em;font-size:clamp(15px,2.5vh,25px);box-shadow:0 5px 0 #b9ab8c}
+.reason:active{transform:translateY(4px)}
+.reason.bad{background:#f9b4b6;opacity:.7;box-shadow:none;pointer-events:none}
+.reason.ok{background:var(--green);color:#fff;box-shadow:0 5px 0 #1b7d4f}
+.notes{background:rgba(255,255,255,.12);border-left:6px solid var(--gold);border-radius:10px;padding:1vh 1.2vw;font-size:clamp(14px,2.3vh,22px)}
+.notes b{color:var(--gold)}
+
+.keys.off{opacity:.4;pointer-events:none}
+#reasons.many{grid-template-columns:1fr 1fr}
+#reasons.many .reason{font-size:clamp(13px,2.1vh,21px)}
+#sceneBox [data-sid]{cursor:pointer}
+#sceneBox{touch-action:none}
+.evidence{overflow:visible}
+.zoomctl{display:flex;gap:.6vw;justify-content:flex-end;margin-top:.6vh}
+.zoomctl button{font:inherit;font-weight:800;border:0;border-radius:10px;padding:.4em .9em;background:#241440;color:#fff;cursor:pointer;font-size:clamp(12px,1.9vh,17px);box-shadow:0 3px 0 #0e0820}
+.zoomctl button:active{transform:translateY(2px)}
+.selwedge{animation:selp .9s infinite alternate}
+@keyframes selp{to{stroke-opacity:.35}}
+.lbl2{font-size:22px;font-weight:900;fill:#241440;text-anchor:middle;dominant-baseline:central;font-family:"Trebuchet MS",Arial,sans-serif}
+.lbld{font-size:20px;font-weight:800;fill:#241440;text-anchor:middle;dominant-baseline:central;font-family:"Trebuchet MS",Arial,sans-serif}
+.notes ol{margin:.4em 0 0;padding-left:1.3em}
+/* results */
+#results{align-items:center;justify-content:center;text-align:center}
+.resrow{display:flex;align-items:flex-end;justify-content:center;gap:3vw}
+.resrow svg{height:42vh;width:auto}
+.stamp{display:inline-block;border:6px solid var(--red);color:var(--red);border-radius:12px;padding:.1em .5em;font-weight:900;
+  font-size:clamp(28px,6vh,64px);letter-spacing:.1em;transform:rotate(-6deg);background:rgba(255,255,255,.92);margin-bottom:1.5vh}
+.big-score{font-size:clamp(34px,8vh,90px);font-weight:900;color:var(--gold)}
+.rank{font-family:Georgia,serif;font-size:clamp(20px,4vh,40px);margin:.5vh 0 2vh}
+.res-btns{display:flex;gap:1.2vw;justify-content:center;flex-wrap:wrap}
+
+@media (max-width:900px){
+  .cards{grid-template-columns:1fr 1fr}
+  .main{grid-template-columns:1fr}
+  .titlerow svg{height:28vh}
+  .titlebox{max-width:90vw}
+}
+</style>
+</head>
+<body>
+
+<!-- character art (original characters) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <g id="insp-g">
+    <ellipse cx="78" cy="292" rx="24" ry="8" fill="#241440"/>
+    <ellipse cx="124" cy="292" rx="24" ry="8" fill="#241440"/>
+    <rect x="68" y="255" width="22" height="34" fill="#4a3a6a"/>
+    <rect x="112" y="255" width="22" height="34" fill="#4a3a6a"/>
+    <path d="M52 128 Q100 112 148 128 L168 262 Q100 276 34 262 Z" fill="#c29a5b" stroke="#6b4a1f" stroke-width="3"/>
+    <path d="M44 205 Q100 218 158 205 L160 220 Q100 233 42 220 Z" fill="#7a5426"/>
+    <rect x="94" y="208" width="14" height="14" rx="2" fill="#ffd34d" stroke="#6b4a1f" stroke-width="2"/>
+    <path d="M76 124 L100 172 L124 124 L112 116 L100 140 L88 116 Z" fill="#a67c3f" stroke="#6b4a1f" stroke-width="2"/>
+    <circle cx="100" cy="188" r="4" fill="#6b4a1f"/><circle cx="100" cy="240" r="4" fill="#6b4a1f"/>
+    <path d="M148 132 Q172 170 166 215" stroke="#c29a5b" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <circle cx="166" cy="222" r="10" fill="#f2c9a0"/>
+    <path d="M54 134 Q22 150 28 180" stroke="#c29a5b" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <circle cx="30" cy="184" r="10" fill="#f2c9a0"/>
+    <line x1="30" y1="182" x2="10" y2="150" stroke="#6b4a1f" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="2" cy="130" r="26" fill="rgba(180,230,255,.6)" stroke="#6b4a1f" stroke-width="6"/>
+    <circle cx="100" cy="88" r="40" fill="#f2c9a0" stroke="#7a4a2a" stroke-width="3"/>
+    <ellipse cx="100" cy="99" rx="14" ry="11" fill="#eab088" stroke="#7a4a2a" stroke-width="2.5"/>
+    <ellipse cx="84" cy="80" rx="9" ry="10" fill="#fff" stroke="#241440" stroke-width="2"/>
+    <ellipse cx="116" cy="80" rx="9" ry="10" fill="#fff" stroke="#241440" stroke-width="2"/>
+    <circle cx="80" cy="82" r="3.5" fill="#241440"/><circle cx="112" cy="82" r="3.5" fill="#241440"/>
+    <path d="M72 66 L94 72" stroke="#241440" stroke-width="5" stroke-linecap="round"/>
+    <path d="M128 66 L106 72" stroke="#241440" stroke-width="5" stroke-linecap="round"/>
+    <path d="M70 114 Q86 102 100 112 Q114 102 130 114 Q114 124 100 116 Q86 124 70 114 Z" fill="#3a2a22"/>
+    <ellipse cx="100" cy="58" rx="58" ry="12" fill="#3b2a5a" stroke="#1a1033" stroke-width="3"/>
+    <path d="M66 58 Q64 22 100 20 Q136 22 134 58 Z" fill="#4b3470" stroke="#1a1033" stroke-width="3"/>
+    <path d="M66 54 Q100 64 134 54 L134 46 Q100 56 66 46 Z" fill="#ff5fa2"/>
+  </g>
+  <clipPath id="bodyclip"><path d="M40 100 Q80 88 120 100 L128 180 L32 180 Z"/></clipPath>
+  <g id="bandit-g">
+    <rect x="44" y="178" width="28" height="48" fill="#2a2a44"/>
+    <rect x="88" y="178" width="28" height="48" fill="#2a2a44"/>
+    <ellipse cx="58" cy="230" rx="20" ry="8" fill="#1b1030"/>
+    <ellipse cx="102" cy="230" rx="20" ry="8" fill="#1b1030"/>
+    <path d="M42 106 Q14 84 20 50" stroke="#1b1030" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <path d="M118 106 Q146 84 140 50" stroke="#1b1030" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <circle cx="20" cy="46" r="9" fill="#f2c9a0"/><circle cx="140" cy="46" r="9" fill="#f2c9a0"/>
+    <g clip-path="url(#bodyclip)">
+      <rect x="20" y="88" width="120" height="100" fill="#fff"/>
+      <rect x="20" y="104" width="120" height="10" fill="#1b1030"/>
+      <rect x="20" y="124" width="120" height="10" fill="#1b1030"/>
+      <rect x="20" y="144" width="120" height="10" fill="#1b1030"/>
+      <rect x="20" y="164" width="120" height="10" fill="#1b1030"/>
+    </g>
+    <path d="M40 100 Q80 88 120 100 L128 180 L32 180 Z" fill="none" stroke="#1b1030" stroke-width="3"/>
+    <circle cx="80" cy="62" r="32" fill="#f2c9a0" stroke="#1b1030" stroke-width="3"/>
+    <path d="M48 56 A32 32 0 0 1 112 56 Z" fill="#1b1030"/>
+    <rect x="46" y="50" width="68" height="9" rx="4" fill="#4a3a6a"/>
+    <rect x="49" y="55" width="62" height="18" rx="8" fill="#1b1030"/>
+    <circle cx="66" cy="64" r="5.5" fill="#fff"/><circle cx="94" cy="64" r="5.5" fill="#fff"/>
+    <circle cx="67" cy="65" r="2.3" fill="#1b1030"/><circle cx="95" cy="65" r="2.3" fill="#1b1030"/>
+    <path d="M66 84 Q80 94 94 84" stroke="#7a3a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M110 232 Q100 196 124 190 Q148 196 142 232 Z" fill="#a47a43" stroke="#5a3b12" stroke-width="3"/>
+    <path d="M116 192 L124 180 L132 192 Z" fill="#a47a43" stroke="#5a3b12" stroke-width="2"/>
+    <text x="126" y="220" font-size="24" font-weight="900" text-anchor="middle" fill="#fff7e0" font-family="Georgia,serif">£</text>
+  </g>
+</defs>
+</svg>
+
+<svg id="skyline" viewBox="0 0 1600 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+<div class="moon"></div>
+<div class="beam"></div>
+
+<!-- TITLE -->
+<section id="title" class="screen active">
+  <div class="titlerow">
+    <svg viewBox="-30 0 240 300" aria-hidden="true"><use href="#insp-g"/></svg>
+    <div class="titlebox">
+      <div class="kicker">Maths Detective Agency</div>
+      <h1>Angle<br>Detective</h1>
+      <div class="subtitle">A bandit has stolen an angle! Crack the case, find the missing angle and give the reason.</div>
+      <button class="btn gold big" id="btnStart">Open the case files</button>
+    </div>
+    <svg viewBox="0 0 160 240" aria-hidden="true"><use href="#bandit-g"/></svg>
+  </div>
+</section>
+
+<!-- LEVEL SELECT -->
+<section id="levels" class="screen">
+  <h2>Choose your case file</h2>
+  <div class="lead">Ten clues in every case. Find the missing angle, then choose the correct reason. In levels 7–9 you must find other angles first.</div>
+  <div class="cards" id="cards"></div>
+  <div class="opts"><label><input type="checkbox" id="optReasons" checked> Ask for the reason as well (levels 1–6)</label> <label><input type="checkbox" id="opt5" checked> Angles are multiples of 5°</label></div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="screen">
+  <div class="topbar">
+    <button class="btn ghost small" id="btnLevels">◀ Case files</button>
+    <div class="ttl" id="gLevel"></div>
+    <div class="pips" id="pips"></div>
+    <div class="score">Evidence: <b id="gScore">0</b></div>
+  </div>
+  <div class="main">
+    <div class="evidence"><div class="tag" id="gTag"></div><div id="sceneBox"></div><div class="zoomctl" title="Drag to move, scroll or double-tap to zoom"><button id="zIn">Zoom in</button><button id="zOut">Zoom out</button><button id="zReset">Reset view</button></div></div>
+    <div class="side">
+      <div class="detective">
+        <svg viewBox="-30 0 240 300" aria-hidden="true"><use href="#insp-g"/></svg>
+        <div class="bubble" id="bubble"></div>
+      </div>
+      <div id="stepAngle">
+        <div class="q" id="qText">Find the missing angle</div>
+        <div class="answer" id="ans"><span id="ansVal">?</span>°</div>
+        <div class="keys" id="keys"></div>
+      </div>
+      <div id="stepReason" hidden>
+        <div class="q">Now, why? Choose the reason:</div>
+        <div id="reasons"></div>
+      </div>
+      <div class="notes" id="notes" hidden></div>
+      <button class="btn gold big" id="btnNext" hidden>Next case ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results" class="screen">
+  <div class="resrow">
+    <svg viewBox="-30 0 240 300" aria-hidden="true"><use href="#insp-g"/></svg>
+    <div>
+      <div class="stamp">CASE CLOSED</div>
+      <div class="big-score" id="rScore"></div>
+      <div class="rank" id="rRank"></div>
+      <div class="res-btns">
+        <button class="btn gold big" id="rAgain">Try this case again</button>
+        <button class="btn big" id="rNext">Next case file ▶</button>
+        <button class="btn ghost big" id="rLevels">All case files</button>
+      </div>
+    </div>
+    <svg viewBox="0 0 160 240" aria-hidden="true"><use href="#bandit-g"/></svg>
+  </div>
+</section>
+
+<script>
+/* ===================== LOGIC & DIAGRAMS ===================== */
+const REASONS={
+  ST:"Angles on a straight line add up to 180°",
+  PT:"Angles around a point add up to 360°",
+  VO:"Vertically opposite angles are equal",
+  COR:"Corresponding angles are equal",
+  ALT:"Alternate angles are equal",
+  CO:"Co-interior angles add up to 180°",
+  TRI:"Angles in a triangle add up to 180°",
+  ISO:"Base angles of an isosceles triangle are equal"
+};
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const rad=d=>d*Math.PI/180;
+const ptAt=(c,r,a)=>[c[0]+r*Math.cos(rad(a)),c[1]-r*Math.sin(rad(a))];
+const f1=n=>Math.round(n*10)/10;
+
+function partition(total,n,min,step){
+  for(let t=0;t<800;t++){
+    const w=Array.from({length:n},()=>Math.random()+0.35);
+    const s=w.reduce((a,b)=>a+b,0);
+    const v=w.map(x=>Math.round(x/s*total/step)*step);
+    v[n-1]+=total-v.reduce((a,b)=>a+b,0);
+    if(v.every(x=>x>=min)&&v.every(x=>x%step===0)) return v;
+  }
+  const base=Math.floor(total/n/step)*step, v=Array(n).fill(base);
+  v[n-1]+=total-base*n; return v;
+}
+const tierOf=i=>i<3?0:i<7?1:2;
+
+function genStraight(i){
+  const tier=tierOf(i), n=[2,3,4][tier];
+  const vals=partition(180,n,30,STEP), u=rnd(0,n-1), tau=rnd(-18,18), c=[260,300];
+  const lines=[{a:ptAt(c,238,tau),b:ptAt(c,238,tau+180)}], wedges=[];
+  let a=tau;
+  for(let k=0;k<n;k++){
+    wedges.push({c,a1:a,a2:a+vals[k],val:k===u?null:vals[k],r:72,lr:112});
+    a+=vals[k];
+    if(k<n-1) lines.push({a:c,b:ptAt(c,190,a)});
+  }
+  const given=vals.filter((_,k)=>k!==u), ans=vals[u], sum=given.reduce((x,y)=>x+y,0);
+  const working=given.length===1?`180° − ${given[0]}° = ${ans}°`:`${given.join("° + ")}° = ${sum}°, then 180° − ${sum}° = ${ans}°`;
+  return {scene:{lines,wedges,dots:[c],chev:[]},ans,reason:"ST",working};
+}
+function genPoint(i){
+  const tier=tierOf(i), n=[3,4,5][tier];
+  let vals; do{vals=partition(360,n,30,STEP);}while(Math.max(...vals)>240);
+  const u=rnd(0,n-1), start=rnd(0,359), c=[260,210];
+  const lines=[], wedges=[]; let a=start;
+  for(let k=0;k<n;k++){
+    wedges.push({c,a1:a,a2:a+vals[k],val:k===u?null:vals[k],r:64,lr:108});
+    lines.push({a:c,b:ptAt(c,185,a)});
+    a+=vals[k];
+  }
+  const given=vals.filter((_,k)=>k!==u), ans=vals[u], sum=given.reduce((x,y)=>x+y,0);
+  const working=`${given.join("° + ")}° = ${sum}°, then 360° − ${sum}° = ${ans}°`;
+  return {scene:{lines,wedges,dots:[c],chev:[]},ans,reason:"PT",working};
+}
+let STEP=5; // 5 = angles are multiples of 5; 1 = any whole number of degrees
+const dirR=(lo,hi)=>STEP*rnd(Math.ceil(lo/STEP),Math.floor(hi/STEP));
+function pickAlpha(){let a;do{a=dirR(35,145);}while(a===90);return a;}
+function genVO(i){
+  const tier=tierOf(i), alpha=pickAlpha();
+  const isVO=tier===0?true:Math.random()<0.5;
+  const S=[alpha,180-alpha,alpha,180-alpha];
+  const g=rnd(0,3), u=isVO?(g+2)%4:(g+(Math.random()<0.5?1:3))%4;
+  const t=rnd(0,179), c=[260,210];
+  const angs=[t,t+alpha,t+180,t+180+alpha,t+360];
+  const lines=[{a:ptAt(c,192,t),b:ptAt(c,192,t+180)},{a:ptAt(c,192,t+alpha),b:ptAt(c,192,t+alpha+180)}];
+  const wedges=[g,u].map(k=>({c,a1:angs[k],a2:angs[k+1],val:k===u?null:S[g],r:62,lr:104}));
+  const ans=S[u];
+  return {scene:{lines,wedges,dots:[c],chev:[]},ans,reason:isVO?"VO":"ST",
+    working:isVO?`Vertically opposite, so the angle is also ${ans}°`:`180° − ${S[g]}° = ${ans}°`};
+}
+const RANGE={UR:[0,1],UL:[1,2],LL:[2,3],LR:[3,4]};
+function parScene(alpha,tau,items){
+  const c=[260,210],h=75,ct=Math.cos(rad(tau)),st=Math.sin(rad(tau));
+  const T=(x,y)=>[c[0]+x*ct-y*st,c[1]-(x*st+y*ct)];
+  const cot=Math.cos(rad(alpha))/Math.sin(rad(alpha));
+  const P=[h*cot,h],Q=[-h*cot,-h],ca=Math.cos(rad(alpha)),sa=Math.sin(rad(alpha));
+  const lines=[
+    {a:T(-238,h),b:T(238,h)},{a:T(-238,-h),b:T(238,-h)},
+    {a:T(Q[0]-95*ca,Q[1]-95*sa),b:T(P[0]+95*ca,P[1]+95*sa)}
+  ];
+  const chev=[];
+  [h,-h].forEach(y=>[168,186].forEach(x=>chev.push([T(x-9,y+9),T(x,y),T(x-9,y-9)])));
+  const bounds=[0,alpha,180,180+alpha,360], wedges=[];
+  items.forEach(it=>{
+    const p=it.pt==="P"?T(P[0],P[1]):T(Q[0],Q[1]), [k0,k1]=RANGE[it.pos];
+    wedges.push({c:p,a1:tau+bounds[k0],a2:tau+bounds[k1],val:it.val,r:34,lr:72});
+  });
+  return {lines,wedges,dots:[T(P[0],P[1]),T(Q[0],Q[1])],chev};
+}
+function genPar(type,alpha){
+  const val=pos=>(pos==="UR"||pos==="LL")?alpha:180-alpha;
+  let g,u;
+  if(type==="COR"){const pos=pick(["UR","UL","LL","LR"]);[g,u]=shuffle([{pt:"P",pos},{pt:"Q",pos}]);}
+  else if(type==="ALT"){const pr=pick([[["P","LL"],["Q","UR"]],[["P","LR"],["Q","UL"]]]);[g,u]=shuffle(pr.map(x=>({pt:x[0],pos:x[1]})));}
+  else if(type==="CO"){const pr=pick([[["P","LL"],["Q","UL"]],[["P","LR"],["Q","UR"]]]);[g,u]=shuffle(pr.map(x=>({pt:x[0],pos:x[1]})));}
+  else if(type==="VO"){const pt=pick(["P","Q"]),pr=pick([["UR","LL"],["UL","LR"]]);[g,u]=shuffle(pr.map(p=>({pt,pos:p})));}
+  else {const pt=pick(["P","Q"]),pr=pick([["UR","UL"],["UL","LL"],["LL","LR"],["LR","UR"]]);[g,u]=shuffle(pr.map(p=>({pt,pos:p})));}
+  const gv=val(g.pos), ans=val(u.pos), tau=rnd(-14,14);
+  const sc=parScene(alpha,tau,[{...g,val:gv},{...u,val:null}]);
+  const sums=(type==="CO"||type==="ST");
+  return {scene:sc,ans,reason:type,
+    working:sums?`180° − ${gv}° = ${ans}°`:`The angles are equal, so ${ans}°`};
+}
+function genPar4(i){
+  const tier=tierOf(i);
+  const type=tier===0?"COR":tier===1?pick(["CO","CO","COR"]):pick(["COR","CO","CO","COR","VO","ST"]);
+  return genPar(type,pickAlpha());
+}
+function genPar5(i){
+  const tier=tierOf(i);
+  const type=tier===0?"ALT":tier===1?pick(["ALT","COR","CO"]):pick(["ALT","COR","CO","VO","ST","ALT"]);
+  return genPar(type,pickAlpha());
+}
+function genMixed(i){
+  return pick([genStraight,genPoint,genVO,genPar5,genPar5,genTriSingle,genTriSingle])(Math.min(9,rnd(3,9)));
+}
+function genTriSingle(i){
+  const iso=Math.random()<0.5;
+  let A,B,C;
+  if(iso){let a;do{a=dirR(35,75);}while(a===60);A=180-2*a;B=a;C=a;}
+  else{do{A=dirR(30,150);B=dirR(30,150);C=180-A-B;}while(C<30||C>130||A===B||B===C||A===C);}
+  // vertices: B left, C right on a base of length 1, A the apex
+  const t=Math.sin(rad(C))/Math.sin(rad(A));
+  let V=[[-0.5,0],[0.5,0],[-0.5+t*Math.cos(rad(B)),t*Math.sin(rad(B))]]; // B,C,A
+  const rot=rnd(0,71)*5,cr=Math.cos(rad(rot)),sr=Math.sin(rad(rot));
+  V=V.map(p=>[p[0]*cr-p[1]*sr,p[0]*sr+p[1]*cr]);
+  const xs=V.map(p=>p[0]),ys=V.map(p=>p[1]);
+  const w=Math.max(...xs)-Math.min(...xs),hh=Math.max(...ys)-Math.min(...ys),sc=Math.min(330/w,250/hh);
+  const cx=(Math.max(...xs)+Math.min(...xs))/2,cy=(Math.max(...ys)+Math.min(...ys))/2;
+  const P=V.map(p=>[(p[0]-cx)*sc,(p[1]-cy)*sc]),S=P.map(toSvg);
+  const names=[B,C,A],sizes=names;
+  const wedges=[];
+  for(let k=0;k<3;k++){
+    const o1=P[(k+1)%3],o2=P[(k+2)%3],th1=Math.atan2(o1[1]-P[k][1],o1[0]-P[k][0])*180/Math.PI,th2=Math.atan2(o2[1]-P[k][1],o2[0]-P[k][0])*180/Math.PI;
+    let a1=th1,sz=nd(th2-th1);if(sz>180){a1=th2;sz=360-sz;}
+    const lr=sizes[k]<40?84:sizes[k]<60?74:66;
+    wedges.push({c:S[k],a1,a2:a1+sz,val:sizes[k],r:lr-30,lr});
+  }
+  const lines=[0,1,2].map(k=>({a:S[k],b:S[(k+1)%3]}));
+  let ticks=[],ans,reason,working;
+  if(iso){
+    // apex is index 2; equal sides are apex-B and apex-C
+    const tk=(p,q)=>{const m=[(p[0]+q[0])/2,(p[1]+q[1])/2],L=Math.hypot(q[0]-p[0],q[1]-p[1]),n=[-(q[1]-p[1])/L,(q[0]-p[0])/L];return [[m[0]-8*n[0],m[1]-8*n[1]],[m[0]+8*n[0],m[1]+8*n[1]]];};
+    ticks=[tk(S[2],S[0]),tk(S[2],S[1])];
+    const u=pick([0,1]);wedges[u].val=null;ans=B;reason="ISO";working=`Base angles are equal, so ${ans}°`;
+    wedges[2].val=-1; // apex left unlabelled
+  } else {
+    const u=rnd(0,2);wedges[u].val=null;ans=sizes[u];reason="TRI";
+    const given=sizes.filter((_,k)=>k!==u);working=`180° − ${given[0]}° − ${given[1]}° = ${ans}°`;
+  }
+  return {scene:{lines,wedges:wedges.filter(x=>x.val!==-1),dots:S,chev:[],ticks},ans,reason,working};
+}
+
+/* ===== multi-step arrangement engine (levels 7-9) ===== */
+const VBX=235,VBY=190,LIMX=185,LIMY=150;
+const UV=d=>[Math.cos(rad(d)),Math.sin(rad(d))];
+const nd=d=>((d%360)+360)%360;
+const toSvg=q=>[260+q[0],210-q[1]];
+function lineX(a,b){
+  const ua=UV(a.d),ub=UV(b.d),den=ua[0]*ub[1]-ua[1]*ub[0];
+  if(Math.abs(den)<1e-9) return null;
+  const dx=b.p[0]-a.p[0],dy=b.p[1]-a.p[1],s=(dx*ub[1]-dy*ub[0])/den;
+  return [a.p[0]+s*ua[0],a.p[1]+s*ua[1]];
+}
+function onLine(l,q){const u=UV(l.d);return Math.abs((q[0]-l.p[0])*u[1]-(q[1]-l.p[1])*u[0])<0.01;}
+function rotLine(l,t){
+  const c=Math.cos(rad(t)),s=Math.sin(rad(t));
+  return {p:[l.p[0]*c-l.p[1]*s,l.p[0]*s+l.p[1]*c],d:nd(l.d+t)%180};
+}
+function clipLine(l){
+  const u=UV(l.d);let s0=-1e9,s1=1e9;
+  for(const [p,dd,lim] of [[l.p[0],u[0],VBX],[l.p[1],u[1],VBY]]){
+    if(Math.abs(dd)<1e-9){if(Math.abs(p)>lim) return null;continue;}
+    let a=(-lim-p)/dd,b=(lim-p)/dd;if(a>b){const t=a;a=b;b=t;}
+    s0=Math.max(s0,a);s1=Math.min(s1,b);
+  }
+  if(s0>=s1) return null;
+  return [[l.p[0]+s0*u[0],l.p[1]+s0*u[1]],[l.p[0]+s1*u[0],l.p[1]+s1*u[1]]];
+}
+function chevrons(lines){
+  const out=[],classes=[...new Set(lines.map(l=>nd(l.d)))];let ci=0;
+  classes.forEach(d=>{
+    const grp=lines.filter(l=>nd(l.d)===d);if(grp.length<2) return;
+    grp.forEach(l=>{
+      const seg=clipLine(l);if(!seg) return;
+      const A=seg[0],B=seg[1],len=Math.hypot(B[0]-A[0],B[1]-A[1]),u=[(B[0]-A[0])/len,(B[1]-A[1])/len],n=[-u[1],u[0]];
+      for(let k=0;k<=ci;k++){
+        const T=[B[0]-(26+k*13)*u[0],B[1]-(26+k*13)*u[1]];
+        out.push([[T[0]-10*u[0]+8*n[0],T[1]-10*u[1]+8*n[1]],T,[T[0]-10*u[0]-8*n[0],T[1]-10*u[1]-8*n[1]]].map(toSvg));
+      }
+    });
+    ci++;
+  });
+  return out;
+}
+function buildArr(lines,opts){
+  const pts=[];
+  for(let i=0;i<lines.length;i++)for(let j=i+1;j<lines.length;j++){
+    const q=lineX(lines[i],lines[j]);if(!q) continue;
+    if(Math.abs(q[0])>VBX+10||Math.abs(q[1])>VBY+10) continue;
+    if(Math.abs(q[0])>LIMX||Math.abs(q[1])>LIMY) return null;
+    if(!pts.some(p=>Math.hypot(p[0]-q[0],p[1]-q[1])<0.5)) pts.push(q);
+  }
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++)
+    if(Math.hypot(pts[i][0]-pts[j][0],pts[i][1]-pts[j][1])<45) return null;
+  if(!pts.length) return null;
+  const sec={},ptInfo=[];
+  for(let pi=0;pi<pts.length;pi++){
+    const q=pts[pi],rays=[];
+    lines.forEach((l,li)=>{if(onLine(l,q)){rays.push({dir:nd(l.d),li});rays.push({dir:nd(l.d+180),li});}});
+    rays.sort((a,b)=>a.dir-b.dir);
+    const m=rays.length,list=[];
+    for(let i=0;i<m;i++){
+      const a=rays[i].dir,b=rays[(i+1)%m].dir,size=nd(b-a);
+      if(size<28||size>=180) return null;
+      const dn=Math.min(999,...pts.filter((_,j)=>j!==pi).map(p=>Math.hypot(p[0]-q[0],p[1]-q[1])));
+      const s={id:pi+":"+i,pi,i,a1:a,size,dn,cs:toSvg(q),r1:rays[i],r2:rays[(i+1)%m]};
+      list.push(s);sec[s.id]=s;
+    }
+    ptInfo.push({q,rays,list});
+  }
+  const facts=[],seen=new Set();
+  const add=(type,ids,total,reason)=>{
+    const k=reason+":"+ids.slice().sort().join(",");
+    if(seen.has(k)) return;seen.add(k);facts.push({type,ids,total,reason});
+  };
+  ptInfo.forEach(P=>{
+    const rays=P.rays,list=P.list,m=rays.length;
+    add("sum",list.map(s=>s.id),360,"PT");
+    for(let i=0;i<m;i++){
+      const j=rays.findIndex(r=>r.dir===nd(rays[i].dir+180));
+      const run=[];for(let k=i;k!==j;k=(k+1)%m) run.push(list[k].id);
+      add("sum",run,180,"ST");
+      const i2=rays.findIndex(r=>r.dir===nd(rays[i].dir+180));
+      add("eq",[list[i].id,list[i2].id],0,"VO");
+    }
+  });
+  const ptOf=q=>pts.findIndex(p=>Math.hypot(p[0]-q[0],p[1]-q[1])<0.5);
+  for(let ia=0;ia<lines.length;ia++)for(let ib=ia+1;ib<lines.length;ib++){
+    const A=lines[ia],B=lines[ib];
+    if(nd(A.d)!==nd(B.d)) continue;
+    lines.forEach((C,ic)=>{
+      if(nd(C.d)===nd(A.d)) return;
+      const P=lineX(A,C),Q=lineX(B,C);if(!P||!Q) return;
+      const pp=ptOf(P),pq=ptOf(Q);if(pp<0||pq<0||pp===pq) return;
+      const dirPQ=nd(Math.round(Math.atan2(Q[1]-P[1],Q[0]-P[0])*180/Math.PI));
+      const cls=(pi,own,inDir)=>ptInfo[pi].list.filter(s=>{
+        const l1=s.r1.li,l2=s.r2.li;return (l1===own&&l2===ic)||(l1===ic&&l2===own);
+      }).map(s=>{
+        const rA=s.r1.li===own?s.r1:s.r2,rC=s.r1.li===ic?s.r1:s.r2;
+        return {id:s.id,pd:rA.dir,cd:rC.dir,inn:rC.dir===inDir};
+      });
+      const sp=cls(pp,ia,dirPQ),sq=cls(pq,ib,nd(dirPQ+180));
+      sp.forEach(x=>sq.forEach(y=>{
+        if(x.pd===y.pd&&x.cd===y.cd) add("eq",[x.id,y.id],0,"COR");
+        else if(x.inn&&y.inn&&x.pd!==y.pd) add("eq",[x.id,y.id],0,"ALT");
+        else if(x.inn&&y.inn&&x.pd===y.pd) add("sum",[x.id,y.id],180,"CO");
+      }));
+    });
+  }
+  const ticks=[];
+  const dirTo=(a,b)=>nd(Math.round(Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI));
+  for(let i=0;i<lines.length;i++)for(let j=i+1;j<lines.length;j++)for(let k=j+1;k<lines.length;k++){
+    const Vij=lineX(lines[i],lines[j]),Vik=lineX(lines[i],lines[k]),Vjk=lineX(lines[j],lines[k]);
+    if(!Vij||!Vik||!Vjk) continue;
+    const pij=ptOf(Vij),pik=ptOf(Vik),pjk=ptOf(Vjk);
+    if(pij<0||pik<0||pjk<0||pij===pik||pij===pjk||pik===pjk) continue;
+    const inner=(pi,V,W1,W2)=>{
+      const a=dirTo(V,W1),b=dirTo(V,W2);
+      const s=ptInfo[pi].list.find(t=>t.size<180&&((t.r1.dir===a&&t.r2.dir===b)||(t.r1.dir===b&&t.r2.dir===a)));
+      return s?s.id:null;
+    };
+    const s1=inner(pij,Vij,Vik,Vjk),s2=inner(pik,Vik,Vij,Vjk),s3=inner(pjk,Vjk,Vij,Vik);
+    if(!s1||!s2||!s3) continue;
+    add("sum",[s1,s2,s3],180,"TRI");
+    if(opts&&opts.iso){
+      const ss=[s1,s2,s3],sz=ss.map(x=>sec[x].size),V=[Vij,Vik,Vjk];
+      for(let a=0;a<3;a++){
+        const b=(a+1)%3,c=(a+2)%3;
+        if(sz[a]===sz[b]&&sz[a]!==sz[c]){add("eq",[ss[a],ss[b]],0,"ISO");ticks.push([V[c],V[a]],[V[c],V[b]]);}
+      }
+    }
+  }
+  return {lines,pts,sec,ptInfo,facts,ticks};
+}
+function valFrom(f,id,known){
+  if(f.type==="eq") return known.get(f.ids.find(x=>x!==id));
+  let s=0;f.ids.forEach(x=>{if(x!==id) s+=known.get(x);});
+  return f.total-s;
+}
+function closure(facts,given){
+  const known=new Map(given),depth=new Map(),how=new Map();
+  given.forEach((v,id)=>depth.set(id,0));
+  for(let lvl=1;lvl<9;lvl++){
+    const nw=new Map();
+    facts.forEach(f=>{
+      const unk=f.ids.filter(x=>!known.has(x));
+      if(unk.length===1&&!nw.has(unk[0])) nw.set(unk[0],{f,v:valFrom(f,unk[0],known)});
+    });
+    if(!nw.size) break;
+    nw.forEach((o,id)=>{known.set(id,o.v);depth.set(id,lvl);how.set(id,o.f);});
+  }
+  return {known,depth,how};
+}
+function treeOf(id,how,given,der,used){
+  if(given.has(id)){used.add(id);return;}
+  if(der.includes(id)) return;
+  const f=how.get(id);
+  f.ids.forEach(x=>{if(x!==id) treeOf(x,how,given,der,used);});
+  der.push(id);
+}
+function labelOf(s){
+  const lr=s.size<40?84:s.size<60?74:66,m=s.a1+s.size/2;
+  const r=Math.max(16,Math.min(lr-30,0.42*(s.dn||999)));
+  return {lr,r,m,p:ptAt(s.cs,lr,m)};
+}
+function pickCase(arr,k,needTri){
+  const ids=Object.keys(arr.sec);
+  for(let t=0;t<150;t++){
+    const g=pick([1,2,2,3,3,4]);
+    const gids=shuffle(ids).slice(0,g);
+    const given=new Map(gids.map(id=>[id,arr.sec[id].size]));
+    const cl=closure(arr.facts,given);
+    const cands=ids.filter(id=>cl.depth.get(id)===k+1);
+    for(const target of shuffle(cands)){
+      const der=[],used=new Set();
+      treeOf(target,cl.how,given,der,used);
+      if(der.length!==k+1) continue;
+      if(needTri&&!der.some(id=>{const r=cl.how.get(id).reason;return r==="TRI"||r==="ISO";})) continue;
+      const shown=[...used,...der];
+      const pos=shown.map(id=>labelOf(arr.sec[id]).p);
+      let ok=pos.every(p=>p[0]>38&&p[0]<482&&p[1]>38&&p[1]<382);
+      for(let i=0;i<pos.length&&ok;i++)for(let j=i+1;j<pos.length;j++)
+        if(Math.hypot(pos[i][0]-pos[j][0],pos[i][1]-pos[j][1])<66){ok=false;break;}
+      if(!ok) continue;
+      const gv=new Map([...used].map(id=>[id,arr.sec[id].size]));
+      const letters=shuffle(["a","b","c","d"]),names={};der.slice(0,-1).forEach((id,q)=>{names[id]=letters[q];});
+      return {multi:true,names,sec:arr.sec,facts:arr.facts,given:gv,marked:der.slice(0,-1),target,order:der,shown,
+        scene:{lines:arr.lines.map(clipLine).filter(Boolean).map(s=>s.map(toSvg)),chev:chevrons(arr.lines),dots:arr.pts.map(toSvg),
+        ticks:arr.ticks.map(t=>{const p=t[0],q=t[1],m=[(p[0]+q[0])/2,(p[1]+q[1])/2],L=Math.hypot(q[0]-p[0],q[1]-p[1]),n=[-(q[1]-p[1])/L,(q[0]-p[0])/L];return [toSvg([m[0]-8*n[0],m[1]-8*n[1]]),toSvg([m[0]+8*n[0],m[1]+8*n[1]])];})}};
+    }
+  }
+  return null;
+}
+const TILT=()=>dirR(-15,15);
+function arrBuild(type){
+  let lines;
+  if(type==="conc3"||type==="conc4"){
+    const n=type==="conc3"?3:4,ds=[];let guard=0;
+    while(ds.length<n&&guard++<300){
+      const d=dirR(0,175);
+      if(ds.every(x=>{const a=Math.abs(x-d);return Math.min(a,180-a)>=30;})) ds.push(d);
+    }
+    if(ds.length<n) return null;
+    const p=[rnd(-40,40),rnd(-30,30)],t=dirR(0,175);
+    lines=ds.map(d=>rotLine({p:[p[0],p[1]],d},t));
+  } else if(type==="par1"||type==="par2"||type==="par2s"){
+    const h=rnd(55,85);lines=[{p:[0,h],d:0},{p:[0,-h],d:0}];
+    const nt=type==="par1"?1:2,ts=[];let guard=0;
+    while(ts.length<nt&&guard++<300){
+      const t=dirR(35,145);
+      if(ts.every(x=>Math.abs(x-t)>=30)) ts.push(t);
+    }
+    if(ts.length<nt) return null;
+    if(type==="par2s"){const x0=rnd(-60,60),y0=pick([h,-h]);ts.forEach(t=>lines.push({p:[x0,y0],d:t}));}
+    else ts.forEach(t=>lines.push({p:[rnd(-70,70),0],d:t}));
+    const t0=TILT();lines=lines.map(l=>rotLine(l,t0));
+  } else if(type==="tri"||type==="tripar"){
+    const ds=[];let guard=0;
+    while(ds.length<3&&guard++<300){
+      const d=dirR(0,175);
+      if(ds.every(x=>{const a=Math.abs(x-d);return Math.min(a,180-a)>=30;})) ds.push(d);
+    }
+    if(ds.length<3) return null;
+    lines=ds.map(d=>({p:[rnd(-60,60),rnd(-50,50)],d}));
+    if(type==="tripar"){const A=lineX(lines[0],lines[1]);if(!A) return null;lines.push({p:A,d:ds[2]});}
+  } else if(type==="triiso"||type==="triisopar"){
+    let a;do{a=dirR(35,75);}while(a===60);
+    const ax=rnd(-40,40),ay=rnd(35,100),by=-rnd(40,80);
+    if(ay-by<70) return null;
+    lines=[{p:[0,by],d:0},{p:[ax,ay],d:a},{p:[ax,ay],d:180-a}];
+    if(type==="triisopar") lines.push({p:[ax,ay],d:0});
+    const t0=pick([-15,-10,-5,0,0,5,10,15]);lines=lines.map(l=>rotLine(l,t0));
+  } else {
+    const h=rnd(50,70),t=dirR(35,145),dl=dirR(25,155);
+    if(Math.abs(dl-t)<30) return null;
+    const cot=Math.cos(rad(dl))/Math.sin(rad(dl));
+    const p1=[rnd(-130,-40),h],p3=[p1[0]-2*h*cot,-h];
+    lines=[{p:p1,d:0},{p:[0,-h],d:0},{p:[p1[0],p1[1]],d:t},{p:p3,d:t}];
+    if(type==="griddiag") lines.push({p:[p1[0],p1[1]],d:dl});
+    const t0=TILT();lines=lines.map(l=>rotLine(l,t0));
+  }
+  return lines;
+}
+function genMulti(i,k,pTri){
+  const tier=tierOf(i),want=Math.random()<(pTri||0);
+  const pools=[["conc3","par1","par2","par2s"],["par2","par2s","conc4","grid","conc3"],["grid","griddiag","par2s","conc4","par2"]][tier];
+  const triPools=[["tri","triiso","tripar"],["triiso","tripar","tri","triisopar"],["triisopar","tripar","triiso","griddiag"]][tier];
+  const all=["conc3","conc4","par1","par2","par2s","grid","griddiag","tri","tripar","triiso","triisopar"];
+  for(let a=0;a<1800;a++){
+    const type=(want&&a<600)?pick(triPools):a<300?pick(pools):pick(all);
+    const lines=arrBuild(type);if(!lines) continue;
+    const arr=buildArr(lines,{iso:type.indexOf("triiso")===0});if(!arr) continue;
+    const c=pickCase(arr,k,want&&a<600);if(c) return c;
+  }
+  return null;
+}
+const genL7=i=>genMulti(i,1,0.4);
+const genL8=i=>genMulti(i,2,0.5);
+const genL9=i=>{const t=tierOf(i);return genMulti(i,pick(t===0?[1,2]:t===1?[2,3]:[2,3,3]),0.55);};
+
+const LEVELS=[
+  {id:1,name:"Straight Line Stakeout",sub:"Angles on a straight line, from one missing angle to three.",reasons:["ST","PT","VO"],gen:genStraight},
+  {id:2,name:"Round the Point",sub:"Angles around a point add up to 360°.",reasons:["ST","PT","VO"],gen:genPoint},
+  {id:3,name:"Vertically Opposite",sub:"Crossing lines: vertically opposite angles and straight lines.",reasons:["ST","PT","VO"],gen:genVO},
+  {id:4,name:"Parallel Lines: Part 1",sub:"Corresponding and co-interior angles.",reasons:["ST","VO","COR","CO"],gen:genPar4},
+  {id:5,name:"Parallel Lines: Part 2",sub:"Now with alternate angles too.",reasons:["ST","VO","COR","ALT","CO"],gen:genPar5},
+  {id:6,name:"Reviewing the Evidence",sub:"A mixed case file: every kind of angle fact, now with triangles and isosceles triangles.",reasons:["ST","PT","VO","COR","ALT","CO","TRI","ISO"],gen:genMixed},
+  {id:7,name:"Intrepid Interrogator",sub:"More lines, triangles too! Find one other angle first, then the missing one. Reasons at every step.",multi:true,gen:genL7},
+  {id:8,name:"Chief Inspector's Challenges",sub:"Two other angles to find first. Reasons at every step.",multi:true,gen:genL8},
+  {id:9,name:"Unsolved Cold Cases",sub:"A mixed bag: one, two or three angles first, with triangles and parallel lines. GCSE standard.",multi:true,gen:genL9}
+];
+
+
+function wedgePath(w){
+  const p1=ptAt(w.c,w.r,w.a1),p2=ptAt(w.c,w.r,w.a2),large=(w.a2-w.a1)>180?1:0;
+  return `M${f1(w.c[0])} ${f1(w.c[1])} L${f1(p1[0])} ${f1(p1[1])} A${w.r} ${w.r} 0 ${large} 0 ${f1(p2[0])} ${f1(p2[1])} Z`;
+}
+function renderScene(s,revealed,ans){
+  let o=`<svg viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Angle diagram">`;
+  s.wedges.forEach(w=>{
+    const unk=w.val===null;
+    const fill=unk?(revealed?"rgba(43,182,115,.35)":"rgba(255,95,162,.38)"):"rgba(110,195,255,.38)";
+    const stroke=unk?(revealed?"#1b7d4f":"#d63a80"):"#3a8fd0";
+    o+=`<path d="${wedgePath(w)}" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/>`;
+  });
+  s.lines.forEach(l=>{o+=`<line x1="${f1(l.a[0])}" y1="${f1(l.a[1])}" x2="${f1(l.b[0])}" y2="${f1(l.b[1])}" stroke="#241440" stroke-width="3.5" stroke-linecap="round"/>`;});
+  (s.ticks||[]).forEach(t=>{o+=`<line x1="${f1(t[0][0])}" y1="${f1(t[0][1])}" x2="${f1(t[1][0])}" y2="${f1(t[1][1])}" stroke="#241440" stroke-width="3.5" stroke-linecap="round"/>`;});
+  s.chev.forEach(ch=>{o+=`<polyline points="${ch.map(p=>f1(p[0])+","+f1(p[1])).join(" ")}" fill="none" stroke="#241440" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;});
+  s.dots.forEach(d=>{o+=`<circle cx="${f1(d[0])}" cy="${f1(d[1])}" r="4.5" fill="#241440"/>`;});
+  s.wedges.forEach(w=>{
+    const m=(w.a1+w.a2)/2, p=ptAt(w.c,w.lr,m), x=f1(p[0]), y=f1(p[1]);
+    if(w.val!==null){o+=`<text class="lbl" x="${x}" y="${y}">${w.val}°</text>`;}
+    else if(revealed){
+      o+=`<rect x="${x-33}" y="${y-17}" width="66" height="34" rx="17" fill="#2bb673" stroke="#1b7d4f" stroke-width="2.5"/><text class="lblw" x="${x}" y="${y+1}">${ans}°</text>`;
+    } else {
+      o+=`<g transform="translate(${x} ${y})"><circle r="24" fill="#ffd9b8" stroke="#241440" stroke-width="2.5"/>
+      <path d="M-22,-9 A23,23 0 0 1 22,-9 Z" fill="#1b1030"/>
+      <rect x="-23" y="-8" width="46" height="14" rx="6" fill="#1b1030"/>
+      <circle cx="-9" cy="-1" r="4" fill="#fff"/><circle cx="9" cy="-1" r="4" fill="#fff"/>
+      <circle cx="-8.5" cy="-0.5" r="1.7" fill="#1b1030"/><circle cx="9.5" cy="-0.5" r="1.7" fill="#1b1030"/>
+      <text x="0" y="15" font-size="15" font-weight="900" text-anchor="middle" fill="#241440" font-family="Arial,sans-serif">?</text></g>`;
+    }
+  });
+  return o+`</svg>`;
+}
+const ANGLE_COL=["#1c7ed6","#e8590c","#2f9e44","#ae3ec9","#d6336c","#0b7285","#e67700","#5f3dc4"];
+function banditG(x,y,id,sel,col){
+  return `<g data-sid="${id}" transform="translate(${x} ${y})">${sel?`<circle r="31" fill="none" stroke="#ffb300" stroke-width="4" class="selwedge"/>`:""}<circle r="25" fill="#ffd9b8" stroke="${col}" stroke-width="4"/>
+      <path d="M-22,-9 A23,23 0 0 1 22,-9 Z" fill="#1b1030"/>
+      <rect x="-23" y="-8" width="46" height="14" rx="6" fill="#1b1030"/>
+      <circle cx="-9" cy="-1" r="4" fill="#fff"/><circle cx="9" cy="-1" r="4" fill="#fff"/>
+      <circle cx="-8.5" cy="-0.5" r="1.7" fill="#1b1030"/><circle cx="9.5" cy="-0.5" r="1.7" fill="#1b1030"/>
+      <text x="0" y="15" font-size="15" font-weight="900" text-anchor="middle" fill="#241440" font-family="Arial,sans-serif">?</text></g>`;
+}
+function renderMulti(C,st){
+  const S=C.scene;
+  let o=`<svg viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Angle diagram">`;
+  const col={};C.shown.forEach((id,i)=>{col[id]=ANGLE_COL[i%ANGLE_COL.length];});
+  const stat=id=>st.solved.has(id)?"solved":C.given.has(id)?"given":(st.pending&&st.pending.id===id)?"pending":id===C.target?"target":"step";
+  const big=C.shown.slice().sort((a,b)=>labelOf(C.sec[b]).r-labelOf(C.sec[a]).r);
+  big.forEach(id=>{
+    const s=C.sec[id],L=labelOf(s),sel=st.sel===id;
+    const w={c:s.cs,a1:s.a1,a2:s.a1+s.size,r:L.r};
+    o+=`<path d="${wedgePath(w)}" fill="${col[id]}" fill-opacity=".30" stroke="${col[id]}" stroke-width="${sel?5.5:3}"${sel?' class="selwedge"':""}${st.sel&&!sel?' opacity=".55"':""}/>`;
+  });
+  S.lines.forEach(l=>{o+=`<line x1="${f1(l[0][0])}" y1="${f1(l[0][1])}" x2="${f1(l[1][0])}" y2="${f1(l[1][1])}" stroke="#241440" stroke-width="3.5" stroke-linecap="round"/>`;});
+  (S.ticks||[]).forEach(t=>{o+=`<line x1="${f1(t[0][0])}" y1="${f1(t[0][1])}" x2="${f1(t[1][0])}" y2="${f1(t[1][1])}" stroke="#241440" stroke-width="3.5" stroke-linecap="round"/>`;});
+  S.chev.forEach(ch=>{o+=`<polyline points="${ch.map(p=>f1(p[0])+","+f1(p[1])).join(" ")}" fill="none" stroke="#241440" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;});
+  S.dots.forEach(d=>{o+=`<circle cx="${f1(d[0])}" cy="${f1(d[1])}" r="4.5" fill="#241440"/>`;});
+  C.shown.forEach(id=>{
+    const s=C.sec[id],L=labelOf(s),p0=ptAt(s.cs,L.r,L.m),p1=ptAt(s.cs,L.lr-17,L.m);
+    o+=`<line x1="${f1(p0[0])}" y1="${f1(p0[1])}" x2="${f1(p1[0])}" y2="${f1(p1[1])}" stroke="${col[id]}" stroke-width="2.5" stroke-linecap="round"/>`;
+  });
+  C.shown.forEach(id=>{
+    const s=C.sec[id],L=labelOf(s),x=f1(L.p[0]),y=f1(L.p[1]),sx=stat(id),sel=st.sel===id,c=col[id];
+    if(sx==="given") o+=`<rect x="${x-27}" y="${y-15}" width="54" height="30" rx="15" fill="#fffaf0" stroke="${c}" stroke-width="3"/><text class="lbld" x="${x}" y="${y+1}">${C.given.get(id)}°</text>`;
+    else if(sx==="solved") o+=`<rect x="${x-27}" y="${y-15}" width="54" height="30" rx="15" fill="#2bb673" stroke="${c}" stroke-width="3"/><text class="lblw" x="${x}" y="${y+1}">${st.known.get(id)}°</text>`;
+    else if(sx==="pending") o+=`<rect x="${x-27}" y="${y-15}" width="54" height="30" rx="15" fill="#ffd34d" stroke="${c}" stroke-width="3"/><text class="lbld" x="${x}" y="${y+1}">${st.pending.val}°</text>`;
+    else if(sx==="step") o+=`<g data-sid="${id}" transform="translate(${x} ${y})">${sel?`<circle r="28" fill="none" stroke="#ffb300" stroke-width="4" class="selwedge"/>`:""}<circle r="21" fill="#ffe27a" stroke="${c}" stroke-width="4"/><text class="lbl2" x="0" y="1">${(C.names&&C.names[id])||"?"}</text></g>`;
+    else o+=banditG(x,y,id,sel,c);
+  });
+  return o+`</svg>`;
+}
+//--UI--
+/* ===================== UI ===================== */
+const $=id=>document.getElementById(id);
+const screens=["title","levels","game","results"];
+function show(id){screens.forEach(s=>$(s).classList.toggle("active",s===id));window.scrollTo(0,0);}
+
+/* skyline */
+(function(){
+  let seed=7;const r=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  let x=0,o="";
+  while(x<1600){
+    const w=50+r()*90,h=70+r()*170;
+    o+=`<rect x="${x}" y="${300-h}" width="${w}" height="${h}" fill="#120824"/>`;
+    for(let wy=300-h+12;wy<285;wy+=22) for(let wx=x+8;wx<x+w-14;wx+=18) if(r()<0.28) o+=`<rect x="${wx}" y="${wy}" width="8" height="11" fill="#ffd34d" opacity=".55"/>`;
+    x+=w+(r()<.3?10:0);
+  }
+  $("skyline").innerHTML=o;
+})();
+
+/* best scores */
+const KEY="angleDetectiveBest";
+function getBest(){try{return JSON.parse(localStorage.getItem(KEY)||"{}");}catch(e){return {};}}
+function setBest(id,v){try{const b=getBest();if(!b[id]||v>b[id]){b[id]=v;localStorage.setItem(KEY,JSON.stringify(b));}}catch(e){}}
+
+function buildCards(){
+  const best=getBest();
+  $("cards").innerHTML=LEVELS.map(L=>`<button class="card" data-id="${L.id}"><span class="num">${L.id}</span><h3>${L.name}</h3><p>${L.sub}</p>${best[L.id]!==undefined?`<div class="best">Best: ${best[L.id]}%</div>`:""}</button>`).join("");
+  $("cards").querySelectorAll(".card").forEach(b=>b.onclick=()=>startLevel(+b.dataset.id));
+}
+
+let VB={x:0,y:0,w:520,h:420},dragMoved=false,pd=null;
+function applyVB(){const s=$("sceneBox").querySelector("svg");if(s)s.setAttribute("viewBox",`${f1(VB.x)} ${f1(VB.y)} ${f1(VB.w)} ${f1(VB.h)}`);}
+function setVB(cx,cy,w){
+  w=Math.max(110,Math.min(520,w));const hh=w*420/520;
+  VB={x:Math.max(0,Math.min(520-w,cx-w/2)),y:Math.max(0,Math.min(420-hh,cy-hh/2)),w,h:hh};applyVB();
+}
+function resetVB(){VB={x:0,y:0,w:520,h:420};applyVB();}
+function zoomAt(f,px,py){
+  const w=Math.max(110,Math.min(520,VB.w/f)),k=w/VB.w,hh=w*420/520;
+  const nx=px-(px-VB.x)*k,ny=py-(py-VB.y)*k;
+  VB={x:Math.max(0,Math.min(520-w,nx)),y:Math.max(0,Math.min(420-hh,ny)),w,h:hh};applyVB();
+}
+(function(){
+  const box=$("sceneBox");
+  const pt=e=>{const s=box.querySelector("svg"),r=s.getBoundingClientRect();return [VB.x+(e.clientX-r.left)/r.width*VB.w,VB.y+(e.clientY-r.top)/r.height*VB.h];};
+  box.addEventListener("wheel",e=>{if(!box.querySelector("svg"))return;e.preventDefault();const p=pt(e);zoomAt(e.deltaY<0?1.2:1/1.2,p[0],p[1]);},{passive:false});
+  box.addEventListener("dblclick",e=>{if(!box.querySelector("svg"))return;const p=pt(e);zoomAt(1.8,p[0],p[1]);});
+  box.addEventListener("pointerdown",e=>{pd={x:e.clientX,y:e.clientY,vx:VB.x,vy:VB.y};dragMoved=false;});
+  window.addEventListener("pointermove",e=>{
+    if(!pd||VB.w>=519) return;
+    const dx=e.clientX-pd.x,dy=e.clientY-pd.y;
+    if(!dragMoved&&Math.hypot(dx,dy)<6) return;
+    dragMoved=true;
+    const s=box.querySelector("svg");if(!s) return;
+    const r=s.getBoundingClientRect(),k=VB.w/r.width;
+    VB.x=Math.max(0,Math.min(520-VB.w,pd.vx-dx*k));VB.y=Math.max(0,Math.min(420-VB.h,pd.vy-dy*k));applyVB();
+  });
+  window.addEventListener("pointerup",()=>{pd=null;});
+  $("zIn").onclick=()=>{
+    if(G&&G.multi&&G.sel){const c=G.cur.sec[G.sel].cs;setVB(c[0],c[1],VB.w/1.8);}
+    else setVB(VB.x+VB.w/2,VB.y+VB.h/2,VB.w/1.6);
+  };
+  $("zOut").onclick=()=>setVB(VB.x+VB.w/2,VB.y+VB.h/2,VB.w*1.6);
+  $("zReset").onclick=resetVB;
+})();
+const MULTI_REASONS=["ST","PT","VO","COR","ALT","CO","TRI","ISO"];
+let G=null, ansStr="";
+const SAY={
+  start:["Where is that angle hiding? Let's find it!","The bandit has been here. Find the missing angle!","Examine the evidence, detective."],
+  pickone:["Which angle can you work out first? Tap a lettered angle.","Look at the clues. Which lettered angle can you find first?","Start with the angle you can work out. Tap it!"],
+  sel:["Good choice! What size is it?","Interesting… what is the angle?"],
+  need:["You can't work that one out yet. Find another angle first!","Not yet, detective. Which angle can you find from the clues you have?"],
+  next:["Angle secured! Which one next?","One down! Tap the next lettered angle, or the bandit.","Evidence collected. What next?"],
+  good:["Aha! The angle is found!","Splendid deduction!","The bandit's cover is blown!","Brilliant detective work!"],
+  bad:["Hmm… not quite. Look at the clues again.","The bandit fooled us! Have another go.","Check your sums, detective."],
+  rgood:["Case solved!","Exactly the reason I was thinking!","Textbook detective work!"],
+  rbad:["Hmm, that is not the right reason. Think about the clues!","Not that one. What are the lines telling us?"]
+};
+const say=k=>{$("bubble").textContent=pick(SAY[k]);};
+
+(function(){
+  try{if(localStorage.getItem("angleDetective5")==="0") $("opt5").checked=false;}catch(e){}
+  $("opt5").onchange=()=>{try{localStorage.setItem("angleDetective5",$("opt5").checked?"1":"0");}catch(e){}};
+})();
+function startLevel(id){
+  const L=LEVELS.find(l=>l.id===id);
+  STEP=$("opt5").checked?5:1;
+  G={L,i:0,score:0,max:0,reasonsOn:L.multi?true:$("optReasons").checked,pipState:[]};
+  $("gLevel").textContent=`Case file ${L.id}: ${L.name}`;
+  show("game");loadQ();
+}
+function updatePips(){
+  $("pips").innerHTML=Array.from({length:10},(_,k)=>`<span class="${G.pipState[k]||""}${k===G.i?" cur":""}"></span>`).join("");
+  $("gScore").textContent=G.score;
+}
+function drawMulti(){
+  $("sceneBox").innerHTML=renderMulti(G.cur,{known:G.known,solved:G.solvedSet,sel:G.sel,pending:G.pending});applyVB();
+}
+function loadQ(){
+  let c=null,t=0;
+  while(!c&&t++<6) c=G.L.gen(G.i);
+  if(!c) c=genVO(G.i);
+  G.cur=c;G.multi=!!c.multi;ansStr="";resetVB();
+  $("gTag").textContent=`CASE ${G.i+1} OF 10`;
+  $("stepReason").hidden=true;$("notes").hidden=true;$("btnNext").hidden=true;$("stepAngle").hidden=false;
+  if(G.multi){
+    G.known=new Map(c.given);G.solvedSet=new Set();G.solvedList=[];G.sel=null;G.pending=null;G.tr={};G.qPts=0;
+    G.qMax=2*c.order.length;G.max+=G.qMax;G.phase="select";
+    drawMulti();updateMultiUI();say("pickone");
+  } else {
+    G.aTries=0;G.rTries=0;G.aPts=0;G.rPts=0;G.max+=G.reasonsOn?2:1;G.phase="angle";
+    $("sceneBox").innerHTML=renderScene(c.scene,false);applyVB();
+    $("qText").textContent="Find the missing angle";$("keys").classList.remove("off");$("ans").style.opacity=1;
+    say("start");
+  }
+  setAns();updatePips();
+}
+function updateMultiUI(){
+  $("stepAngle").hidden=false;$("stepReason").hidden=true;
+  $("keys").classList.toggle("off",G.phase!=="angle");
+  $("ans").style.opacity=G.phase==="angle"?1:.45;
+  $("qText").textContent=G.phase==="angle"?"Find the angle you have selected":"Tap a lettered angle, or the bandit, to work it out";
+  setAns();
+}
+function setAns(){$("ansVal").textContent=ansStr||"?";}
+function shake(el){el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake");}
+
+(function(){
+  const k=$("keys");
+  const keys=["7","8","9","4","5","6","1","2","3","⌫","0","Check"];
+  k.innerHTML=keys.map(x=>`<button data-k="${x}" class="${x==="Check"?"go":x==="⌫"?"del":""}">${x}</button>`).join("");
+  k.querySelectorAll("button").forEach(b=>b.onclick=()=>press(b.dataset.k));
+})();
+function press(key){
+  if(!G||$("stepAngle").hidden||G.phase!=="angle") return;
+  if(key==="⌫"||key==="Backspace"){ansStr=ansStr.slice(0,-1);}
+  else if(key==="Check"||key==="Enter"){checkAngle();return;}
+  else if(/^\d$/.test(key)&&ansStr.length<3){ansStr+=key;}
+  setAns();
+}
+document.addEventListener("keydown",e=>{
+  if(!G||!$("game").classList.contains("active")) return;
+  if(/^\d$/.test(e.key)||e.key==="Backspace"||e.key==="Enter"){
+    if(!$("stepAngle").hidden&&G.phase==="angle"){e.preventDefault();press(e.key);}
+    else if(e.key==="Enter"&&!$("btnNext").hidden){$("btnNext").click();}
+  }
+});
+
+function showReasons(keys,handler){
+  const opts=shuffle(keys);
+  $("reasons").className=opts.length>=5?"many":"";
+  $("reasons").innerHTML=opts.map(r=>`<button class="reason" data-r="${r}">${REASONS[r]}</button>`).join("");
+  $("reasons").querySelectorAll(".reason").forEach(b=>b.onclick=()=>handler(b));
+  $("stepReason").hidden=false;
+}
+
+/* ---- single-step levels (1-6) ---- */
+function checkAngle(){
+  if(!ansStr) return;
+  if(G.multi){checkAngleMulti();return;}
+  if(parseInt(ansStr,10)===G.cur.ans){
+    if(G.aTries===0){G.score++;G.aPts=1;}
+    $("sceneBox").innerHTML=renderScene(G.cur.scene,true,G.cur.ans);applyVB();
+    $("stepAngle").hidden=true;say("good");G.phase="reason";
+    if(G.reasonsOn) showReasons(G.L.reasons,chooseReason);
+    else finish();
+    updatePips();
+  } else {
+    G.aTries++;shake($("ans"));say("bad");ansStr="";setAns();
+  }
+}
+function chooseReason(b){
+  if(b.dataset.r===G.cur.reason){
+    b.classList.add("ok");
+    if(G.rTries===0){G.score++;G.rPts=1;}
+    say("rgood");
+    $("reasons").querySelectorAll(".reason").forEach(x=>x.style.pointerEvents="none");
+    finish();
+  } else {
+    G.rTries++;b.classList.add("bad");shake(b);say("rbad");
+  }
+}
+function finish(){
+  G.phase="done";
+  const pts=G.aPts+G.rPts, full=G.reasonsOn?2:1;
+  G.pipState[G.i]=pts===full?"full":pts===0?"none":"part";
+  let n=`<b>Case notes:</b> ${G.cur.working}`;
+  if(G.reasonsOn) n+=`<br><b>Reason:</b> ${REASONS[G.cur.reason]}`;
+  $("notes").innerHTML=n;$("notes").hidden=false;
+  $("btnNext").textContent=G.i>=9?"Close the case ▶":"Next case ▶";
+  $("btnNext").hidden=false;
+  updatePips();
+}
+
+/* ---- multi-step levels (7-9) ---- */
+function applicable(id){
+  return G.cur.facts.filter(f=>f.ids.includes(id)&&f.ids.every(x=>x===id||G.known.has(x)))
+    .map(f=>({f,val:valFrom(f,id,G.known)}));
+}
+$("sceneBox").addEventListener("click",e=>{
+  if(dragMoved){dragMoved=false;return;}
+  if(!G||!G.multi||(G.phase!=="select"&&G.phase!=="angle")) return;
+  const t=e.target.closest?e.target.closest("[data-sid]"):null;if(!t) return;
+  const id=t.getAttribute("data-sid");
+  if(G.known.has(id)) return;
+  if(!applicable(id).length){say("need");return;}
+  G.sel=id;G.phase="angle";ansStr="";
+  updateMultiUI();drawMulti();say("sel");
+});
+function checkAngleMulti(){
+  const id=G.sel,tr=G.tr[id]=G.tr[id]||{a:0,r:0},size=G.cur.sec[id].size;
+  if(parseInt(ansStr,10)===size){
+    if(tr.a===0){G.score++;G.qPts++;}
+    G.pending={id,val:size};G.phase="reason";$("stepAngle").hidden=true;
+    drawMulti();showReasons(MULTI_REASONS,chooseReasonMulti);say("good");updatePips();
+  } else {
+    tr.a++;shake($("ans"));say("bad");ansStr="";setAns();
+  }
+}
+function workingOf(f,id,val){
+  if(f.type==="eq") return `Equal to the ${G.known.get(f.ids.find(x=>x!==id))}° angle, so ${val}°`;
+  const o=f.ids.filter(x=>x!==id).map(x=>G.known.get(x));
+  return `${f.total}° − ${o.join("° − ")}° = ${val}°`;
+}
+function chooseReasonMulti(b){
+  const id=G.sel,tr=G.tr[id],hit=applicable(id).find(x=>x.f.reason===b.dataset.r);
+  if(hit){
+    if(tr.r===0){G.score++;G.qPts++;}
+    const work=workingOf(hit.f,id,hit.val);
+    G.known.set(id,hit.val);G.solvedSet.add(id);
+    G.solvedList.push({id,work,reason:b.dataset.r});
+    G.pending=null;G.sel=null;ansStr="";
+    if(id===G.cur.target){drawMulti();finishMulti();say("rgood");}
+    else{G.phase="select";updateMultiUI();drawMulti();say("next");updatePips();}
+  } else {
+    tr.r++;b.classList.add("bad");shake(b);say("rbad");
+  }
+}
+function finishMulti(){
+  G.phase="done";$("stepAngle").hidden=true;$("stepReason").hidden=true;
+  G.pipState[G.i]=G.qPts===G.qMax?"full":G.qPts===0?"none":"part";
+  $("notes").innerHTML=`<b>Case notes:</b><ol>${G.solvedList.map(s=>`<li><b>${s.id===G.cur.target?"Missing angle":"Angle "+G.cur.names[s.id]}:</b> ${s.work} <i>(${REASONS[s.reason]})</i></li>`).join("")}</ol>`;
+  $("notes").hidden=false;
+  $("btnNext").textContent=G.i>=9?"Close the case ▶":"Next case ▶";
+  $("btnNext").hidden=false;
+  updatePips();
+}
+$("btnNext").onclick=()=>{G.i++;if(G.i>=10)results();else loadQ();};
+
+function results(){
+  const pct=Math.round(G.score/G.max*100);
+  setBest(G.L.id,pct);
+  $("rScore").textContent=`${G.score} / ${G.max}`;
+  const rank=pct>=90?"Chief Inspector":pct>=70?"Inspector":pct>=50?"Detective":"Trainee Detective";
+  $("rRank").textContent=`Your rank: ${rank} (${pct}%)`;
+  $("rNext").hidden=G.L.id>=LEVELS.length;
+  show("results");
+}
+$("btnStart").onclick=()=>{buildCards();show("levels");};
+$("btnLevels").onclick=()=>{buildCards();show("levels");};
+$("rLevels").onclick=()=>{buildCards();show("levels");};
+$("rAgain").onclick=()=>startLevel(G.L.id);
+$("rNext").onclick=()=>startLevel(G.L.id+1);
+</script>
+</body>
+</html>
