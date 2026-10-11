@@ -140,7 +140,32 @@ const pad=n=>String(n).padStart(5,'0');
 
 /* ---------- audio ---------- */
 let AC=null;
-function initAudio(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume()}
+/* Phones: play even when the ringer/silent switch is on.
+   1) Safari 16.4+ lets a page ask for the "playback" audio category.
+   2) Older iOS needs a silent looping <audio> element started by a tap. */
+let silentEl=null;
+function playbackMode(){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}}
+function unlockSilentSwitch(){
+  try{
+    if(silentEl){if(silentEl.paused)silentEl.play().catch(()=>{});return}
+    const sr=8000,n=sr,buf=new ArrayBuffer(44+n),v=new DataView(buf);
+    const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+    w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);
+    v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr,true);
+    v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);
+    for(let i=0;i<n;i++)v.setUint8(44+i,128);
+    silentEl=document.createElement('audio');
+    silentEl.src=URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+    silentEl.loop=true;silentEl.preload='auto';silentEl.setAttribute('playsinline','');
+    silentEl.play().catch(()=>{});
+  }catch(e){}
+}
+playbackMode();
+function initAudio(){
+  playbackMode();unlockSilentSwitch();
+  if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+  if(AC&&AC.state==='suspended')AC.resume();
+}
 function tone(f1,f2,dur,type,vol,delay){
   if(!cfg.sound||!AC)return;const t=AC.currentTime+(delay||0);
   const o=AC.createOscillator(),g=AC.createGain();o.type=type;
