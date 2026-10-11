@@ -13,6 +13,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Bouncer | `bouncer/` |
 | Brain Gym | `brain-gym/` |
 | Count Protracula's Coffin Quiz | `coffin-quiz/` |
+| Dance Floor Filler | `dance-floor-filler/` |
 | Data Lab | `data-lab/` |
 | Dice Games | `dice-games/` |
 | Erno | `erno/` |
