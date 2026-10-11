@@ -174,6 +174,57 @@ h1{color:var(--gold);text-shadow:0 4px 0 rgba(0,0,0,.45)}
   #menu h1{font-size:44px}
 }
 
+/* ---- Compact layout (phones, either way up): controls pinned, play area scrolls if needed ---- */
+@media (max-width:700px),(max-height:480px){
+  #game{height:100vh;height:100dvh;bottom:auto;padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom));overflow:hidden}
+  #game .arena{flex:1 1 0;min-height:0;width:100%;overflow-y:auto;justify-content:safe center;gap:4px}
+  #game .controls{flex:0 0 auto;width:100%;flex-wrap:nowrap;gap:10px;margin:6px 0 4px}
+  #game .controls .bigBtn{flex:1 1 0;min-width:0;white-space:nowrap}
+  #game .controls .bigBtn.hidden{display:none}
+  #game .footbar{flex:0 0 auto;flex-wrap:nowrap;gap:6px}
+  #game .corner{flex-wrap:nowrap;gap:6px}
+  #game .turnLabel{flex:0 0 auto;font-size:17px;margin:2px 0}
+  #game .scoreboard{flex:0 0 auto;width:100%}
+  .smallBtn.on{outline:2px solid var(--gold,#f3c64b)}
+}
+@media (max-width:700px){
+  .smallBtn .tx{display:none}
+  .smallBtn .ic{font-size:20px}
+  #game .smallBtn{min-height:44px;min-width:44px;padding:6px 10px}
+  #game .footbar{justify-content:space-between}
+  #game .corner{flex:0 1 auto}
+  [data-game=pig],[data-game=snake]{--ds:min(30vw,17vh)}
+  html[data-game=pig] #game .turnScore,html[data-game=snake] #game .turnScore{font-size:48px}
+
+  /* 10,000: all six dice on one row, slim scoreboard */
+  html[data-game=tenk] #game{--ds:min(64px,calc((100vw - 16px - 30px)/6))}
+  html[data-game=tenk] #game .diceRow{flex-wrap:nowrap;gap:6px;row-gap:6px}
+  html[data-game=tenk] #game .arena{justify-content:flex-start;gap:6px;padding-top:6px}
+  html[data-game=tenk] #game .diceRow{min-height:0;padding-bottom:20px}
+  html[data-game=tenk] #game .scoreboard{display:flex;flex-direction:column;gap:3px}
+  html[data-game=tenk] #game .team{flex-direction:row;align-items:center;padding:3px 8px;gap:8px;border-width:2px;border-radius:10px}
+  html[data-game=tenk] #game .team .left{flex:1;min-width:0;margin:0}
+  html[data-game=tenk] #game .team .name{font-size:15px}
+  html[data-game=tenk] #game .team .score{font-size:22px;align-self:center}
+  html[data-game=tenk] #game .team .bar{display:none}
+  html[data-game=tenk] #game .team .tag{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html[data-game=tenk] #game .centreInfo{display:none}
+  html[data-game=tenk] #game .message{font-size:clamp(16px,4.8vw,22px);min-height:1.2em;margin:0}
+  html[data-game=tenk] #game .message.bad{font-size:clamp(22px,7vw,34px)}
+  html[data-game=tenk] #game .totals{gap:8vw}
+  html[data-game=tenk] #game .totals .big{font-size:28px}
+  html[data-game=tenk] #game .tray{min-height:0}
+  html[data-game=tenk] #game .combos{max-height:30vh;overflow-y:auto}
+  html[data-game=tenk] #game.combosOn{--ds:min(64px,calc((100vw - 16px - 30px)/6))}
+  #game .controls .bigBtn{font-size:20px;padding:12px 8px}
+}
+@media (max-height:480px){
+  #game .controls{margin:2px 0}
+  html[data-game=tenk] #game .diceRow{min-height:0;padding-bottom:20px}
+  html[data-game=tenk] #game .arena{gap:4px}
+  html[data-game=tenk] #game .combos{max-height:34vh;overflow-y:auto}
+}
+
 </style>
 
 <!-- Title screen only -->
@@ -420,12 +471,12 @@ button{font-family:var(--font);cursor:pointer;border:none;color:inherit}
 
   <div class="footbar">
   <div class="corner l">
-    <button class="smallBtn" id="menuBtn">☰ Menu</button>
-    <button class="smallBtn" id="rulesBtn">? Rules</button>
-    <button class="smallBtn" id="endBtn">🔔 End game</button>
+    <button class="smallBtn" id="menuBtn"><span class="ic">☰</span><span class="tx"> Menu</span></button>
+    <button class="smallBtn" id="rulesBtn"><span class="ic">?</span><span class="tx"> Rules</span></button>
+    <button class="smallBtn" id="endBtn"><span class="ic">🔔</span><span class="tx"> End game</span></button>
   </div>
   <div class="corner r">
-    <button class="smallBtn" id="soundBtn">🔊 Sound on</button>
+    <button class="smallBtn" id="soundBtn"><span class="ic">🔊</span><span class="tx"> Sound on</span></button>
   </div>
   </div>
 </section>
@@ -824,7 +875,7 @@ $("againBtn").addEventListener("click", ()=>{ $("winOverlay").classList.remove("
 $("winMenuBtn").addEventListener("click", ()=>{ $("winOverlay").classList.remove("show"); show("menu"); });
 $("soundBtn").addEventListener("click", ()=>{
   soundOn = !soundOn;
-  $("soundBtn").textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off";
+  $("soundBtn").innerHTML = soundOn ? '<span class="ic">🔊</span><span class="tx"> Sound on</span>' : '<span class="ic">🔇</span><span class="tx"> Sound off</span>';
 });
 
 // Keyboard: Space/R = roll, B = bank, N/Enter = next team
@@ -1056,14 +1107,14 @@ input,select{font-family:var(--font)}
 
   <div class="footbar">
   <div class="corner l">
-    <button class="smallBtn" id="menuBtn">☰ Menu</button>
-    <button class="smallBtn" id="rulesBtn">? Rules</button>
-    <button class="smallBtn" id="endBtn">🔔 End game</button>
+    <button class="smallBtn" id="menuBtn"><span class="ic">☰</span><span class="tx"> Menu</span></button>
+    <button class="smallBtn" id="rulesBtn"><span class="ic">?</span><span class="tx"> Rules</span></button>
+    <button class="smallBtn" id="endBtn"><span class="ic">🔔</span><span class="tx"> End game</span></button>
   </div>
   <div class="corner r">
-    <button class="smallBtn" id="combosBtn">📋 Combos: off</button>
-    <button class="smallBtn" id="bestBtn">✨ Select best</button>
-    <button class="smallBtn" id="soundBtn">🔊 Sound on</button>
+    <button class="smallBtn" id="combosBtn"><span class="ic">📋</span><span class="tx"> Combos: off</span></button>
+    <button class="smallBtn" id="bestBtn"><span class="ic">✨</span><span class="tx"> Select best</span></button>
+    <button class="smallBtn" id="soundBtn"><span class="ic">🔊</span><span class="tx"> Sound on</span></button>
   </div>
   </div>
 </section>
@@ -1812,7 +1863,7 @@ function toggleCombos(){
   if (G.phase==="choose") updateSelection(); else hideCombos();
 }
 function syncCombosBtn(){
-  $("combosBtn").textContent = "📋 Combos: " + (showCombos ? "on" : "off");
+  $("combosBtn").innerHTML = '<span class="ic">📋</span><span class="tx"> Combos: ' + (showCombos ? "on" : "off") + "</span>"; $("combosBtn").classList.toggle("on", showCombos);
   $("game").classList.toggle("combosOn", showCombos);
 }
 syncCombosBtn();
@@ -1828,7 +1879,7 @@ $("menuBtn").addEventListener("click", ()=>{ if (confirm("Leave this game and re
 $("endBtn").addEventListener("click", ()=>{ if (G.phase!=="over" && confirm("End the game now? The team with the most banked points wins.")) declareResult("early"); });
 $("againBtn").addEventListener("click", ()=>{ $("winOverlay").classList.remove("show"); startGame(); });
 $("winMenuBtn").addEventListener("click", ()=>{ $("winOverlay").classList.remove("show"); syncTitle(); show("menu"); });
-$("soundBtn").addEventListener("click", ()=>{ soundOn=!soundOn; $("soundBtn").textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off"; });
+$("soundBtn").addEventListener("click", ()=>{ soundOn=!soundOn; $("soundBtn").innerHTML = soundOn ? '<span class="ic">🔊</span><span class="tx"> Sound on</span>' : '<span class="ic">🔇</span><span class="tx"> Sound off</span>'; });
 
 // Keyboard: 1–6 pick dice, R/Space roll, B bank, N/Enter next team, S select best
 document.addEventListener("keydown", e=>{
