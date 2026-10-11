@@ -65,6 +65,12 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
 .team,.chair{--c2:color-mix(in srgb,var(--c) 58%,#000)}
 .c1{fill:var(--c)}.c2{fill:var(--c2)}.hl{fill:rgba(255,255,255,.15)}.cush{fill:rgba(255,255,255,.22)}.leg{fill:#2a2450}.shd{fill:rgba(0,0,0,.35)}
 .numplate.txt.sm{font-size:1.75rem}
+.numplate.txt.eq{font-size:3rem;width:auto;min-width:0;padding:.5rem 1.3rem;white-space:nowrap;top:10%}
+.card.txt.eq{font-size:2.7rem;white-space:nowrap;padding:0 .4rem}
+.graphbox{position:absolute;top:2.7rem;left:50%;width:11rem;height:11rem;margin-left:-5.5rem;z-index:3;border-radius:.9rem;border:.15rem solid var(--gold);background:rgba(8,6,31,.9);box-shadow:0 .4rem 1.4rem rgba(0,0,0,.5);opacity:0;transform:scale(.7);transition:opacity .5s,transform .5s;pointer-events:none}
+.graphbox.show{opacity:1;transform:none}
+.graphbox svg{width:100%;height:100%;display:block;border-radius:.7rem}
+.seg[data-key=topic] button{font-size:1.4rem;padding:.6rem .3rem}
 .numplate.txt{font-size:2.1rem;line-height:1.1;width:14.5rem;min-width:0;padding:.6rem .6rem;top:8%}
 .numplate{position:absolute;left:50%;top:2%;transform:translateX(-50%);background:linear-gradient(#ffe38a,#f2b632);color:#2a1a00;
  font-weight:900;font-size:5.6rem;line-height:1.1;padding:.2rem 1.4rem;border-radius:1.2rem;box-shadow:0 .5rem 1.2rem rgba(0,0,0,.5);min-width:8rem;text-align:center}
@@ -146,7 +152,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
   <div class="tag">Blind auditions for maths detectives</div>
   <div class="setupcard">
     <label>Topic</label>
-    <div class="seg" data-key="topic"><button data-v="num" class="on">Numbers</button><button data-v="2d">2D shapes</button><button data-v="3d">3D solids</button><button data-v="mix">Mixed</button></div>
+    <div class="seg" data-key="topic"><button data-v="num" class="on">Numbers</button><button data-v="2d">2D shapes</button><button data-v="3d">3D solids</button><button data-v="lin">Linear graphs</button><button data-v="mix">Mixed</button></div>
     <label>Teams</label>
     <div class="seg" data-key="teamCount"><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div>
     <label>Team names</label>
@@ -162,7 +168,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
     <label>Clues appear</label>
     <div class="seg" data-key="auto"><button data-v="0" class="on">When I click</button><button data-v="10">Every 10 s</button><button data-v="20">Every 20 s</button></div>
   </div>
-  <div class="rules">A mystery number or shape sits in the chair with its back to you. Clues appear one at a time. Buzz when you think you know &ndash; your chair spins, then pick the answer from four cards.
+  <div class="rules">A mystery number, shape or graph sits in the chair with its back to you. Clues appear one at a time. Buzz when you think you know &ndash; your chair spins, then pick the answer from four cards.
   The earlier you buzz, the more points &ndash; but a wrong pick locks your team out of the round. Watch out for the occasional bonus brain-teaser clue: it makes the round worth one point more.</div>
   <button class="bigbtn" id="startBtn">Start the show</button>
 </div>
@@ -183,6 +189,7 @@ kbd{font-family:inherit;font-size:.7em;opacity:.7;border:.1rem solid currentColo
     <div class="stage">
       <div class="cone"></div><div class="floor"></div>
       <div class="stagelabel">THE CONTESTANT</div>
+      <div class="graphbox" id="graphbox"></div>
       <div class="chair big" id="cchair" style="--c:#3d63dd">
         <div class="inner">
           <div class="face back" id="cback"></div>
@@ -517,8 +524,196 @@ const OBS={
  'Hexagonal prism':[{t:'A classic hexagonal pencil is shaped like me',m:1}],
  'Octahedron':[{t:'I’m two square-based pyramids joined base to base',m:2}],
  'Dodecahedron':[{t:'A 12-sided die is shaped like me',m:3}],
- 'Icosahedron':[{t:'A 20-sided die is shaped like me',m:3}]
+ 'Icosahedron':[{t:'A 20-sided die is shaped like me',m:3}],
+ 'x = 0':[{t:'Reflecting the point (3, 5) in me gives (−3, 5)',m:1}],
+ 'y = 0':[{t:'Reflecting the point (3, 5) in me gives (3, −5)',m:1}],
+ 'y = x':[{t:'Reflecting the point (2, 5) in me gives (5, 2)',m:2}],
+ 'y = −x':[{t:'Reflecting the point (2, 5) in me gives (−5, −2)',m:2}]
 };
+/* ---------- topic: linear graphs ---------- */
+const MINUS='−';
+function sgn(n){return n<0?MINUS+Math.abs(n):String(n)}
+function fmtM(m){const a=Math.abs(m),s=m<0?MINUS:'';return a===1?s+'x':a===0.5?s+'½x':s+a+'x'}
+function fmtG(m){const a=Math.abs(m);return (m<0?MINUS:'')+(a===0.5?'½':a)}
+function fmtLine(m,c){
+  let t='y = '+fmtM(m);
+  if(c>0)t+=' + '+c;else if(c<0)t+=' '+MINUS+' '+Math.abs(c);
+  return t;
+}
+const LIN_GV=[1,-1,2,-2,3,-3,4,-4,5,-5,0.5,-0.5];
+const LIN_REFS=[1,-1,2,-2,0.5,-0.5];
+function quadsOf(o){
+  const Q=new Set();
+  [-1e5,-100,-10,-3,-1,-0.5,-0.01,0.01,0.5,1,3,10,100,1e5].forEach(t=>{
+    let x,y;
+    if(o.kind==='v'){x=o.a;y=t}else{x=t;y=o.m*t+o.c}
+    if(x>0&&y>0)Q.add(1);
+    if(x<0&&y>0)Q.add(2);
+    if(x<0&&y<0)Q.add(3);
+    if(x>0&&y<0)Q.add(4);
+  });
+  return Q;
+}
+function keysLin(o){
+  const K=new Set(),v=o.kind==='v',h=o.kind==='h',s=o.kind==='s';
+  if(v){
+    K.add('vert');K.add('noY');K.add('sameX');K.add('gund');K.add('parV');K.add('perpX');
+    K.add('xi:'+o.a);
+    if(o.a>0)K.add('xpos');
+    if(o.a<0)K.add('xneg');
+    if(o.a!==0){K.add('neverY');K.add('dY:'+Math.abs(o.a))}else{K.add('axisY');K.add('axis');K.add('orig')}
+    for(let T=-4;T<=4;T++){if(o.a>T)K.add('xgt:'+T);if(o.a<T)K.add('xlt:'+T)}
+  }else{
+    const m=o.m,c=o.c;
+    if(h){
+      K.add('horiz');K.add('noX');K.add('sameY');K.add('g0');K.add('parH');K.add('perpY');
+      if(c!==0){K.add('neverX');K.add('dX:'+Math.abs(c))}else{K.add('axisX');K.add('axis');K.add('orig')}
+      for(let T=-4;T<=4;T++){if(c>T)K.add('ygt:'+T);if(c<T)K.add('ylt:'+T)}
+    }else{
+      K.add('slant');K.add('bothXY');K.add('both');
+      if(c===0){K.add('orig');K.add('bothSame')}
+      const x0=-c/m+0;
+      if(Number.isInteger(x0))K.add('xi:'+x0);
+      if(x0>0)K.add('xpos');
+      if(x0<0)K.add('xneg');
+      if(m===1&&c===0)K.add('sameXY');
+      if(m===-1&&c===0)K.add('opp');
+      LIN_REFS.forEach(r=>{if(Math.abs(m*r+1)<1e-9)K.add('perp:'+r)});
+      if(LIN_GV.indexOf(m)>=0)K.add('par:'+m);
+      K.add('step:'+m);
+      K.add('gv:'+m);
+    }
+    K.add('yi:'+c);
+    if(c>0)K.add('ypos');
+    if(c<0)K.add('yneg');
+    if(m>0){K.add('gpos');K.add('gup')}
+    if(m<0){K.add('gneg');K.add('gdown')}
+    [-2,-1,1,2].forEach(T=>{if(m>T)K.add('gt:'+T);if(m<T)K.add('lt:'+T)});
+    K.add(Number.isInteger(m)?'gint':'gfrac');
+    const am=Math.abs(m);
+    if(am>1)K.add('big');
+    if(am>0&&am<1)K.add('small');
+    if(am===1)K.add('unit');
+  }
+  for(let x=-5;x<=5;x++)for(let y=-5;y<=5;y++){
+    const on=v?x===o.a:Math.abs(y-(o.m*x+o.c))<1e-9;
+    if(on)K.add('p:'+x+','+y);
+  }
+  const Q=quadsOf(o);
+  for(let q=1;q<=4;q++)K.add(Q.has(q)?'q'+q:'nq'+q);
+  K.add('qn'+Q.size);
+  return K;
+}
+const LINES=[];
+(function(){
+  const add=o=>{o.k=keysLin(o);LINES.push(o)};
+  for(let a=-5;a<=5;a++)add({kind:'v',a:a,min:1,name:'x = '+sgn(a)});
+  for(let a=-5;a<=5;a++)add({kind:'h',m:0,c:a,min:1,name:'y = '+sgn(a)});
+  [1,-1].forEach(m=>add({kind:'s',m:m,c:0,min:1,name:fmtLine(m,0)}));
+  [2,3,4,5,0.5].forEach(g=>[1,-1].forEach(sg=>add({kind:'s',m:sg*g,c:0,min:2,name:fmtLine(sg*g,0)})));
+  [1,2,3,0.5].forEach(g=>[1,-1].forEach(sg=>[1,2,3,4].forEach(cc=>[1,-1].forEach(cs=>
+    add({kind:'s',m:sg*g,c:cs*cc,min:3,name:fmtLine(sg*g,cs*cc)})))));
+})();
+
+const CATL={};
+(function(){
+  const r=(k,t,m,ty)=>{CATL[k]={t:t,m:m,ty:ty}};
+  const ORD=['first','second','third','fourth'];
+  r('vert','I’m a vertical line',1,'orient');
+  r('horiz','I’m a horizontal line',1,'orient');
+  r('slant','I’m neither horizontal nor vertical',1,'orient');
+  r('axis','I’m one of the two axes',1,'orient');
+  r('axisX','I’m the x-axis',1,'orient');
+  r('axisY','I’m the y-axis',1,'orient');
+  r('noY','My equation doesn’t contain y',1,'eqn');
+  r('noX','My equation doesn’t contain x',1,'eqn');
+  r('bothXY','My equation contains both x and y',1,'eqn');
+  r('sameX','Every point on me has the same x-coordinate',1,'eqn');
+  r('sameY','Every point on me has the same y-coordinate',1,'eqn');
+  r('sameXY','Every point on me has equal x- and y-coordinates',1,'eqn');
+  r('opp','Every point on me has x- and y-coordinates that add up to 0',1,'eqn');
+  r('gpos','My gradient is positive',1,'grad');
+  r('gneg','My gradient is negative',1,'grad');
+  r('g0','My gradient is zero',1,'grad');
+  r('gup','I go uphill from left to right',1,'grad');
+  r('gdown','I go downhill from left to right',1,'grad');
+  r('unit','The size of my gradient is exactly 1',1,'grad');
+  r('gund','My gradient is undefined',2,'grad');
+  r('gint','My gradient is a whole number',2,'grad');
+  r('gfrac','My gradient is a proper fraction',2,'grad');
+  r('big','The size of my gradient is more than 1',2,'grad');
+  r('small','The size of my gradient is between 0 and 1',2,'grad');
+  [-2,-1,1,2].forEach(T=>{
+    r('gt:'+T,'My gradient is greater than '+sgn(T),2,'grad');
+    r('lt:'+T,'My gradient is less than '+sgn(T),2,'grad');
+  });
+  LIN_GV.forEach(g=>{
+    r('gv:'+g,'My gradient is '+fmtG(g),Math.abs(g)===1?1:2,'gradv');
+    const a=Math.abs(g),dir=g>0?'up':'down';
+    r('step:'+g,a===0.5?'When x goes up by 2, y goes '+dir+' by 1':'When x goes up by 1, y goes '+dir+' by '+a,2,'step');
+  });
+  for(let c=-5;c<=5;c++)r('yi:'+c,'I cross the y-axis at (0, '+sgn(c)+')',1,'yint');
+  for(let v=-10;v<=10;v++)r('xi:'+v,'I cross the x-axis at ('+sgn(v)+', 0)',1,'xint');
+  for(let T=-4;T<=4;T++){
+    r('xgt:'+T,'Every point on me has an x-coordinate greater than '+sgn(T),1,'xr');
+    r('xlt:'+T,'Every point on me has an x-coordinate less than '+sgn(T),1,'xr');
+    r('ygt:'+T,'Every point on me has a y-coordinate greater than '+sgn(T),1,'yr');
+    r('ylt:'+T,'Every point on me has a y-coordinate less than '+sgn(T),1,'yr');
+  }
+  for(let d=1;d<=5;d++){
+    r('dY:'+d,'I’m '+d+(d===1?' unit':' units')+' away from the y-axis',1,'dist');
+    r('dX:'+d,'I’m '+d+(d===1?' unit':' units')+' away from the x-axis',1,'dist');
+  }
+  r('neverX','I never touch the x-axis',1,'nev');
+  r('neverY','I never touch the y-axis',1,'nev');
+  r('both','I cross both axes',1,'nev');
+  r('bothSame','I cross both axes at the same point',1,'nev');
+  r('orig','I pass through the origin',1,'orig');
+  r('ypos','My y-intercept is positive',2,'yint');
+  r('yneg','My y-intercept is negative',2,'yint');
+  r('xpos','I cross the x-axis to the right of the origin',2,'xint');
+  r('xneg','I cross the x-axis to the left of the origin',2,'xint');
+  for(let x=-5;x<=5;x++)for(let y=-5;y<=5;y++)r('p:'+x+','+y,'I pass through the point ('+sgn(x)+', '+sgn(y)+')',1,'pt');
+  for(let q=1;q<=4;q++){
+    r('q'+q,'I pass through the '+ORD[q-1]+' quadrant',1,'quad');
+    r('nq'+q,'I never enter the '+ORD[q-1]+' quadrant',1,'quad');
+  }
+  r('qn0','I don’t pass through any quadrant',1,'quad');
+  r('qn2','I pass through exactly two quadrants',1,'quad');
+  r('qn3','I pass through exactly three quadrants',1,'quad');
+  r('perpX','I’m perpendicular to the x-axis',2,'rel');
+  r('perpY','I’m perpendicular to the y-axis',2,'rel');
+  r('parH','I’m parallel to the line y = 7',2,'rel');
+  r('parV','I’m parallel to the line x = 7',2,'rel');
+  LIN_REFS.forEach(g=>r('perp:'+g,'I’m perpendicular to the line '+fmtLine(g,0),3,'rel'));
+  LIN_GV.forEach(g=>r('par:'+g,'I’m parallel to the line '+fmtLine(g,7),3,'rel'));
+})();
+
+/* mini graph, drawn on the stage when the contestant is revealed */
+function drawLine(o){
+  const B=6;
+  let x1,y1,x2,y2;
+  if(o.kind==='v'){x1=x2=o.a;y1=-B;y2=B}
+  else{
+    x1=-B;x2=B;
+    if(o.m!==0){
+      const xa=(-B-o.c)/o.m,xb=(B-o.c)/o.m;
+      x1=Math.max(x1,Math.min(xa,xb));x2=Math.min(x2,Math.max(xa,xb));
+    }
+    y1=o.m*x1+o.c;y2=o.m*x2+o.c;
+  }
+  let g='';
+  for(let i=-B;i<=B;i++)g+='<line x1="'+i+'" y1="'+-B+'" x2="'+i+'" y2="'+B+'" stroke="rgba(255,255,255,.16)" stroke-width=".03"/><line x1="'+-B+'" y1="'+i+'" x2="'+B+'" y2="'+i+'" stroke="rgba(255,255,255,.16)" stroke-width=".03"/>';
+  return '<svg viewBox="-6.4 -6.4 12.8 12.8" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1,-1)">'+g+
+    '<line x1="'+-B+'" y1="0" x2="'+B+'" y2="0" stroke="#fff" stroke-width=".09"/><line x1="0" y1="'+-B+'" x2="0" y2="'+B+'" stroke="#fff" stroke-width=".09"/>'+
+    '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#ffcf4a" stroke-width=".22" stroke-linecap="round"/></g></svg>';
+}
+function linDomain(lvl){
+  const list=LINES.filter(l=>l.min<=lvl);
+  return{topic:'lin',cands:list,pool:t=>keyPool(t,CATL,lvl),ob:t=>obPool(t,lvl),label:x=>x.name,txt:true,eq:true,short:true,draw:drawLine,
+    intro:'The contestant is a straight-line graph'};
+}
+
 function obPool(t,lvl){
   return (OBS[t.name]||[]).filter(o=>o.m<=lvl).map(o=>({type:'obscure',text:o.t,ob:1,test:x=>x===t}));
 }
@@ -536,9 +731,10 @@ function keyPool(t,cat,lvl){
   return P;
 }
 
-const TOPICS=['num','2d','3d'];
+const TOPICS=['num','2d','3d','lin'];
 function makeDomain(topic,lvl){
   if(topic==='num')return numDomain(lvl);
+  if(topic==='lin')return linDomain(lvl);
   const is2=topic==='2d';
   const list=(is2?SH2:SH3).filter(s=>s.min<=lvl);
   return{topic,cands:list,pool:t=>keyPool(t,is2?CAT2:CAT3,lvl),ob:t=>obPool(t,lvl),label:x=>x.name,txt:true,
@@ -547,28 +743,34 @@ function makeDomain(topic,lvl){
 
 /* ---------- round builder ---------- */
 let OB_CHANCE=0.5;
+function tryChain(dom,all,N,target,steps){
+  const pool=dom.pool(target);
+  let cur=all,chosen=[],tc={};
+  for(let step=1;step<=steps;step++){
+    const desired=Math.pow(N,1-step/steps);
+    let best=null,bs=1e9;
+    for(const c of pool){
+      if(chosen.includes(c))continue;
+      const nx=cur.filter(x=>c.test(x));
+      const n=nx.length;
+      if(step<steps){if(n<2||n>=cur.length)continue}else if(n!==1)continue;
+      const s=Math.abs(Math.log(n)-Math.log(desired))+Math.random()*.5+(tc[c.type]||0)*.45;
+      if(s<bs){bs=s;best={c,nx}}
+    }
+    if(!best)return null;
+    chosen.push(best.c);tc[best.c.type]=(tc[best.c.type]||0)+1;cur=best.nx;
+  }
+  return(cur.length===1&&cur[0]===target)?chosen:null;
+}
 function buildRound(dom,used){
   const all=dom.cands,N=all.length;
   for(let attempt=0;attempt<900;attempt++){
     const target=all[Math.floor(Math.random()*N)];
     if(used.has(target)&&attempt<600)continue;
-    const pool=dom.pool(target);
-    let cur=all,chosen=[],tc={},ok=true;
-    for(let step=1;step<=5;step++){
-      const desired=Math.pow(N,1-step/5);
-      let best=null,bs=1e9;
-      for(const c of pool){
-        if(chosen.includes(c))continue;
-        const nx=cur.filter(x=>c.test(x));
-        const n=nx.length;
-        if(step<5){if(n<2||n>=cur.length)continue}else if(n!==1)continue;
-        const s=Math.abs(Math.log(n)-Math.log(desired))+Math.random()*.5+(tc[c.type]||0)*.45;
-        if(s<bs){bs=s;best={c,nx}}
-      }
-      if(!best){ok=false;break}
-      chosen.push(best.c);tc[best.c.type]=(tc[best.c.type]||0)+1;cur=best.nx;
-    }
-    if(ok&&cur.length===1&&cur[0]===target){
+    let chosen=tryChain(dom,all,N,target,5);
+    /* a few targets (y = x and y = -x at the first level) only have four good clues */
+    if(!chosen&&dom.short)chosen=tryChain(dom,all,N,target,4);
+    if(chosen){
       if(dom.ob&&Math.random()<OB_CHANCE){
         const o=dom.ob(target);
         if(o.length)chosen.splice(Math.random()<.5?0:1,0,o[Math.floor(Math.random()*o.length)]);
@@ -671,7 +873,8 @@ function levelLabels(){
     if(S.topic==='num')t='numbers '+RANGE[l][0]+'–'+RANGE[l][1];
     else if(S.topic==='2d')t=makeDomain('2d',l).cands.length+' shapes';
     else if(S.topic==='3d')t=makeDomain('3d',l).cands.length+' solids';
-    else t='all three topics';
+    else if(S.topic==='lin')t=['x = a, y = a, y = ±x','adds y = mx','adds y = mx + c'][l-1];
+    else t='all four topics';
     $('lv'+l).textContent=t;
   });
 }
@@ -762,7 +965,9 @@ function nextRound(){
   resetChair($('cchair'));S.teams.forEach((t,i)=>resetChair($('chair'+i)));
   $('numplate').textContent=S.dom.label(S.cur.target);
   $('numplate').classList.toggle('txt',S.dom.txt);
-  $('numplate').classList.toggle('sm',S.dom.txt&&S.dom.label(S.cur.target).length>16);
+  $('numplate').classList.toggle('sm',S.dom.txt&&!S.dom.eq&&S.dom.label(S.cur.target).length>16);
+  $('numplate').classList.toggle('eq',!!S.dom.eq);
+  $('graphbox').classList.remove('show');$('graphbox').innerHTML='';
   $('roundLbl').textContent='Round '+S.round+' of '+S.rounds;
   $('rangeLbl').textContent=S.dom.intro;
   const list=$('cluelist');list.innerHTML='';
@@ -824,6 +1029,7 @@ function showChoice(){
     const k=document.createElement('span');k.className='k';k.textContent='ABCD'[i];
     c.appendChild(k);c.appendChild(document.createTextNode(S.dom.label(v)));
     if(S.dom.txt)c.classList.add('txt');
+    if(S.dom.eq)c.classList.add('eq');
     c.onclick=()=>pick(i);
     $('cards').appendChild(c);
   });
@@ -869,6 +1075,7 @@ function finishRound(winner){
     if(!row.classList.contains('on')){setClue(row,S.cur.clues[i].text);row.classList.add('late')}
   });
   $('cchair').classList.add('spun');
+  if(S.dom.draw){$('graphbox').innerHTML=S.dom.draw(S.cur.target);later(()=>$('graphbox').classList.add('show'),900)}
   const n=S.dom.label(S.cur.target);
   if(winner!==null){
     const pt=pts();
