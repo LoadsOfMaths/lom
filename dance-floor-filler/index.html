@@ -7,9 +7,9 @@
 <style>
 :root{--cell:80px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;height:100dvh;overflow:hidden;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
 body{background:radial-gradient(ellipse at 50% 0%,#4b1d8f 0%,#1a0b3b 60%,#0d0522 100%)}
-#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
+#app{position:relative;z-index:1;height:100%;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;gap:10px;flex:0 0 auto}
 h1{margin:0;font-size:clamp(20px,3vw,34px);letter-spacing:2px;font-style:italic;text-shadow:0 0 12px #ff3d81,0 0 26px #8338ec}
 .hb{display:flex;gap:8px}
@@ -17,7 +17,7 @@ h1{margin:0;font-size:clamp(20px,3vw,34px);letter-spacing:2px;font-style:italic;
 .btn.alt{background:linear-gradient(#ff5da2,#e0246f);box-shadow:0 3px 0 #8f1448}
 .btn.dim{background:linear-gradient(#4a3a78,#35285a);box-shadow:0 3px 0 #1d1436}
 .btn:active{transform:translateY(2px);box-shadow:none}
-main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:30px;padding:6px 16px 14px}
+main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:30px;padding:6px 16px calc(14px + env(safe-area-inset-bottom))}
 #board{position:relative;display:grid;grid-template-columns:repeat(5,var(--cell));grid-template-rows:repeat(5,var(--cell));width:calc(var(--cell)*5);height:calc(var(--cell)*5);background:#120730;border-radius:6px;box-shadow:0 0 0 6px #2b1566,0 0 40px rgba(131,56,236,.6);flex:0 0 auto}
 .slot{box-shadow:inset 0 0 0 1px rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
 .slot:nth-child(even){background:rgba(255,255,255,.08)}
@@ -56,19 +56,34 @@ main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
 #endBox h2{margin:4px 0 8px;font-size:clamp(20px,3vw,28px)}
 #endBox .btn{display:block;width:100%;margin-top:8px}
 #side.ended #status,#side.ended #timerWrap,#side.ended #tray,#side.ended #rotRow,#side.ended #nextWrap{display:none}
+#side.ended #btnRow{display:none}
 #side.ended #endBox{display:block}
 #ghost{position:fixed;left:0;top:0;z-index:100;pointer-events:none;opacity:.92;filter:drop-shadow(0 6px 8px rgba(0,0,0,.6))}
-@media (max-width:720px),(max-aspect-ratio:1/1){
- main{flex-direction:column;gap:12px}
- #side{flex-direction:row;flex-wrap:wrap;justify-content:center;width:100%;max-width:620px;align-items:flex-start}
- #colA,#colB{display:flex;flex-direction:column;gap:10px;flex:1 1 230px;min-width:200px}
- #colA>*,#colB>*{order:0}
- #side.ended #colB{flex-basis:100%}
-}
+#app.portrait main{flex-direction:column;justify-content:flex-start;gap:10px}
+#app.portrait h1{letter-spacing:1px}
+#app.portrait .hb .btn{padding:8px 10px;font-size:14px}
+.hb .btn{white-space:nowrap}
+#app.sideRow #side.ended #colA,#app.sideRow #side.ended #btnRow{display:none}
+#app.sideRow #side{flex-direction:row;flex-wrap:nowrap;align-items:flex-start;gap:10px;width:auto}
+#app.portrait #side{width:100%;max-width:640px}
+#app.sideRow #colA,#app.sideRow #colB{display:flex;flex-direction:column;gap:10px}
+#app.sideRow #colA{flex:0 0 auto}
+#app.sideRow #colB{flex:1 1 0;min-width:0}
+#app:not(.portrait).sideRow #colB{flex:0 1 220px}
+#app.sideRow #colA>*,#app.sideRow #colB>*{order:0}
+#app.sideRow #status{min-height:3.3em;padding:8px 10px;font-size:15px}
+#app.sideRow #side>*,#app.sideRow #colA>*,#app.sideRow #colB>*{padding:8px 10px}
+#app.sideRow #tray{padding:0}
+#app.sideRow #rotRow,#app.sideRow #btnRow{padding:0}
+#app.sideRow #rotRow .btn,#app.sideRow #btnRow .btn{font-size:15px;padding:9px 4px}
+#app.sideRow #side.ended{width:100%}
+#app.sideRow #side.ended #endBox{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#app.sideRow #endBox h2,#app.sideRow #endBox p{flex:1 1 100%;margin:2px 0}
+#app.sideRow #endBox .btn{flex:1 1 30%;width:auto;margin-top:0;padding:8px 6px;font-size:14px}
 /* menu */
 #menu{position:fixed;inset:0;z-index:200;background:rgba(10,4,30,.88);display:flex;align-items:center;justify-content:center;padding:12px}
 #menu.hide{display:none}
-.card{background:#271259;border-radius:20px;padding:20px 24px;max-width:660px;width:100%;max-height:94vh;overflow:auto;box-shadow:0 0 40px rgba(131,56,236,.7)}
+.card{background:#271259;border-radius:20px;padding:20px 24px;max-width:660px;width:100%;max-height:94vh;max-height:94dvh;overflow:auto;box-shadow:0 0 40px rgba(131,56,236,.7)}
 .card h2{margin:0 0 4px;font-size:clamp(26px,5vw,42px);font-style:italic;text-shadow:0 0 14px #ff3d81}
 .card p{margin:6px 0;line-height:1.4}
 .grp{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
@@ -116,7 +131,7 @@ body.disco .pw.v2{animation-name:pc,glow}
   <div id="side">
    <div id="colA">
     <div id="tray"><div id="piece"></div></div>
-    <div id="rotRow"><button class="btn" id="rotL">&#8634; Turn left</button><button class="btn" id="rotR">Turn right &#8635;</button></div>
+    <div id="rotRow"><button class="btn" id="rotL">&#8634; Left</button><button class="btn" id="rotR">Right &#8635;</button></div>
    </div>
    <div id="colB">
     <div id="status"></div>
@@ -306,13 +321,26 @@ function updateStatus(){
 
 /* ---------- layout ---------- */
 function fit(){
- var m=$('main').getBoundingClientRect();
- var portrait=window.innerWidth<720||window.innerWidth<window.innerHeight*1.05;
- var c=portrait?Math.min((m.width-24)/5,(m.height-300)/5):Math.min((m.height-24)/5,(m.width-350)/5);
- CELL=Math.max(34,Math.floor(c));
+ var app=$('app'),W=window.innerWidth,H=window.innerHeight;
+ app.style.height=H+'px';
+ var portrait=W<720||W<H*1.05;
+ var A=H-document.querySelector('header').offsetHeight-40;
+ var sideRow=portrait||A<560;
+ app.classList.toggle('portrait',portrait);app.classList.toggle('sideRow',sideRow);
+ if(portrait)TC=Math.max(24,Math.min(36,Math.floor(W*.075)));
+ else if(sideRow)TC=30;
+ else TC=Math.max(30,Math.min(52,Math.floor((A-322)/5)));
+ renderTray();renderNext();
+ var c;
+ if(portrait){
+  var sh=Math.max($('side').offsetHeight,5*TC+16+62,236);
+  c=Math.min((W-32)/5,(A-sh-10)/5);
+ }else if(sideRow){
+  c=Math.min((A-4)/5,(W-(5*TC+16+10+220)-30-32)/5);
+ }else c=Math.min((A-4)/5,(W-350)/5);
+ CELL=Math.max(28,Math.floor(c));
  document.documentElement.style.setProperty('--cell',CELL+'px');
- TC=portrait?Math.max(26,Math.min(38,Math.floor(CELL*.5))):Math.max(30,Math.min(52,Math.floor(CELL*.62)));
- renderPlaced();renderTray();renderNext();
+ renderPlaced();
 }
 
 /* ---------- audio ---------- */
@@ -599,7 +627,9 @@ $('stopPrev').onclick=function(){stopMusic();};
 $('startBtn').onclick=function(){$('menu').classList.add('hide');ac();LAD.T=0;LAD.level=S.level;newGame(false);};
 $('sndBtn').onclick=function(){S.sound=!S.sound;if(!S.sound)stopMusic();else ac();save();refreshOpts();};
 
-buildBoard();refreshOpts();window.addEventListener('resize',fit);fit();
+buildBoard();refreshOpts();window.addEventListener('resize',fit);window.addEventListener('orientationchange',function(){setTimeout(fit,200);});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',fit);
+fit();setTimeout(fit,300);
 })();
 </script>
 </body>
