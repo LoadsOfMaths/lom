@@ -376,6 +376,7 @@ button{font-family:var(--font);cursor:pointer;border:none;color:inherit}
   <div class="settings">
     <label>Team A <input id="nameA" value="Team A" maxlength="16"></label>
     <label>Team B <input id="nameB" value="Team B" maxlength="16"></label>
+    <label>Play against <select id="opp"><option value="human">Another team</option><option value="easy">🤖 Computer: easy</option><option value="medium">🤖 Computer: medium</option><option value="hard">🤖 Computer: hard</option></select></label>
     <label>Target <select id="target">
       <option>50</option><option selected>100</option><option>150</option><option>200</option>
     </select></label>
@@ -500,7 +501,7 @@ const sfx = {
 const $ = id => document.getElementById(id);
 const S = {
   mode:"pig", target:100, names:["Team A","Team B"],
-  scores:[0,0], current:0, turn:0, rolls:[],
+  scores:[0,0], current:0, turn:0, rolls:[], ai:null, tok:0,
   phase:"ready", finalTurn:false, // ready | rolling | choose | bust | banking | over
 };
 
@@ -539,6 +540,10 @@ function startGame(mode){
   S.target = +$("target").value;
   S.names = [$("nameA").value.trim()||"Team A", $("nameB").value.trim()||"Team B"];
   S.scores = [0,0]; S.current = 0; S.finalTurn = false;
+  S.tok++;
+  const opp = $("opp").value; S.ai = opp==="human" ? null : opp;
+  try{ localStorage.setItem("dice-opp", opp); }catch(e){}
+  if (S.ai && S.names[1]==="Team B") S.names[1] = "Computer";
   $("labelA").textContent = S.names[0]; $("labelB").textContent = S.names[1];
   $("modeName").textContent = mode==="pig" ? "🐷 Pig" : "🐍 Snake Eyes";
   $("targetLabel").textContent = "First to " + S.target;
@@ -567,6 +572,7 @@ function newTurn(first){
   $("history").innerHTML = "";
   $("rollBtn").textContent = "🎲 Roll now";
   setButtons({roll:true});
+  if (isAI()){ setButtons({}); later(()=>roll(true), 1100); }
 }
 
 function setButtons({roll=false, bank=false, next=false}){
@@ -592,7 +598,8 @@ function renderScores(){
 }
 
 /* ---------------- Rolling ---------------- */
-function roll(){
+function roll(viaAI){
+  if (isAI() && viaAI!==true) return;
   if (S.phase!=="ready" && S.phase!=="choose") return;
   S.phase = "rolling";
   $("rollBtn").disabled = true; $("bankBtn").disabled = true;
@@ -655,6 +662,7 @@ function resolve(results){
   S.phase = "choose";
   $("rollBtn").textContent = "🎲 Roll again";
   setButtons({roll:true, bank:true});
+  if (isAI()){ setButtons({}); later(aiDecide, 1100); }
 }
 
 function bust(text, fatal){
@@ -673,10 +681,12 @@ function bust(text, fatal){
   } else sfx.bad();
   setButtons({next:true});
   $("nextBtn").textContent = S.finalTurn ? "See result ➜" : "Next team ➜";
+  if (isAI()){ setButtons({}); later(()=>nextTeam(true), 1800); }
 }
 
-function bank(){
+function bank(viaAI){
   if (S.phase!=="choose") return;
+  if (isAI() && viaAI!==true) return;
   const team = S.current;
   const target = S.scores[team] + S.turn;
   sfx.bank();
@@ -714,8 +724,9 @@ function countTo(team, value, done){
   step();
 }
 
-function nextTeam(){
+function nextTeam(viaAI){
   if (S.phase!=="bust") return;
+  if (isAI() && viaAI!==true) return;
   if (S.finalTurn) return declareResult("final");
   S.current = 1 - S.current;
   newTurn(false);
@@ -761,11 +772,43 @@ function confetti(){
   })();
 }
 
+/* ---------------- Computer opponent (Team B) ---------------- */
+const isAI = () => !!S.ai && S.current===1;
+function later(fn, ms){ const t=S.tok; setTimeout(()=>{ if (t===S.tok && S.phase!=="over") fn(); }, ms); }
+const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
+function aiDecide(){
+  if (S.phase!=="choose" || !isAI()) return;
+  if (aiWantsBank()) bank(true); else roll(true);
+}
+// Decides whether to bank, using the turn score, both banked totals and the chosen level.
+function aiWantsBank(){
+  const me=S.scores[1], opp=S.scores[0], T=S.turn, L=S.ai;
+  if (T<=0) return false;
+  if (S.finalTurn) return me+T > opp;          // last chance: keep going until ahead
+  if (me+T >= S.target) return true;           // banking wins the game
+  const gap = opp - me;                        // positive = computer is behind
+  const chase = opp >= S.target-20;            // opponent about to win: take more risk
+  let th;
+  if (S.mode==="pig"){
+    if (L==="easy") th = 8 + Math.random()*8;
+    else if (L==="medium") th = 18 + clamp(gap/6,-5,7) + (Math.random()*6-3);
+    else { th = 20 + clamp(gap/5,-8,12); if (chase) th += 8; }
+  } else {
+    // Snake Eyes: roll while the expected gain beats the expected loss
+    const base = (200 - me)/11;
+    if (L==="easy") th = 8 + Math.random()*10;
+    else if (L==="medium") th = base*(0.8+Math.random()*0.4) + clamp(gap/20,-3,5);
+    else { th = base + clamp(gap/18,-3,6); if (chase) th += 6; }
+    th = Math.max(th, 5);
+  }
+  return T >= th;
+}
+
 /* ---------------- Wiring ---------------- */
 $("rollBtn").addEventListener("click", roll);
 $("bankBtn").addEventListener("click", bank);
 $("nextBtn").addEventListener("click", nextTeam);
-$("menuBtn").addEventListener("click", ()=>{ if (confirm("Leave this game and return to the menu?")) show("menu"); });
+$("menuBtn").addEventListener("click", ()=>{ if (confirm("Leave this game and return to the menu?")){ S.tok++; show("menu"); } });
 $("rulesBtn").addEventListener("click", ()=>{
   const r = RULES[S.mode];
   $("rulesTitle").textContent = r.title;
@@ -803,6 +846,11 @@ try{
   }
 }catch(e){}
 
+try{
+  const so = localStorage.getItem("dice-opp");
+  if (so && [...$("opp").options].some(o=>o.value===so)) $("opp").value = so;
+}catch(e){}
+
 /* When the hub opens this game as Pig or Snake Eyes, show just that mode */
 if (window.HUB_MODE === "pig" || window.HUB_MODE === "snake"){
   const keep = window.HUB_MODE;
@@ -834,7 +882,10 @@ input,select{font-family:var(--font)}
 .field{font-size:inherit;background:rgba(255,255,255,.1);color:var(--chalk);border:2px solid var(--chalk-dim);border-radius:10px;padding:4px 10px}
 .field option{color:#000}
 .names{display:flex;flex-wrap:wrap;gap:10px;max-width:60vw}
-.names input{width:9em}
+.names input.nm{width:8.5em}
+.nameWrap{display:flex;align-items:center;gap:6px}
+.aiTick{display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.9em;color:var(--chalk-dim)}
+.aiTick input{width:20px;height:20px;accent-color:var(--gold)}
 .check{display:flex;align-items:center;gap:10px;cursor:pointer}
 .check input{width:24px;height:24px;accent-color:var(--gold)}
 .menuBtns{display:flex;gap:2vw}
@@ -911,6 +962,14 @@ input,select{font-family:var(--font)}
 .tray{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:52px;max-width:92vw}
 .group{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:10px;background:rgba(255,255,255,.08);font-size:clamp(13px,1.3vw,18px)}
 .group b{margin-left:6px;color:var(--good)}
+.combos{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-height:21vh;overflow-y:auto;max-width:94vw;padding:2px}
+.combo{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;background:rgba(0,0,0,.35);border:2px solid var(--chalk-dim);color:var(--chalk);font-size:clamp(13px,1.45vw,20px);cursor:pointer}
+.combo:hover{background:rgba(0,0,0,.55)}
+.combo.on{border-color:var(--gold);background:rgba(255,207,92,.22)}
+.combo b{color:var(--gold);margin-left:4px}
+.combo .die.small{--ds:24px;box-shadow:0 2px 0 #d6c49a}
+.combo .dgrp{display:flex;gap:3px}
+#game.combosOn{--ds:clamp(56px,min(11vh,16vw),120px)}
 
 .controls{display:flex;gap:2vw;align-items:center;margin-bottom:calc(1vh + 44px);min-height:clamp(64px,10vh,110px)}
 .corner{position:absolute;bottom:1.2vh;display:flex;gap:10px}
@@ -960,6 +1019,8 @@ input,select{font-family:var(--font)}
     <select id="teamCount" class="field"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
     <label>Names</label>
     <div class="names" id="names"></div>
+    <label for="aiLevel">Computer level <span style="font-size:.8em">(tick 🤖 beside a team)</span></label>
+    <select id="aiLevel" class="field"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
     <label for="target">Winning score</label>
     <select id="target" class="field"><option value="5000">5,000 (short game)</option><option value="10000">10,000</option></select>
     <label>Opening score</label>
@@ -984,6 +1045,7 @@ input,select{font-family:var(--font)}
       <div class="box"><div class="lbl">Selected</div><div class="big" id="selTotal" style="color:var(--gold)">–</div></div>
     </div>
     <div class="tray" id="tray"></div>
+    <div class="combos hidden" id="combos"></div>
   </div>
 
   <div class="controls">
@@ -999,6 +1061,7 @@ input,select{font-family:var(--font)}
     <button class="smallBtn" id="endBtn">🔔 End game</button>
   </div>
   <div class="corner r">
+    <button class="smallBtn" id="combosBtn">📋 Combos: off</button>
     <button class="smallBtn" id="bestBtn">✨ Select best</button>
     <button class="smallBtn" id="soundBtn">🔊 Sound on</button>
   </div>
@@ -1053,7 +1116,8 @@ const DEFAULTS = {
   fullHouseOn:false, fullHouse:1500,
   openMinOn:false, openMin:750,
   penaltyOn:false, penalty:500,
-  target:10000, teams:2, names:["Team A","Team B","Team C","Team D","Team E","Team F"]
+  target:10000, teams:2, names:["Team A","Team B","Team C","Team D","Team E","Team F"],
+  ai:[false,false,false,false,false,false], aiLevel:"medium"
 };
 const KEY = "tenk-settings-v1";
 let cfg = load();
@@ -1171,26 +1235,31 @@ const sfx = {
 /* =================== TITLE SCREEN =================== */
 function buildNames(){
   const n = +$("teamCount").value, box = $("names");
-  const old = [...box.querySelectorAll("input")].map(i=>i.value);
-  old.forEach((v,i)=>cfg.names[i]=v);
+  [...box.querySelectorAll("input.nm")].forEach((inp,i)=>cfg.names[i]=inp.value);
   box.innerHTML = "";
   for (let i=0;i<n;i++){
+    const w = document.createElement("span"); w.className = "nameWrap";
     const inp = document.createElement("input");
-    inp.className="field"; inp.maxLength=14; inp.value=cfg.names[i]||("Team "+"ABCDEF"[i]);
+    inp.className="field nm"; inp.maxLength=14; inp.value=cfg.names[i]||("Team "+"ABCDEF"[i]);
     inp.style.borderColor = TEAM_COLOURS[i]; inp.style.color = TEAM_COLOURS[i];
-    box.appendChild(inp);
+    const lab = document.createElement("label"); lab.className = "aiTick"; lab.title = "Computer plays this team";
+    lab.innerHTML = '<input type="checkbox" data-ai="'+i+'"'+(cfg.ai[i]?" checked":"")+'> 🤖';
+    w.append(inp, lab); box.appendChild(w);
   }
 }
 function syncTitle(){
   $("teamCount").value = cfg.teams; $("target").value = cfg.target;
   $("openQuick").checked = cfg.openMinOn;
+  $("aiLevel").value = cfg.aiLevel;
   $("openQuickLbl").textContent = "Need " + fmt(cfg.openMin) + " to get on the board";
   buildNames();
 }
 $("teamCount").addEventListener("change", ()=>{ buildNames(); cfg.teams=+$("teamCount").value; save(); });
 $("target").addEventListener("change", ()=>{ cfg.target=+$("target").value; save(); });
 $("openQuick").addEventListener("change", ()=>{ cfg.openMinOn=$("openQuick").checked; save(); });
-$("names").addEventListener("input", ()=>{ [...$("names").querySelectorAll("input")].forEach((i,k)=>cfg.names[k]=i.value); save(); });
+$("names").addEventListener("input", ()=>{ [...$("names").querySelectorAll("input.nm")].forEach((i,k)=>cfg.names[k]=i.value); save(); });
+$("names").addEventListener("change", e=>{ const t=e.target; if (t.dataset && t.dataset.ai!==undefined){ cfg.ai[+t.dataset.ai]=t.checked; save(); } });
+$("aiLevel").addEventListener("change", ()=>{ cfg.aiLevel=$("aiLevel").value; save(); });
 syncTitle();
 
 /* =================== SETTINGS OVERLAY =================== */
@@ -1236,7 +1305,7 @@ $("settingsBtn").addEventListener("click", ()=>{ buildSettings(); $("settingsOve
 $("closeSettings").addEventListener("click", ()=>$("settingsOverlay").classList.remove("show"));
 $("resetSettings").addEventListener("click", ()=>{
   if (!confirm("Reset all scores and rules to the defaults?")) return;
-  const keep = {teams:cfg.teams, names:cfg.names, target:cfg.target};
+  const keep = {teams:cfg.teams, names:cfg.names, target:cfg.target, ai:cfg.ai, aiLevel:cfg.aiLevel};
   cfg = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), keep);
   save(); buildSettings(); syncTitle();
 });
@@ -1273,15 +1342,22 @@ $("closeRules").addEventListener("click", ()=>$("rulesOverlay").classList.remove
 
 /* =================== GAME STATE =================== */
 const G = { teams:[], cur:0, turn:0, rolled:[], sel:new Set(), groups:[], phase:"idle",
-            finalRound:false, finalQueue:[], triggerTeam:-1 };
+            finalRound:false, finalQueue:[], triggerTeam:-1, tok:0 };
 
 function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active", s.id===id)); }
 
 function startGame(){
-  [...$("names").querySelectorAll("input")].forEach((i,k)=>cfg.names[k]=i.value.trim()||("Team "+"ABCDEF"[k]));
-  cfg.teams = +$("teamCount").value; cfg.target = +$("target").value; save();
-  G.teams = Array.from({length:cfg.teams}, (_,i)=>({name:cfg.names[i], score:0, onBoard:!cfg.openMinOn, busts:0, colour:TEAM_COLOURS[i]}));
+  [...$("names").querySelectorAll("input.nm")].forEach((i,k)=>cfg.names[k]=i.value.trim()||("Team "+"ABCDEF"[k]));
+  cfg.teams = +$("teamCount").value; cfg.target = +$("target").value; cfg.aiLevel = $("aiLevel").value; save();
+  const nAI = cfg.ai.slice(0,cfg.teams).filter(Boolean).length; let aiN = 0;
+  G.teams = Array.from({length:cfg.teams}, (_,i)=>{
+    const ai = !!cfg.ai[i]; let name = cfg.names[i];
+    if (ai && name==="Team "+"ABCDEF"[i]) name = nAI>1 ? "Computer "+(++aiN) : "Computer";
+    return {name, score:0, onBoard:!cfg.openMinOn, busts:0, colour:TEAM_COLOURS[i], ai};
+  });
   G.cur = 0; G.finalRound = false; G.finalQueue = []; G.triggerTeam = -1;
+  G.tok++; G.phase = "idle";
+  if (nAI) bustProbs();
   buildScoreboard();
   show("game");
   newTurn();
@@ -1313,6 +1389,7 @@ function renderScores(){
     if (!t.onBoard) tag = "Not on the board yet";
     else if (cfg.penaltyOn && t.busts>0) tag = "Busts in a row: " + t.busts;
     if (G.finalRound && i===G.triggerTeam) tag = "Reached " + fmt(cfg.target) + "!";
+    if (!tag && G.teams[i].ai) tag = "🤖 Computer · " + cfg.aiLevel;
     if (G.teams.length>2 && !tag) tag = "First to " + fmt(cfg.target);
     $("tag"+i).textContent = tag;
     $("team"+i).classList.toggle("active", i===G.cur);
@@ -1320,6 +1397,7 @@ function renderScores(){
 }
 
 function newTurn(){
+  hideCombos();
   G.turn = 0; G.rolled = []; G.sel.clear(); G.groups = []; G.phase = "start";
   const t = G.teams[G.cur];
   renderScores();
@@ -1337,6 +1415,7 @@ function newTurn(){
   $("rollBtn").textContent = "🎲 Roll 6 dice";
   setButtons({roll:true});
   $("bestBtn").disabled = true;
+  if (t.ai){ setButtons({}); later(()=>roll(true), 1100); }
 }
 
 function setButtons({roll=false,bank=false,next=false}){
@@ -1372,7 +1451,8 @@ function renderTray(){
 }
 
 /* ---------- Rolling ---------- */
-function roll(){
+function roll(viaAI){
+  if (isAI() && viaAI!==true) return;
   if (G.phase==="start"){ doRoll(6); return; }
   if (G.phase!=="choose") return;
   const res = currentSelection();
@@ -1389,6 +1469,7 @@ function roll(){
 function setButtonsDisabled(){ $("rollBtn").disabled = $("bankBtn").disabled = true; $("bestBtn").disabled = true; }
 
 function lockSelection(res){
+  hideCombos();
   const dice = [...G.sel].sort((a,b)=>a-b).map(i=>G.rolled[i]);
   G.groups.push({dice, pts:res.pts, desc:res.desc});
   G.turn += res.pts;
@@ -1399,6 +1480,7 @@ function lockSelection(res){
 }
 
 function doRoll(n){
+  hideCombos();
   G.phase = "rolling"; setButtonsDisabled();
   setMessage("", "");
   G.rolled = Array.from({length:n}, rnd);
@@ -1423,6 +1505,7 @@ function afterRoll(){
   const best = bestSubset(G.rolled);
   if (best.pts===0) return goBust();
   G.phase = "choose";
+  if (isAI()){ later(aiPlan, 900); return; }
   [...$("diceRow").children].forEach((d,i)=>{
     d.classList.add("pickable");
     const k = document.createElement("div"); k.className="key"; k.textContent = i+1; d.appendChild(k);
@@ -1436,13 +1519,13 @@ $("diceRow").addEventListener("click", e=>{
   toggleDie(+d.dataset.i);
 });
 function toggleDie(i){
-  if (G.phase!=="choose" || i>=G.rolled.length) return;
+  if (isAI() || G.phase!=="choose" || i>=G.rolled.length) return;
   G.sel.has(i) ? G.sel.delete(i) : G.sel.add(i);
   sfx.pick();
   updateSelection();
 }
 function selectBest(){
-  if (G.phase!=="choose") return;
+  if (isAI() || G.phase!=="choose") return;
   const b = bestSubset(G.rolled);
   G.sel.clear();
   G.rolled.forEach((_,i)=>{ if (b.mask & (1<<i)) G.sel.add(i); });
@@ -1458,6 +1541,7 @@ function currentSelection(){
 }
 
 function updateSelection(){
+  renderCombos();
   [...$("diceRow").children].forEach((d,i)=>d.classList.toggle("sel", G.sel.has(i)));
   const res = currentSelection(), t = G.teams[G.cur];
   const left = G.rolled.length - res.count;
@@ -1489,6 +1573,7 @@ function updateSelection(){
 }
 
 function goBust(){
+  hideCombos();
   G.phase = "bust";
   const t = G.teams[G.cur];
   G.turn = 0; $("turnTotal").textContent = "0"; $("selTotal").textContent = "–";
@@ -1508,11 +1593,13 @@ function goBust(){
   setButtons({next:true});
   $("nextBtn").textContent = nextLabel();
   $("bestBtn").disabled = true;
+  if (t.ai){ setButtons({}); later(advance, cfg.penaltyOn ? 2600 : 1900); }
 }
 function nextLabel(){ return (G.finalRound && G.finalQueue.length===0) ? "See result ➜" : "Next team ➜"; }
 
-function bank(){
+function bank(viaAI){
   if (G.phase!=="choose") return;
+  if (isAI() && viaAI!==true) return;
   const res = currentSelection(); if (!res.valid) return;
   const t = G.teams[G.cur];
   if (!t.onBoard && G.turn + res.pts < cfg.openMin) return;
@@ -1557,7 +1644,7 @@ function advance(){
   } else G.cur = (G.cur+1) % G.teams.length;
   newTurn();
 }
-function nextTeam(){ if (G.phase==="bust") advance(); }
+function nextTeam(){ if (G.phase==="bust" && !isAI()) advance(); }
 
 /* ---------- Result ---------- */
 function declareResult(reason){
@@ -1587,13 +1674,157 @@ function confetti(){
   })();
 }
 
+/* =================== COMPUTER PLAYERS =================== */
+const isAI = () => !!(G.teams[G.cur] && G.teams[G.cur].ai);
+function later(fn, ms){ const t=G.tok; setTimeout(()=>{ if (t===G.tok && G.phase!=="over") fn(); }, ms); }
+
+// Chance of busting when rolling n dice, worked out exactly from the current scoring rules.
+let bustCache = {key:"", p:null};
+function hasScore(vals){
+  for (let m=1; m<(1<<vals.length); m++){
+    const r = scoreDice(vals.filter((_,i)=>m&(1<<i)));
+    if (r && r.pts>0) return true;
+  }
+  return false;
+}
+function bustProbs(){
+  const key = JSON.stringify(Object.assign({}, cfg, {names:0, ai:0, aiLevel:0, teams:0, target:0, openMin:0, openMinOn:0, penalty:0, penaltyOn:0}));
+  if (bustCache.key===key) return bustCache.p;
+  const fact=[1,1,2,6,24,120,720], p=[0];
+  for (let n=1;n<=6;n++){
+    let bust = 0;
+    (function rec(face,left,vals,den){
+      if (face===7){ if (left===0 && !hasScore(vals)) bust += fact[n]/den; return; }
+      for (let c=0;c<=left;c++) rec(face+1, left-c, vals.concat(Array(c).fill(face)), den*fact[c]);
+    })(1,n,[],1);
+    p[n] = bust/Math.pow(6,n);
+  }
+  bustCache = {key, p};
+  return p;
+}
+// Typical extra points a roll is worth when it doesn't bust (includes the hot-dice bonus), by dice left.
+const AI_G = [0,600,240,155,185,170,120];
+
+function aiPlan(){
+  if (G.phase!=="choose" || !isAI()) return;
+  const t = G.teams[G.cur], lvl = cfg.aiLevel, n = G.rolled.length, bp = bustProbs();
+  const bestOther = Math.max(...G.teams.filter((_,i)=>i!==G.cur).map(x=>x.score));
+  const need = bestOther - t.score + 1;                 // needed in the final round
+  let f = 1;                                            // appetite for risk
+  if (lvl==="medium") f = 0.85 + Math.random()*0.3;
+  if (lvl==="hard") f = 1 + Math.max(-0.2, Math.min(0.3, (bestOther - t.score)/cfg.target));
+
+  // Value of locking dice to reach turn total T with k dice left, and whether to bank there.
+  const pos = (T,k) => {
+    const kk = k===0 ? 6 : k;
+    const cont = (1-bp[kk])*(T+AI_G[kk])*f;
+    const can = t.onBoard || T>=cfg.openMin;
+    if (G.finalRound){
+      if (can && T>=need) return {bank:true, v:1e6+T};
+      return {bank:false, v:cont};                      // must keep going to win
+    }
+    if (can && t.score+T>=cfg.target) return {bank:true, v:1e6+T};
+    if (lvl==="easy") return {bank: can && k>0 && T>=250+Math.random()*250, v:T};
+    const bank = can && T>=cont;
+    return {bank, v: bank ? T : cont};
+  };
+
+  let pick = null;
+  const greedy = bestSubset(G.rolled);
+  if (lvl==="easy" || (lvl==="medium" && Math.random()<0.3)){
+    pick = {mask:greedy.mask, pts:greedy.pts};          // grab the most points
+  } else {
+    let bestV = -1, bestK = -1;
+    for (let m=1; m<(1<<n); m++){
+      const r = scoreDice(G.rolled.filter((_,i)=>m&(1<<i)));
+      if (!r || r.pts<=0) continue;
+      const k = n - popcount(m), v = pos(G.turn+r.pts, k).v;
+      if (v>bestV+1e-9 || (Math.abs(v-bestV)<1e-9 && k>bestK)){ bestV=v; bestK=k; pick={mask:m, pts:r.pts}; }
+    }
+  }
+  if (!pick) pick = {mask:greedy.mask, pts:greedy.pts};
+  const d = pos(G.turn+pick.pts, n-popcount(pick.mask));
+
+  G.sel = new Set();
+  G.rolled.forEach((_,i)=>{ if (pick.mask & (1<<i)) G.sel.add(i); });
+  sfx.pick(); updateSelection();
+  setButtons({}); $("bestBtn").disabled = true;
+  later(()=>{ if (d.bank) bank(true); else roll(true); }, 1200);
+}
+
+/* =================== COMBO LIST =================== */
+let showCombos = false;
+try{ showCombos = localStorage.getItem("tenk-combos")==="1"; }catch(e){}
+function hideCombos(){ $("combos").classList.add("hidden"); $("combos").innerHTML = ""; }
+// Every scoring combination available in the current throw, as {mask, pts, label, dice}
+function comboList(){
+  const rolled = G.rolled, c = countsOf(rolled), seen = new Map();
+  const add = (mask) => {
+    if (!mask || seen.has(mask)) return;
+    const vals = rolled.filter((_,i)=>mask & (1<<i));
+    const r = scoreDice(vals);
+    if (!r || r.pts<=0) return;
+    seen.set(mask, {mask, pts:r.pts, label:describe(r.parts), dice:vals});
+  };
+  const maskFor = use => {
+    let m = 0;
+    for (let v=1; v<=6; v++){
+      let need = use[v];
+      for (let i=0; i<rolled.length && need>0; i++) if (rolled[i]===v){ m |= 1<<i; need--; }
+    }
+    return m;
+  };
+  patternsFor(c).forEach(p=>add(maskFor(p.use)));
+  [1,5].forEach(v=>{ for (let n=2; n<=c[v]; n++){ const u=[0,0,0,0,0,0,0]; u[v]=n; add(maskFor(u)); } });
+  const best = bestSubset(rolled);
+  if (best.pts>0) add(best.mask);                     // everything that scores, together
+  return [...seen.values()].sort((a,b)=>b.pts-a.pts || popcount(a.mask)-popcount(b.mask));
+}
+function renderCombos(){
+  const box = $("combos");
+  if (!showCombos || G.phase!=="choose" || isAI()){ hideCombos(); return; }
+  const list = comboList();
+  box.innerHTML = "";
+  list.forEach(cb=>{
+    const el = document.createElement("button");
+    el.className = "combo" + (G.sel.size && [...Array(G.rolled.length).keys()].every(i=>!(cb.mask&(1<<i)) || G.sel.has(i)) ? " on" : "");
+    el.dataset.mask = cb.mask;
+    const g = document.createElement("span"); g.className = "dgrp";
+    cb.dice.forEach(v=>{ const d=makeDie(true); showFace(d,v); g.appendChild(d); });
+    const t = document.createElement("span"); t.textContent = cb.label;
+    const b = document.createElement("b"); b.textContent = "+" + fmt(cb.pts);
+    el.append(g, t, b); box.appendChild(el);
+  });
+  box.classList.toggle("hidden", !list.length);
+}
+// Tapping a combo selects its dice, exactly as if you had tapped them; tap again to un-select.
+$("combos").addEventListener("click", e=>{
+  const el = e.target.closest(".combo"); if (!el || isAI() || G.phase!=="choose") return;
+  const mask = +el.dataset.mask, idx = [];
+  for (let i=0;i<G.rolled.length;i++) if (mask & (1<<i)) idx.push(i);
+  if (idx.every(i=>G.sel.has(i))) idx.forEach(i=>G.sel.delete(i)); else idx.forEach(i=>G.sel.add(i));
+  sfx.pick(); updateSelection();
+});
+function toggleCombos(){
+  showCombos = !showCombos;
+  try{ localStorage.setItem("tenk-combos", showCombos?"1":"0"); }catch(e){}
+  syncCombosBtn();
+  if (G.phase==="choose") updateSelection(); else hideCombos();
+}
+function syncCombosBtn(){
+  $("combosBtn").textContent = "📋 Combos: " + (showCombos ? "on" : "off");
+  $("game").classList.toggle("combosOn", showCombos);
+}
+syncCombosBtn();
+
 /* =================== WIRING =================== */
 const SAFE = `<svg class="safe" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11V9a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="11" width="18" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.5 4.2V20M16.5 4.2V20" stroke="currentColor" stroke-width="1.4"/><rect x="10.3" y="9.2" width="3.4" height="4.8" rx=".8" fill="currentColor"/></svg>`;
 $("rollBtn").addEventListener("click", roll);
 $("bankBtn").addEventListener("click", bank);
 $("nextBtn").addEventListener("click", nextTeam);
 $("bestBtn").addEventListener("click", selectBest);
-$("menuBtn").addEventListener("click", ()=>{ if (confirm("Leave this game and return to the menu?")){ G.phase="over"; syncTitle(); show("menu"); } });
+$("combosBtn").addEventListener("click", toggleCombos);
+$("menuBtn").addEventListener("click", ()=>{ if (confirm("Leave this game and return to the menu?")){ G.phase="over"; G.tok++; syncTitle(); show("menu"); } });
 $("endBtn").addEventListener("click", ()=>{ if (G.phase!=="over" && confirm("End the game now? The team with the most banked points wins.")) declareResult("early"); });
 $("againBtn").addEventListener("click", ()=>{ $("winOverlay").classList.remove("show"); startGame(); });
 $("winMenuBtn").addEventListener("click", ()=>{ $("winOverlay").classList.remove("show"); syncTitle(); show("menu"); });
@@ -1608,6 +1839,7 @@ document.addEventListener("keydown", e=>{
   else if (k===" " || k==="r"){ e.preventDefault(); roll(); }
   else if (k==="b") bank();
   else if (k==="s") selectBest();
+  else if (k==="c") toggleCombos();
   else if (k==="n" || k==="enter") nextTeam();
 });
 
