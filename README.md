@@ -31,6 +31,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Number Forensics | `number-forensics/` |
 | Number Memory Game | `number-memory-game/` |
 | Penguins & Icebergs | `penguins-and-icebergs/` |
+| Pentomino Explorer | `pentomino-explorer/` |
 | Potato | `potato/` |
 | Recite Pi | `recite-pi/` |
 | Sports Day | `sports-day/` |

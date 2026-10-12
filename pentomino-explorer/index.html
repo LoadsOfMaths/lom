@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="color-scheme" content="dark">
+<title>Pentomino Explorer – LoadsOfMaths</title>
+<style>
+:root {
+  --bg: #1d1f24;
+  --panel: rgba(38, 41, 49, 0.80);
+  --panel-edge: rgba(255, 255, 255, 0.08);
+  --ink: #e6e8f1;
+  --muted: #9ba2b8;
+  --accent: #c0b6ff;
+  --accent-soft: rgba(192, 182, 255, 0.17);
+  --moon: #f4e8b8;
+  --ok: #a9e7cf;
+  --rose: #ffb3c4;
+  --r: 18px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body {
+  margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+  font-family: "Nunito", "Avenir Next", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden; overscroll-behavior: none; user-select: none; -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; }
+
+#board { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; outline: none; }
+#board.grabbing { cursor: grabbing; }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--panel-edge); border-radius: var(--r);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- top bar ---------- */
+.top {
+  position: fixed; top: 12px; left: 12px; right: 12px; z-index: 5;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+  pointer-events: none;
+}
+.top > * { pointer-events: auto; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 12px; min-height: 52px; }
+.brand svg { width: 26px; height: 26px; flex: none; filter: drop-shadow(0 0 8px rgba(244, 232, 184, 0.45)); }
+.brand span { font-weight: 800; letter-spacing: 0.2px; font-size: 17px; color: #eef0f8; white-space: nowrap; }
+.seg { display: flex; padding: 5px; gap: 4px; }
+.seg button {
+  border: 0; background: transparent; padding: 10px 22px; border-radius: 13px; cursor: pointer;
+  font-weight: 700; font-size: 15px; color: var(--muted); transition: background .2s, color .2s;
+  min-height: 44px;
+}
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(192, 182, 255, 0.28); }
+.tools { display: flex; align-items: center; gap: 2px; padding: 4px; }
+.tools .sep { width: 1px; height: 26px; background: var(--panel-edge); margin: 0 4px; }
+
+.ibtn {
+  width: 44px; height: 44px; border: 0; border-radius: 13px; background: transparent; cursor: pointer;
+  display: inline-grid; place-items: center; color: #d6d9e8; transition: background .15s, color .15s, opacity .15s;
+  flex: none;
+}
+.ibtn:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.ibtn:active { background: rgba(255, 255, 255, 0.12); }
+.ibtn:disabled { opacity: 0.32; cursor: default; background: transparent; }
+.ibtn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ibtn.on { color: var(--moon); background: rgba(244, 232, 184, 0.12); }
+.ibtn:focus-visible, .pill:focus-visible, .chip:focus-visible, .tile:focus-visible, .seg button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+#vol { width: 84px; accent-color: var(--moon); margin: 0 8px 0 2px; height: 28px; cursor: pointer; }
+
+/* ---------- bottom panels ---------- */
+.bottom {
+  position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 5;
+  display: flex; justify-content: center; pointer-events: none;
+}
+.bottom > .panel { pointer-events: auto; max-width: 100%; }
+
+.dock { display: flex; align-items: center; gap: 14px; padding: 8px 12px 8px 8px; flex-wrap: wrap; justify-content: center; transition: box-shadow .2s, background .2s, outline-color .2s; outline: 2px dashed transparent; outline-offset: 3px; }
+.dock.hot { outline-color: rgba(255, 179, 196, 0.95); background: rgba(96, 52, 68, 0.92); }
+.dock.hot .hint { color: #ffd3dc; }
+.tiles { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.tile {
+  width: 66px; height: 66px; border-radius: 15px; background: rgba(255, 255, 255, 0.035); border: 1px solid transparent;
+  display: grid; place-items: center; cursor: grab; touch-action: none; padding: 0;
+  transition: transform .16s ease, background .16s ease, border-color .16s;
+}
+.tile:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.075); border-color: rgba(255, 255, 255, 0.08); }
+.tile:active { cursor: grabbing; }
+.tile svg { display: block; overflow: visible; }
+.dockside { display: flex; align-items: center; gap: 12px; }
+.hint { color: var(--muted); font-size: 13.5px; line-height: 1.35; max-width: 250px; }
+
+.pill {
+  border: 1px solid var(--panel-edge); background: rgba(255, 255, 255, 0.05); border-radius: 999px;
+  padding: 10px 18px; min-height: 44px; font-weight: 700; font-size: 14.5px; cursor: pointer; color: #e3e6f2;
+  display: inline-flex; align-items: center; gap: 8px; transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.pill:hover { background: rgba(255, 255, 255, 0.10); }
+.pill svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pill.toggle[aria-pressed="true"] { background: var(--accent-soft); border-color: rgba(192, 182, 255, 0.45); color: var(--accent); }
+
+.pbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 22px; padding: 10px 16px; }
+.grp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.grp .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 800; }
+.chips { display: flex; gap: 4px; }
+.chip {
+  border: 1px solid transparent; background: rgba(255, 255, 255, 0.05); color: #cfd3e4; border-radius: 12px;
+  padding: 8px 14px; min-width: 42px; min-height: 42px; font-weight: 800; font-size: 15px; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.chip:hover { background: rgba(255, 255, 255, 0.10); }
+.chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: rgba(192, 182, 255, 0.4); }
+.acts { gap: 8px; }
+.status { font-size: 13.5px; color: var(--muted); min-width: 150px; text-align: center; }
+.status b { color: var(--ink); font-weight: 800; }
+
+/* ---------- piece controls ---------- */
+.selbar {
+  position: fixed; left: 0; top: 0; z-index: 6; display: flex; gap: 2px; padding: 4px; border-radius: 16px;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease; will-change: transform;
+}
+.selbar.show { opacity: 1; pointer-events: auto; }
+.selbar .ibtn svg.rot90 { transform: rotate(90deg); }
+.selbar .sep { width: 1px; background: var(--panel-edge); margin: 6px 3px; }
+.selbar .danger:hover { color: var(--rose); background: rgba(255, 179, 196, 0.12); }
+body[data-mode="puzzle"] #btnDel, body[data-mode="puzzle"] #selSepDel { display: none; }
+
+/* ---------- mixer (graphic equaliser) ---------- */
+.mixer { position: fixed; top: 76px; right: 12px; z-index: 8; padding: 14px 16px 14px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.eq { display: flex; gap: 6px; }
+.band { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px; }
+.slot { position: relative; width: 48px; height: 172px; border-radius: 14px; background: rgba(255, 255, 255, 0.045); }
+.slot input {
+  position: absolute; left: 50%; top: 50%; width: 156px; height: 30px; margin: 0;
+  transform: translate(-50%, -50%) rotate(-90deg); background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; touch-action: none;
+}
+.slot input::-webkit-slider-runnable-track { height: 5px; border-radius: 5px; background: linear-gradient(90deg, rgba(244,232,184,0.55), rgba(192,182,255,0.55)); }
+.slot input::-moz-range-track { height: 5px; border-radius: 5px; background: linear-gradient(90deg, rgba(244,232,184,0.55), rgba(192,182,255,0.55)); }
+.slot input::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 20px; margin-top: -7.5px; border-radius: 8px; background: #f1ecd0; box-shadow: 0 0 12px rgba(244,232,184,0.45), 0 2px 6px rgba(0,0,0,0.4); border: 0; }
+.slot input::-moz-range-thumb { width: 30px; height: 20px; border-radius: 8px; background: #f1ecd0; box-shadow: 0 0 12px rgba(244,232,184,0.45), 0 2px 6px rgba(0,0,0,0.4); border: 0; }
+.slot input:focus-visible { outline: none; }
+.slot:focus-within { box-shadow: 0 0 0 2px var(--accent); }
+.band .val { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.band .nm { font-size: 13px; font-weight: 800; color: #dfe2ee; }
+.mixrow { display: flex; gap: 8px; }
+
+/* ---------- toast ---------- */
+.toast {
+  position: fixed; left: 50%; top: 84px; z-index: 7; transform: translate(-50%, -14px); opacity: 0; pointer-events: none;
+  padding: 12px 14px 12px 20px; display: flex; align-items: center; gap: 16px; transition: opacity .5s ease, transform .5s ease;
+  border-color: rgba(169, 231, 207, 0.35); box-shadow: 0 0 40px rgba(169, 231, 207, 0.16), 0 10px 34px rgba(0, 0, 0, 0.30);
+  max-width: calc(100% - 24px);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast .msg { font-size: 15.5px; color: var(--ok); font-weight: 800; }
+.toast .msg small { display: block; color: var(--muted); font-weight: 600; font-size: 13px; margin-top: 1px; }
+
+@media (max-width: 760px) {
+  .brand span { display: none; }
+  .brand { padding: 7px 10px; }
+  .hint { display: none; }
+  .tile { width: 52px; height: 52px; }
+  .tile svg { transform: scale(0.85); }
+  #vol { width: 64px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
+}
+
+</style>
+</head>
+<body data-mode="puzzle">
+
+<canvas id="board" aria-label="Pentomino board" tabindex="0"></canvas>
+
+<header class="top">
+  <div class="panel brand">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z" fill="#f4e8b8"/><circle cx="17.6" cy="5.4" r="1" fill="#f4e8b8"/><circle cx="20.6" cy="8.6" r="0.7" fill="#f4e8b8"/></svg>
+    <span>Pentomino Explorer</span>
+  </div>
+
+  <div class="panel seg" role="group" aria-label="Mode">
+    <button id="modePuzzle" aria-pressed="true">Puzzle</button>
+    <button id="modeExplore" aria-pressed="false">Explore</button>
+  </div>
+
+  <div class="panel tools" role="toolbar" aria-label="Board tools">
+    <button class="ibtn" id="btnUndo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+      <svg viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+    </button>
+    <button class="ibtn" id="btnZoomOut" title="Zoom out (-)" aria-label="Zoom out">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+    </button>
+    <button class="ibtn" id="btnZoomIn" title="Zoom in (+)" aria-label="Zoom in">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
+    </button>
+    <button class="ibtn" id="btnFit" title="Centre the view" aria-label="Centre the view">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg>
+    </button>
+    <button class="ibtn" id="btnSave" title="Save a picture of the board" aria-label="Save a picture of the board">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="ibtn" id="btnMix" title="Mixer: piano, bass and brushes" aria-label="Mixer" aria-expanded="false" aria-controls="mixer">
+      <svg viewBox="0 0 24 24"><line x1="5" y1="3" x2="5" y2="21"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="19" y1="3" x2="19" y2="21"/><rect x="2.8" y="13" width="4.4" height="3.4" rx="1.2" fill="currentColor" stroke="none"/><rect x="9.8" y="6.5" width="4.4" height="3.4" rx="1.2" fill="currentColor" stroke="none"/><rect x="16.8" y="10.5" width="4.4" height="3.4" rx="1.2" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <span class="sep"></span>
+    <input id="vol" type="range" min="0" max="100" value="55" aria-label="Music volume" hidden>
+    <button class="ibtn" id="btnMusic" title="Music on / off (M)" aria-label="Music" aria-pressed="false">
+      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line id="musicSlash" x1="3" y1="3" x2="21" y2="21" stroke-width="2.2"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="panel selbar" id="selbar" role="toolbar" aria-label="Tile controls">
+  <button class="ibtn" id="btnRotL" title="Turn left (Shift+R)" aria-label="Turn left">
+    <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+  </button>
+  <button class="ibtn" id="btnRotR" title="Turn right (R)" aria-label="Turn right">
+    <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+  </button>
+  <span class="sep"></span>
+  <button class="ibtn" id="btnFlipX" title="Flip left-right (H)" aria-label="Flip left to right">
+    <svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7 3 18h6z"/><path d="M15 7l6 11h-6z"/></svg>
+  </button>
+  <button class="ibtn" id="btnFlipY" title="Flip up-down (V)" aria-label="Flip top to bottom">
+    <svg viewBox="0 0 24 24" class="rot90"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7 3 18h6z"/><path d="M15 7l6 11h-6z"/></svg>
+  </button>
+  <span class="sep" id="selSepDel"></span>
+  <button class="ibtn danger" id="btnDel" title="Put the tile away (Delete)" aria-label="Put the tile away">
+    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+  </button>
+</div>
+
+<div class="panel mixer" id="mixer" role="group" aria-label="Music mixer" hidden>
+  <div class="eq">
+    <div class="band"><div class="slot"><input type="range" id="mixEp" min="0" max="150" value="100" aria-label="Piano level"></div><span class="val" id="valEp">100%</span><span class="nm">Piano</span></div>
+    <div class="band"><div class="slot"><input type="range" id="mixBass" min="0" max="150" value="100" aria-label="Bass level"></div><span class="val" id="valBass">100%</span><span class="nm">Bass</span></div>
+    <div class="band"><div class="slot"><input type="range" id="mixDrum" min="0" max="150" value="100" aria-label="Brushes level"></div><span class="val" id="valDrum">100%</span><span class="nm">Brushes</span></div>
+  </div>
+  <div class="mixrow">
+    <button class="pill toggle" id="btnOct" aria-pressed="true">+ Bass octave</button>
+    <button class="pill" id="btnMixReset">Reset</button>
+  </div>
+</div>
+
+<div class="panel toast" id="toast" role="status" aria-live="polite">
+  <div class="msg">Beautifully done.<small>Every square is filled.</small></div>
+  <button class="pill" id="btnNext">Next puzzle</button>
+</div>
+
+<div class="bottom">
+  <!-- Puzzle controls -->
+  <div class="panel pbar" id="pbar">
+    <div class="grp"><span class="lbl">Tiles</span><div class="chips" id="countChips"></div></div>
+    <div class="grp"><span class="lbl">Shape</span>
+      <div class="chips">
+        <button class="chip" data-shape="rect" aria-pressed="true">Rectangle</button>
+        <button class="chip" data-shape="free" aria-pressed="false">Free-form</button>
+        <button class="chip" data-shape="tile" aria-pressed="false" title="Build a bigger copy of a pentomino">Tile</button>
+      </div>
+    </div>
+    <div class="grp" id="madeGrp" hidden><span class="lbl">Made from</span>
+      <div class="chips">
+        <button class="chip" data-made="mixed" aria-pressed="true" title="Different tiles">Mixed tiles</button>
+        <button class="chip" data-made="copies" aria-pressed="false" title="Copies of the tile itself (only I, P and L can do this)">Copies</button>
+      </div>
+    </div>
+    <div class="grp acts">
+      <button class="pill" id="btnNew">
+        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+        New puzzle</button>
+      <button class="pill toggle" id="btnGhost" aria-pressed="false">
+        <svg viewBox="0 0 24 24"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        Show solution</button>
+      <button class="pill" id="btnAgain">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Start again</button>
+    </div>
+    <div class="status" id="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Explore tile stack -->
+  <div class="panel dock" id="dock" hidden>
+    <div class="tiles" id="tiles"></div>
+    <div class="dockside">
+      <span class="hint" id="dockHint">Drag a tile onto the board, or tap one to add it. Drag a tile back here to put it away.</span>
+      <button class="pill" id="btnClear">Clear board</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* "Late Night Lounge in Db": a 32-bar slow swing written as code (Rhodes comping, walking bass, brushes) */
+const COMPOSER = (() => {
+  'use strict';
+  const BPM = 66, BARS = 32;
+  const PC = { C: 0, Db: 1, D: 2, Eb: 3, E: 4, F: 5, Gb: 6, G: 7, Ab: 8, A: 9, Bb: 10, B: 11 };
+
+  // Rhodes voicings (rootless: the bass player has the root) and bass chord tones, as semitones above the root
+  const Q = {
+    maj9: { v: [4, 7, 11, 14], b: [0, 4, 7, 11], n: 'maj9' },
+    lyd:  { v: [4, 11, 14, 18], b: [0, 4, 7, 11], n: 'maj7#11' },
+    min9: { v: [3, 7, 10, 14], b: [0, 3, 7, 10], n: 'm9' },
+    dom13: { v: [4, 10, 14, 21], b: [0, 4, 7, 10], n: '13' },
+    alt:  { v: [4, 10, 13, 20], b: [0, 4, 7, 10], n: '7b9' },
+  };
+  const chord = (root, q) => ({ root, q, pc: PC[root] });
+
+  // each bar: one chord, or two chords of two beats each
+  const A = [
+    [chord('Db', 'maj9')], [chord('Bb', 'min9')], [chord('Eb', 'min9')], [chord('Ab', 'dom13')],
+    [chord('Db', 'maj9')], [chord('Gb', 'lyd')], [chord('Eb', 'min9'), chord('Ab', 'dom13')], [chord('Db', 'maj9'), chord('Bb', 'alt')],
+  ];
+  const B = [
+    [chord('Eb', 'min9')], [chord('Ab', 'dom13')], [chord('Db', 'maj9')], [chord('Bb', 'min9')],
+    [chord('Gb', 'lyd')], [chord('Gb', 'min9')], [chord('Db', 'maj9'), chord('Bb', 'alt')], [chord('Eb', 'min9'), chord('Ab', 'dom13')],
+  ];
+  const FORM = [].concat(A, B, A, B);
+
+  function rng(seed) {
+    return () => {
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* smooth voice-leading: choose the octave of each voice so the hand moves as little as possible */
+  function voice(prev, pc, ivs) {
+    const LO = 53, HI = 77;
+    const pcs = ivs.map(i => (pc + i) % 12);
+    const cand = pcs.map(p => { const a = []; for (let m = LO; m <= HI; m++) if (m % 12 === p) a.push(m); return a; });
+    let best = null, bestCost = 1e9;
+    const pick = [];
+    (function rec(i) {
+      if (i === 4) {
+        const s = pick.slice().sort((a, b) => a - b);
+        for (let k = 1; k < 4; k++) if (s[k] - s[k - 1] < 2) return;
+        const span = s[3] - s[0];
+        if (span > 17 || span < 7) return;
+        let cost = span * 0.15 + Math.abs((s[0] + s[1] + s[2] + s[3]) / 4 - 65) * 0.55;
+        if (prev) for (let k = 0; k < 4; k++) cost += Math.abs(s[k] - prev[k]) * (k === 3 ? 1.7 : 1);
+        else cost += Math.abs(s[3] - 70) * 1.2;
+        if (cost < bestCost) { bestCost = cost; best = s; }
+        return;
+      }
+      for (const m of cand[i]) { pick[i] = m; rec(i + 1); }
+    })(0);
+    return best || cand.map(a => a[0]).sort((a, b) => a - b);
+  }
+
+  const nearPc = (pc, ref, lo, hi) => {
+    let best = null, bd = 1e9;
+    for (let m = lo; m <= hi; m++) if (m % 12 === pc) { const d = Math.abs(m - ref); if (d < bd) { bd = d; best = m; } }
+    return best;
+  };
+
+  // comping rhythms: [position in beats, length in beats, loudness]. swung off-beats sit at +0.667
+  const PATS = [
+    { w: 3, hits: [[0, 3.7, 1]] },
+    { w: 3, hits: [[0, 1.45, 1], [1.667, 2.1, 0.8]] },
+    { w: 3, hits: [[0, 2.5, 1], [2.667, 1.2, 0.74]] },
+    { w: 2, hits: [[0, 1.6, 1], [2, 1.5, 0.82], [3.667, 0.3, 0.55]] },
+  ];
+
+  function compose() {
+    const R = rng(1957);
+    const ev = [], info = [];
+    let prevV = null, prevBass = 38, lastPat = -1;
+
+    for (let bar = 0; bar < BARS; bar++) {
+      const cs = FORM[bar], next = FORM[(bar + 1) % BARS][0];
+      const t0 = bar * 4, sec = Math.floor(bar / 8), lvl = [1, 2, 3, 2][sec];
+      const row = { bar: bar + 1, chords: cs.map(c => c.root + Q[c.q].n), voicings: [], bass: [] };
+
+      /* ---- Rhodes ---- */
+      const voicings = cs.map(c => (prevV = voice(prevV, c.pc, Q[c.q].v)));
+      row.voicings = voicings.slice();
+      let hits = [];
+      if (cs.length === 2) hits = [[0, 0, 1.9, 1], [1, 2, 1.9, 0.9]];
+      else {
+        let p; do { let r = R() * 11, acc = 0; p = 0; for (let i = 0; i < PATS.length; i++) { acc += PATS[i].w; if (r < acc) { p = i; break; } } } while (p === lastPat && p === 3);
+        lastPat = p;
+        hits = PATS[p].hits.map(h => [0, h[0], h[1], h[2]]);
+        // a little twinkle over long held chords
+        if (p === 0 && R() < 0.55) {
+          const v = voicings[0], up = n => (n + 12 <= 84 ? n + 12 : n);
+          const pitches = [up(v[3]), up(v[2]), v[3] - 0].slice(0, 3);
+          [2.667, 3, 3.333].forEach((pos, i) => ev.push([t0 + pos + (R() - 0.5) * 0.02, 0, 1.3, pitches[i], 34 + Math.round(R() * 8)]));
+        }
+      }
+      for (const h of hits) {
+        const v = voicings[h[0]];
+        v.forEach((m, i) => {
+          const vel = Math.round((46 + lvl * 3 + R() * 7) * (0.7 + 0.3 * h[3]) * (i === 3 ? 1.06 : 1));
+          ev.push([t0 + h[1] + i * 0.012 + (R() - 0.5) * 0.03, 0, h[2], m, vel]);
+        });
+      }
+
+      /* ---- walking bass ---- */
+      const lo = 33, hi = 51, nx = next.pc;
+      const notes = [];
+      const approach = (ref) => {
+        const a = nearPc((nx + 1) % 12, ref, lo, hi), b = nearPc((nx + 11) % 12, ref, lo, hi);
+        if (a === ref) return b;
+        if (b === ref) return a;
+        return Math.abs(a - ref) <= Math.abs(b - ref) ? a : b;
+      };
+      const pull = m => Math.round(m * 0.7 + 41 * 0.3);          // gently steer the line back to the middle of the bass
+      if (cs.length === 1) {
+        const c = cs[0], bt = Q[c.q].b, r = c.pc;
+        const n0 = nearPc(r, pull(prevBass), lo, hi);
+        const pats = [[1, 2], [2, 1], [1, 3], [2, 3], [3, 2]];
+        const [a, b] = pats[Math.floor(R() * pats.length)];
+        let n1 = nearPc((r + bt[a]) % 12, n0, lo, hi);
+        let n2 = nearPc((r + bt[b]) % 12, n1, lo, hi);
+        if (n2 === n1) n2 = nearPc((r + bt[2]) % 12, n1 + 3, lo, hi);
+        let n3 = approach(n2);
+        notes.push(n0, n1, n2, n3);
+      } else {
+        const c1 = cs[0], c2 = cs[1];
+        const n0 = nearPc(c1.pc, pull(prevBass), lo, hi);
+        const n1 = nearPc((c1.pc + Q[c1.q].b[R() < 0.5 ? 1 : 2]) % 12, n0, lo, hi);
+        const n2 = nearPc(c2.pc, n1, lo, hi);
+        notes.push(n0, n1, n2, approach(n2));
+      }
+      prevBass = notes[3];
+      notes.forEach((m, i) => {
+        const vel = Math.round((i === 0 ? 80 : 66) + R() * 8);
+        ev.push([t0 + i + (R() - 0.5) * 0.024, 1, 0.9, m, vel]);
+      });
+      row.bass = notes;
+      // a soft swung pick-up now and then
+      if (R() < 0.18) ev.push([t0 + 2.667 + (R() - 0.5) * 0.01, 1, 0.25, notes[1], 36]);
+
+      /* ---- brushes (tracks 3: 36 kick, 51 swish, 38 sweep, 44 pedal hat, 37 tap) ---- */
+      const jit = () => (R() - 0.5) * 0.02;
+      [0, 1, 2, 3].forEach(b => ev.push([t0 + b + jit(), 3, 0.5, 51, Math.round((b % 2 ? 36 : 44) + R() * 6 + lvl * 2)]));
+      [1.667, 3.667].forEach(b => ev.push([t0 + b + jit(), 3, 0.3, 51, Math.round(26 + R() * 6 + lvl * 2)]));
+      if (lvl >= 2) [1, 3].forEach(b => ev.push([t0 + b + jit(), 3, 0.4, 38, Math.round(34 + R() * 6 + lvl * 2)]));
+      [1, 3].forEach(b => ev.push([t0 + b + jit(), 3, 0.1, 44, Math.round(28 + R() * 6)]));
+      if (lvl >= 2) ev.push([t0 + jit(), 3, 0.3, 36, Math.round(30 + R() * 6)]);
+      if (lvl >= 3 && R() < 0.6) ev.push([t0 + 2 + jit(), 3, 0.3, 36, Math.round(22 + R() * 6)]);
+      if (lvl >= 3 && R() < 0.5) ev.push([t0 + (R() < 0.5 ? 0.667 : 2.667) + jit(), 3, 0.1, 37, Math.round(20 + R() * 6)]);
+
+      info.push(row);
+    }
+    ev.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[3] - b[3]);
+    for (const e of ev) if (e[0] < 0) e[0] = 0.001;       // never before the loop start
+    return { bpm: BPM, len: BARS * 4, ev, info };
+  }
+
+  return { compose, BPM, BARS };
+})();
+if (typeof module !== 'undefined') module.exports = COMPOSER;
+
+</script>
+<script>
+/* Pentomino core: shapes, orientations, tiling solver, puzzle generators */
+const PX_CORE = (() => {
+  'use strict';
+
+  const PIECE_TYPES = ['F', 'I', 'L', 'N', 'P', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  const PIECE_DEFS = {
+    F: [[1, 0], [2, 0], [0, 1], [1, 1], [1, 2]],
+    I: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]],
+    L: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 3]],
+    N: [[1, 0], [1, 1], [1, 2], [0, 2], [0, 3]],
+    P: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2]],
+    T: [[0, 0], [1, 0], [2, 0], [1, 1], [1, 2]],
+    U: [[0, 0], [2, 0], [0, 1], [1, 1], [2, 1]],
+    V: [[0, 0], [0, 1], [0, 2], [1, 2], [2, 2]],
+    W: [[0, 0], [0, 1], [1, 1], [1, 2], [2, 2]],
+    X: [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]],
+    Y: [[1, 0], [0, 1], [1, 1], [1, 2], [1, 3]],
+    Z: [[0, 0], [1, 0], [1, 1], [1, 2], [2, 2]],
+  };
+
+  const K = (x, y) => x * 65536 + y; // numeric cell key
+
+  function normCells(cells) {
+    let mx = Infinity, my = Infinity;
+    for (const c of cells) { if (c[0] < mx) mx = c[0]; if (c[1] < my) my = c[1]; }
+    return cells.map(c => [c[0] - mx, c[1] - my]).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+  }
+  // screen coordinates (y down): clockwise quarter turn is (x,y) -> (-y,x)
+  const rotCW = c => normCells(c.map(([x, y]) => [-y, x]));
+  const rotCCW = c => normCells(c.map(([x, y]) => [y, -x]));
+  const flipX = c => normCells(c.map(([x, y]) => [-x, y]));
+  const flipY = c => normCells(c.map(([x, y]) => [x, -y]));
+  const keyOf = c => c.map(p => p[0] + ',' + p[1]).join(';');
+
+  function orientations(cells) {
+    const seen = new Map();
+    let c = normCells(cells);
+    for (let f = 0; f < 2; f++) {
+      for (let r = 0; r < 4; r++) { seen.set(keyOf(c), c); c = rotCW(c); }
+      c = flipX(c);
+    }
+    return [...seen.values()];
+  }
+
+  const ORIENTS = {};
+  const BASE = {};
+  for (const t of PIECE_TYPES) { BASE[t] = normCells(PIECE_DEFS[t]); ORIENTS[t] = orientations(PIECE_DEFS[t]); }
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  const randInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1)); // inclusive
+
+  /* ---------- exact-cover style tiling with distinct pentominoes ---------- */
+  function solveTiling(cells, maxNodes, opts) {
+    maxNodes = maxNodes || 60000;
+    opts = opts || {};
+    const distinct = opts.distinct !== false;
+    const allowed = opts.allowed || PIECE_TYPES;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [x, y] of cells) {
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+    const W = maxX - minX + 1, H = maxY - minY + 1;
+    const g = new Uint8Array(W * H);
+    for (const [x, y] of cells) g[(y - minY) * W + (x - minX)] = 1;
+    const need = cells.length / 5;
+    const order = shuffle(allowed.slice());
+    const used = {};
+    const placed = [];
+    const seen = new Uint8Array(W * H);
+    const stack = new Int32Array(W * H);
+    let nodes = 0, aborted = false;
+
+    function regionsOk() {
+      seen.fill(0);
+      for (let i = 0; i < g.length; i++) {
+        if (g[i] === 1 && !seen[i]) {
+          let n = 0, sp = 0;
+          stack[sp++] = i; seen[i] = 1;
+          while (sp) {
+            const c = stack[--sp]; n++;
+            const cx = c % W;
+            if (cx > 0 && g[c - 1] === 1 && !seen[c - 1]) { seen[c - 1] = 1; stack[sp++] = c - 1; }
+            if (cx < W - 1 && g[c + 1] === 1 && !seen[c + 1]) { seen[c + 1] = 1; stack[sp++] = c + 1; }
+            if (c >= W && g[c - W] === 1 && !seen[c - W]) { seen[c - W] = 1; stack[sp++] = c - W; }
+            if (c + W < g.length && g[c + W] === 1 && !seen[c + W]) { seen[c + W] = 1; stack[sp++] = c + W; }
+          }
+          if (n % 5) return false;
+        }
+      }
+      return true;
+    }
+
+    function rec() {
+      if (placed.length === need) return true;
+      if (++nodes > maxNodes) { aborted = true; return false; }
+      const i = g.indexOf(1);
+      const fx = i % W, fy = (i / W) | 0;
+      const ord = opts.shuffleEach ? shuffle(order.slice()) : order;
+      for (const t of ord) {
+        if (distinct && used[t]) continue;
+        for (const o of ORIENTS[t]) {
+          const ax = o[0][0], ay = o[0][1];
+          let ok = true;
+          for (let k = 0; k < 5; k++) {
+            const x = fx + o[k][0] - ax, y = fy + o[k][1] - ay;
+            if (x < 0 || y < 0 || x >= W || y >= H || g[y * W + x] !== 1) { ok = false; break; }
+          }
+          if (!ok) continue;
+          const abs = [];
+          for (let k = 0; k < 5; k++) {
+            const x = fx + o[k][0] - ax, y = fy + o[k][1] - ay;
+            g[y * W + x] = 2; abs.push([x + minX, y + minY]);
+          }
+          used[t] = true; placed.push({ type: t, cells: abs });
+          if (regionsOk() && rec()) return true;
+          if (aborted) return false;
+          placed.pop(); used[t] = false;
+          for (const [x, y] of abs) g[(y - minY) * W + (x - minX)] = 1;
+        }
+      }
+      return false;
+    }
+    return rec() ? placed : null;
+  }
+
+  function trySolve(cells, attempts, nodes, opts) {
+    for (let a = 0; a < attempts; a++) {
+      const r = solveTiling(cells, nodes, opts);
+      if (r) return r;
+    }
+    return null;
+  }
+
+  /* ---------- free-form shapes grown from real pieces (always solvable) ---------- */
+  function perimeterOf(cells) {
+    const s = new Set(cells.map(c => K(c[0], c[1])));
+    let p = 0;
+    for (const [x, y] of cells) {
+      if (!s.has(K(x + 1, y))) p++; if (!s.has(K(x - 1, y))) p++;
+      if (!s.has(K(x, y + 1))) p++; if (!s.has(K(x, y - 1))) p++;
+    }
+    return p;
+  }
+
+  function hasHole(cells) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const s = new Set();
+    for (const [x, y] of cells) {
+      s.add(K(x, y));
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+    minX--; minY--; maxX++; maxY++;
+    const seen = new Set([K(minX, minY)]);
+    const st = [[minX, minY]];
+    while (st.length) {
+      const [x, y] = st.pop();
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
+        const k = K(nx, ny);
+        if (s.has(k) || seen.has(k)) continue;
+        seen.add(k); st.push([nx, ny]);
+      }
+    }
+    const total = (maxX - minX + 1) * (maxY - minY + 1);
+    return seen.size + cells.length !== total;
+  }
+
+  function growOnce(k) {
+    const types = shuffle(PIECE_TYPES.slice()).slice(0, k);
+    const occ = new Set();
+    const placements = [];
+    const put = (type, cells) => { placements.push({ type, cells }); for (const [x, y] of cells) occ.add(K(x, y)); };
+    const o0 = ORIENTS[types[0]][randInt(0, ORIENTS[types[0]].length - 1)];
+    put(types[0], o0.map(c => [c[0], c[1]]));
+    for (let i = 1; i < k; i++) {
+      const t = types[i];
+      const frontier = new Map();
+      for (const pl of placements) for (const [x, y] of pl.cells) {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx, ny = y + dy;
+          if (!occ.has(K(nx, ny))) frontier.set(K(nx, ny), [nx, ny]);
+        }
+      }
+      const cand = [];
+      for (const o of ORIENTS[t]) {
+        for (const [fx, fy] of frontier.values()) {
+          for (const [cx, cy] of o) {
+            const ox = fx - cx, oy = fy - cy;
+            let ok = true, contact = 0;
+            for (const [px, py] of o) {
+              const x = ox + px, y = oy + py;
+              if (occ.has(K(x, y))) { ok = false; break; }
+              if (occ.has(K(x + 1, y))) contact++;
+              if (occ.has(K(x - 1, y))) contact++;
+              if (occ.has(K(x, y + 1))) contact++;
+              if (occ.has(K(x, y - 1))) contact++;
+            }
+            if (ok) cand.push({ o, ox, oy, s: contact + Math.random() * 1.8 });
+          }
+        }
+      }
+      if (!cand.length) return null;
+      cand.sort((a, b) => b.s - a.s);
+      const pick = cand[Math.floor(Math.random() * Math.min(3, cand.length))];
+      put(t, pick.o.map(([x, y]) => [x + pick.ox, y + pick.oy]));
+    }
+    return placements;
+  }
+
+  function normPlacements(placements) {
+    let mx = Infinity, my = Infinity;
+    for (const p of placements) for (const [x, y] of p.cells) { if (x < mx) mx = x; if (y < my) my = y; }
+    const sol = placements.map(p => ({ type: p.type, cells: p.cells.map(([x, y]) => [x - mx, y - my]) }));
+    const cells = [];
+    for (const p of sol) for (const c of p.cells) cells.push(c);
+    return { cells, solution: sol };
+  }
+
+  function makeFreeform(k) {
+    let best = null;
+    for (let a = 0; a < 60; a++) {
+      const pl = growOnce(k);
+      if (!pl) continue;
+      const r = normPlacements(pl);
+      if (hasHole(r.cells)) continue;
+      r.score = perimeterOf(r.cells) + Math.random() * 5;
+      if (!best || r.score < best.score) best = r;
+      if (a >= 14 && best) break;
+    }
+    return best;
+  }
+
+  /* ---------- rectangles ---------- */
+  const RECTS = {
+    3: [[5, 3]],
+    4: [[5, 4], [10, 2]],
+    5: [[5, 5]],
+    6: [[6, 5], [10, 3]],
+    8: [[8, 5], [10, 4]],
+    10: [[10, 5]],
+    12: [[10, 6], [12, 5], [15, 4]],
+  };
+  const COUNTS = [3, 4, 5, 6, 8, 12];
+
+  function makeRect(k) {
+    const opts = shuffle((RECTS[k] || RECTS[4]).slice());
+    for (const [w, h] of opts) {
+      const cells = [];
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) cells.push([x, y]);
+      const sol = trySolve(cells, 12, 40000);
+      if (sol) {
+        const r = normPlacements(sol);
+        // present the long side horizontally, as a landscape picture
+        return r;
+      }
+    }
+    return null;
+  }
+
+  /* ---------- "Tile": an enlarged pentomino built from k*k smaller tiles ---------- */
+  const TILE_COUNTS = [4, 9, 16];
+  function scaleCells(cells, k) {
+    const out = [];
+    for (const [x, y] of cells) for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) out.push([x * k + i, y * k + j]);
+    return out;
+  }
+  function makeTile(count, made) {
+    const k = Math.round(Math.sqrt(count));
+    let types = PIECE_TYPES.slice();
+    if (made === 'copies') types = k === 4 ? ['I', 'L', 'P'] : ['I', 'P'];       // the only pentomino rep-tiles
+    else if (k === 2) types = types.filter(t => t !== 'V' && t !== 'X');          // no 4-different-tile answer for V, X
+    shuffle(types);
+    for (const t of types) {
+      const os = ORIENTS[t];
+      const base = os[randInt(0, os.length - 1)];
+      const cells = scaleCells(base, k);
+      const opts = made === 'copies' ? { allowed: [t], distinct: false }
+        : { allowed: PIECE_TYPES, distinct: k < 4, shuffleEach: k >= 4 };
+      const sol = trySolve(cells, 15, 60000, opts);
+      if (sol) { const r = normPlacements(sol); r.label = { type: t, k }; return r; }
+    }
+    return null;
+  }
+
+  function makePuzzle(count, shape, made) {
+    let r = null;
+    if (shape === 'tile') r = makeTile(count, made);
+    if (!r && shape === 'tile') r = makeTile(4, 'mixed');
+    if (!r && shape === 'rect') r = makeRect(count);
+    if (!r) r = makeFreeform(count);
+    if (!r) r = makeRect(4);
+    return r;
+  }
+
+  const api = {
+    PIECE_TYPES, PIECE_DEFS, BASE, ORIENTS, K, normCells, rotCW, rotCCW, flipX, flipY,
+    orientations, shuffle, randInt, solveTiling, trySolve, makeFreeform, makeRect, makeTile, makePuzzle,
+    hasHole, perimeterOf, RECTS, COUNTS, TILE_COUNTS,
+  };
+  return api;
+})();
+if (typeof module !== 'undefined') module.exports = PX_CORE;
+
+</script>
+<script>
+/* Late Night Lounge: Rhodes, walking bass and brushes, played by a small Web Audio synth */
+const Music = (() => {
+  'use strict';
+  const S = COMPOSER.compose();
+  const SPB = 60 / S.bpm;                 // seconds per beat
+  const LOOP = S.len * SPB;               // loop length in seconds (about 1 min 56 s)
+  const GAIN = 0.62;                      // overall level: kept deliberately quiet
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  let ctx = null, chain = null, sess = null;
+  let timer = null, idx = 0, loopStart = 0, playing = false, vol = 0.55, posBeats = 0;
+  const levels = { ep: 1, bass: 1, drum: 1 };      // mixer trims (1 = the balance I mixed)
+  const BASE = { ep: 1, bass: 1, drum: 0.7 };
+  let octave = true;                                // bass doubled an octave up
+
+  /* ---------- shared chain: soft plate reverb, warm low-pass, gentle compression ---------- */
+  function makeIR(c) {
+    const len = Math.floor(c.sampleRate * 2.8), buf = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < len; i++) {
+        lp += ((Math.random() * 2 - 1) - lp) * 0.28;                 // dark, smooth tail
+        const pre = i < 0.012 * c.sampleRate ? 0 : 1;
+        d[i] = lp * pre * Math.pow(1 - i / len, 3.4) * Math.min(1, i / 900);
+      }
+    }
+    return buf;
+  }
+  function makeNoise(c) {
+    const len = c.sampleRate * 3, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+  function buildChain(c) {
+    const master = c.createGain(); master.gain.value = vol * vol * GAIN;
+    const comp = c.createDynamicsCompressor();
+    comp.threshold.value = -24; comp.knee.value = 26; comp.ratio.value = 2.6; comp.attack.value = 0.03; comp.release.value = 0.35;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6800; lp.Q.value = 0.3;
+    const mix = c.createGain();
+    const conv = c.createConvolver(); conv.buffer = makeIR(c);
+    const wet = c.createGain(); wet.gain.value = 0.8;
+    mix.connect(lp); conv.connect(wet); wet.connect(lp);
+    lp.connect(comp); comp.connect(master); master.connect(c.destination);
+    return { master, mix, conv, noise: makeNoise(c) };
+  }
+
+  // one "session" per play/pause so that scheduled-but-unplayed notes die with a pause
+  function buildSession(c, ch) {
+    const out = c.createGain(); out.gain.value = 0;
+    const lfos = [];
+    const feed = (node, send) => {                 // node -> dry mix + reverb send
+      node.connect(out);
+      const s = c.createGain(); s.gain.value = send; node.connect(s); s.connect(ch.conv);
+    };
+    // Rhodes bus: slow auto-pan + light chorus, so the chords shimmer instead of sitting still
+    const ep = c.createGain(); ep.gain.value = levels.ep;
+    let epHead = ep;
+    if (c.createStereoPanner) {
+      const pan = c.createStereoPanner();
+      const l = c.createOscillator(), lg = c.createGain();
+      l.frequency.value = 0.2; lg.gain.value = 0.26; l.connect(lg); lg.connect(pan.pan); l.start(); lfos.push(l);
+      ep.connect(pan); epHead = pan;
+    }
+    const epOut = c.createGain();
+    epHead.connect(epOut);
+    const cl = c.createOscillator(); cl.frequency.value = 0.33; cl.start(); lfos.push(cl);
+    [[0.017, 0.0022, 0.30], [0.024, -0.0026, 0.30]].forEach(([base, depth, level]) => {
+      const d = c.createDelay(0.06); d.delayTime.value = base;
+      const dg = c.createGain(); dg.gain.value = depth; cl.connect(dg); dg.connect(d.delayTime);
+      const lv = c.createGain(); lv.gain.value = level;
+      epHead.connect(d); d.connect(lv); lv.connect(epOut);
+    });
+    feed(epOut, 0.38);
+    // upright bass bus: a little body around 100 Hz
+    const bass = c.createGain(); bass.gain.value = levels.bass;
+    const body = c.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 100; body.gain.value = 3.5; body.Q.value = 0.9;
+    bass.connect(body); feed(body, 0.04);
+    // brushes
+    const drum = c.createGain(); drum.gain.value = BASE.drum * levels.drum; feed(drum, 0.5);
+    const echo = c.createDelay(2); echo.delayTime.value = SPB * 0.667;     // soft swung echo
+    const fb = c.createGain(); fb.gain.value = 0.3;
+    const elp = c.createBiquadFilter(); elp.type = 'lowpass'; elp.frequency.value = 3200;
+    const ew = c.createGain(); ew.gain.value = 0.3;
+    drum.connect(echo); echo.connect(elp); elp.connect(fb); fb.connect(echo); elp.connect(ew); feed(ew, 0.3);
+    return { out, ep, bass, drum, lfos };
+  }
+
+  /* ---------- voices ---------- */
+  function vEP(c, out, t, dur, m, vel) {                 // FM electric piano: soft bark, bell-like tine, slow decay
+    const f = mtof(m), v = vel / 127;
+    const g = c.createGain(), lp = c.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 0.2;
+    lp.frequency.value = Math.min(7000, 1100 + f * 3 + v * 2600);
+    const car = c.createOscillator(); car.type = 'sine'; car.frequency.value = f;
+    const body = c.createOscillator(); body.type = 'sine'; body.frequency.value = f;
+    const bg = c.createGain();
+    bg.gain.setValueAtTime(f * (0.35 + 1.9 * v * v), t);
+    bg.gain.setTargetAtTime(f * 0.07, t, 0.16);
+    body.connect(bg); bg.connect(car.frequency);
+    const tine = c.createOscillator(); tine.type = 'sine'; tine.frequency.value = f * 14;
+    const tg = c.createGain();
+    tg.gain.setValueAtTime(f * 0.6 * v, t); tg.gain.setTargetAtTime(0.0001, t, 0.035);
+    tine.connect(tg); tg.connect(car.frequency);
+    car.connect(g); g.connect(lp); lp.connect(out);
+    const peak = 0.43 * (0.25 + v), tau = Math.max(0.7, Math.min(2.4, 1.7 * Math.sqrt(261 / f)));
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.004);
+    g.gain.setTargetAtTime(peak * 0.14, t + 0.004, tau);
+    g.gain.setTargetAtTime(0, t + dur, 0.16);
+    const end = t + dur + 1.2;
+    car.start(t); body.start(t); tine.start(t);
+    car.stop(end); body.stop(end); tine.stop(end);
+  }
+
+  function vBass(c, out, t, dur, m, vel) {               // plucked upright: round fundamental, quick string snap
+    const f = mtof(m), v = vel / 127;
+    const g = c.createGain(), lp = c.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 0.8;
+    lp.frequency.setValueAtTime(f * 7, t); lp.frequency.exponentialRampToValueAtTime(f * 2.6, t + 0.2);
+    const o1 = c.createOscillator(); o1.type = 'triangle';
+    o1.frequency.setValueAtTime(f * 1.012, t); o1.frequency.setTargetAtTime(f, t, 0.02);
+    const o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = f;
+    const g2 = c.createGain(); g2.gain.value = 0.85;
+    const o3 = c.createOscillator(); o3.type = 'sawtooth'; o3.frequency.value = f;
+    const g3 = c.createGain(); g3.gain.setValueAtTime(0.1, t); g3.gain.setTargetAtTime(0.0001, t, 0.05);
+    o1.connect(g); o2.connect(g2); g2.connect(g); o3.connect(g3); g3.connect(g);
+    g.connect(lp); lp.connect(out);
+    const peak = 0.5 * (0.3 + v);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.01);
+    g.gain.setTargetAtTime(peak * 0.5, t + 0.01, 0.5);
+    g.gain.setTargetAtTime(0, t + dur, 0.07);
+    const end = t + dur + 0.6;
+    [o1, o2, o3].forEach(o => { o.start(t); o.stop(end); });
+  }
+
+  function vDrum(c, out, noise, t, m, vel) {              // brushes: 36 feather kick, 51 swish, 38 sweep, 44 pedal hat, 37 tap
+    const v = vel / 127;
+    if (m === 36) {
+      const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 200;
+      o.type = 'sine'; o.frequency.setValueAtTime(105, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.18);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25 * (0.3 + v), t + 0.022);
+      g.gain.setTargetAtTime(0, t + 0.01, 0.07);
+      o.connect(lp); lp.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
+      return;
+    }
+    const src = c.createBufferSource(); src.buffer = noise;
+    const f1 = c.createBiquadFilter(), g = c.createGain();
+    let len = 0.5;
+    if (m === 51) {                                        // brush swish: soft attack, silky tail
+      f1.type = 'bandpass'; f1.frequency.value = 5200; f1.Q.value = 0.55;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.42 * v, t + 0.075); g.gain.setTargetAtTime(0, t + 0.08, 0.1);
+    } else if (m === 38) {                                 // sweep across the snare head
+      f1.type = 'bandpass'; f1.frequency.setValueAtTime(2000, t); f1.frequency.linearRampToValueAtTime(3600, t + 0.28); f1.Q.value = 0.5;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.52 * v, t + 0.19); g.gain.setTargetAtTime(0, t + 0.2, 0.1);
+      len = 0.8;
+    } else if (m === 44) {                                 // pedal hi-hat: a dry chick
+      f1.type = 'highpass'; f1.frequency.value = 5200; f1.Q.value = 0.4;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.35 * v, t + 0.014); g.gain.setTargetAtTime(0, t + 0.016, 0.026);
+      len = 0.2;
+    } else {                                               // ghost tap
+      f1.type = 'bandpass'; f1.frequency.value = 3600; f1.Q.value = 1.1;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.35 * v, t + 0.014); g.gain.setTargetAtTime(0, t + 0.016, 0.026);
+      len = 0.2;
+    }
+    src.connect(f1); f1.connect(g); g.connect(out);
+    src.start(t, Math.random() * 2.2, len);
+  }
+
+  function playEvent(c, ch, se, e, t) {              // e = [beat, track, length in beats, pitch, velocity]
+    const dur = e[2] * SPB;
+    if (e[1] === 0) vEP(c, se.ep, t, dur, e[3], e[4]);
+    else if (e[1] === 1) { vBass(c, se.bass, t, dur, e[3], e[4]); if (octave) vBass(c, se.bass, t, dur, e[3] + 12, e[4] * 0.6); }
+    else vDrum(c, se.drum, ch.noise, t, e[3], e[4]);
+  }
+
+  /* ---------- scheduler ---------- */
+  function pump() {
+    if (!playing) return;
+    const horizon = ctx.currentTime + 1.4;
+    for (let guard = 0; guard < 500; guard++) {
+      const e = S.ev[idx], t = loopStart + e[0] * SPB;
+      if (t > horizon) break;
+      if (t >= ctx.currentTime - 0.05) playEvent(ctx, chain, sess, e, Math.max(t, ctx.currentTime));
+      idx++;
+      if (idx >= S.ev.length) { idx = 0; loopStart += LOOP; }
+    }
+  }
+
+  function start() {
+    if (playing) return;
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      chain = buildChain(ctx);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    const t0 = ctx.currentTime;
+    sess = buildSession(ctx, chain);
+    sess.out.gain.setValueAtTime(0.0001, t0);
+    sess.out.gain.linearRampToValueAtTime(1, t0 + 2.4);          // gentle fade in
+    sess.out.connect(chain.master);
+    loopStart = t0 + 0.2 - posBeats * SPB;
+    idx = 0; while (idx < S.ev.length && S.ev[idx][0] < posBeats) idx++;
+    if (idx >= S.ev.length) { idx = 0; posBeats = 0; loopStart = t0 + 0.2; }
+    playing = true;
+    pump();
+    timer = setInterval(pump, 220);
+  }
+
+  function stop() {
+    if (!playing) return;
+    playing = false;
+    clearInterval(timer); timer = null;
+    const t = ctx.currentTime, old = sess;
+    posBeats = (((t - loopStart) / SPB) % S.len + S.len) % S.len;
+    old.out.gain.cancelScheduledValues(t);
+    old.out.gain.setValueAtTime(Math.max(0.0001, old.out.gain.value), t);
+    old.out.gain.linearRampToValueAtTime(0.0001, t + 0.8);        // gentle fade out
+    setTimeout(() => {
+      try { old.out.disconnect(); } catch (e) { /* already gone */ }
+      old.lfos.forEach(l => { try { l.stop(); } catch (e) { /* already stopped */ } });
+    }, 3500);
+  }
+
+  function setVolume(v) {
+    vol = Math.max(0, Math.min(1, v));
+    if (chain) chain.master.gain.setTargetAtTime(vol * vol * GAIN, ctx.currentTime, 0.05);
+  }
+  function setLevel(name, v) {
+    if (!(name in levels)) return;
+    levels[name] = Math.max(0, Math.min(2, v));
+    if (sess && ctx) sess[name].gain.setTargetAtTime(BASE[name] * levels[name], ctx.currentTime, 0.04);
+  }
+  function setOctave(on) { octave = !!on; }
+  function chime() {                         // a soft rising Rhodes arpeggio when a puzzle is finished
+    if (!playing) return;
+    const t0 = ctx.currentTime + 0.05;
+    [73, 77, 80, 84, 89].forEach((m, i) => vEP(ctx, sess.ep, t0 + i * 0.15, 1.8, m, 62));
+  }
+
+  /* ---------- offline render (used for testing levels without a sound card) ---------- */
+  async function renderOffline(seconds, sr, fromBeat, tracks) {
+    const c = new OfflineAudioContext(2, Math.floor(seconds * (sr || 22050)), sr || 22050);
+    const ch = buildChain(c);
+    ch.master.gain.value = 0.55 * 0.55 * GAIN;
+    const se = buildSession(c, ch); se.out.gain.value = 1; se.out.connect(ch.master);
+    const b0 = fromBeat || 0;
+    for (const e of S.ev) { const t = (e[0] - b0) * SPB; if (t >= 0 && t < seconds && (!tracks || tracks.includes(e[1]))) playEvent(c, ch, se, e, t); }
+    return c.startRendering();
+  }
+
+  setVolume(0.55);
+  return {
+    start, stop, setVolume, chime, renderOffline, setLevel, setOctave,
+    get playing() { return playing; },
+    get levels() { return levels; },
+    get octave() { return octave; },
+    get volume() { return vol; },
+    LOOP, score: S,
+  };
+})();
+
+</script>
+<script>
+/* Pentomino Explorer: board, tiles, puzzle + explore modes */
+(() => {
+  'use strict';
+  const { PIECE_TYPES, BASE, ORIENTS, K, rotCW, rotCCW, flipX, flipY, shuffle, randInt, makePuzzle, COUNTS, TILE_COUNTS } = PX_CORE;
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('board'), ctx = canvas.getContext('2d');
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const MIN_S = 14, MAX_S = 100;
+
+  /* ---------- colours: soft pastels, one hue per tile ---------- */
+  const HUE = { F: 350, I: 22, L: 46, N: 78, P: 125, T: 160, U: 188, V: 212, W: 238, X: 268, Y: 296, Z: 324 };
+  const fillCol = t => `hsl(${HUE[t]}, 62%, 79%)`;
+  const glowCol = (t, a) => `hsla(${HUE[t]}, 85%, 78%, ${a})`;
+  const softCol = (t, a) => `hsla(${HUE[t]}, 70%, 82%, ${a})`;
+
+  /* ---------- geometry helpers ---------- */
+  const dimW = cells => { let m = 0; for (const c of cells) if (c[0] > m) m = c[0]; return m + 1; };
+  const dimH = cells => { let m = 0; for (const c of cells) if (c[1] > m) m = c[1]; return m + 1; };
+
+  const OFFS = [];
+  for (let dy = -26; dy <= 26; dy++) for (let dx = -26; dx <= 26; dx++) OFFS.push([dx, dy, dx * dx + dy * dy]);
+  OFFS.sort((a, b) => a[2] - b[2]);
+
+  function findFree(cells, x, y, occ) {
+    for (const o of OFFS) {
+      let ok = true;
+      for (const c of cells) if (occ.has(K(x + o[0] + c[0], y + o[1] + c[1]))) { ok = false; break; }
+      if (ok) return [x + o[0], y + o[1]];
+    }
+    return [x, y];
+  }
+  function computeEdges(cells) {
+    const set = new Set(cells.map(c => K(c[0], c[1])));
+    const e = [];
+    for (const [x, y] of cells) {
+      if (!set.has(K(x, y - 1))) e.push([x, y, x + 1, y]);
+      if (!set.has(K(x, y + 1))) e.push([x, y + 1, x + 1, y + 1]);
+      if (!set.has(K(x - 1, y))) e.push([x, y, x, y + 1]);
+      if (!set.has(K(x + 1, y))) e.push([x + 1, y, x + 1, y + 1]);
+    }
+    return e;
+  }
+
+  /* ---------- state ---------- */
+  function makeView() { return { pieces: [], nextId: 1, cam: { x: 0, y: 0, s: 44 }, undo: [], selected: null, fitted: false, userMoved: false }; }
+  const explore = makeView();
+  const puzzle = Object.assign(makeView(), {
+    target: [], edges: [], solution: [], showGhost: false, count: 4, tcount: 4, made: 'mixed', label: null, shape: 'rect', solved: false, solvedAt: 0,
+  });
+  let mode = 'puzzle';
+  const view = () => (mode === 'puzzle' ? puzzle : explore);
+
+  let W = 0, H = 0, DPR = 1, vignette = null, dirty = true;
+  const G = { ox: 0, oy: 0, s: 40 };
+  const invalidate = () => { dirty = true; };
+
+  const snap = v => JSON.stringify(v.pieces.map(p => [p.id, p.type, p.cells, p.x, p.y]));
+  function restore(v, s) {
+    v.pieces = JSON.parse(s).map(a => ({ id: a[0], type: a[1], cells: a[2], x: a[3], y: a[4] }));
+    if (!v.pieces.some(p => p.id === v.selected)) v.selected = null;
+  }
+  function pushUndo(v, s) { v.undo.push(s); if (v.undo.length > 150) v.undo.shift(); }
+  function undo() {
+    const v = view();
+    if (!v.undo.length) return;
+    restore(v, v.undo.pop());
+    afterChange();
+  }
+  const selPiece = () => { const v = view(); return v.pieces.find(p => p.id === v.selected) || null; };
+
+  function occupancy(v, skipId) {
+    const s = new Set();
+    for (const p of v.pieces) {
+      if (p.id === skipId) continue;
+      for (const c of p.cells) s.add(K(p.x + c[0], p.y + c[1]));
+    }
+    return s;
+  }
+
+  /* ---------- camera ---------- */
+  const w2s = (wx, wy) => { const c = view().cam; return [(wx - c.x) * c.s + W / 2, (wy - c.y) * c.s + H / 2]; };
+  const s2w = (sx, sy) => { const c = view().cam; return [(sx - W / 2) / c.s + c.x, (sy - H / 2) / c.s + c.y]; };
+  const activeBottom = () => (mode === 'puzzle' ? $('pbar') : $('dock'));
+
+  function avail() {
+    const tb = document.querySelector('.top').getBoundingClientRect().bottom;
+    const r = activeBottom().getBoundingClientRect();
+    const bt = r.height ? r.top : H - 12;
+    return { top: tb + 12, bottom: Math.min(bt - 12, H - 10) };
+  }
+  function fit(v) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    const inc = (x, y) => { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; };
+    if (v === puzzle) for (const [x, y] of v.target) inc(x, y);
+    for (const p of v.pieces) for (const c of p.cells) inc(p.x + c[0], p.y + c[1]);
+    const empty = x0 === Infinity;
+    if (empty) { x0 = -4; x1 = 3; y0 = -3; y1 = 2; }
+    const pad = 1.3, cw = x1 - x0 + 1 + pad * 2, ch = y1 - y0 + 1 + pad * 2;
+    const A = avail(), aw = W - 24, ah = Math.max(120, A.bottom - A.top);
+    const maxFit = Math.max(56, Math.min(W, H) / 13);   // bigger tiles on big boards
+    const s = empty ? Math.round(clamp(Math.min(W, H) / 17, 40, 64)) : clamp(Math.min(aw / cw, ah / ch), 16, maxFit);
+    v.cam.s = s;
+    v.cam.x = (x0 + x1 + 1) / 2;
+    v.cam.y = (y0 + y1 + 1) / 2 - ((A.top + ah / 2) - H / 2) / s;
+    v.userMoved = false;
+    invalidate();
+  }
+  function zoomAt(sx, sy, f) {
+    const v = view(), c = v.cam, [wx, wy] = s2w(sx, sy);
+    c.s = clamp(c.s * f, MIN_S, MAX_S);
+    c.x = wx - (sx - W / 2) / c.s; c.y = wy - (sy - H / 2) / c.s;
+    v.userMoved = true; invalidate();
+  }
+
+  /* ---------- drawing ---------- */
+  function rrect(path, x, y, w, h, a, b, c, d) { // corner radii: tl, tr, br, bl
+    path.moveTo(x + a, y); path.lineTo(x + w - b, y);
+    if (b) path.arcTo(x + w, y, x + w, y + b, b); else path.lineTo(x + w, y);
+    path.lineTo(x + w, y + h - c);
+    if (c) path.arcTo(x + w, y + h, x + w - c, y + h, c); else path.lineTo(x + w, y + h);
+    path.lineTo(x + d, y + h);
+    if (d) path.arcTo(x, y + h, x, y + h - d, d); else path.lineTo(x, y + h);
+    path.lineTo(x, y + a);
+    if (a) path.arcTo(x, y, x + a, y, a); else path.lineTo(x, y);
+    path.closePath();
+  }
+
+  function drawPiece(p, wx, wy, o) {
+    const s = G.s, X0 = G.ox + wx * s, Y0 = G.oy + wy * s;
+    const set = new Set(p.cells.map(c => c[0] * 8 + c[1]));
+    const has = (x, y) => set.has(x * 8 + y);
+    const g = Math.max(1, s * 0.04), r = s * 0.22;
+    const path = new Path2D();
+    const seams = new Path2D();
+    for (const [cx, cy] of p.cells) {
+      const x = X0 + cx * s, y = Y0 + cy * s;
+      const L = has(cx - 1, cy), R = has(cx + 1, cy), T = has(cx, cy - 1), B = has(cx, cy + 1);
+      rrect(path, x + g, y + g, s - 2 * g, s - 2 * g, (!L && !T) ? r : 0, (!R && !T) ? r : 0, (!R && !B) ? r : 0, (!L && !B) ? r : 0);
+      if (R) { path.rect(x + s - g - 0.5, y + g, 2 * g + 1, s - 2 * g); seams.moveTo(x + s, y + g * 2.5); seams.lineTo(x + s, y + s - g * 2.5); }
+      if (B) { path.rect(x + g, y + s - g - 0.5, s - 2 * g, 2 * g + 1); seams.moveTo(x + g * 2.5, y + s); seams.lineTo(x + s - g * 2.5, y + s); }
+      if (R && B && has(cx + 1, cy + 1)) path.rect(x + s - g - 0.5, y + s - g - 0.5, 2 * g + 1, 2 * g + 1); // only inside a 2x2 block
+    }
+    ctx.save();
+    ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
+    if (o.lift) {
+      ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = s * 0.55 * DPR; ctx.shadowOffsetY = s * 0.16 * DPR;
+      ctx.fillStyle = fillCol(p.type); ctx.fill(path);
+      ctx.shadowColor = 'transparent'; ctx.shadowOffsetY = 0;
+    }
+    if (o.glow) {
+      ctx.shadowColor = glowCol(p.type, o.lift ? 0.75 : 0.42); ctx.shadowBlur = s * (o.lift ? 0.7 : 0.5) * DPR;
+      ctx.fillStyle = fillCol(p.type); ctx.fill(path);
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+    }
+    if (o.sel) {
+      ctx.lineJoin = 'round'; ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,255,255,0.88)';
+      ctx.shadowColor = 'rgba(255,255,255,0.75)'; ctx.shadowBlur = 12 * DPR;
+      ctx.stroke(path);
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = fillCol(p.type); ctx.fill(path);
+    ctx.save();
+    ctx.clip(path);
+    const gr = ctx.createLinearGradient(0, Y0, 0, Y0 + dimH(p.cells) * s);
+    gr.addColorStop(0, 'rgba(255,255,255,0.24)'); gr.addColorStop(1, 'rgba(60,40,90,0.14)');
+    ctx.fillStyle = gr; ctx.fillRect(X0 - 2, Y0 - 2, dimW(p.cells) * s + 4, dimH(p.cells) * s + 4);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(50,40,80,0.16)'; ctx.lineWidth = 1; ctx.stroke(seams);
+    ctx.restore();
+  }
+
+  function strokeEdges(edges, ox, oy, s) {
+    ctx.beginPath();
+    for (const e of edges) { ctx.moveTo(ox + e[0] * s, oy + e[1] * s); ctx.lineTo(ox + e[2] * s, oy + e[3] * s); }
+    ctx.stroke();
+  }
+  function fillCells(cells, ox, oy, s) {
+    ctx.beginPath();
+    for (const c of cells) ctx.rect(ox + c[0] * s - 0.25, oy + c[1] * s - 0.25, s + 0.5, s + 0.5);
+    ctx.fill();
+  }
+
+  function drawTarget(now) {
+    const s = G.s;
+    ctx.fillStyle = 'rgba(255,255,255,0.075)';
+    fillCells(puzzle.target, G.ox, G.oy, s);
+    const solved = puzzle.solved;
+    const pulse = solved && !REDUCE && now - puzzle.solvedAt < 6000 ? 0.5 + 0.5 * Math.sin(now / 420) : 0.4;
+    ctx.save();
+    ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.strokeStyle = solved ? 'rgba(176,238,214,0.95)' : 'rgba(198,188,255,0.85)';
+    ctx.shadowColor = solved ? 'rgba(176,238,214,0.95)' : 'rgba(176,162,255,0.85)';
+    ctx.shadowBlur = DPR * (solved ? 14 + 12 * pulse : 12);
+    strokeEdges(puzzle.edges, G.ox, G.oy, s);
+    ctx.restore();
+  }
+
+  function drawGhost() {
+    const s = G.s;
+    ctx.save();
+    ctx.lineWidth = Math.max(1.8, s * 0.06); ctx.lineCap = 'butt';
+    ctx.setLineDash([s * 0.34, s * 0.16]);
+    for (const g of puzzle.solution) {
+      ctx.fillStyle = softCol(g.type, 0.23);
+      fillCells(g.cells, G.ox, G.oy, s);
+      ctx.strokeStyle = softCol(g.type, 0.95);
+      strokeEdges(g.edges, G.ox, G.oy, s);
+    }
+    ctx.restore();
+  }
+
+  const particles = [];
+  function celebrate() {
+    if (REDUCE) return;
+    const T = puzzle.target;
+    for (let i = 0; i < 80; i++) {
+      const c = T[randInt(0, T.length - 1)];
+      particles.push({ x: c[0] + Math.random(), y: c[1] + Math.random(), vx: (Math.random() - 0.5) * 0.3, vy: -(0.25 + Math.random() * 0.6), life: 0, max: 2.6 + Math.random() * 2.6, h: randInt(0, 360), r: 1.8 + Math.random() * 3 });
+    }
+  }
+
+  function draw(now, clean) {
+    const v = view(), s = v.cam.s;
+    G.s = s; G.ox = W / 2 - v.cam.x * s; G.oy = H / 2 - v.cam.y * s;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.setLineDash([]);
+    ctx.fillStyle = '#25282f'; ctx.fillRect(0, 0, W, H);
+
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.058)'; ctx.beginPath();
+    const gx0 = Math.floor(-G.ox / s), gx1 = Math.ceil((W - G.ox) / s), gy0 = Math.floor(-G.oy / s), gy1 = Math.ceil((H - G.oy) / s);
+    for (let i = gx0; i <= gx1; i++) { const x = Math.round(G.ox + i * s) + 0.5; ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let j = gy0; j <= gy1; j++) { const y = Math.round(G.oy + j * s) + 0.5; ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+    if (vignette) { ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H); }
+
+    if (mode === 'puzzle') { drawTarget(now); if (puzzle.showGhost) drawGhost(); }
+
+    const many = v.pieces.length > 90;
+    for (const p of v.pieces) {
+      if (drag && drag.piece === p) continue;
+      drawPiece(p, p.x, p.y, { glow: !many, sel: !clean && v.selected === p.id });
+    }
+    if (drag && !clean) {
+      if (!drag.hot) {
+        const pc = drag.piece;
+        ctx.save();
+        ctx.fillStyle = softCol(pc.type, 0.20);
+        fillCells(pc.cells.map(c => [c[0] + drag.sx, c[1] + drag.sy]), G.ox, G.oy, s);
+        ctx.strokeStyle = softCol(pc.type, 0.8); ctx.lineWidth = 2; ctx.lineCap = 'round';
+        strokeEdges(computeEdges(pc.cells.map(c => [c[0] + drag.sx, c[1] + drag.sy])), G.ox, G.oy, s);
+        ctx.restore();
+      }
+      drawPiece(drag.piece, drag.px, drag.py, { glow: true, lift: true, alpha: 0.97 });
+    }
+    if (particles.length && !clean) {
+      ctx.save();
+      for (const p of particles) {
+        const a = Math.sin(Math.PI * clamp(p.life / p.max, 0, 1)) * 0.85;
+        ctx.fillStyle = `hsla(${p.h}, 85%, 84%, ${a})`;
+        ctx.shadowColor = `hsla(${p.h}, 90%, 80%, ${a})`; ctx.shadowBlur = 9 * DPR;
+        ctx.beginPath(); ctx.arc(G.ox + p.x * s, G.oy + p.y * s, p.r, 0, 6.2832); ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (!clean) placeSelbar();
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    let anim = false;
+    if (particles.length) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i]; p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.life > p.max) particles.splice(i, 1);
+      }
+      anim = true;
+    }
+    if (mode === 'puzzle' && puzzle.solved && !REDUCE && now - puzzle.solvedAt < 6200) anim = true;
+    if (!dirty && !anim) return;
+    dirty = false;
+    draw(now, false);
+  }
+
+  /* ---------- puzzle creation ---------- */
+  function scatter() {
+    const v = puzzle, T = v.target;
+    let bx0 = Infinity, bx1 = -Infinity, by0 = Infinity, by1 = -Infinity;
+    for (const [x, y] of T) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
+    const blocked = new Set();
+    for (const [x, y] of T) for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) blocked.add(K(x + dx, y + dy));
+    v.pieces = []; v.selected = null;
+    let fallback = 0;
+    for (const sol of shuffle(v.solution.slice())) {
+      const os = ORIENTS[sol.type];
+      const cells = os[randInt(0, os.length - 1)].map(c => c.slice());
+      const w = dimW(cells), h = dimH(cells);
+      let pos = null;
+      for (let a = 0; a < 1500 && !pos; a++) {
+        const m = 2 + Math.floor(a / 50);
+        const lx = bx0 - m, hx = Math.max(lx, bx1 + m - w + 1), ly = by0 - m, hy = Math.max(ly, by1 + m - h + 1);
+        const x = randInt(lx, hx), y = randInt(ly, hy);
+        let ok = true;
+        for (const c of cells) if (blocked.has(K(x + c[0], y + c[1]))) { ok = false; break; }
+        if (ok) pos = [x, y];
+      }
+      if (!pos) pos = [bx1 + 4 + (fallback++) * 6, by0];
+      for (const c of cells) for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) blocked.add(K(pos[0] + c[0] + dx, pos[1] + c[1] + dy));
+      v.pieces.push({ id: v.nextId++, type: sol.type, cells, x: pos[0], y: pos[1] });
+    }
+  }
+
+  function newPuzzle() {
+    const r = makePuzzle(puzzle.shape === 'tile' ? puzzle.tcount : puzzle.count, puzzle.shape, puzzle.made);
+    puzzle.label = r.label || null;
+    puzzle.target = r.cells;
+    puzzle.edges = computeEdges(r.cells);
+    puzzle.solution = r.solution.map(p => ({ type: p.type, cells: p.cells, edges: computeEdges(p.cells) }));
+    puzzle.undo = []; puzzle.solved = false; puzzle.solvedAt = 0;
+    showToast(false);
+    scatter();
+    fit(puzzle); puzzle.fitted = true;
+    checkSolved(); updateButtons(); invalidate();
+  }
+  function startAgain() {
+    puzzle.undo = []; puzzle.solved = false; showToast(false);
+    scatter(); fit(puzzle); checkSolved(); updateButtons(); invalidate();
+  }
+
+  function checkSolved() {
+    if (!puzzle.target.length) return;
+    const occ = new Set();
+    for (const p of puzzle.pieces) for (const c of p.cells) occ.add(K(p.x + c[0], p.y + c[1]));
+    let filled = 0;
+    for (const [x, y] of puzzle.target) if (occ.has(K(x, y))) filled++;
+    const total = puzzle.target.length, solved = filled === total;
+    const lab = puzzle.label ? `Make a <b>${puzzle.label.k}\u00d7 size ${puzzle.label.type}</b> &middot; ` : '';
+    $('status').innerHTML = lab + (solved ? '<b>Complete</b>' : `Squares filled: <b>${filled}</b> of ${total}`);
+    if (solved && !puzzle.solved) {
+      puzzle.solved = true; puzzle.solvedAt = performance.now();
+      if (mode === 'puzzle') { showToast(true); celebrate(); Music.chime(); }
+    } else if (!solved && puzzle.solved) {
+      puzzle.solved = false; showToast(false);
+    }
+  }
+  function showToast(on) { $('toast').classList.toggle('show', !!on && mode === 'puzzle'); }
+
+  /* ---------- editing pieces ---------- */
+  function afterChange() { checkSolved(); updateButtons(); invalidate(); }
+
+  function transform(fn) {
+    const v = view(), p = selPiece();
+    if (!p) return;
+    const before = snap(v);
+    const ow = dimW(p.cells), oh = dimH(p.cells);
+    p.cells = fn(p.cells);
+    const nw = dimW(p.cells), nh = dimH(p.cells);
+    p.x = Math.round(p.x + ow / 2 - nw / 2); p.y = Math.round(p.y + oh / 2 - nh / 2);
+    [p.x, p.y] = findFree(p.cells, p.x, p.y, occupancy(v, p.id));
+    pushUndo(v, before);
+    afterChange();
+  }
+  function removeSel() {
+    if (mode !== 'explore') return;
+    const v = explore, p = selPiece();
+    if (!p) return;
+    pushUndo(v, snap(v));
+    v.pieces = v.pieces.filter(q => q !== p); v.selected = null;
+    afterChange();
+  }
+  function nudgeSel(dx, dy) {
+    const v = view(), p = selPiece();
+    if (!p) return false;
+    const occ = occupancy(v, p.id);
+    for (const c of p.cells) if (occ.has(K(p.x + dx + c[0], p.y + dy + c[1]))) return true;
+    pushUndo(v, snap(v));
+    p.x += dx; p.y += dy;
+    afterChange();
+    return true;
+  }
+  function addAtCentre(type) {
+    const v = explore, before = snap(v);
+    const cells = BASE[type].map(c => c.slice());
+    const A = avail(), [cx, cy] = s2w(W / 2, (A.top + A.bottom) / 2);
+    const p = { id: v.nextId++, type, cells, x: 0, y: 0 };
+    [p.x, p.y] = findFree(cells, Math.round(cx - dimW(cells) / 2), Math.round(cy - dimH(cells) / 2), occupancy(v, -1));
+    v.pieces.push(p); v.selected = p.id;
+    pushUndo(v, before);
+    afterChange();
+  }
+
+  /* ---------- floating tile controls ---------- */
+  function placeSelbar() {
+    const bar = $('selbar'), p = selPiece();
+    if (!p || drag || pinch || (pan && pan.moved)) { bar.classList.remove('show'); return; }
+    const s = G.s, w = dimW(p.cells), h = dimH(p.cells);
+    const x0 = G.ox + p.x * s, y0 = G.oy + p.y * s, x1 = x0 + w * s, y1 = y0 + h * s;
+    const bw = bar.offsetWidth, bh = bar.offsetHeight;
+    const A = avail();
+    let left = (x0 + x1) / 2 - bw / 2;
+    left = clamp(left, 8, Math.max(8, W - bw - 8));
+    let top = y1 + 14;
+    if (top + bh > A.bottom + 4) top = y0 - bh - 14;
+    if (top < A.top - 4) top = y1 - bh - 12;                 // tile fills the view: sit inside it
+    top = clamp(top, A.top - 4, Math.max(A.top, A.bottom - bh));
+    bar.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
+    bar.classList.add('show');
+  }
+
+  /* ---------- pointer handling ---------- */
+  const pointers = new Map();
+  let drag = null, pan = null, pinch = null;
+
+  function hitTest(wx, wy) {
+    const v = view(), cx = Math.floor(wx), cy = Math.floor(wy);
+    for (let i = v.pieces.length - 1; i >= 0; i--) {
+      const p = v.pieces[i], rx = cx - p.x, ry = cy - p.y;
+      if (rx < 0 || ry < 0 || rx > 4 || ry > 4) continue;
+      for (const c of p.cells) if (c[0] === rx && c[1] === ry) return p;
+    }
+    return null;
+  }
+
+  function beginDrag(p, e, gx, gy, fromDock, before) {
+    const v = view();
+    if (!before) before = snap(v);
+    const i = v.pieces.indexOf(p);
+    if (i >= 0) v.pieces.splice(i, 1);
+    v.pieces.push(p);
+    v.selected = p.id;
+    const [wx, wy] = s2w(e.clientX, e.clientY);
+    drag = {
+      id: e.pointerId, piece: p, gx, gy, px: wx - gx, py: wy - gy, sx: p.x, sy: p.y, ox: p.x, oy: p.y,
+      startX: e.clientX, startY: e.clientY, moved: false, hot: false, fromDock, before, occ: occupancy(v, p.id),
+    };
+    updateDrag(e.clientX, e.clientY);
+    canvas.classList.add('grabbing');
+    $('selbar').classList.remove('show');
+    invalidate();
+  }
+
+  function updateDrag(x, y) {
+    const d = drag, [wx, wy] = s2w(x, y);
+    d.px = wx - d.gx; d.py = wy - d.gy;
+    if (!d.moved && Math.hypot(x - d.startX, y - d.startY) > 5) d.moved = true;
+    const dock = $('dock');
+    let hot = false;
+    if (mode === 'explore' && !dock.hidden) {
+      const r = dock.getBoundingClientRect();
+      hot = x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6;
+    }
+    d.hot = hot;
+    dock.classList.toggle('hot', hot && (d.moved || !d.fromDock));
+    if (!hot) {
+      const f = findFree(d.piece.cells, Math.round(d.px), Math.round(d.py), d.occ);
+      d.sx = f[0]; d.sy = f[1];
+    }
+    invalidate();
+  }
+
+  function endDrag(cancelled) {
+    const d = drag; drag = null;
+    canvas.classList.remove('grabbing');
+    $('dock').classList.remove('hot');
+    const v = view(), p = d.piece;
+    if (cancelled) {
+      if (d.fromDock) { v.pieces = v.pieces.filter(q => q !== p); v.selected = null; }
+      afterChange(); return;
+    }
+    if (d.fromDock && !d.moved) {
+      const A = avail(), [cx, cy] = s2w(W / 2, (A.top + A.bottom) / 2);
+      const f = findFree(p.cells, Math.round(cx - dimW(p.cells) / 2), Math.round(cy - dimH(p.cells) / 2), d.occ);
+      p.x = f[0]; p.y = f[1];
+      pushUndo(v, d.before);
+    } else if (d.hot) {
+      v.pieces = v.pieces.filter(q => q !== p); v.selected = null;
+      if (!d.fromDock) pushUndo(v, d.before);
+    } else {
+      p.x = d.sx; p.y = d.sy;
+      if (d.fromDock || p.x !== d.ox || p.y !== d.oy) pushUndo(v, d.before);
+    }
+    afterChange();
+  }
+
+  function beginPinch() {
+    const pts = [...pointers.values()].slice(0, 2);
+    pan = null;
+    const mx = (pts[0].x + pts[1].x) / 2, my = (pts[0].y + pts[1].y) / 2;
+    const [wx, wy] = s2w(mx, my);
+    pinch = { d0: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1, s0: view().cam.s, wx, wy };
+    $('selbar').classList.remove('show');
+  }
+  function updatePinch() {
+    const pts = [...pointers.values()].slice(0, 2);
+    const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+    const mx = (pts[0].x + pts[1].x) / 2, my = (pts[0].y + pts[1].y) / 2;
+    const v = view(), c = v.cam;
+    c.s = clamp(pinch.s0 * d / pinch.d0, MIN_S, MAX_S);
+    c.x = pinch.wx - (mx - W / 2) / c.s; c.y = pinch.wy - (my - H / 2) / c.s;
+    v.userMoved = true; invalidate();
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
+    e.preventDefault();
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (drag) return;
+    if (pointers.size === 2) { beginPinch(); return; }
+    if (pointers.size > 2 || pinch) return;
+    const v = view(), [wx, wy] = s2w(e.clientX, e.clientY);
+    const p = e.button === 1 ? null : hitTest(wx, wy);
+    if (p) beginDrag(p, e, wx - p.x, wy - p.y, false);
+    else {
+      pan = { id: e.pointerId, sx: e.clientX, sy: e.clientY, cx: v.cam.x, cy: v.cam.y, moved: false };
+      canvas.classList.add('grabbing');
+    }
+  });
+
+  window.addEventListener('pointermove', e => {
+    const pt = pointers.get(e.pointerId);
+    if (!pt) return;
+    if (e.pointerType === 'mouse' && e.buttons === 0 && (drag || pan)) { finishPointer(e, false); return; }
+    pt.x = e.clientX; pt.y = e.clientY;
+    if (pinch && pointers.size >= 2) { updatePinch(); return; }
+    if (drag && drag.id === e.pointerId) { updateDrag(e.clientX, e.clientY); return; }
+    if (pan && pan.id === e.pointerId) {
+      const v = view(), c = v.cam;
+      const dx = e.clientX - pan.sx, dy = e.clientY - pan.sy;
+      if (!pan.moved && Math.hypot(dx, dy) > 4) pan.moved = true;
+      if (pan.moved) {
+        c.x = pan.cx - dx / c.s; c.y = pan.cy - dy / c.s;
+        v.userMoved = true; invalidate();
+        $('selbar').classList.remove('show');
+      }
+    }
+  });
+
+  function finishPointer(e, cancelled) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    if (pinch && pointers.size < 2) pinch = null;
+    if (drag && drag.id === e.pointerId) {
+      if (!cancelled) updateDrag(e.clientX, e.clientY);
+      endDrag(cancelled);
+    }
+    if (pan && pan.id === e.pointerId) {
+      const wasMoved = pan.moved;
+      pan = null;
+      canvas.classList.remove('grabbing');
+      if (!wasMoved) { view().selected = null; }
+      invalidate();
+    }
+  }
+  window.addEventListener('pointerup', e => finishPointer(e, false));
+  window.addEventListener('pointercancel', e => finishPointer(e, true));
+  window.addEventListener('blur', () => {
+    if (drag) endDrag(false);
+    pointers.clear(); pan = null; pinch = null; canvas.classList.remove('grabbing');
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const unit = e.deltaMode === 1 ? 16 : 1, k = e.ctrlKey ? 0.01 : 0.0013;
+    zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * unit * k));
+  }, { passive: false });
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  canvas.addEventListener('dblclick', e => {
+    const [wx, wy] = s2w(e.clientX, e.clientY), p = hitTest(wx, wy);
+    if (p) { view().selected = p.id; transform(rotCW); }
+  });
+
+  /* ---------- tile stack (Explore) ---------- */
+  function tileSVG(t) {
+    const cell = 11, off = 3, base = BASE[t], w = dimW(base), h = dimH(base);
+    const SW = w * cell + off * 2 + 2, SH = h * cell + off * 2 + 2;
+    let g = '';
+    for (const k of [2, 1, 0]) {
+      const o = k * off + 1, op = k === 0 ? 1 : (k === 1 ? 0.34 : 0.16);
+      g += `<g transform="translate(${o},${o})" opacity="${op}">` +
+        base.map(([x, y]) => `<rect x="${x * cell + 0.6}" y="${y * cell + 0.6}" width="${cell - 1.2}" height="${cell - 1.2}" rx="2.6" fill="${fillCol(t)}"/>`).join('') + '</g>';
+    }
+    return `<svg width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}" style="filter:drop-shadow(0 0 5px ${glowCol(t, 0.38)})" aria-hidden="true">${g}</svg>`;
+  }
+  function buildDock() {
+    const box = $('tiles');
+    for (const t of PIECE_TYPES) {
+      const b = document.createElement('button');
+      b.className = 'tile'; b.dataset.type = t; b.title = 'Tile ' + t; b.setAttribute('aria-label', 'Add tile ' + t);
+      b.innerHTML = tileSVG(t);
+      b.addEventListener('pointerdown', e => {
+        if (mode !== 'explore' || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        e.preventDefault();
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (drag || pinch || pointers.size > 1) return;
+        const v = explore, before = snap(v);
+        const cells = BASE[t].map(c => c.slice());
+        const p = { id: v.nextId++, type: t, cells, x: 0, y: 0 };
+        const [wx, wy] = s2w(e.clientX, e.clientY);
+        p.x = Math.round(wx - dimW(cells) / 2); p.y = Math.round(wy - dimH(cells) / 2);
+        v.pieces.push(p);
+        beginDrag(p, e, dimW(cells) / 2, dimH(cells) / 2, true, before);
+      });
+      b.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); addAtCentre(t); }
+      });
+      box.appendChild(b);
+    }
+  }
+
+  /* ---------- UI wiring ---------- */
+  function updateButtons() {
+    $('btnUndo').disabled = !view().undo.length;
+  }
+  function setMode(m) {
+    if (drag) endDrag(true);
+    mode = m; document.body.dataset.mode = m;
+    $('modePuzzle').setAttribute('aria-pressed', m === 'puzzle');
+    $('modeExplore').setAttribute('aria-pressed', m === 'explore');
+    $('pbar').hidden = m !== 'puzzle';
+    $('dock').hidden = m !== 'explore';
+    $('selbar').classList.remove('show');
+    const v = view();
+    if (!v.fitted) { fit(v); v.fitted = true; }
+    showToast(m === 'puzzle' && puzzle.solved);
+    updateButtons(); invalidate();
+  }
+
+  function buildCountChips() {
+    const box = $('countChips');
+    box.textContent = '';
+    const tile = puzzle.shape === 'tile';
+    for (const n of (tile ? TILE_COUNTS : COUNTS)) {
+      const b = document.createElement('button');
+      b.className = 'chip'; b.textContent = n; b.dataset.count = n;
+      b.title = tile ? `${n} tiles: ${Math.round(Math.sqrt(n))}\u00d7 size` : n + ' tiles';
+      b.addEventListener('click', () => {
+        if (puzzle.shape === 'tile') puzzle.tcount = n; else puzzle.count = n;
+        syncChips(); newPuzzle();
+      });
+      box.appendChild(b);
+    }
+  }
+  function buildPuzzleBar() {
+    buildCountChips();
+    document.querySelectorAll('[data-shape]').forEach(b => b.addEventListener('click', () => {
+      puzzle.shape = b.dataset.shape; buildCountChips(); syncChips(); newPuzzle();
+    }));
+    document.querySelectorAll('[data-made]').forEach(b => b.addEventListener('click', () => {
+      puzzle.made = b.dataset.made; syncChips(); newPuzzle();
+    }));
+    syncChips();
+  }
+  function syncChips() {
+    const cur = puzzle.shape === 'tile' ? puzzle.tcount : puzzle.count;
+    document.querySelectorAll('#countChips .chip').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.count === cur)));
+    document.querySelectorAll('[data-shape]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.shape === puzzle.shape)));
+    document.querySelectorAll('[data-made]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.made === puzzle.made)));
+    $('madeGrp').hidden = puzzle.shape !== 'tile';
+  }
+
+  $('modePuzzle').addEventListener('click', () => setMode('puzzle'));
+  $('modeExplore').addEventListener('click', () => setMode('explore'));
+  $('btnUndo').addEventListener('click', undo);
+  $('btnZoomIn').addEventListener('click', () => zoomAt(W / 2, H / 2, 1.2));
+  $('btnZoomOut').addEventListener('click', () => zoomAt(W / 2, H / 2, 1 / 1.2));
+  $('btnFit').addEventListener('click', () => fit(view()));
+  $('btnRotL').addEventListener('click', () => transform(rotCCW));
+  $('btnRotR').addEventListener('click', () => transform(rotCW));
+  $('btnFlipX').addEventListener('click', () => transform(flipX));
+  $('btnFlipY').addEventListener('click', () => transform(flipY));
+  $('btnDel').addEventListener('click', removeSel);
+  $('btnNew').addEventListener('click', newPuzzle);
+  $('btnNext').addEventListener('click', newPuzzle);
+  $('btnAgain').addEventListener('click', startAgain);
+  $('btnGhost').addEventListener('click', () => {
+    puzzle.showGhost = !puzzle.showGhost;
+    const b = $('btnGhost');
+    b.setAttribute('aria-pressed', String(puzzle.showGhost));
+    b.lastChild.textContent = puzzle.showGhost ? ' Hide solution' : ' Show solution';
+    invalidate();
+  });
+  let clearTimer = null;
+  $('btnClear').addEventListener('click', () => {
+    const b = $('btnClear');
+    if (!explore.pieces.length) return;
+    if (!clearTimer) {
+      b.textContent = 'Tap again to clear';
+      clearTimer = setTimeout(() => { b.textContent = 'Clear board'; clearTimer = null; }, 3000);
+      return;
+    }
+    clearTimeout(clearTimer); clearTimer = null; b.textContent = 'Clear board';
+    pushUndo(explore, snap(explore));
+    explore.pieces = []; explore.selected = null;
+    afterChange();
+  });
+  $('btnSave').addEventListener('click', () => {
+    draw(performance.now(), true);
+    canvas.toBlob(blob => {
+      if (blob) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = mode === 'explore' ? 'pentomino-picture.png' : 'pentomino-puzzle.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+      }
+      invalidate();
+    }, 'image/png');
+  });
+
+  function setMusicUI() {
+    const on = Music.playing;
+    $('btnMusic').classList.toggle('on', on);
+    $('btnMusic').setAttribute('aria-pressed', String(on));
+    $('musicSlash').style.display = on ? 'none' : '';
+    $('vol').hidden = !on;
+  }
+  function toggleMusic() { if (Music.playing) Music.stop(); else Music.start(); setMusicUI(); }
+  $('btnMusic').addEventListener('click', toggleMusic);
+  $('vol').addEventListener('input', e => Music.setVolume(e.target.value / 100));
+
+  /* ---------- mixer ---------- */
+  const MIX = [['mixEp', 'valEp', 'ep'], ['mixBass', 'valBass', 'bass'], ['mixDrum', 'valDrum', 'drum']];
+  function saveMix() {
+    try { localStorage.setItem('pentoMix', JSON.stringify({ l: Music.levels, o: Music.octave })); } catch (err) { /* storage unavailable */ }
+  }
+  function syncMixUI() {
+    for (const [id, val, key] of MIX) { $(id).value = Math.round(Music.levels[key] * 100); $(val).textContent = $(id).value + '%'; }
+    $('btnOct').setAttribute('aria-pressed', String(Music.octave));
+  }
+  for (const [id, val, key] of MIX) {
+    $(id).addEventListener('input', e => { Music.setLevel(key, e.target.value / 100); $(val).textContent = e.target.value + '%'; saveMix(); });
+    $(id).addEventListener('dblclick', () => { Music.setLevel(key, 1); syncMixUI(); saveMix(); });
+  }
+  $('btnOct').addEventListener('click', () => { Music.setOctave(!Music.octave); syncMixUI(); saveMix(); });
+  $('btnMixReset').addEventListener('click', () => { for (const k of ['ep', 'bass', 'drum']) Music.setLevel(k, 1); Music.setOctave(true); syncMixUI(); saveMix(); });
+  function toggleMixer(force) {
+    const open = force == null ? $('mixer').hidden : force;
+    $('mixer').hidden = !open;
+    $('btnMix').classList.toggle('on', open);
+    $('btnMix').setAttribute('aria-expanded', String(open));
+  }
+  $('btnMix').addEventListener('click', () => toggleMixer());
+  document.addEventListener('pointerdown', e => {
+    if (!$('mixer').hidden && !$('mixer').contains(e.target) && !$('btnMix').contains(e.target)) toggleMixer(false);
+  }, true);
+  try {
+    const saved = JSON.parse(localStorage.getItem('pentoMix') || 'null');
+    if (saved && saved.l) { for (const k of ['ep', 'bass', 'drum']) if (typeof saved.l[k] === 'number') Music.setLevel(k, saved.l[k]); Music.setOctave(saved.o !== false); }
+  } catch (err) { /* ignore */ }
+  syncMixUI();
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('mixer').hidden) { toggleMixer(false); return; }
+    if (e.target && e.target.tagName === 'INPUT') return;
+    const k = e.key;
+    if ((e.ctrlKey || e.metaKey) && (k === 'z' || k === 'Z')) { e.preventDefault(); undo(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const sel = selPiece();
+    switch (k) {
+      case 'r': case 'R': if (sel) { e.preventDefault(); transform(e.shiftKey ? rotCCW : rotCW); } break;
+      case ']': if (sel) { e.preventDefault(); transform(rotCW); } break;
+      case '[': if (sel) { e.preventDefault(); transform(rotCCW); } break;
+      case 'h': case 'H': if (sel) { e.preventDefault(); transform(flipX); } break;
+      case 'v': case 'V': if (sel) { e.preventDefault(); transform(flipY); } break;
+      case 'Delete': case 'Backspace': if (sel && mode === 'explore') { e.preventDefault(); removeSel(); } break;
+      case 'Escape': view().selected = null; invalidate(); break;
+      case '+': case '=': zoomAt(W / 2, H / 2, 1.2); break;
+      case '-': case '_': zoomAt(W / 2, H / 2, 1 / 1.2); break;
+      case 'm': case 'M': toggleMusic(); break;
+      case 'ArrowLeft': if (sel) { e.preventDefault(); nudgeSel(-1, 0); } break;
+      case 'ArrowRight': if (sel) { e.preventDefault(); nudgeSel(1, 0); } break;
+      case 'ArrowUp': if (sel) { e.preventDefault(); nudgeSel(0, -1); } break;
+      case 'ArrowDown': if (sel) { e.preventDefault(); nudgeSel(0, 1); } break;
+      default:
+    }
+  });
+
+  /* ---------- sizing + start ---------- */
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const gr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.32, W / 2, H / 2, Math.max(W, H) * 0.78);
+    gr.addColorStop(0, 'rgba(8,9,14,0)'); gr.addColorStop(1, 'rgba(8,9,14,0.5)');
+    vignette = gr;
+    for (const v of [puzzle, explore]) if (v.fitted && !v.userMoved && v === view()) fit(v);
+    invalidate();
+  }
+  window.addEventListener('resize', resize);
+
+  buildDock();
+  buildPuzzleBar();
+  resize();
+  newPuzzle();
+  setMode('puzzle');
+  setMusicUI();
+  requestAnimationFrame(frame);
+  window.addEventListener('load', () => { const v = view(); if (!v.userMoved) fit(v); });
+
+  // small hook so the page can be tested automatically
+  window.__px = { puzzle, explore, view, setMode, newPuzzle, w2s, s2w, checkSolved, get mode() { return mode; }, get drag() { return drag; }, selPiece, fit };
+})();
+
+</script>
+</body>
+</html>
