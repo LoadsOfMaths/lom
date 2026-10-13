@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Dave | LoadsOfMaths</title>
+<style>
+  :root{
+    --bg:#0d1226;
+    --panel:#171d3a;
+    --edge:#2a3566;
+    --text:#eef1ff;
+    --muted:#9aa5d6;
+    --accent:#ffd84a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(circle at 50% 40%,#1a2250,#0a0e20 70%);
+    color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none;user-select:none;
+    touch-action:manipulation;
+  }
+  #app{display:flex;flex-direction:column;align-items:center;height:100dvh}
+  header{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    padding:10px 16px;gap:10px;
+  }
+  header h2{margin:0;font-size:26px;letter-spacing:.06em;color:var(--accent)}
+  .hbtns{display:flex;gap:10px}
+  .small{
+    background:var(--panel);color:var(--text);border:2px solid var(--edge);
+    border-radius:12px;padding:8px 16px;font-size:18px;cursor:pointer;font-family:inherit;
+  }
+  .small:active{transform:scale(.97)}
+  #msg{
+    min-height:1.5em;text-align:center;padding:2px 16px;
+    font-size:clamp(20px,3.2vw,36px);font-weight:600;
+  }
+  #wheelWrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+  svg#wheel{
+    width:min(94vw, calc(100dvh - 200px));
+    height:auto;aspect-ratio:1;touch-action:none;
+  }
+  .sec{
+    fill:var(--dim);stroke:#05070f;stroke-width:10;stroke-linejoin:round;cursor:pointer;
+    transition:fill .06s;
+  }
+  .sec.lit{fill:var(--lit);filter:drop-shadow(0 0 16px var(--lit)) brightness(1.15)}
+  .lab{pointer-events:none;fill:#fff;font-size:28px;font-weight:700;text-anchor:middle;dominant-baseline:middle;opacity:0;transition:opacity .2s}
+  svg.notes .lab{opacity:.85}
+  #hubName{fill:var(--accent);font-size:22px;font-weight:800;letter-spacing:.08em;text-anchor:middle}
+  #hubNum{fill:#fff;font-size:44px;font-weight:800;text-anchor:middle}
+  #info{
+    min-height:52px;display:flex;gap:12px;align-items:center;justify-content:center;
+    padding:6px 16px 12px;flex-wrap:wrap;
+  }
+  .chip{
+    background:var(--panel);border:2px solid var(--edge);border-radius:999px;
+    padding:6px 18px;font-size:20px;color:var(--muted);
+  }
+  .chip.active{border-color:var(--accent);color:#fff;box-shadow:0 0 12px rgba(255,216,74,.35)}
+  .overlay{
+    position:fixed;inset:0;background:rgba(5,8,20,.9);
+    display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;z-index:10;
+  }
+  .overlay.hidden{display:none}
+  .card{
+    background:var(--panel);border:2px solid var(--edge);border-radius:22px;
+    padding:26px 30px;max-width:640px;width:100%;text-align:center;
+  }
+  .card h1{margin:0;font-size:64px;letter-spacing:.08em;color:var(--accent)}
+  .card h3{margin:0 0 6px;font-size:40px}
+  .brandline{margin:-14px 0 18px;color:var(--muted);font-size:15px;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+  .sub{margin:4px 0 20px;color:var(--muted);font-size:20px}
+  .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+  .btn{
+    font-family:inherit;font-size:24px;font-weight:700;color:#10142b;background:var(--accent);
+    border:none;border-radius:16px;padding:14px 30px;cursor:pointer;min-width:180px;
+  }
+  .btn.alt{background:#2b3570;color:#fff}
+  .btn:active{transform:scale(.97)}
+  .opts{margin:18px 0 6px;text-align:left;display:flex;flex-direction:column;gap:12px}
+  .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:20px}
+  .opt small{color:var(--muted)}
+  .seg{display:flex;border:2px solid var(--edge);border-radius:12px;overflow:hidden}
+  .seg button{
+    font-family:inherit;font-size:18px;background:transparent;color:var(--muted);
+    border:none;padding:8px 14px;cursor:pointer;
+  }
+  .seg button.on{background:var(--accent);color:#10142b;font-weight:700}
+  .help{color:var(--muted);font-size:17px;line-height:1.45;text-align:left;margin-top:14px}
+  .help b{color:var(--text)}
+  .best{margin-top:12px;color:var(--muted);font-size:18px}
+  @media (max-width:520px){
+    .card{padding:18px}.card h1{font-size:48px}
+    .btn{min-width:140px;font-size:20px}
+    .opt{font-size:17px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h2>DAVE</h2>
+    <div class="hbtns">
+      <button class="small" id="notesBtn" onclick="toggleNotes()">Notes: On</button>
+      <button class="small" onclick="toMenu()">Menu</button>
+    </div>
+  </header>
+  <div id="msg"></div>
+  <div id="wheelWrap"><svg id="wheel" viewBox="0 0 400 400" aria-label="Dave colour wheel"></svg></div>
+  <div id="info"></div>
+</div>
+<div class="overlay" id="overlay"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Data ---------- */
+// Diminished 7th chord: C# E G Bb
+var NOTES=[{name:"C\u266F",f:277.18},{name:"E",f:329.63},{name:"G",f:392.00},{name:"B\u266D",f:466.16}];
+var SECT=[
+  {name:"Green", a1:180,a2:270,dim:"#14683a",lit:"#43ff86",key:"q"},
+  {name:"Red",   a1:270,a2:360,dim:"#a3222c",lit:"#ff5560",key:"w"},
+  {name:"Yellow",a1:90, a2:180,dim:"#a98a12",lit:"#fff04d",key:"a"},
+  {name:"Blue",  a1:0,  a2:90, dim:"#1d4aa3",lit:"#58a0ff",key:"s"}
+];
+var STEP=[900,620,400];           // ms per step: slow, medium, fast
+var SPEEDNAMES=["Slow","Medium","Fast"];
+
+/* ---------- State ---------- */
+var settings={sound:true,speed:1,replay:true};
+var state="menu";   // menu | showing | input | wait | over
+var mode=1, seq=[], idx=0, player=0, runId=0, wins=[0,0], best=0;
+var active={};      // currently pressed things: key -> {i,tone}
+var svg=document.getElementById("wheel");
+var overlay=document.getElementById("overlay");
+var msgEl=document.getElementById("msg");
+var infoEl=document.getElementById("info");
+
+try{
+  var s=JSON.parse(localStorage.getItem("dave.settings")||"null");
+  if(s){settings.sound=s.sound!==false;settings.speed=(s.speed>=0&&s.speed<=2)?s.speed:1;settings.replay=s.replay!==false;}
+  best=parseInt(localStorage.getItem("dave.best")||"0",10)||0;
+}catch(e){}
+function saveSettings(){try{localStorage.setItem("dave.settings",JSON.stringify(settings));}catch(e){}}
+function saveBest(){try{localStorage.setItem("dave.best",String(best));}catch(e){}}
+
+/* ---------- Build wheel ---------- */
+function pt(r,a){var t=a*Math.PI/180;return [200+r*Math.cos(t),200+r*Math.sin(t)];}
+function sectorPath(a1,a2){
+  var R=186,r=70,p1=pt(R,a1),p2=pt(R,a2),p3=pt(r,a2),p4=pt(r,a1);
+  return "M"+p1[0]+" "+p1[1]+" A"+R+" "+R+" 0 0 1 "+p2[0]+" "+p2[1]+
+         " L"+p3[0]+" "+p3[1]+" A"+r+" "+r+" 0 0 0 "+p4[0]+" "+p4[1]+" Z";
+}
+function buildWheel(){
+  var h='<circle cx="200" cy="200" r="198" fill="#05070f"/>';
+  SECT.forEach(function(s,i){
+    var m=pt(130,(s.a1+s.a2)/2);
+    h+='<path class="sec" id="sec'+i+'" data-i="'+i+'" d="'+sectorPath(s.a1,s.a2)+'" style="--dim:'+s.dim+';--lit:'+s.lit+'"/>';
+    h+='<text class="lab" x="'+m[0]+'" y="'+m[1]+'">'+NOTES[i].name+'</text>';
+  });
+  h+='<circle cx="200" cy="200" r="62" fill="#0d1226" stroke="#2a3566" stroke-width="4"/>';
+  h+='<text id="hubName" x="200" y="186">DAVE</text>';
+  h+='<text id="hubNum" x="200" y="230">0</text>';
+  svg.innerHTML=h;
+  SECT.forEach(function(s,i){
+    document.getElementById("sec"+i).addEventListener("pointerdown",function(e){
+      e.preventDefault();
+      pressInput("p"+e.pointerId,i);
+    });
+  });
+}
+
+/* ---------- Audio ---------- */
+var ctx=null;
+function ac(){
+  if(!ctx){var C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C();}
+  if(ctx.state==="suspended")ctx.resume();
+  return ctx;
+}
+function startTone(i){
+  if(!settings.sound)return null;
+  var c=ac();if(!c)return null;
+  var t=c.currentTime,g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator(),g2=c.createGain();
+  o1.type="triangle";o1.frequency.value=NOTES[i].f;
+  o2.type="sine";o2.frequency.value=NOTES[i].f*2;g2.gain.value=0.3;
+  o1.connect(g);o2.connect(g2);g2.connect(g);g.connect(c.destination);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.28,t+0.02);
+  o1.start(t);o2.start(t);
+  return {stop:function(){
+    var n=c.currentTime;
+    g.gain.cancelScheduledValues(n);g.gain.setValueAtTime(g.gain.value,n);
+    g.gain.linearRampToValueAtTime(0,n+0.08);
+    o1.stop(n+0.1);o2.stop(n+0.1);
+  }};
+}
+function buzzer(){
+  if(!settings.sound)return;
+  var c=ac();if(!c)return;
+  var t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+  o.type="sawtooth";o.frequency.value=110;
+  o.connect(g);g.connect(c.destination);
+  g.gain.setValueAtTime(0.22,t);g.gain.linearRampToValueAtTime(0,t+0.6);
+  o.start(t);o.stop(t+0.65);
+}
+
+/* ---------- Lights ---------- */
+function light(i,on){
+  var el=document.getElementById("sec"+i);
+  if(el)el.classList.toggle("lit",on);
+}
+function press(key,i){
+  release(key);
+  light(i,true);
+  active[key]={i:i,tone:startTone(i)};
+}
+function release(key){
+  var a=active[key];
+  if(!a)return;
+  light(a.i,false);
+  if(a.tone)a.tone.stop();
+  delete active[key];
+}
+function releaseAll(){Object.keys(active).forEach(release);}
+window.addEventListener("pointerup",function(e){release("p"+e.pointerId);});
+window.addEventListener("pointercancel",function(e){release("p"+e.pointerId);});
+window.addEventListener("blur",releaseAll);
+
+/* ---------- Helpers ---------- */
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function setMsg(t){msgEl.textContent=t;}
+function setHub(){
+  var n=document.getElementById("hubNum");
+  if(n)n.textContent=seq.length;
+}
+function renderInfo(){
+  var h="";
+  if(mode===1){
+    h+='<div class="chip">Sequence: '+seq.length+'</div><div class="chip">Best: '+best+'</div>';
+  }else{
+    for(var p=0;p<2;p++){
+      h+='<div class="chip'+((p===player&&state!=="over"&&state!=="menu")?" active":"")+'">Player '+(p+1)+' &middot; wins: '+wins[p]+'</div>';
+    }
+    h+='<div class="chip">Sequence: '+seq.length+'</div>';
+  }
+  infoEl.innerHTML=h;
+  svg.classList.toggle("notes",settings.sound);
+  document.getElementById("notesBtn").textContent="Notes: "+(settings.sound?"On":"Off");
+}
+function stepTimes(){var s=STEP[settings.speed];return {lit:Math.round(s*0.65),gap:Math.round(s*0.35)};}
+
+async function playSeq(run){
+  var t=stepTimes();
+  await sleep(350);
+  for(var k=0;k<seq.length;k++){
+    if(run!==runId)return false;
+    press("seq",seq[k]);
+    await sleep(t.lit);
+    release("seq");
+    await sleep(t.gap);
+  }
+  return run===runId;
+}
+
+/* ---------- Game flow ---------- */
+function start(m,fresh){
+  mode=m;
+  if(fresh!==false){wins=[0,0];}
+  seq=[];idx=0;player=0;
+  overlay.classList.add("hidden");
+  releaseAll();
+  ac();           // unlock audio on this user gesture
+  setHub();
+  if(mode===1){
+    setMsg("Watch carefully...");
+    renderInfo();
+    var run=++runId;
+    state="wait";
+    sleep(500).then(function(){if(run===runId)nextRound(run);});
+  }else{
+    renderInfo();
+    var run2=++runId;
+    state="wait";
+    sleep(300).then(function(){if(run2===runId)startTurn(run2);});
+  }
+}
+async function nextRound(run){
+  seq.push(Math.floor(Math.random()*4));
+  setHub();renderInfo();
+  state="showing";
+  setMsg("Watch carefully...");
+  var ok=await playSeq(run);
+  if(!ok)return;
+  idx=0;state="input";
+  setMsg("Your turn: repeat the sequence");
+}
+async function startTurn(run){
+  renderInfo();setHub();
+  var who="Player "+(player+1);
+  if(seq.length>0&&settings.replay){
+    state="showing";
+    setMsg(who+": watch the sequence...");
+    var ok=await playSeq(run);
+    if(!ok)return;
+  }
+  idx=0;state="input";
+  if(seq.length===0)setMsg(who+": start us off. Tap any colour!");
+  else setMsg(who+": repeat the sequence, then add a new colour");
+}
+function pressInput(key,i){
+  if(state!=="input"||!overlay.classList.contains("hidden"))return;
+  press(key,i);
+  onTap(i);
+}
+function onTap(i){
+  if(mode===1){
+    if(i===seq[idx]){
+      idx++;
+      if(idx===seq.length){
+        state="wait";
+        setMsg("Well done!");
+        var run=runId;
+        sleep(900).then(function(){if(run===runId)nextRound(run);});
+      }
+    }else fail();
+  }else{
+    var who="Player "+(player+1);
+    if(idx<seq.length){
+      if(i===seq[idx]){
+        idx++;
+        if(idx===seq.length)setMsg(who+": now add a new colour of your own!");
+      }else fail();
+    }else{
+      seq.push(i);
+      setHub();
+      state="wait";
+      setMsg(who+" added a colour. Over to Player "+(2-player)+"!");
+      player=1-player;
+      var run2=runId;
+      sleep(1100).then(function(){if(run2===runId)startTurn(run2);});
+    }
+  }
+}
+async function fail(){
+  state="over";
+  var run=++runId;
+  var exp=seq[idx];
+  buzzer();
+  setMsg("Oh no! That was the wrong colour.");
+  renderInfo();
+  await sleep(500);
+  for(var k=0;k<2;k++){
+    if(run!==runId)return;
+    press("fx",exp);await sleep(350);release("fx");await sleep(200);
+  }
+  await sleep(300);
+  if(run!==runId)return;
+  showResult();
+}
+
+/* ---------- Overlays ---------- */
+function showResult(){
+  var h='<div class="card">';
+  if(mode===1){
+    var score=Math.max(0,seq.length-1);
+    var nb=false;
+    if(score>best){best=score;saveBest();nb=true;}
+    h+='<h3>Game over</h3>';
+    h+='<p class="sub">You remembered a sequence of <b style="color:#fff;font-size:1.4em">'+score+'</b></p>';
+    h+='<p class="best">'+(nb?'New best score!':'Best: '+best)+'</p>';
+    h+='<div class="row"><button class="btn" onclick="DAVE.start(1)">Play again</button><button class="btn alt" onclick="DAVE.menu()">Menu</button></div>';
+  }else{
+    var loser=player, winner=1-player;
+    wins[winner]++;
+    h+='<h3>Player '+(winner+1)+' wins!</h3>';
+    h+='<p class="sub">Player '+(loser+1)+' slipped up on a sequence of '+seq.length+'.</p>';
+    h+='<p class="best">Wins: Player 1 &ndash; '+wins[0]+' &nbsp;|&nbsp; Player 2 &ndash; '+wins[1]+'</p>';
+    h+='<div class="row"><button class="btn" onclick="DAVE.start(2,false)">Play again</button><button class="btn alt" onclick="DAVE.menu()">Menu</button></div>';
+  }
+  h+='</div>';
+  overlay.innerHTML=h;
+  overlay.classList.remove("hidden");
+  renderInfo();
+}
+function seg(name,opts,cur){
+  return '<div class="seg">'+opts.map(function(o,i){
+    return '<button class="'+(i===cur?'on':'')+'" onclick="DAVE.set(\''+name+'\','+i+')">'+o+'</button>';
+  }).join("")+'</div>';
+}
+function renderMenu(){
+  var h='<div class="card"><h1>DAVE</h1><p class="sub">The sequence memory game</p><div class="brandline">LoadsOfMaths</div>';
+  h+='<div class="row"><button class="btn" onclick="DAVE.start(1)">1 Player</button><button class="btn" onclick="DAVE.start(2)">2 Players</button></div>';
+  h+='<div class="opts">';
+  h+='<div class="opt"><span>Notes <small>(C&#9839; E G B&#9837;)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
+  h+='<div class="opt"><span>Speed</span>'+seg("speed",SPEEDNAMES,settings.speed)+'</div>';
+  h+='<div class="opt"><span>2 players: replay sequence each turn</span>'+seg("replay",["No","Yes"],settings.replay?1:0)+'</div>';
+  h+='</div>';
+  h+='<div class="help"><b>1 Player:</b> Dave plays a sequence. Repeat it, then watch it grow by one each round.<br>';
+  h+='<b>2 Players:</b> Take turns. On your go, repeat the whole sequence, then add one new colour of your own. First to slip up loses!<br>';
+  h+='Keys: <b>Q W</b> (top row) and <b>A S</b> (bottom row).</div>';
+  h+='<div class="best">1 Player best: '+best+'</div></div>';
+  overlay.innerHTML=h;
+  overlay.classList.remove("hidden");
+}
+function toMenu(){
+  runId++;
+  releaseAll();
+  state="menu";
+  setMsg("");
+  seq=[];setHub();
+  renderInfo();
+  renderMenu();
+}
+function toggleNotes(){
+  settings.sound=!settings.sound;saveSettings();renderInfo();
+  if(state==="menu")renderMenu();
+}
+function setOpt(name,v){
+  if(name==="sound")settings.sound=!!v;
+  if(name==="speed")settings.speed=v;
+  if(name==="replay")settings.replay=!!v;
+  saveSettings();renderInfo();renderMenu();
+  if(name==="sound"&&settings.sound){ac();var tn=startTone(0);if(tn)setTimeout(tn.stop,250);}
+}
+
+/* ---------- Keyboard ---------- */
+window.addEventListener("keydown",function(e){
+  if(e.repeat)return;
+  var k=e.key.toLowerCase();
+  for(var i=0;i<4;i++){
+    if(SECT[i].key===k){pressInput("k"+k,i);}
+  }
+});
+window.addEventListener("keyup",function(e){release("k"+e.key.toLowerCase());});
+
+/* ---------- Init ---------- */
+window.DAVE={start:start,menu:toMenu,set:setOpt};
+window.toMenu=toMenu;window.toggleNotes=toggleNotes;
+buildWheel();
+setHub();
+toMenu();
+})();
+</script>
+</body>
+</html>

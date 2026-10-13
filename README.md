@@ -15,6 +15,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Count Protracula's Coffin Quiz | `coffin-quiz/` |
 | Dance Floor Filler | `dance-floor-filler/` |
 | Data Lab | `data-lab/` |
+| Dave | `dave/` |
 | Dice Games | `dice-games/` |
 | Erno | `erno/` |
 | Fraction Blaster | `fraction-blaster/` |
