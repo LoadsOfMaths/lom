@@ -140,7 +140,7 @@ var STEP=[900,620,400];           // ms per step: slow, medium, fast
 var SPEEDNAMES=["Slow","Medium","Fast"];
 
 /* ---------- State ---------- */
-var settings={sound:true,speed:1,replay:true};
+var settings={sound:true,speed:1,replay:true,centre:false};
 var state="menu";   // menu | showing | input | wait | over
 var mode=1, seq=[], idx=0, player=0, runId=0, wins=[0,0], best=0;
 var active={};      // currently pressed things: key -> {i,tone}
@@ -151,7 +151,7 @@ var infoEl=document.getElementById("info");
 
 try{
   var s=JSON.parse(localStorage.getItem("dave.settings")||"null");
-  if(s){settings.sound=s.sound!==false;settings.speed=(s.speed>=0&&s.speed<=2)?s.speed:1;settings.replay=s.replay!==false;}
+  if(s){settings.sound=s.sound!==false;settings.speed=(s.speed>=0&&s.speed<=2)?s.speed:1;settings.replay=s.replay!==false;settings.centre=s.centre===true;}
   best=parseInt(localStorage.getItem("dave.best")||"0",10)||0;
 }catch(e){}
 function saveSettings(){try{localStorage.setItem("dave.settings",JSON.stringify(settings));}catch(e){}}
@@ -246,8 +246,8 @@ window.addEventListener("blur",releaseAll);
 /* ---------- Helpers ---------- */
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function setMsg(t){msgEl.textContent=t;}
-// The centre button (low C) joins in from the 10th colour onwards
-function centreOn(){return mode===1?seq.length>=10:seq.length>=9;}
+// The centre button (low C) is an optional fifth note
+function centreOn(){return !!settings.centre;}
 function setHub(){
   var n=document.getElementById("hubNum");
   if(n)n.textContent=seq.length;
@@ -309,7 +309,7 @@ function start(m,fresh){
   }
 }
 async function nextRound(run){
-  seq.push(Math.floor(Math.random()*(seq.length+1>=10?5:4)));
+  seq.push(Math.floor(Math.random()*(settings.centre?5:4)));
   setHub();renderInfo();
   state="showing";
   setMsg("Watch carefully...");
@@ -333,7 +333,7 @@ async function startTurn(run){
 }
 function pressInput(key,i){
   if(state!=="input"||!overlay.classList.contains("hidden"))return;
-  if(i===4&&!centreOn())return;   // centre button not in play yet
+  if(i===4&&!centreOn())return;   // centre button switched off
   press(key,i);
   onTap(i);
 }
@@ -416,13 +416,14 @@ function renderMenu(){
   var h='<div class="card"><h1>DAVE</h1><p class="sub">The sequence memory game</p><div class="brandline">LoadsOfMaths</div>';
   h+='<div class="row"><button class="btn" onclick="DAVE.start(1)">1 Player</button><button class="btn" onclick="DAVE.start(2)">2 Players</button></div>';
   h+='<div class="opts">';
-  h+='<div class="opt"><span>Notes <small>(D E C and the low G; low C in the centre)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
+  h+='<div class="opt"><span>Notes <small>(D E C and the low G)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
+  h+='<div class="opt"><span>Centre button <small>(a fifth note, low C)</small></span>'+seg("centre",["Off","On"],settings.centre?1:0)+'</div>';
   h+='<div class="opt"><span>Speed</span>'+seg("speed",SPEEDNAMES,settings.speed)+'</div>';
   h+='<div class="opt"><span>2 players: replay sequence each turn</span>'+seg("replay",["No","Yes"],settings.replay?1:0)+'</div>';
   h+='</div>';
   h+='<div class="help"><b>1 Player:</b> Dave plays a sequence. Repeat it, then watch it grow by one each round.<br>';
   h+='<b>2 Players:</b> Take turns. On your go, repeat the whole sequence, then add one new colour of your own. First to slip up loses!<br>';
-  h+='From the 10th colour onwards the <b>centre button</b> (low C) joins in too.<br>Keys: <b>Q W</b> (top row), <b>A S</b> (bottom row) and <b>Space</b> (centre).</div>';
+  h+='Switch on the <b>centre button</b> for a fifth note, the low C.<br>Keys: <b>Q W</b> (top row), <b>A S</b> (bottom row) and <b>Space</b> (centre).</div>';
   h+='<div class="best">1 Player best: '+best+'</div></div>';
   overlay.innerHTML=h;
   overlay.classList.remove("hidden");
@@ -444,6 +445,7 @@ function setOpt(name,v){
   if(name==="sound")settings.sound=!!v;
   if(name==="speed")settings.speed=v;
   if(name==="replay")settings.replay=!!v;
+  if(name==="centre")settings.centre=!!v;
   saveSettings();renderInfo();renderMenu();
   if(name==="sound"&&settings.sound){ac();var tn=startTone(0);if(tn)setTimeout(tn.stop,250);}
 }
