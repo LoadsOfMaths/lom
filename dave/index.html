@@ -196,7 +196,7 @@ function ac(){
   return ctx;
 }
 function startTone(i){
-  if(!settings.sound)return null;
+  if(!settings.sound&&state!=="free")return null;
   var c=ac();if(!c)return null;
   var t=c.currentTime,g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator(),g2=c.createGain();
   o1.type="triangle";o1.frequency.value=NOTES[i].f;
@@ -247,18 +247,19 @@ window.addEventListener("blur",releaseAll);
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function setMsg(t){msgEl.textContent=t;}
 // The centre button (low C) is an optional fifth note
-function centreOn(){return !!settings.centre;}
+function centreOn(){return !!settings.centre||state==="free";}
 function setHub(){
   var n=document.getElementById("hubNum");
-  if(n)n.textContent=seq.length;
+  if(n)n.textContent=(state==="free")?"\u266A":seq.length;
   var hb=document.getElementById("sec4");
   if(hb)hb.classList.toggle("on",centreOn());
   var hl=document.getElementById("hubLab");
-  if(hl)hl.textContent=(centreOn()&&settings.sound)?"low C":"";
+  if(hl)hl.textContent=(centreOn()&&(settings.sound||state==="free"))?"low C":"";
 }
 function renderInfo(){
   var h="";
-  if(mode===1){
+  if(state==="free"){h+='<div class="chip">Free play: tap the wheel and the centre</div>';}
+  else if(mode===1){
     h+='<div class="chip">Sequence: '+seq.length+'</div><div class="chip">Best: '+best+'</div>';
   }else{
     for(var p=0;p<2;p++){
@@ -267,7 +268,7 @@ function renderInfo(){
     h+='<div class="chip">Sequence: '+seq.length+'</div>';
   }
   infoEl.innerHTML=h;
-  svg.classList.toggle("notes",settings.sound);
+  svg.classList.toggle("notes",settings.sound||state==="free");
   setHub();
   document.getElementById("notesBtn").textContent="Notes: "+(settings.sound?"On":"Off");
 }
@@ -332,10 +333,10 @@ async function startTurn(run){
   else setMsg(who+": repeat the sequence, then add a new colour");
 }
 function pressInput(key,i){
-  if(state!=="input"||!overlay.classList.contains("hidden"))return;
+  if((state!=="input"&&state!=="free")||!overlay.classList.contains("hidden"))return;
   if(i===4&&!centreOn())return;   // centre button switched off
   press(key,i);
-  onTap(i);
+  if(state==="input")onTap(i);
 }
 function onTap(i){
   if(mode===1){
@@ -413,7 +414,7 @@ function seg(name,opts,cur){
   }).join("")+'</div>';
 }
 function renderMenu(){
-  var h='<div class="card"><h1>DAVE</h1><p class="sub">The sequence memory game</p><div class="brandline">LoadsOfMaths</div>';
+  var h='<div class="card"><h1 id="dtitle">DAVE</h1><p class="sub">The sequence memory game</p><div class="brandline">LoadsOfMaths</div>';
   h+='<div class="row"><button class="btn" onclick="DAVE.start(1)">1 Player</button><button class="btn" onclick="DAVE.start(2)">2 Players</button></div>';
   h+='<div class="opts">';
   h+='<div class="opt"><span>Notes <small>(D E C and the low G)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
@@ -427,6 +428,22 @@ function renderMenu(){
   h+='<div class="best">1 Player best: '+best+'</div></div>';
   overlay.innerHTML=h;
   overlay.classList.remove("hidden");
+  // Hidden: tap the title five times for free play of all five tones
+  var tt=document.getElementById("dtitle"),taps=0,last=0;
+  if(tt)tt.addEventListener("click",function(){
+    var now=Date.now();
+    taps=(now-last<1500)?taps+1:1;last=now;
+    if(taps>=5){taps=0;startFree();}
+  });
+}
+function startFree(){
+  runId++;
+  releaseAll();
+  state="free";mode=1;seq=[];idx=0;
+  overlay.classList.add("hidden");
+  ac();
+  setMsg("Free play: all five tones");
+  renderInfo();
 }
 function toMenu(){
   runId++;
