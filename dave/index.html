@@ -51,6 +51,13 @@
   .sec.lit{fill:var(--lit);filter:drop-shadow(0 0 16px var(--lit)) brightness(1.15)}
   .lab{pointer-events:none;fill:#fff;font-size:28px;font-weight:700;text-anchor:middle;dominant-baseline:middle;opacity:0;transition:opacity .2s}
   svg.notes .lab{opacity:.85}
+  .hubc{fill:var(--dim);stroke:#2a3566;stroke-width:4;cursor:pointer;transition:fill .06s,stroke .2s}
+  .hubc.on{stroke:var(--accent);stroke-width:6}
+  .hubc.lit{fill:var(--lit);filter:drop-shadow(0 0 16px var(--lit))}
+  .hubc.lit ~ #hubNum{fill:#10142b}
+  .hubc.lit ~ #hubName{fill:#7a5a00}
+  #hubName,#hubNum,#hubLab{pointer-events:none}
+  #hubLab{fill:var(--accent);font-size:15px;font-weight:700;text-anchor:middle}
   #hubName{fill:var(--accent);font-size:22px;font-weight:800;letter-spacing:.08em;text-anchor:middle}
   #hubNum{fill:#fff;font-size:44px;font-weight:800;text-anchor:middle}
   #info{
@@ -122,7 +129,7 @@
 
 /* ---------- Data ---------- */
 // Close Encounters notes: D E C and the low G
-var NOTES=[{name:"D",f:293.66},{name:"E",f:329.63},{name:"C",f:261.63},{name:"G",f:196.00}];
+var NOTES=[{name:"D",f:293.66},{name:"E",f:329.63},{name:"C",f:261.63},{name:"G",f:196.00},{name:"C",f:130.81}];   // index 4 = centre button (low C)
 var SECT=[
   {name:"Green", a1:180,a2:270,dim:"#14683a",lit:"#43ff86",key:"q"},
   {name:"Red",   a1:270,a2:360,dim:"#a3222c",lit:"#ff5560",key:"w"},
@@ -164,10 +171,15 @@ function buildWheel(){
     h+='<path class="sec" id="sec'+i+'" data-i="'+i+'" d="'+sectorPath(s.a1,s.a2)+'" style="--dim:'+s.dim+';--lit:'+s.lit+'"/>';
     h+='<text class="lab" x="'+m[0]+'" y="'+m[1]+'">'+NOTES[i].name+'</text>';
   });
-  h+='<circle cx="200" cy="200" r="62" fill="#0d1226" stroke="#2a3566" stroke-width="4"/>';
+  h+='<circle id="sec4" class="hubc" cx="200" cy="200" r="62" style="--dim:#0d1226;--lit:#ffe9a0"/>';
   h+='<text id="hubName" x="200" y="186">DAVE</text>';
   h+='<text id="hubNum" x="200" y="230">0</text>';
+  h+='<text id="hubLab" x="200" y="254"></text>';
   svg.innerHTML=h;
+  document.getElementById("sec4").addEventListener("pointerdown",function(e){
+    e.preventDefault();
+    pressInput("p"+e.pointerId,4);
+  });
   SECT.forEach(function(s,i){
     document.getElementById("sec"+i).addEventListener("pointerdown",function(e){
       e.preventDefault();
@@ -234,9 +246,15 @@ window.addEventListener("blur",releaseAll);
 /* ---------- Helpers ---------- */
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function setMsg(t){msgEl.textContent=t;}
+// The centre button (low C) joins in from the 10th colour onwards
+function centreOn(){return mode===1?seq.length>=10:seq.length>=9;}
 function setHub(){
   var n=document.getElementById("hubNum");
   if(n)n.textContent=seq.length;
+  var hb=document.getElementById("sec4");
+  if(hb)hb.classList.toggle("on",centreOn());
+  var hl=document.getElementById("hubLab");
+  if(hl)hl.textContent=(centreOn()&&settings.sound)?"low C":"";
 }
 function renderInfo(){
   var h="";
@@ -250,6 +268,7 @@ function renderInfo(){
   }
   infoEl.innerHTML=h;
   svg.classList.toggle("notes",settings.sound);
+  setHub();
   document.getElementById("notesBtn").textContent="Notes: "+(settings.sound?"On":"Off");
 }
 function stepTimes(){var s=STEP[settings.speed];return {lit:Math.round(s*0.65),gap:Math.round(s*0.35)};}
@@ -290,7 +309,7 @@ function start(m,fresh){
   }
 }
 async function nextRound(run){
-  seq.push(Math.floor(Math.random()*4));
+  seq.push(Math.floor(Math.random()*(seq.length+1>=10?5:4)));
   setHub();renderInfo();
   state="showing";
   setMsg("Watch carefully...");
@@ -314,6 +333,7 @@ async function startTurn(run){
 }
 function pressInput(key,i){
   if(state!=="input"||!overlay.classList.contains("hidden"))return;
+  if(i===4&&!centreOn())return;   // centre button not in play yet
   press(key,i);
   onTap(i);
 }
@@ -396,13 +416,13 @@ function renderMenu(){
   var h='<div class="card"><h1>DAVE</h1><p class="sub">The sequence memory game</p><div class="brandline">LoadsOfMaths</div>';
   h+='<div class="row"><button class="btn" onclick="DAVE.start(1)">1 Player</button><button class="btn" onclick="DAVE.start(2)">2 Players</button></div>';
   h+='<div class="opts">';
-  h+='<div class="opt"><span>Notes <small>(D E C and the low G)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
+  h+='<div class="opt"><span>Notes <small>(D E C and the low G; low C in the centre)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
   h+='<div class="opt"><span>Speed</span>'+seg("speed",SPEEDNAMES,settings.speed)+'</div>';
   h+='<div class="opt"><span>2 players: replay sequence each turn</span>'+seg("replay",["No","Yes"],settings.replay?1:0)+'</div>';
   h+='</div>';
   h+='<div class="help"><b>1 Player:</b> Dave plays a sequence. Repeat it, then watch it grow by one each round.<br>';
   h+='<b>2 Players:</b> Take turns. On your go, repeat the whole sequence, then add one new colour of your own. First to slip up loses!<br>';
-  h+='Keys: <b>Q W</b> (top row) and <b>A S</b> (bottom row).</div>';
+  h+='From the 10th colour onwards the <b>centre button</b> (low C) joins in too.<br>Keys: <b>Q W</b> (top row), <b>A S</b> (bottom row) and <b>Space</b> (centre).</div>';
   h+='<div class="best">1 Player best: '+best+'</div></div>';
   overlay.innerHTML=h;
   overlay.classList.remove("hidden");
@@ -431,6 +451,7 @@ function setOpt(name,v){
 /* ---------- Keyboard ---------- */
 window.addEventListener("keydown",function(e){
   if(e.repeat)return;
+  if(e.key===" "){e.preventDefault();pressInput("k ",4);return;}
   var k=e.key.toLowerCase();
   for(var i=0;i<4;i++){
     if(SECT[i].key===k){pressInput("k"+k,i);}
