@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hanoi | LoadsOfMaths</title>
+<style>
+  :root{
+    --bg1:#0f2a4a; --bg2:#1d4f7a; --panel:#f6f1e4; --ink:#13263d;
+    --accent:#ffb703; --good:#2ecc71; --bad:#e63946; --wood:#8a5a2b; --wood2:#a9743a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(circle at 50% 0%,var(--bg2),var(--bg1) 70%);
+    color:#fff;display:flex;flex-direction:column;min-height:100vh;user-select:none;
+  }
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;flex-wrap:wrap}
+  h1{margin:0;font-size:clamp(1.6rem,3.5vw,2.6rem);letter-spacing:.04em;color:var(--accent);text-shadow:0 3px 0 rgba(0,0,0,.35)}
+  h1 small{font-size:.4em;color:#cfe3f5;letter-spacing:.1em;margin-left:10px;text-shadow:none}
+  .levels{display:flex;gap:6px;flex-wrap:wrap}
+  .lvl{
+    width:clamp(38px,5vw,54px);height:clamp(38px,5vw,54px);border-radius:50%;border:3px solid #cfe3f5;
+    background:transparent;color:#fff;font-size:clamp(1rem,2vw,1.4rem);font-weight:bold;cursor:pointer;
+  }
+  .lvl.cur{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+  .lvl.done:not(.cur){background:rgba(46,204,113,.35);border-color:var(--good)}
+  .lvl:hover{transform:scale(1.08)}
+  .info{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;padding:4px 20px}
+  #task{font-size:clamp(1.1rem,2.6vw,1.8rem);font-weight:bold;text-align:center}
+  #task b{color:var(--accent)}
+  .counter{background:rgba(0,0,0,.3);border-radius:14px;padding:6px 18px;font-size:clamp(1rem,2vw,1.4rem)}
+  .counter b{color:var(--accent);font-size:1.3em}
+  #msg{height:1.6em;text-align:center;font-size:1.15rem;color:#ffd6d9;margin:2px 0}
+  main{flex:1;display:flex;align-items:flex-end;justify-content:center;padding:0 3vw}
+  #board{display:flex;width:100%;max-width:1100px;gap:2vw;align-items:flex-end}
+  .col{
+    flex:1;position:relative;cursor:pointer;border-radius:16px 16px 0 0;
+    height:var(--poleH);display:flex;flex-direction:column-reverse;align-items:center;
+    padding-bottom:var(--baseH);
+  }
+  .col::before{ /* pole */
+    content:"";position:absolute;bottom:var(--baseH);left:50%;width:clamp(10px,1.6vw,18px);
+    height:calc(100% - var(--baseH) - 4px);transform:translateX(-50%);
+    background:linear-gradient(90deg,var(--wood),var(--wood2),var(--wood));border-radius:8px 8px 0 0;
+  }
+  .col::after{ /* base */
+    content:"";position:absolute;bottom:0;left:0;right:0;height:var(--baseH);
+    background:linear-gradient(#b9833f,#7a4e22);border-radius:10px;box-shadow:0 6px 10px rgba(0,0,0,.4);
+  }
+  .col.target{background:linear-gradient(rgba(46,204,113,.0),rgba(46,204,113,.22));outline:3px dashed var(--good);outline-offset:-3px}
+  .col.sel{background:rgba(255,183,3,.12)}
+  .flag{
+    position:absolute;top:-6px;left:50%;transform:translateX(-50%);background:var(--good);color:#06301a;font-weight:bold;
+    padding:2px 14px;border-radius:12px;font-size:clamp(.8rem,1.6vw,1.1rem);z-index:5;display:none;white-space:nowrap
+  }
+  .col.target .flag{display:block}
+  .disk{
+    position:relative;z-index:2;height:var(--diskH);border-radius:calc(var(--diskH)/2);margin-top:2px;
+    display:flex;align-items:center;justify-content:center;font-weight:bold;color:rgba(0,0,0,.65);
+    font-size:calc(var(--diskH)*.55);
+    box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),inset 0 4px 0 rgba(255,255,255,.3),0 3px 5px rgba(0,0,0,.35);
+    transition:transform .15s;
+  }
+  .disk.lift{transform:translateY(calc(var(--diskH) * -.7));box-shadow:0 0 0 4px #fff,0 0 22px 6px var(--accent)}
+  .col.shake{animation:shake .3s}
+  @keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+  footer{display:flex;justify-content:center;gap:12px;padding:14px;flex-wrap:wrap;align-items:center}
+  button.act{
+    font:inherit;font-weight:bold;font-size:clamp(1rem,2vw,1.3rem);padding:10px 22px;border-radius:14px;border:0;cursor:pointer;
+    background:var(--panel);color:var(--ink);box-shadow:0 4px 0 rgba(0,0,0,.35)
+  }
+  button.act:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+  button.act.go{background:var(--accent)}
+  .brand{margin-left:18px;color:#8fb3d3;font-size:.9rem}
+  #win{
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,15,30,.55);z-index:20
+  }
+  #win.show{display:flex}
+  .card{
+    background:var(--panel);color:var(--ink);border-radius:26px;padding:28px 36px;max-width:min(92vw,620px);text-align:center;
+    box-shadow:0 14px 40px rgba(0,0,0,.5);animation:pop .45s cubic-bezier(.2,1.6,.4,1)
+  }
+  @keyframes pop{from{transform:scale(.3);opacity:0}}
+  .card h2{margin:0 0 6px;font-size:clamp(2rem,5vw,3.2rem);color:#d98300}
+  .card p{font-size:clamp(1.1rem,2.6vw,1.6rem);margin:10px 0 18px}
+  .card .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:30}
+</style>
+</head>
+<body>
+<header>
+  <h1>HANOI<small>LoadsOfMaths</small></h1>
+  <div class="levels" id="levels"></div>
+</header>
+<div class="info">
+  <div id="task"></div>
+  <div class="counter">Moves: <b id="moves">0</b></div>
+</div>
+<div id="msg"></div>
+<main><div id="board"></div></main>
+<footer>
+  <button class="act" id="restart">&#8635; Start level again</button>
+  <button class="act" id="newlayout">&#127922; New layout</button>
+  <span class="brand">Tap a pillar to lift its top disk, then tap where it should go.</span>
+</footer>
+
+<div id="win"><div class="card">
+  <h2 id="winTitle">Well done!</h2>
+  <p id="winText"></p>
+  <div class="row">
+    <button class="act" id="again">Try this level again</button>
+    <button class="act go" id="next">Next level &#9654;</button>
+  </div>
+</div></div>
+<canvas id="fx"></canvas>
+
+<script>
+(function(){
+  var MAXLEVEL = 8;                       // level n uses n disks
+  var NAMES = ["left","middle","right"];
+  var level = 1, n = 1, pegs, start, target, moves, selected, finished;
+  var doneLevels = {};
+  var board = document.getElementById("board");
+
+  // ---------- level buttons ----------
+  var lv = document.getElementById("levels");
+  for (var i = 1; i <= MAXLEVEL; i++){
+    (function(l){
+      var b = document.createElement("button");
+      b.className = "lvl"; b.textContent = l; b.title = l + (l===1?" disk":" disks");
+      b.onclick = function(){ setLevel(l); };
+      lv.appendChild(b);
+    })(i);
+  }
+  function refreshLevels(){
+    var bs = lv.children;
+    for (var i = 0; i < bs.length; i++){
+      bs[i].className = "lvl" + (i+1===level?" cur":"") + (doneLevels[i+1]?" done":"");
+    }
+  }
+
+  // ---------- setup ----------
+  function randInt(k){ return Math.floor(Math.random()*k); }
+  function setLevel(l, keepLayout){
+    level = l; n = l;
+    if (!keepLayout){
+      start = randInt(3);
+      var others = [0,1,2].filter(function(c){return c!==start;});
+      target = others[randInt(2)];
+    }
+    pegs = [[],[],[]];
+    for (var d = n; d >= 1; d--) pegs[start].push(d);   // biggest at bottom
+    moves = 0; selected = -1; finished = false;
+    document.getElementById("win").classList.remove("show");
+    msg("");
+    build(); refreshLevels();
+  }
+  function msg(t){ document.getElementById("msg").textContent = t; }
+
+  function sizes(){
+    var avail = Math.max(260, Math.min(window.innerHeight - 330, 520));
+    var baseH = 18;
+    var poleH = avail;
+    var diskH = Math.max(14, Math.min(40, Math.floor((poleH - baseH - 30) / Math.max(n,1) - 2)));
+    if (n < 6) diskH = Math.min(diskH, 44);
+    board.style.setProperty("--poleH", poleH + "px");
+    board.style.setProperty("--baseH", baseH + "px");
+    board.style.setProperty("--diskH", diskH + "px");
+  }
+
+  function build(){
+    sizes();
+    document.getElementById("task").innerHTML =
+      "Move the " + (n===1?"disk":"stack of <b>"+n+"</b> disks") +
+      " from the <b>" + NAMES[start] + "</b> pillar to the <b>" + NAMES[target] + "</b> pillar";
+    board.innerHTML = "";
+    for (var c = 0; c < 3; c++){
+      var col = document.createElement("div");
+      col.className = "col" + (c===target?" target":"") + (c===selected?" sel":"");
+      col.dataset.c = c;
+      var flag = document.createElement("div"); flag.className = "flag"; flag.textContent = "GOAL";
+      col.appendChild(flag);
+      var stack = pegs[c];
+      for (var k = 0; k < stack.length; k++){
+        var d = stack[k];
+        var el = document.createElement("div");
+        var top = (k === stack.length - 1);
+        el.className = "disk" + (top && c===selected ? " lift" : "");
+        var w = 28 + (d / n) * 66;                  // % of column width
+        if (n === 1) w = 60;
+        el.style.width = w + "%";
+        el.style.background = "hsl(" + Math.round(((d-1)/Math.max(n,1))*300 + 10) + ",78%,58%)";
+        el.textContent = d;
+        col.appendChild(el);
+      }
+      col.addEventListener("click", onCol);
+      board.appendChild(col);
+    }
+    document.getElementById("moves").textContent = moves;
+  }
+
+  // ---------- play ----------
+  function onCol(e){
+    if (finished) return;
+    var c = +e.currentTarget.dataset.c;
+    if (selected === -1){
+      if (!pegs[c].length){ msg("There is no disk on that pillar."); return; }
+      selected = c; msg(""); build();
+    } else if (selected === c){
+      selected = -1; msg(""); build();
+    } else {
+      var from = pegs[selected], to = pegs[c];
+      var d = from[from.length-1];
+      if (to.length && to[to.length-1] < d){
+        msg("A bigger disk can't go on top of a smaller one!");
+        var cols = board.children; cols[c].classList.add("shake");
+        setTimeout(function(){ cols[c].classList.remove("shake"); }, 320);
+        selected = -1; build(); return;
+      }
+      from.pop(); to.push(d); moves++; selected = -1; msg("");
+      build();
+      if (pegs[target].length === n) win();
+    }
+  }
+
+  function win(){
+    finished = true; doneLevels[level] = true; refreshLevels();
+    var best = Math.pow(2, n) - 1;
+    var t = document.getElementById("winText");
+    var title = document.getElementById("winTitle");
+    if (moves === best){
+      title.textContent = "Perfect!";
+      t.textContent = "You took " + moves + " move" + (moves===1?"":"s") + ", which is the quickest possible!";
+    } else {
+      title.textContent = "Well done!";
+      t.textContent = "You took " + moves + " moves - could you do it in fewer moves next time?";
+    }
+    var nx = document.getElementById("next");
+    if (level >= MAXLEVEL){ nx.style.display = "none"; if (moves===best) t.textContent += " You have mastered every level!"; }
+    else nx.style.display = "";
+    setTimeout(function(){ document.getElementById("win").classList.add("show"); }, 350);
+    celebrate();
+  }
+
+  // ---------- buttons ----------
+  document.getElementById("restart").onclick = function(){ setLevel(level, true); };
+  document.getElementById("newlayout").onclick = function(){ setLevel(level); };
+  document.getElementById("again").onclick = function(){ stopFx(); setLevel(level, true); };
+  document.getElementById("next").onclick = function(){ stopFx(); setLevel(Math.min(MAXLEVEL, level+1)); };
+  window.addEventListener("resize", function(){ if (pegs) build(); });
+
+  // ---------- celebration ----------
+  var cv = document.getElementById("fx"), cx = cv.getContext("2d"), parts = [], raf = null, fxEnd = 0;
+  function fit(){ cv.width = innerWidth; cv.height = innerHeight; }
+  window.addEventListener("resize", fit); fit();
+  function burst(x, y){
+    var hue = randInt(360);
+    for (var i = 0; i < 70; i++){
+      var a = Math.random()*Math.PI*2, s = 2 + Math.random()*6;
+      parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:70+randInt(40),h:(hue+randInt(60))%360});
+    }
+  }
+  function confetti(){
+    for (var i = 0; i < 6; i++){
+      parts.push({x:Math.random()*cv.width,y:-10,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,life:200,h:randInt(360),sq:true});
+    }
+  }
+  function frame(t){
+    cx.clearRect(0,0,cv.width,cv.height);
+    if (t < fxEnd){
+      if (Math.random() < .07) burst(cv.width*(.15+Math.random()*.7), cv.height*(.15+Math.random()*.4));
+      confetti();
+    }
+    parts = parts.filter(function(p){ return p.life > 0 && p.y < cv.height + 20; });
+    parts.forEach(function(p){
+      p.x += p.vx; p.y += p.vy; p.vy += p.sq ? .02 : .12; p.life--;
+      cx.fillStyle = "hsla(" + p.h + ",90%,60%," + Math.min(1,p.life/40) + ")";
+      if (p.sq) cx.fillRect(p.x,p.y,9,6); else { cx.beginPath(); cx.arc(p.x,p.y,3,0,7); cx.fill(); }
+    });
+    if (parts.length || t < fxEnd) raf = requestAnimationFrame(frame); else raf = null;
+  }
+  function celebrate(){
+    fxEnd = performance.now() + 3500;
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+  function stopFx(){ fxEnd = 0; parts = []; }
+
+  setLevel(1);
+})();
+</script>
+</body>
+</html>

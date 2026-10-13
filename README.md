@@ -19,6 +19,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Erno | `erno/` |
 | Fraction Blaster | `fraction-blaster/` |
 | Fraction Fight Night | `fraction-fight-night/` |
+| Hanoi | `hanoi/` |
 | Heads or Tails | `heads-or-tails/` |
 | Higher or Lower | `higher-or-lower/` |
 | Jelly Bean Disco | `jelly-bean-disco/` |
