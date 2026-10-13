@@ -121,8 +121,8 @@
 "use strict";
 
 /* ---------- Data ---------- */
-// Major arpeggio: C E G C
-var NOTES=[{name:"C",f:261.63},{name:"E",f:329.63},{name:"G",f:392.00},{name:"C",f:523.25}];
+// Close Encounters notes: D E C and the low G
+var NOTES=[{name:"D",f:293.66},{name:"E",f:329.63},{name:"C",f:261.63},{name:"G",f:196.00}];
 var SECT=[
   {name:"Green", a1:180,a2:270,dim:"#14683a",lit:"#43ff86",key:"q"},
   {name:"Red",   a1:270,a2:360,dim:"#a3222c",lit:"#ff5560",key:"w"},
@@ -396,7 +396,7 @@ function renderMenu(){
   var h='<div class="card"><h1>DAVE</h1><p class="sub">The sequence memory game</p><div class="brandline">LoadsOfMaths</div>';
   h+='<div class="row"><button class="btn" onclick="DAVE.start(1)">1 Player</button><button class="btn" onclick="DAVE.start(2)">2 Players</button></div>';
   h+='<div class="opts">';
-  h+='<div class="opt"><span>Notes <small>(C major arpeggio)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
+  h+='<div class="opt"><span>Notes <small>(D E C and the low G)</small></span>'+seg("sound",["Off","On"],settings.sound?1:0)+'</div>';
   h+='<div class="opt"><span>Speed</span>'+seg("speed",SPEEDNAMES,settings.speed)+'</div>';
   h+='<div class="opt"><span>2 players: replay sequence each turn</span>'+seg("replay",["No","Yes"],settings.replay?1:0)+'</div>';
   h+='</div>';
