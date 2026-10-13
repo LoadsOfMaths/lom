@@ -90,9 +90,10 @@
   .btn.alt{background:#2b3570;color:#fff}
   .btn:active{transform:scale(.97)}
   .opts{margin:18px 0 6px;text-align:left;display:flex;flex-direction:column;gap:12px}
-  .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:20px}
+  .opt{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;font-size:20px}
+  .opt>span{flex:1 1 190px;min-width:0}
   .opt small{color:var(--muted)}
-  .seg{display:flex;border:2px solid var(--edge);border-radius:12px;overflow:hidden}
+  .seg{display:flex;flex:none;max-width:100%;border:2px solid var(--edge);border-radius:12px;overflow:hidden}
   .seg button{
     font-family:inherit;font-size:18px;background:transparent;color:var(--muted);
     border:none;padding:8px 14px;cursor:pointer;
@@ -105,6 +106,7 @@
     .card{padding:18px}.card h1{font-size:48px}
     .btn{min-width:140px;font-size:20px}
     .opt{font-size:17px}
+    .seg button{padding:8px 12px;font-size:17px}
   }
 </style>
 </head>
