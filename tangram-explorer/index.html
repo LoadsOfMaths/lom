@@ -184,6 +184,23 @@ body[data-style="black"] .panel { background: rgba(28, 31, 39, 0.93); }
 body[data-style="black"] .toast { box-shadow: 0 0 30px rgba(36,150,112,0.25), 0 10px 34px rgba(0,0,0,0.30); }
 @media (max-width: 1100px) { .brand span { display: none; } .brand { padding: 7px 10px; } }
 
+/* ---------- phones: stop the page itself panning or bouncing ---------- */
+html, body { position: fixed; inset: 0; width: 100%; touch-action: none; -webkit-touch-callout: none; }
+
+/* ---------- compact: the settings fold down to one slim strip ---------- */
+.ptxt { white-space: nowrap; }
+body.compact .xtra, body.compact #vol, body.compact #countGrp, body.compact #shapeGrp, body.compact .dockside { display: none !important; }
+body.compact .brand span { display: none; }
+body.compact .brand { padding: 7px 10px; }
+body.compact .top { flex-wrap: nowrap; }
+body.compact #pbar .pill { padding: 10px 14px; }
+body.compact #pbar .pill .ptxt { display: none; }
+body.compact .pbar { gap: 6px 14px; padding: 8px 12px; }
+body.compact .status { min-width: 0; }
+body.compact .dock { padding: 6px 8px; }
+@media (max-width: 760px) { .tools { gap: 0; padding: 3px; } .tools .ibtn { width: 38px; } .tools .sep { margin: 0 2px; } }
+@media (max-width: 760px) { .tools { flex-wrap: wrap; max-width: calc(100vw - 24px); } #vol { width: 70px; } }
+
 </style>
 </head>
 <body data-mode="puzzle" data-style="colour">
@@ -201,34 +218,37 @@ body[data-style="black"] .toast { box-shadow: 0 0 30px rgba(36,150,112,0.25), 0 
     <button id="modeExplore" aria-pressed="false">Explore</button>
   </div>
 
-  <div class="panel seg" role="group" aria-label="Piece style">
+  <div class="panel seg xtra" id="styleSeg" role="group" aria-label="Piece style">
     <button id="styColour" aria-pressed="true" title="Soft coloured pieces">Colour</button>
     <button id="styBlack" aria-pressed="false" title="Solid black pieces, like a printed tangram">Black</button>
   </div>
 
   <div class="panel tools" role="toolbar" aria-label="Board tools">
+    <button class="ibtn" id="btnMore" title="Show or hide the settings" aria-label="Show or hide the settings" aria-expanded="true">
+      <svg viewBox="0 0 24 24"><polyline points="6 15 12 9 18 15"/></svg>
+    </button>
     <button class="ibtn" id="btnUndo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
       <svg viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
     </button>
-    <button class="ibtn" id="btnZoomOut" title="Zoom out (-)" aria-label="Zoom out">
+    <button class="ibtn xtra" id="btnZoomOut" title="Zoom out (-)" aria-label="Zoom out">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
     </button>
-    <button class="ibtn" id="btnZoomIn" title="Zoom in (+)" aria-label="Zoom in">
+    <button class="ibtn xtra" id="btnZoomIn" title="Zoom in (+)" aria-label="Zoom in">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
     </button>
-    <button class="ibtn" id="btnCorner" title="Corners: rounded (click for sharp)" aria-label="Sharp or rounded corners" aria-pressed="false">
+    <button class="ibtn xtra" id="btnCorner" title="Corners: rounded (click for sharp)" aria-label="Sharp or rounded corners" aria-pressed="false">
       <svg viewBox="0 0 24 24"><path d="M4 20V11a7 7 0 0 1 7-7h9v16z"/></svg>
     </button>
-    <button class="ibtn" id="btnFit" title="Centre the view" aria-label="Centre the view">
+    <button class="ibtn xtra" id="btnFit" title="Centre the view" aria-label="Centre the view">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg>
     </button>
-    <button class="ibtn" id="btnSave" title="Save a picture of the board" aria-label="Save a picture of the board">
+    <button class="ibtn xtra" id="btnSave" title="Save a picture of the board" aria-label="Save a picture of the board">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </button>
-    <button class="ibtn" id="btnMix" title="Mixer: piano, bass and brushes" aria-label="Mixer" aria-expanded="false" aria-controls="mixer">
+    <button class="ibtn xtra" id="btnMix" title="Mixer: piano, bass and brushes" aria-label="Mixer" aria-expanded="false" aria-controls="mixer">
       <svg viewBox="0 0 24 24"><line x1="5" y1="3" x2="5" y2="21"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="19" y1="3" x2="19" y2="21"/><rect x="2.8" y="13" width="4.4" height="3.4" rx="1.2" fill="currentColor" stroke="none"/><rect x="9.8" y="6.5" width="4.4" height="3.4" rx="1.2" fill="currentColor" stroke="none"/><rect x="16.8" y="10.5" width="4.4" height="3.4" rx="1.2" fill="currentColor" stroke="none"/></svg>
     </button>
-    <span class="sep"></span>
+    <span class="sep xtra"></span>
     <input id="vol" type="range" min="0" max="100" value="55" aria-label="Music volume" hidden>
     <button class="ibtn" id="btnMusic" title="Music on / off (M)" aria-label="Music" aria-pressed="false">
       <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line id="musicSlash" x1="3" y1="3" x2="21" y2="21" stroke-width="2.2"/></svg>
@@ -274,7 +294,7 @@ body[data-style="black"] .toast { box-shadow: 0 0 30px rgba(36,150,112,0.25), 0 
   <!-- Puzzle controls -->
   <div class="panel pbar" id="pbar">
     <div class="grp" id="countGrp"><span class="lbl">Pieces</span><div class="chips" id="countChips"></div></div>
-    <div class="grp"><span class="lbl">Shape</span>
+    <div class="grp" id="shapeGrp"><span class="lbl">Shape</span>
       <div class="chips">
         <button class="chip" data-shape="compact" aria-pressed="true" title="Neat, rounded-off shapes">Compact</button>
         <button class="chip" data-shape="free" aria-pressed="false" title="Wandering shapes: animals, birds and boats">Free-form</button>
@@ -282,15 +302,15 @@ body[data-style="black"] .toast { box-shadow: 0 0 30px rgba(36,150,112,0.25), 0 
       </div>
     </div>
     <div class="grp acts">
-      <button class="pill" id="btnNew">
+      <button class="pill" id="btnNew" title="New puzzle" aria-label="New puzzle">
         <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
-        New puzzle</button>
-      <button class="pill toggle" id="btnGhost" aria-pressed="false">
+        <span class="ptxt">New puzzle</span></button>
+      <button class="pill toggle" id="btnGhost" aria-pressed="false" title="Show or hide the solution" aria-label="Show or hide the solution">
         <svg viewBox="0 0 24 24"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
-        Show solution</button>
-      <button class="pill" id="btnAgain">
+        <span class="ptxt" id="ghostTxt">Show solution</span></button>
+      <button class="pill" id="btnAgain" title="Start again" aria-label="Start again">
         <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        Start again</button>
+        <span class="ptxt">Start again</span></button>
     </div>
     <div class="status" id="status" aria-live="polite"></div>
   </div>
@@ -1613,6 +1633,7 @@ const Music = (() => {
     if (i >= 0) v.pieces.splice(i, 1);
     v.pieces.push(p);
     v.selected = p.id;
+    v.userMoved = true;
     const [wx, wy] = s2w(e.clientX, e.clientY);
     drag = {
       id: e.pointerId, piece: p, gx: wx - p.x, gy: wy - p.y, px: p.x, py: p.y, sx: p.x, sy: p.y, ox: p.x, oy: p.y,
@@ -1847,6 +1868,22 @@ const Music = (() => {
     buildDock(); invalidate();
   }
   $('btnCorner').addEventListener('click', () => setCorners(!sharp));
+  /* ---------- settings strip: collapse to one slim row, expand at will ---------- */
+  let compact = window.innerWidth < 760;
+  try { const c = localStorage.getItem('tangCompact'); if (c === '1') compact = true; else if (c === '0') compact = false; } catch (err) { /* storage unavailable */ }
+  function setCompact(on, refit) {
+    compact = on;
+    document.body.classList.toggle('compact', on);
+    const b = $('btnMore');
+    b.setAttribute('aria-expanded', String(!on));
+    b.title = on ? 'Show the settings' : 'Hide the settings';
+    b.querySelector('polyline').setAttribute('points', on ? '6 9 12 15 18 9' : '6 15 12 9 18 15');
+    if (on) toggleMixer(false);
+    try { localStorage.setItem('tangCompact', on ? '1' : '0'); } catch (err) { /* storage unavailable */ }
+    if (refit) { const v = view(); if (!v.userMoved) fit(v); else invalidate(); }
+    invalidate();
+  }
+  $('btnMore').addEventListener('click', () => setCompact(!compact, true));
   $('styColour').addEventListener('click', () => setLook('colour'));
   $('styBlack').addEventListener('click', () => setLook('black'));
 
@@ -1887,7 +1924,7 @@ const Music = (() => {
     puzzle.showGhost = !puzzle.showGhost;
     const b = $('btnGhost');
     b.setAttribute('aria-pressed', String(puzzle.showGhost));
-    b.lastChild.textContent = puzzle.showGhost ? ' Hide solution' : ' Show solution';
+    $('ghostTxt').textContent = puzzle.showGhost ? 'Hide solution' : 'Show solution';
     invalidate();
   });
   function setLimit(on) {
@@ -2001,6 +2038,7 @@ const Music = (() => {
 
   /* ---------- sizing + start ---------- */
   function resize() {
+    const oW = W, oH = H;
     DPR = Math.min(window.devicePixelRatio || 1, 2.5);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
@@ -2009,7 +2047,13 @@ const Music = (() => {
     if (isBlack()) { gr.addColorStop(0, 'rgba(40,44,70,0)'); gr.addColorStop(1, 'rgba(40,44,70,0.20)'); }
     else { gr.addColorStop(0, 'rgba(8,9,14,0)'); gr.addColorStop(1, 'rgba(8,9,14,0.5)'); }
     vignette = gr;
-    for (const v of [puzzle, explore]) if (v.fitted && !v.userMoved && v === view()) fit(v);
+    // A phone's address bar sliding in and out resizes the window in small steps: keep the pieces still on screen
+    // instead of letting the view jump. Only a real change (turning the device, a new window size) refits.
+    const big = !oW || Math.abs(W - oW) > 60 || Math.abs(H - oH) > 170;
+    for (const v of [puzzle, explore]) {
+      if (big) { if (v.fitted && !v.userMoved && v === view()) fit(v); }
+      else { v.cam.x += (W - oW) / (2 * v.cam.s); v.cam.y += (H - oH) / (2 * v.cam.s); }
+    }
     invalidate();
   }
   window.addEventListener('resize', resize);
@@ -2019,6 +2063,7 @@ const Music = (() => {
   $('styBlack').setAttribute('aria-pressed', String(look === 'black'));
   buildDock();
   setCorners(sharp);
+  setCompact(compact, false);
   buildPuzzleBar();
   resize();
   newPuzzle();
@@ -2028,7 +2073,7 @@ const Music = (() => {
   window.addEventListener('load', () => { const v = view(); if (!v.userMoved) fit(v); });
 
   // small hook so the page can be tested automatically
-  window.__tg = { invalidate, w2s, puzzle, explore, view, setMode, setLook, newPuzzle, s2w, checkSolved, V, TG, get mode() { return mode; }, get drag() { return drag; }, selPiece, fit, G, get look() { return look; }, get sharp() { return sharp; }, setCorners, addAtCentre, setLimit };
+  window.__tg = { invalidate, w2s, puzzle, explore, view, setMode, setLook, newPuzzle, s2w, checkSolved, V, TG, get mode() { return mode; }, get drag() { return drag; }, selPiece, fit, G, get look() { return look; }, get sharp() { return sharp; }, setCorners, setCompact, get compact() { return compact; }, addAtCentre, setLimit };
 })();
 
 </script>
