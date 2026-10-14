@@ -39,6 +39,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Recite Pi | `recite-pi/` |
 | Sports Day | `sports-day/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
+| Tangram Explorer | `tangram-explorer/` |
 | The Choice | `the-choice/` |
 | Times Tables Quiz | `times-tables-quiz/` |
 | Toast | `toast/` |
