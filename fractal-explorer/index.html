@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fractal Explorer</title>
+<style>
+:root{
+  --bg:#0b1220; --head:#080d18; --panel:#141d30; --panel2:#1d2a44; --line:#2b3d5f;
+  --text:#e8eef9; --muted:#9fb0cc; --accent:#35d0c0; --accent2:#ffb84d; --bad:#ff6b6b;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-text-size-adjust:100%}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+header{display:flex;align-items:center;gap:14px;padding:8px 14px;background:var(--head);
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{font-size:22px;margin:0;letter-spacing:.3px;white-space:nowrap}
+h1 span{color:var(--accent)}
+.saves{display:flex;gap:6px;flex-wrap:wrap}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+nav button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;
+  padding:9px 16px;font-size:16px;cursor:pointer;min-height:42px}
+nav button[aria-selected="true"]{background:var(--accent);color:#04201d;border-color:var(--accent);font-weight:700}
+main{flex:1;display:flex;min-height:0}
+#left{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+#stage{flex:1;position:relative;min-width:0;min-height:0;background:var(--bg)}
+#cv{position:absolute;left:0;top:0;width:100%;height:100%;touch-action:none;display:block}
+#hud{position:absolute;left:10px;top:10px;background:rgba(5,9,18,.72);padding:6px 10px;border-radius:8px;
+  font-size:14px;pointer-events:none;max-width:70%;line-height:1.35}
+#hud:empty{display:none}
+/* Mandelbrot tab: full-width picture with its own toolbar and overlays */
+body[data-tab="mandel"] #panel{display:none}
+body[data-tab="mandel"] #hud{display:none}
+.mdonly{display:none}
+#mdBar{align-items:center;gap:12px;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+#mdBar .grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#mdBar label{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
+#mdBar input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+body[data-tab="mandel"] #mdBar{display:flex}
+#mdJulia{position:absolute;left:12px;bottom:12px;width:170px;height:170px;border:2px solid var(--accent2);border-radius:8px;background:#000;pointer-events:none}
+#mdJLabel{position:absolute;left:12px;bottom:186px;font-size:12px;color:var(--accent2);background:rgba(8,13,24,.8);padding:2px 6px;border-radius:4px;pointer-events:none}
+#mdHelp{position:absolute;right:12px;top:10px;background:rgba(8,13,24,.8);border-radius:8px;padding:6px 10px;font-size:13px;color:var(--muted);max-width:300px;pointer-events:none}
+#mdInfo{position:absolute;right:12px;bottom:12px;background:rgba(8,13,24,.85);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:14px;line-height:1.5;min-width:260px;pointer-events:none}
+#mdInfo b{color:var(--accent2)}
+#mdWarn{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:#b00020;color:#fff;padding:8px 14px;border-radius:8px;font-size:14px;display:none;max-width:80%;text-align:center}
+body[data-tab="mandel"] #mdHelp, body[data-tab="mandel"] #mdInfo{display:block}
+body[data-tab="mandel"] #mdJulia.on, body[data-tab="mandel"] #mdJLabel.on{display:block}
+#panel{width:410px;max-width:48vw;background:var(--panel);border-left:1px solid var(--line);
+  overflow-y:auto;padding:12px 14px 24px}
+body[data-tab="fern"] #panel{width:480px;max-width:60vw}
+body[data-tab="gen"] #panel{width:450px;max-width:56vw}
+.tabpanel{display:none}
+.tabpanel.on{display:block}
+h2{font-size:20px;margin:2px 0 6px;color:var(--accent2)}
+.lead{margin:0 0 10px;color:var(--muted);font-size:14.5px;line-height:1.4}
+.row{display:flex;align-items:center;gap:8px;margin:9px 0}
+.row label{min-width:92px;font-size:14.5px}
+.row input[type=range]{flex:1;accent-color:var(--accent);min-width:0;height:28px}
+.row output{min-width:54px;text-align:right;font-variant-numeric:tabular-nums;color:var(--accent2);font-size:14.5px}
+.btns{flex-wrap:wrap}
+.btn{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;
+  padding:9px 14px;font-size:15px;cursor:pointer;min-height:42px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#04201d;border-color:var(--accent);font-weight:700}
+.btn.small{padding:6px 10px;font-size:13.5px;min-height:34px}
+.btn.big{font-size:20px;font-weight:700;padding:2px 14px;min-height:38px}
+.btn.on{background:var(--accent2);color:#2a1a00;border-color:var(--accent2);font-weight:700}
+.chk{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:14.5px;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--accent)}
+select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;
+  padding:8px;font-size:14.5px;min-height:38px;max-width:100%}
+.card{background:#0f1829;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin:10px 0;
+  font-size:14px;line-height:1.45}
+.card b{color:var(--accent2)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+details.ask{margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+details.ask summary{cursor:pointer;font-weight:700;color:var(--accent);font-size:15px}
+details.ask ul{margin:8px 0 0;padding-left:20px;font-size:14px;line-height:1.5;color:#cdd9ee}
+details.ask li{margin-bottom:6px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.tblwrap{max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin:8px 0}
+table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:5px 7px;text-align:right;border-bottom:1px solid #22314f;white-space:nowrap}
+.tbl th{position:sticky;top:0;background:#1a2640;font-size:12.5px;vertical-align:bottom}
+.tbl th small{display:block;color:var(--accent2);font-weight:400;font-size:12px}
+.tbl td:first-child,.tbl th:first-child{text-align:center}
+.tbl tr.cur td{background:#23375c}
+.tbl tr.hid td{cursor:pointer;color:var(--accent2);font-weight:700}
+.tbl tr.lim td{color:var(--accent);font-style:italic}
+.ifs td,.ifs th{padding:3px 3px}
+.ifs input[type=number]{width:43px;background:#0f1829;color:var(--text);border:1px solid var(--line);
+  border-radius:6px;padding:4px 2px;font-size:12px;text-align:right;-moz-appearance:textfield}
+.ifs input[type=number]::-webkit-inner-spin-button{display:none}
+.ifs .nm{min-width:58px;font-size:11.5px}
+.ifs input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.ifs .nm{text-align:left;font-size:12px;white-space:normal;min-width:70px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:13px;margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+@media (max-width:820px){
+  main{flex-direction:column}
+  #left{flex:none;height:56vh}
+  body[data-tab="mandel"] #left{flex:1;height:auto}
+  #panel{width:100%;max-width:none;border-left:0;border-top:1px solid var(--line);flex:1}
+  h1{font-size:19px}
+  nav button{padding:7px 11px;font-size:14px;min-height:38px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Fractal <span>Explorer</span></h1>
+  <nav id="tabs">
+    <button data-tab="chaos">Chaos Game</button>
+    <button data-tab="fern">Fern</button>
+    <button data-tab="gen">Generations</button>
+    <button data-tab="tree">Tree</button>
+    <button data-tab="mandel">Mandelbrot</button>
+  </nav>
+  <div class="saves">
+    <button class="btn" id="saveImg" title="Download the picture as a PNG">Save Image</button>
+    <button class="btn" id="saveHi" title="Download the picture again at up to 4 times the width and height (16 times the pixels)">Save High Res</button>
+  </div>
+</header>
+<main>
+  <div id="left">
+    <div id="mdBar" class="mdonly">
+      <div class="grp">
+        <button class="btn big" id="mdZin" title="Zoom in">+</button>
+        <button class="btn big" id="mdZout" title="Zoom out">&minus;</button>
+        <button class="btn" id="mdReset">Reset</button>
+      </div>
+      <div class="grp">
+        <label>Go to
+          <select id="mdPlaces">
+            <option value="">Choose a place&hellip;</option>
+            <option value="-0.5,0,3.5">The whole set</option>
+            <option value="-0.75,0.1,0.15">Seahorse Valley</option>
+            <option value="0.275,0.0,0.12">Elephant Valley</option>
+            <option value="-0.7453,0.1127,0.006">Spiral</option>
+            <option value="-1.7549,0,0.04">A mini Mandelbrot set</option>
+            <option value="-0.1011,0.9563,0.02">Double spiral</option>
+          </select>
+        </label>
+        <label>Colours
+          <select id="mdPal">
+            <option value="0">Fire</option>
+            <option value="1">Ocean</option>
+            <option value="2">Rainbow</option>
+            <option value="3">Electric</option>
+            <option value="4">Greyscale</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="mdJtog"> Show Julia set for the point under the pointer</label>
+      </div>
+    </div>
+    <div id="stage"><canvas id="cv"></canvas><div id="hud"></div>
+      <div id="mdJLabel" class="mdonly">Julia set for this c</div>
+      <canvas id="mdJulia" class="mdonly" width="170" height="170"></canvas>
+      <div id="mdHelp" class="mdonly"><b>Click</b> to zoom in on a point &middot; <b>Right-click</b> to zoom out &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom at the pointer</div>
+      <div id="mdInfo" class="mdonly">Move the pointer over the picture.</div>
+      <div id="mdWarn">Maximum zoom reached. The computer can only store numbers to about 15 significant figures, so it cannot go any deeper.</div>
+    </div>
+  </div>
+  <aside id="panel">
+
+    <!-- ================= CHAOS GAME ================= -->
+    <section id="p-chaos" class="tabpanel">
+      <h2>Chaos Game</h2>
+      <p class="lead">Pick a corner at random. Jump part of the way towards it. Plot a dot. Repeat. Where do the dots end up?</p>
+      <div class="row btns">
+        <button id="chRun" class="btn primary">Run</button>
+        <button id="chStep" class="btn">Step (one jump)</button>
+        <button id="chClear" class="btn">Clear</button>
+      </div>
+      <div class="row"><label for="chN">Corners</label><input type="range" id="chN" min="3" max="8" step="1" value="3"><output id="chNV"></output></div>
+      <div class="row"><label for="chR">Jump fraction</label><input type="range" id="chR" min="0.1" max="0.9" step="0.001" value="0.5"><output id="chRV"></output></div>
+      <div class="row"><button id="chBest" class="btn small">Best fraction for this shape</button></div>
+      <label class="chk"><input type="checkbox" id="chMid"> Add the midpoints of the sides as extra corners</label>
+      <label class="chk"><input type="checkbox" id="chNoRep"> Never pick the same corner twice in a row</label>
+      <label class="chk"><input type="checkbox" id="chCol" checked> Colour each dot by the corner chosen</label>
+      <div class="row"><label for="chSp">Speed</label><input type="range" id="chSp" min="0" max="7" step="1" value="5"><output id="chSpV" style="min-width:90px"></output></div>
+      <div class="presets" id="chPresets">
+        <button class="btn small" data-p="tri">Triangle</button>
+        <button class="btn small" data-p="sq">Square</button>
+        <button class="btn small" data-p="sqnr">Square, no repeats</button>
+        <button class="btn small" data-p="pen">Pentagon</button>
+        <button class="btn small" data-p="hex">Hexagon</button>
+        <button class="btn small" data-p="car">Carpet</button>
+      </div>
+      <div class="card" id="chMsg">Press <b>Step</b> to take one jump at a time, or <b>Run</b> to let the computer do thousands.</div>
+      <div class="card" id="chInfo"></div>
+      <details class="ask" open><summary>Questions to explore</summary><ul>
+        <li>The corners are picked at random, so why does the same picture appear every time?</li>
+        <li>Point P is at (2, 6) and the corner is at (10, 2). Where is the point half way between them? What if the jump fraction is ⅔?</li>
+        <li>Which jump fractions work for a square? What does the “never repeat” rule change?</li>
+        <li>The triangle has dimension log 3 ÷ log 2 ≈ 1.585. What could “between a line and a surface” mean?</li>
+      </ul></details>
+    </section>
+
+    <!-- ================= FERN / IFS ================= -->
+    <section id="p-fern" class="tabpanel">
+      <h2>Fern</h2>
+      <p class="lead">Four rules, each one shrinks, turns and moves the whole picture. A dice-roll picks which rule is used next. Change the numbers to “break” the fern.</p>
+      <div class="row btns">
+        <button id="feRun" class="btn primary">Pause</button>
+        <button id="feClear" class="btn">Restart</button>
+        <button id="feWob" class="btn">Wobble the numbers</button>
+      </div>
+      <div class="row"><label for="feSp">Speed</label><input type="range" id="feSp" min="0" max="4" step="1" value="2"><output id="feSpV" style="min-width:90px"></output></div>
+      <label class="chk"><input type="checkbox" id="feCol"> Colour dots by the rule used</label>
+      <div class="presets" id="fePresets">
+        <button class="btn small" data-p="barnsley">Barnsley fern</button>
+        <button class="btn small" data-p="thely">Another fern</button>
+        <button class="btn small" data-p="sier">Triangle (3 rules)</button>
+      </div>
+      <div class="tblwrap"><table class="tbl ifs" id="feTable"></table></div>
+      <div class="card">Each rule turns a point (x, y) into a new point:<br>
+        <span class="mono">x′ = ax + by + e</span><br><span class="mono">y′ = cx + dy + f</span><br>
+        <b>p</b> is how likely the rule is to be picked. Untick a rule to switch it off.</div>
+      <details class="ask" open><summary>Questions to explore</summary><ul>
+        <li>Switch the rules off one at a time. Which part of the fern does each one build?</li>
+        <li>Rule 2 keeps 85% of the size. Where is the “whole fern, slightly smaller” hiding inside the fern?</li>
+        <li>The stem rule has a probability of only 1%. What happens if you make it 30%?</li>
+        <li>The triangle needs only three rules, and all of them have a = d = 0.5. Why 0.5?</li>
+      </ul></details>
+    </section>
+
+    <!-- ================= GENERATIONS ================= -->
+    <section id="p-gen" class="tabpanel">
+      <h2>Generations</h2>
+      <p class="lead" id="gnRule"></p>
+      <div class="seg" id="gnPick">
+        <button class="btn small" data-f="snow">Koch snowflake</button>
+        <button class="btn small" data-f="koch">Koch curve</button>
+        <button class="btn small" data-f="sier">Sierpinski triangle</button>
+        <button class="btn small" data-f="carpet">Sierpinski carpet</button>
+        <button class="btn small" data-f="arrow">Sierpinski arrowhead</button>
+        <button class="btn small" data-f="dragon">Jurassic (dragon) curve</button>
+        <button class="btn small" data-f="levy">Lévy C curve</button>
+        <button class="btn small" data-f="hilbert">Hilbert curve</button>
+        <button class="btn small" data-f="peano">Peano curve</button>
+        <button class="btn small" data-f="cantor">Cantor set</button>
+        <button class="btn small" data-f="pyth">Pythagoras tree</button>
+      </div>
+      <div class="row btns">
+        <button id="gnDown" class="btn">&minus;</button>
+        <b id="gnLabel" style="min-width:110px;text-align:center;font-size:17px"></b>
+        <button id="gnUp" class="btn">+</button>
+        <button id="gnReset" class="btn small">Reset view</button>
+      </div>
+      <div class="row" id="gnPARow" hidden><label for="gnPA">Angle</label><input type="range" id="gnPA" min="15" max="75" step="1" value="45"><output id="gnPAV"></output></div>
+      <label class="chk"><input type="checkbox" id="gnColour" checked> <span id="gnColourTxt">Colour each new generation</span></label>
+      <div class="legend" id="gnLegend"></div>
+      <label class="chk"><input type="checkbox" id="gnPredict"> Predict the next row before it is shown</label>
+      <div class="row" id="gnRevealRow" hidden><button id="gnReveal" class="btn small on">Reveal the row</button><span style="font-size:13px;color:var(--muted)">or tap the row</span></div>
+      <div class="tblwrap" id="gnTblWrap"></div>
+      <div class="card" id="gnDim"></div>
+      <div class="card" style="color:var(--muted)">Drag to move, scroll or pinch to zoom, double-tap to reset. Left and right arrow keys change generation.</div>
+      <details class="ask" open><summary>Questions to explore</summary><ul id="gnAsk"></ul></details>
+    </section>
+
+    <!-- ================= TREE ================= -->
+    <section id="p-tree" class="tabpanel">
+      <h2>Tree</h2>
+      <p class="lead">Every branch splits into smaller branches. Change the angle and the shrink ratio to grow a different tree.</p>
+      <div class="row"><label for="trA">Angle</label><input type="range" id="trA" min="5" max="90" step="1" value="25"><output id="trAV"></output></div>
+      <div class="row"><label for="trR">Shrink ratio</label><input type="range" id="trR" min="0.4" max="0.85" step="0.01" value="0.72"><output id="trRV"></output></div>
+      <div class="row"><label for="trD">Splits</label><input type="range" id="trD" min="1" max="12" step="1" value="9"><output id="trDV"></output></div>
+      <div class="row"><label>Branches</label><div class="seg" id="trB"><button class="btn small on" data-b="2">2 each</button><button class="btn small" data-b="3">3 each</button></div></div>
+      <div class="row"><label for="trJ">Randomness</label><input type="range" id="trJ" min="0" max="1" step="0.05" value="0"><output id="trJV"></output></div>
+      <div class="row"><label for="trL">Tips</label><select id="trL"><option value="none">Bare</option><option value="leaves" selected>Leaves</option><option value="blossom">Blossom</option></select>
+        <button id="trShuffle" class="btn small">Shuffle</button></div>
+      <label class="chk"><input type="checkbox" id="trWind"> Blow wind through the tree</label>
+      <div class="card" id="trInfo"></div>
+      <details class="ask" open><summary>Questions to explore</summary><ul>
+        <li>Which angle and ratio give the tree that looks most real to you? Does it match a real tree’s shape?</li>
+        <li>With 2 branches each time and ratio 0.6, how many twigs are there after 10 splits? Check the count.</li>
+        <li>Add up the lengths of all the branches. What ratio makes the total stay finite as the splits go on for ever?</li>
+        <li>What does the shape look like when the angle is very small? Very large?</li>
+      </ul></details>
+    </section>
+
+  </aside>
+</main>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d'), hud = $('hud');
+var W = 100, H = 100, DPR = 1;
+var BG = '#0b1220';
+var MINUS = '\u2212';
+
+function resize(){
+  DPR = (cur === 'mandel') ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  var r = stage.getBoundingClientRect();
+  var w = Math.max(120, Math.floor(r.width)), h = Math.max(120, Math.floor(r.height));
+  var pw = Math.round(w * DPR), ph = Math.round(h * DPR);
+  var changed = (cv.width !== pw || cv.height !== ph);
+  if (changed){ cv.width = pw; cv.height = ph; }
+  W = cv.width; H = cv.height;
+  return changed;
+}
+function clearCanvas(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle = BG; ctx.fillRect(0,0,W,H);
+}
+var FMT = {};
+function onSlider(id, fn, fmt){
+  var el = $(id), out = $(id + 'V');
+  FMT[id] = fmt;
+  function upd(){ if (out) out.textContent = fmt ? fmt(+el.value) : el.value; }
+  el.addEventListener('input', function(){ upd(); fn(+el.value); });
+  upd();
+}
+function setSlider(id, v){
+  var el = $(id), out = $(id + 'V');
+  el.value = v;
+  if (out) out.textContent = FMT[id] ? FMT[id](v) : v;
+}
+function commas(n){ return n.toLocaleString('en-GB'); }
+function num4(v){
+  if (!isFinite(v)) return '–';
+  if (Number.isInteger(v)) return commas(v);
+  return String(Number(v.toPrecision(4)));
+}
+function fmtMinus(s){ return s.replace(/-/g, MINUS); }
+function lerp(a,b,t){ return a + (b - a) * t; }
+function hexRGB(h){ return [parseInt(h.substr(1,2),16), parseInt(h.substr(3,2),16), parseInt(h.substr(5,2),16)]; }
+function eventPos(e){
+  var r = cv.getBoundingClientRect();
+  return { cssX: e.clientX - r.left, cssY: e.clientY - r.top,
+           px: (e.clientX - r.left) * (cv.width / r.width), py: (e.clientY - r.top) * (cv.height / r.height) };
+}
+
+/* ====================================================================
+   CHAOS GAME
+   ==================================================================== */
+var CH = { n:3, r:0.5, mid:false, norep:false, col:true, sp:5, run:false, count:0, x:0, y:0, last:-1,
+           verts:[], cols:[], raf:0, warm:0, speeds:[1,2,5,20,100,500,2000,8000], started:false };
+var CH_MAX = 1000000;
+
+function chMakeVerts(){
+  var n = CH.n, cx = W/2, cy = H/2, R = Math.min(W,H) * 0.43;
+  var off = -Math.PI/2 + (n % 2 === 0 ? Math.PI/n : 0);
+  var c = [], i;
+  for (i = 0; i < n; i++) c.push([cx + R*Math.cos(off + 2*Math.PI*i/n), cy + R*Math.sin(off + 2*Math.PI*i/n)]);
+  var v = c.slice();
+  if (CH.mid){
+    for (i = 0; i < n; i++){ var a = c[i], b = c[(i+1)%n]; v.push([(a[0]+b[0])/2, (a[1]+b[1])/2]); }
+  }
+  var minY = Infinity, maxY = -Infinity;
+  v.forEach(function(p){ if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1]; });
+  var shift = H/2 - (minY + maxY)/2;
+  v.forEach(function(p){ p[1] += shift; });
+  return v;
+}
+function chColStr(i, N){ return 'hsl(' + Math.round(i * 360 / N) + ',85%,62%)'; }
+function chBuildVerts(){
+  CH.verts = chMakeVerts();
+  CH.cols = CH.verts.map(function(_, i){ return chColStr(i, CH.verts.length); });
+}
+function chReset(){
+  CH.run = false; cancelAnimationFrame(CH.raf);
+  $('chRun').textContent = 'Run';
+  clearCanvas();
+  chBuildVerts();
+  var cx = 0, cy = 0;
+  CH.verts.forEach(function(p){ cx += p[0]; cy += p[1]; });
+  CH.x = cx / CH.verts.length; CH.y = cy / CH.verts.length;
+  CH.count = 0; CH.last = -1; CH.warm = 10; CH.started = false;
+  chDrawCorners();
+  chUpdateInfo();
+  hud.textContent = 'Points: 0';
+}
+function chDrawCorners(verts, cols){
+  verts = verts || CH.verts; cols = cols || CH.cols;
+  var n = CH.n, cx = W/2, cy = H/2;
+  verts.forEach(function(p, i){
+    ctx.fillStyle = cols[i];
+    ctx.beginPath(); ctx.arc(p[0], p[1], (i < n ? 6 : 4) * DPR, 0, 6.2832); ctx.fill();
+    if (i < n){
+      var dx = p[0] - cx, dy = p[1] - cy, d = Math.hypot(dx, dy) || 1;
+      ctx.fillStyle = '#e8eef9'; ctx.font = (16 * DPR) + 'px system-ui,Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String.fromCharCode(65 + i), p[0] + dx/d * 20 * DPR, p[1] + dy/d * 20 * DPR);
+    }
+  });
+}
+function chPick(){
+  var N = CH.verts.length, v;
+  do { v = Math.floor(Math.random() * N); } while (CH.norep && v === CH.last && N > 1);
+  return v;
+}
+function chJump(show){
+  var v = chPick(), p = CH.verts[v], ox = CH.x, oy = CH.y;
+  CH.x += (p[0] - CH.x) * CH.r; CH.y += (p[1] - CH.y) * CH.r;
+  CH.last = v;
+  if (show){
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = DPR;
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(p[0], p[1]); ctx.stroke();
+    ctx.fillStyle = CH.col ? CH.cols[v] : '#35d0c0';
+    ctx.beginPath(); ctx.arc(CH.x, CH.y, 3.5 * DPR, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = DPR; ctx.stroke();
+    CH.count++;
+    var label = v < CH.n ? String.fromCharCode(65 + v) : 'a midpoint';
+    $('chMsg').innerHTML = 'The dice chose corner <b>' + label + '</b>. The new dot is ' + CH.r.toFixed(3) +
+      ' of the way from the last dot towards it.';
+    return;
+  }
+  if (CH.warm > 0){ CH.warm--; return; }
+  var sz = Math.max(1, Math.round(DPR));
+  ctx.fillStyle = CH.col ? CH.cols[v] : '#35d0c0';
+  ctx.fillRect(Math.floor(CH.x), Math.floor(CH.y), sz, sz);
+  CH.count++;
+}
+function chLoop(){
+  if (!CH.run) return;
+  var k = CH.speeds[CH.sp];
+  for (var i = 0; i < k; i++) chJump(false);
+  hud.textContent = 'Points: ' + commas(CH.count);
+  if (CH.count >= CH_MAX){ CH.run = false; $('chRun').textContent = 'Run'; hud.textContent += ' (stopped at 1,000,000)'; return; }
+  CH.raf = requestAnimationFrame(chLoop);
+}
+function chUpdateInfo(){
+  var N = CH.verts.length, s = 1 - CH.r, D = Math.log(N) / Math.log(1 / s);
+  var t = 'There are <b>' + N + '</b> corners. Each small copy is <b>' + s.toFixed(3) + '</b> times the size of the whole.<br>';
+  if (D <= 2.0005) t += 'Dimension = log ' + N + ' &divide; log (1/' + s.toFixed(3) + ') &asymp; <b>' + D.toFixed(3) + '</b>';
+  else t += 'The copies overlap, so the dimension formula gives ' + D.toFixed(2) + ' (more than 2 does not make sense for a flat picture).';
+  $('chInfo').innerHTML = t;
+}
+function chBestRatio(){
+  var n = CH.n;
+  if (!CH.mid){
+    var sum = 0, m = Math.floor(n/4);
+    for (var k = 1; k <= m; k++) sum += Math.cos(2*Math.PI*k/n);
+    return 1 - 1 / (2 * (1 + sum));
+  }
+  if (n === 4) return 2/3;
+  return null;
+}
+function chSetFromState(){
+  setSlider('chN', CH.n); setSlider('chR', CH.r);
+  $('chMid').checked = CH.mid; $('chNoRep').checked = CH.norep;
+}
+var CH_PRESETS = {
+  tri:{n:3,r:0.5,mid:false,norep:false}, sq:{n:4,r:0.5,mid:false,norep:false},
+  sqnr:{n:4,r:0.5,mid:false,norep:true}, pen:{n:5,r:0.618034,mid:false,norep:false},
+  hex:{n:6,r:2/3,mid:false,norep:false}, car:{n:4,r:2/3,mid:true,norep:false}
+};
+function chInit(){
+  onSlider('chN', function(v){ CH.n = v; chReset(); });
+  onSlider('chR', function(v){ CH.r = v; chReset(); }, function(v){ return v.toFixed(3); });
+  onSlider('chSp', function(v){ CH.sp = v; }, function(v){ return commas(CH.speeds[v]) + ' / frame'; });
+  $('chMid').addEventListener('change', function(){ CH.mid = this.checked; chReset(); });
+  $('chNoRep').addEventListener('change', function(){ CH.norep = this.checked; chReset(); });
+  $('chCol').addEventListener('change', function(){ CH.col = this.checked; chReset(); });
+  $('chRun').addEventListener('click', function(){
+    if (CH.run){ CH.run = false; cancelAnimationFrame(CH.raf); this.textContent = 'Run'; }
+    else { CH.run = true; this.textContent = 'Pause'; chLoop(); }
+  });
+  $('chStep').addEventListener('click', function(){
+    if (CH.run){ CH.run = false; cancelAnimationFrame(CH.raf); $('chRun').textContent = 'Run'; }
+    if (!CH.started){
+      CH.started = true;
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = DPR; ctx.beginPath(); ctx.arc(CH.x, CH.y, 6 * DPR, 0, 6.2832); ctx.stroke();
+    }
+    CH.warm = 0; chJump(true);
+    hud.textContent = 'Points: ' + commas(CH.count);
+  });
+  $('chClear').addEventListener('click', chReset);
+  $('chBest').addEventListener('click', function(){
+    var b = chBestRatio();
+    if (b === null){ $('chMsg').innerHTML = 'There is no neat formula once midpoints are added to this shape. Slide the fraction and look for where the copies just touch.'; return; }
+    CH.r = b; setSlider('chR', b); chReset();
+    $('chMsg').innerHTML = 'With this many corners, the copies just touch when the jump fraction is <b>' + b.toFixed(3) + '</b>.';
+  });
+  $('chPresets').addEventListener('click', function(e){
+    var p = e.target.getAttribute && e.target.getAttribute('data-p'); if (!p) return;
+    var s = CH_PRESETS[p]; CH.n = s.n; CH.r = s.r; CH.mid = s.mid; CH.norep = s.norep;
+    chSetFromState(); chReset();
+  });
+}
+var CHm = {
+  activate: function(){ chReset(); },
+  deactivate: function(){ CH.run = false; cancelAnimationFrame(CH.raf); $('chRun').textContent = 'Run'; },
+  onResize: function(){ chReset(); }
+};
+
+/* ====================================================================
+   FERN (iterated function system)
+   ==================================================================== */
+var FE_PRESETS = {
+  barnsley: [
+    {nm:'Stem', a:0,b:0,c:0,d:0.16,e:0,f:0,p:0.01,on:true},
+    {nm:'Rest of the fern', a:0.85,b:0.04,c:-0.04,d:0.85,e:0,f:1.6,p:0.85,on:true},
+    {nm:'Left leaflet', a:0.2,b:-0.26,c:0.23,d:0.22,e:0,f:1.6,p:0.07,on:true},
+    {nm:'Right leaflet', a:-0.15,b:0.28,c:0.26,d:0.24,e:0,f:0.44,p:0.07,on:true}
+  ],
+  thely: [
+    {nm:'Stem', a:0,b:0,c:0,d:0.25,e:0,f:-0.4,p:0.02,on:true},
+    {nm:'Rest of the fern', a:0.95,b:0.005,c:-0.005,d:0.93,e:-0.002,f:0.5,p:0.84,on:true},
+    {nm:'Left leaflet', a:0.035,b:-0.2,c:0.16,d:0.04,e:-0.09,f:0.02,p:0.07,on:true},
+    {nm:'Right leaflet', a:-0.04,b:0.2,c:0.16,d:0.04,e:0.083,f:0.12,p:0.07,on:true}
+  ],
+  sier: [
+    {nm:'Bottom left', a:0.5,b:0,c:0,d:0.5,e:0,f:0,p:1/3,on:true},
+    {nm:'Bottom right', a:0.5,b:0,c:0,d:0.5,e:0.5,f:0,p:1/3,on:true},
+    {nm:'Top', a:0.5,b:0,c:0,d:0.5,e:0.25,f:0.4330127,p:1/3,on:true}
+  ]
+};
+var FE_COLS = ['#ffb84d','#6ee7a0','#ff6b9a','#4d9fff','#c77dff','#f6e05e'];
+var FE = { maps:[], x:0, y:0, count:0, run:true, raf:0, sp:2, speeds:[100,500,2000,5000,20000], colour:false,
+           ox:0, oy:0, s:1, preset:'barnsley' };
+var FE_MAX = 600000;
+
+function feLoadPreset(name){
+  FE.preset = name;
+  FE.maps = FE_PRESETS[name].map(function(m){ var o = {}; for (var k in m) o[k] = m[k]; return o; });
+  feBuildTable(); feRefit();
+}
+function feBuildTable(){
+  var h = '<thead><tr><th></th><th>Rule</th><th>a</th><th>b</th><th>c</th><th>d</th><th>e</th><th>f</th><th>p</th></tr></thead><tbody>';
+  FE.maps.forEach(function(m, i){
+    h += '<tr><td><input type="checkbox" data-i="' + i + '" data-k="on"' + (m.on ? ' checked' : '') + '></td>' +
+         '<td class="nm"><span class="dot" style="background:' + FE_COLS[i % FE_COLS.length] + '"></span>' + m.nm + '</td>';
+    ['a','b','c','d','e','f','p'].forEach(function(k){
+      h += '<td><input type="number" step="0.01" data-i="' + i + '" data-k="' + k + '" value="' + (Math.round(m[k]*1000)/1000) + '"></td>';
+    });
+    h += '</tr>';
+  });
+  $('feTable').innerHTML = h + '</tbody>';
+}
+function feChoose(onlyOn){
+  var tot = 0, i, m;
+  for (i = 0; i < FE.maps.length; i++){ m = FE.maps[i]; if (m.p > 0 && (!onlyOn || m.on)) tot += m.p; }
+  if (tot <= 0) return -1;
+  var r = Math.random() * tot;
+  for (i = 0; i < FE.maps.length; i++){
+    m = FE.maps[i]; if (!(m.p > 0 && (!onlyOn || m.on))) continue;
+    if (r < m.p) return i; r -= m.p;
+  }
+  return -1;
+}
+function feFit(){
+  var x = 0, y = 0, minx = 1e12, maxx = -1e12, miny = 1e12, maxy = -1e12, i;
+  for (i = 0; i < 30000; i++){
+    var k = feChoose(false); if (k < 0) break;
+    var m = FE.maps[k], nx = m.a*x + m.b*y + m.e, ny = m.c*x + m.d*y + m.f;
+    x = nx; y = ny;
+    if (!isFinite(x) || !isFinite(y) || Math.abs(x) > 1e6 || Math.abs(y) > 1e6){ x = 0; y = 0; continue; }
+    if (i > 20){ if (x<minx) minx=x; if (x>maxx) maxx=x; if (y<miny) miny=y; if (y>maxy) maxy=y; }
+  }
+  if (!(maxx > minx)){ minx = -1; maxx = 1; }
+  if (!(maxy > miny)){ miny = -1; maxy = 1; }
+  var s = Math.min(W*0.92/(maxx-minx), H*0.94/(maxy-miny));
+  return { s: s, ox: W/2 - (minx+maxx)/2*s, oy: H/2 + (miny+maxy)/2*s };
+}
+function feRefit(){
+  var f = feFit(); FE.s = f.s; FE.ox = f.ox; FE.oy = f.oy;
+  feReset();
+}
+function feReset(){
+  cancelAnimationFrame(FE.raf);
+  clearCanvas(); FE.x = 0; FE.y = 0; FE.count = 0;
+  hud.textContent = 'Points: 0';
+  if (FE.run) feLoop();
+}
+function feLoop(){
+  if (!FE.run) return;
+  var n = FE.speeds[FE.sp], sz = Math.max(1, Math.round(DPR)), i;
+  var useCol = FE.colour;
+  if (!useCol) ctx.fillStyle = '#6ee7a0';
+  for (i = 0; i < n; i++){
+    var k = feChoose(true); if (k < 0) break;
+    var m = FE.maps[k], nx = m.a*FE.x + m.b*FE.y + m.e, ny = m.c*FE.x + m.d*FE.y + m.f;
+    FE.x = nx; FE.y = ny;
+    if (!isFinite(FE.x) || !isFinite(FE.y) || Math.abs(FE.x) > 1e6 || Math.abs(FE.y) > 1e6){ FE.x = 0; FE.y = 0; continue; }
+    if (FE.count < 15 && false) continue;
+    if (useCol) ctx.fillStyle = FE_COLS[k % FE_COLS.length];
+    ctx.fillRect(Math.floor(FE.ox + FE.x * FE.s), Math.floor(FE.oy - FE.y * FE.s), sz, sz);
+    FE.count++;
+  }
+  hud.textContent = 'Points: ' + commas(FE.count);
+  if (FE.count >= FE_MAX){ FE.run = false; $('feRun').textContent = 'Run'; hud.textContent += ' (paused)'; return; }
+  FE.raf = requestAnimationFrame(feLoop);
+}
+function feInit(){
+  onSlider('feSp', function(v){ FE.sp = v; }, function(v){ return commas(FE.speeds[v]) + ' / frame'; });
+  $('feRun').addEventListener('click', function(){
+    FE.run = !FE.run; this.textContent = FE.run ? 'Pause' : 'Run';
+    if (FE.run){ if (FE.count >= FE_MAX) feReset(); else feLoop(); } else cancelAnimationFrame(FE.raf);
+  });
+  $('feClear').addEventListener('click', function(){ FE.run = true; $('feRun').textContent = 'Pause'; feReset(); });
+  $('feCol').addEventListener('change', function(){ FE.colour = this.checked; FE.run = true; $('feRun').textContent = 'Pause'; feReset(); });
+  $('fePresets').addEventListener('click', function(e){
+    var p = e.target.getAttribute && e.target.getAttribute('data-p'); if (!p) return;
+    FE.run = true; $('feRun').textContent = 'Pause'; feLoadPreset(p);
+  });
+  $('feWob').addEventListener('click', function(){
+    FE.maps.forEach(function(m){
+      ['a','b','c','d'].forEach(function(k){ m[k] += (Math.random() - 0.5) * 0.06; });
+      ['e','f'].forEach(function(k){ m[k] += (Math.random() - 0.5) * 0.06; });
+    });
+    feBuildTable(); FE.run = true; $('feRun').textContent = 'Pause'; feRefit();
+  });
+  $('feTable').addEventListener('input', function(e){
+    var t = e.target, i = +t.getAttribute('data-i'), k = t.getAttribute('data-k'); if (isNaN(i) || !k) return;
+    if (k === 'on'){ FE.maps[i].on = t.checked; FE.run = true; $('feRun').textContent = 'Pause'; feReset(); return; }
+    var v = parseFloat(t.value); if (isNaN(v)) return;
+    FE.maps[i][k] = v; FE.run = true; $('feRun').textContent = 'Pause'; feRefit();
+  });
+  FE.maps = FE_PRESETS.barnsley.map(function(m){ var o = {}; for (var k in m) o[k] = m[k]; return o; });
+  feBuildTable();
+}
+var FEm = {
+  activate: function(){ $('feRun').textContent = FE.run ? 'Pause' : 'Run'; feRefit(); },
+  deactivate: function(){ cancelAnimationFrame(FE.raf); },
+  onResize: function(){ feRefit(); }
+};
+
+/* ====================================================================
+   GENERATIONS (Koch, Sierpinski)
+   ==================================================================== */
+var GENCOL = ['#ffb84d','#ff6b6b','#c77dff','#4d9fff','#35d0c0','#7bd88f','#f6e05e','#ff8fab'];
+var BASEFILL = '#2f5d8a';
+var S3 = Math.sqrt(3) / 2;
+var FRS = {
+  snow: { label:'Koch snowflake', max:6, box:[-0.12,1.12,-0.33,0.91],
+    rule:'Start with an equilateral triangle. On every side, replace the middle third with a smaller triangle bump.',
+    cols:[ {h:'Sides', f:'3 × 4ⁿ', v:function(n){return 3*Math.pow(4,n);}, lim:'→ ∞'},
+           {h:'Side length', f:'(⅓)ⁿ', v:function(n){return Math.pow(1/3,n);}, lim:'→ 0'},
+           {h:'Perimeter', f:'3 × (4/3)ⁿ', v:function(n){return 3*Math.pow(4/3,n);}, lim:'→ ∞'},
+           {h:'Area (start = 1)', f:'8/5 − 3/5 × (4/9)ⁿ', v:function(n){return 1.6-0.6*Math.pow(4/9,n);}, lim:'→ 1.6'} ],
+    N:4, S:3, dimNote:'of the boundary',
+    ask:['Every generation the perimeter is multiplied by 4/3. Will it ever stop growing? What does that mean for the finished snowflake?',
+         'The snowflake fits inside a circle, so its area cannot grow for ever. Yet the perimeter does. Is that a contradiction?',
+         'Predict the number of sides at generation 5 without using the table.',
+         'The area at generation 1 is 4/3. Where does the 1/3 extra come from? Can you find it for generation 2?']},
+  koch: { label:'Koch curve', max:7, box:[-0.05,1.05,-0.03,0.31],
+    rule:'Start with a straight line. Replace the middle third with two sides of an equilateral triangle. Repeat on every line.',
+    cols:[ {h:'Segments', f:'4ⁿ', v:function(n){return Math.pow(4,n);}, lim:'→ ∞'},
+           {h:'Segment length', f:'(⅓)ⁿ', v:function(n){return Math.pow(1/3,n);}, lim:'→ 0'},
+           {h:'Total length', f:'(4/3)ⁿ', v:function(n){return Math.pow(4/3,n);}, lim:'→ ∞'} ],
+    N:4, S:3, dimNote:'',
+    ask:['The two ends are always 1 apart, yet the curve gets longer each time. Where does the extra length come from?',
+         'How many generations until the curve is more than 10 times as long as the start? Use the formula.',
+         'Zoom in on one part of the curve. What do you notice?',
+         'The dimension is about 1.26. Why might it sit between 1 (a line) and 2 (a surface)?']},
+  sier: { label:'Sierpinski triangle', max:8, box:[-0.04,1.04,-0.04,0.91],
+    rule:'Start with a triangle. Join the midpoints of the sides and remove the middle triangle. Repeat on every triangle left.',
+    cols:[ {h:'Triangles', f:'3ⁿ', v:function(n){return Math.pow(3,n);}, lim:'→ ∞'},
+           {h:'Side length', f:'(½)ⁿ', v:function(n){return Math.pow(1/2,n);}, lim:'→ 0'},
+           {h:'Area (start = 1)', f:'(¾)ⁿ', v:function(n){return Math.pow(3/4,n);}, lim:'→ 0'},
+           {h:'Total perimeter (start = 3)', f:'3 × (3/2)ⁿ', v:function(n){return 3*Math.pow(3/2,n);}, lim:'→ ∞'} ],
+    N:3, S:2, dimNote:'',
+    ask:['The area heads to zero but the perimeter heads to infinity. How can there be so much edge and so little triangle?',
+         'This is the same shape the chaos game makes. Can you spot the generation-3 triangles in the dots?',
+         'Look at the numbers of triangles: 1, 3, 9, 27… Where have you seen this pattern in Pascal’s triangle (odd numbers)?',
+         'After how many generations is less than 10% of the area left?']},
+  carpet: { label:'Sierpinski carpet', max:5, box:[-0.04,1.04,-0.04,1.04],
+    rule:'Start with a square. Split it into nine equal squares and remove the middle one. Repeat on every square left.',
+    cols:[ {h:'Squares', f:'8ⁿ', v:function(n){return Math.pow(8,n);}, lim:'→ ∞'},
+           {h:'Side length', f:'(⅓)ⁿ', v:function(n){return Math.pow(1/3,n);}, lim:'→ 0'},
+           {h:'Area (start = 1)', f:'(8/9)ⁿ', v:function(n){return Math.pow(8/9,n);}, lim:'→ 0'},
+           {h:'Total perimeter (start = 4)', f:'4 × (8/3)ⁿ', v:function(n){return 4*Math.pow(8/3,n);}, lim:'→ ∞'} ],
+    N:8, S:3, dimNote:'',
+    ask:['The area is multiplied by 8/9 each time. How many generations until half the carpet has gone?',
+         'Try the chaos game with 4 corners, midpoints added and jump fraction ⅔. What do you see?',
+         'The carpet has dimension log 8 ÷ log 3 ≈ 1.89. Why is that bigger than the triangle’s 1.58?',
+         'Predict the number of squares at generation 4. Then check.']},
+  arrow: { label:'Sierpinski arrowhead', kind:'lsys', max:9,
+    rule:'Start with a line. Replace every line with three lines of half the length, joined at 60° and alternating left and right. One unbroken path ends up tracing the Sierpinski triangle.',
+    cols:[ {h:'Segments', f:'3ⁿ', v:function(n){return Math.pow(3,n);}, lim:'→ ∞'},
+           {h:'Segment length (ends 1 apart)', f:'(½)ⁿ', v:function(n){return Math.pow(1/2,n);}, lim:'→ 0'},
+           {h:'Total length', f:'(3/2)ⁿ', v:function(n){return Math.pow(3/2,n);}, lim:'→ ∞'} ],
+    N:3, S:2, dimNote:'',
+    ask:['Compare the number of segments with the number of triangles in the Sierpinski triangle table. What do you notice?',
+         'The two ends stay exactly 1 apart, but the path gets longer each time. By what factor?',
+         'The path never crosses itself or lifts the pen. Can you follow it with a finger at generation 3?',
+         'Why does a single wiggly line give the same limit shape as removing triangles?']},
+  dragon: { label:'Jurassic (dragon) curve', kind:'lsys', max:15,
+    rule:'Replace every line with two lines at a right angle, each 1/√2 times as long, switching which side the corner is on each time. The two ends stay 1 apart. It is what you get by folding a paper strip and opening it out.',
+    cols:[ {h:'Segments', f:'2ⁿ', v:function(n){return Math.pow(2,n);}, lim:'→ ∞'},
+           {h:'Segment length (ends 1 apart)', f:'(1/√2)ⁿ', v:function(n){return Math.pow(1/Math.SQRT2,n);}, lim:'→ 0'},
+           {h:'Total length', f:'(√2)ⁿ', v:function(n){return Math.pow(Math.SQRT2,n);}, lim:'→ ∞'} ],
+    N:2, S:Math.SQRT2, Ss:'√2', dimNote:'',
+    ask:['Fold a strip of paper in half 4 times, then open it with every crease at 90°. Which generation is it? How many creases are there?',
+         'The dimension is exactly 2. What could it mean for a curve with no thickness to behave like a surface?',
+         'Copies of the dragon fit together with no gaps and cover the whole plane. Zoom in at generation 12 and look for the pattern.',
+         'Every generation multiplies the length by √2. After how many generations is the path over 100 times the distance between its ends?',
+         'The chapter pages in the novel Jurassic Park are decorated with this curve at different generations.']},
+  hilbert: { label:'Hilbert curve', kind:'lsys', max:7,
+    rule:'Join the centres of four squares in a U shape. Then shrink the pattern, repeat it in all four quarters (turning two of them round) and join up the ends. The curve stays inside a square of side 1.',
+    cols:[ {h:'Segments', f:'4ⁿ − 1', v:function(n){return Math.pow(4,n)-1;}, lim:'→ ∞'},
+           {h:'Segment length (square = 1)', f:'1/(2ⁿ − 1)', v:function(n){return n===0?NaN:1/(Math.pow(2,n)-1);}, lim:'→ 0'},
+           {h:'Total length', f:'2ⁿ + 1', v:function(n){return n===0?NaN:Math.pow(2,n)+1;}, lim:'→ ∞'} ],
+    N:4, S:2, dimNote:'',
+    ask:['The dimension is exactly 2: in the limit the curve passes through every point of the square. Does that seem possible?',
+         'Predict the number of segments at generation 6, then check the table.',
+         'Each generation fits four copies at half the size. How is this like the Sierpinski triangle, and how is it different?',
+         'The curve keeps points that are close together in the square close together along the line. Why might a computer find that useful?']},
+  cantor: { label:'Cantor set', kind:'rows', max:8,
+    rule:'Start with a line of length 1. Remove the middle third. Remove the middle third of each piece left. Keep going.',
+    cols:[ {h:'Pieces', f:'2ⁿ', v:function(n){return Math.pow(2,n);}, lim:'→ ∞'},
+           {h:'Length of each piece', f:'(⅓)ⁿ', v:function(n){return Math.pow(1/3,n);}, lim:'→ 0'},
+           {h:'Total length', f:'(⅔)ⁿ', v:function(n){return Math.pow(2/3,n);}, lim:'→ 0'} ],
+    N:2, S:3, dimNote:'',
+    ask:['The total length goes to 0, but the set still contains infinitely many points. Which points survive? Is ⅓ still there?',
+         'After how many generations is less than 1% of the line left?',
+         'The dimension is about 0.63, between 0 (points) and 1 (a line). What would “dust” mean?',
+         'Extension: write ¼ in base 3. Is it in the set? (Points in the set have no digit 1 in base 3.)']},
+  levy: { label:'Lévy C curve', kind:'lsys', max:16,
+    rule:'Replace every line with two lines at a right angle, each 1/√2 times as long, with the corner always on the same side. The two ends stay 1 apart. The finished shape looks like the letter C.',
+    cols:[ {h:'Segments', f:'2ⁿ', v:function(n){return Math.pow(2,n);}, lim:'→ ∞'},
+           {h:'Segment length (ends 1 apart)', f:'(1/√2)ⁿ', v:function(n){return Math.pow(1/Math.SQRT2,n);}, lim:'→ 0'},
+           {h:'Total length', f:'(√2)ⁿ', v:function(n){return Math.pow(Math.SQRT2,n);}, lim:'→ ∞'} ],
+    N:2, S:Math.SQRT2, Ss:'√2', dimNote:'',
+    dimExtra:'The pieces overlap, so this formula does not tell the whole story. The finished curve fills a solid region (dimension 2), but the rough edge around that region has a dimension of about 1.934.',
+    ask:['This is built like the Jurassic (dragon) curve, but the corner is always on the same side instead of alternating. Compare generation 10 of the two. What is different?',
+         'The total length is multiplied by √2 each time. After how many generations is it more than 100 times the distance between the ends?',
+         'Step up to generations 12 to 16. The curve starts to look like a solid shape. Where do you think lines are being drawn on top of each other?',
+         'The edge of the finished shape has dimension about 1.934. How does that compare with the Koch curve at 1.262?']},
+  peano: { label:'Peano curve', kind:'lsys', max:5,
+    rule:'Join the centres of the nine squares of a 3 by 3 grid with an S-shaped path from one corner to the opposite corner. Then split every square into nine and repeat, keeping the whole thing one unbroken line.',
+    cols:[ {h:'Segments', f:'9ⁿ − 1', v:function(n){return Math.pow(9,n)-1;}, lim:'→ ∞'},
+           {h:'Segment length (square = 1)', f:'1/(3ⁿ − 1)', v:function(n){return n===0?NaN:1/(Math.pow(3,n)-1);}, lim:'→ 0'},
+           {h:'Total length', f:'3ⁿ + 1', v:function(n){return n===0?NaN:Math.pow(3,n)+1;}, lim:'→ ∞'} ],
+    N:9, S:3, dimNote:'',
+    ask:['Giuseppe Peano found this curve in 1890. In the limit it passes through every point of the square. Is it a line or a surface?',
+         'Predict the number of segments at generation 3, then check the table. How does the pattern compare with the Hilbert curve (4ⁿ − 1)?',
+         'At generation n the curve visits every point of a 3ⁿ by 3ⁿ grid exactly once. How many points is that at generation 4? How many segments join them?',
+         'The Peano and Hilbert curves both have dimension 2. One uses 9 copies at ⅓ size and the other 4 copies at ½ size. Why do both give 2?']},
+  pyth: { label:'Pythagoras tree', kind:'pyth', max:12,
+    rule:'Start with a square. Build a right-angled triangle on its top edge, then a square on each of the two short sides. Repeat on every new square. Areas are counted in starting squares. Move the angle slider to change the tree.',
+    cols:[ {h:'Squares added', f:'2ⁿ', v:function(n){return Math.pow(2,n);}, lim:'→ ∞'},
+           {h:'Total squares', f:'2ⁿ⁺¹ − 1', v:function(n){return Math.pow(2,n+1)-1;}, lim:'→ ∞'},
+           {h:'Area added', f:'1', v:function(n){return 1;}, lim:'1 every time'},
+           {h:'Total area', f:'n + 1', v:function(n){return n+1;}, lim:'→ ∞'} ],
+    dimHTML:function(){
+      var t = GN.pa * Math.PI / 180, a = Math.cos(t), b = Math.sin(t);
+      return 'The two small squares have sides <b>' + a.toFixed(3) + '</b> and <b>' + b.toFixed(3) + '</b>.<br>' +
+        'Areas: ' + (a*a).toFixed(3) + ' + ' + (b*b).toFixed(3) + ' = <b>' + (a*a+b*b).toFixed(3) + '</b>, the area of the square they sit on.<br>' +
+        '<span style="color:var(--muted)">That is Pythagoras’ theorem: a² + b² = c².</span>';
+    },
+    ask:['Move the angle slider. The two small squares always have the same total area as the square they sit on. Why is that Pythagoras’ theorem?',
+         'Each generation adds an area of 1, so the total area grows for ever. But the tree stays inside a box. What must be happening to the squares?',
+         'At 45° both small squares have side 0.707. What happens to the tree as the angle gets smaller or larger? Which side leans over?',
+         'How many squares are there after 10 generations? Use the formula, then check the table.']}
+};
+var LSYS = {
+  levy: { axiom:'F', rules:{F:'+F--F+'}, angle:45, draw:'F', start:function(){ return 0; } },
+  peano: { axiom:'X', rules:{X:'XFYFX+F+YFXFY-F-XFYFX', Y:'YFXFY-F-XFYFX+F+YFXFY'}, angle:90, draw:'F', mode:'square', start:function(){ return 0; } },
+  dragon: { axiom:'FX', rules:{X:'X+YF', Y:'FX-Y'}, angle:90, draw:'F', start:function(){ return 0; } },
+  arrow: { axiom:'A', rules:{A:'B-A-B', B:'A+B+A'}, angle:60, draw:'AB', start:function(n){ return n % 2 ? 60 : 0; } },
+  hilbert: { axiom:'A', rules:{A:'-BF+AFA+FB-', B:'+AF-BFB-FA+'}, angle:90, draw:'F', start:function(){ return 0; } }
+};
+var GN = { fr:'snow', n:3, colour:true, predict:false, revealed:false, k:1, ox:0, oy:0, geo:null, box:null, pa:45, ptrs:{}, pinch:0 };
+
+function kochBuild(n, closed){
+  var pts = closed ? [[0,0],[1,0],[0.5,S3]] : [[0,0],[1,0]];
+  var th = (closed ? -1 : 1) * Math.PI / 3, c = Math.cos(th), s = Math.sin(th);
+  var tris = [], k, i;
+  for (k = 1; k <= n; k++){
+    var np = [], tk = [], m = pts.length, edges = closed ? m : m - 1;
+    for (i = 0; i < edges; i++){
+      var p = pts[i], q = pts[(i+1) % m];
+      var dx = (q[0]-p[0])/3, dy = (q[1]-p[1])/3;
+      var a = [p[0]+dx, p[1]+dy], b = [p[0]+2*dx, p[1]+2*dy];
+      var pk = [a[0] + dx*c - dy*s, a[1] + dx*s + dy*c];
+      np.push(p, a, pk, b);
+      tk.push(a[0], a[1], pk[0], pk[1], b[0], b[1]);
+    }
+    if (!closed) np.push(pts[m-1]);
+    pts = np; tris.push(tk);
+  }
+  return { pts: pts, tris: tris, closed: closed };
+}
+function sierBuild(n){
+  var tris = [[0,0,1,0,0.5,S3]], holes = [], k, j;
+  for (k = 1; k <= n; k++){
+    var h = [], nt = [];
+    for (j = 0; j < tris.length; j++){
+      var t = tris[j], ax=t[0], ay=t[1], bx=t[2], by=t[3], cx=t[4], cy=t[5];
+      var mx=(ax+bx)/2, my=(ay+by)/2, nx=(bx+cx)/2, ny=(by+cy)/2, ox=(cx+ax)/2, oy=(cy+ay)/2;
+      h.push(mx,my,nx,ny,ox,oy);
+      if (k < n) nt.push([ax,ay,mx,my,ox,oy],[mx,my,bx,by,nx,ny],[ox,oy,nx,ny,cx,cy]);
+    }
+    holes.push(h); tris = nt;
+  }
+  return { holes: holes };
+}
+function carpetBuild(n){
+  var sq = [[0,0,1]], holes = [], k, j, a, b;
+  for (k = 1; k <= n; k++){
+    var h = [], ns = [];
+    for (j = 0; j < sq.length; j++){
+      var t = sq[j], s3 = t[2]/3;
+      h.push(t[0]+s3, t[1]+s3, s3);
+      if (k < n) for (a = 0; a < 3; a++) for (b = 0; b < 3; b++) if (!(a === 1 && b === 1)) ns.push([t[0]+a*s3, t[1]+b*s3, s3]);
+    }
+    holes.push(h); sq = ns;
+  }
+  return { holes: holes };
+}
+function lsysBuild(def, n){
+  var s = def.axiom, i, j, t, ch;
+  for (i = 0; i < n; i++){
+    t = [];
+    for (j = 0; j < s.length; j++){ ch = s.charAt(j); t.push(def.rules[ch] !== undefined ? def.rules[ch] : ch); }
+    s = t.join('');
+  }
+  var ang = def.angle * Math.PI / 180, h = def.start(n) * Math.PI / 180, x = 0, y = 0, pts = [0, 0];
+  for (j = 0; j < s.length; j++){
+    ch = s.charAt(j);
+    if (def.draw.indexOf(ch) >= 0){ x += Math.cos(h); y += Math.sin(h); pts.push(x, y); }
+    else if (ch === '+') h += ang;
+    else if (ch === '-') h -= ang;
+  }
+  var m = pts.length / 2, ex = pts[pts.length - 2], ey = pts[pts.length - 1], d = Math.hypot(ex, ey);
+  if (def.mode === 'square'){
+    // no rotation: scale so the bounding square has side 1
+    var bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9;
+    for (i = 0; i < m; i++){
+      if (pts[2*i] < bx0) bx0 = pts[2*i]; if (pts[2*i] > bx1) bx1 = pts[2*i];
+      if (pts[2*i+1] < by0) by0 = pts[2*i+1]; if (pts[2*i+1] > by1) by1 = pts[2*i+1];
+    }
+    var ext = Math.max(bx1 - bx0, by1 - by0) || 1;
+    for (i = 0; i < m; i++){ pts[2*i] = (pts[2*i] - bx0) / ext; pts[2*i+1] = (pts[2*i+1] - by0) / ext; }
+  } else if (m > 1 && d > 1e-9){
+    // rotate and scale so the start is (0,0) and the end is (1,0)
+    var c = ex / d, sn = ey / d;
+    for (i = 0; i < m; i++){
+      var px = pts[2*i], py = pts[2*i+1];
+      pts[2*i] = (px * c + py * sn) / d; pts[2*i+1] = (-px * sn + py * c) / d;
+    }
+  }
+  var minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+  for (i = 0; i < m; i++){
+    if (pts[2*i] < minx) minx = pts[2*i]; if (pts[2*i] > maxx) maxx = pts[2*i];
+    if (pts[2*i+1] < miny) miny = pts[2*i+1]; if (pts[2*i+1] > maxy) maxy = pts[2*i+1];
+  }
+  var pad = 0.04 * Math.max(maxx - minx, maxy - miny, 0.2);
+  return { pts: pts, count: m - 1, box: [minx - pad, maxx + pad, miny - pad, maxy + pad] };
+}
+function cantorBuild(n){
+  var rows = [[0, 1]], cur = [0, 1], k, j;
+  for (k = 1; k <= n; k++){
+    var nx = [];
+    for (j = 0; j < cur.length; j += 2){ var a = cur[j], b = cur[j+1], w = (b - a) / 3; nx.push(a, a + w, b - w, b); }
+    rows.push(nx); cur = nx;
+  }
+  return { rows: rows };
+}
+function pythBuild(n, deg){
+  var th = deg * Math.PI / 180, c = Math.cos(th), s = Math.sin(th);
+  var levels = [], curL = [[0, 0, 1, 0]], k, j;
+  var minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+  function bound(x, y){ if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; }
+  for (k = 0; k <= n; k++){
+    var next = [];
+    levels.push(curL);
+    for (j = 0; j < curL.length; j++){
+      var q = curL[j], ax = q[0], ay = q[1], ux = q[2], uy = q[3], vx = -uy, vy = ux;
+      bound(ax, ay); bound(ax + ux, ay + uy); bound(ax + ux + vx, ay + uy + vy); bound(ax + vx, ay + vy);
+      if (k < n){
+        var dx = ax + vx, dy = ay + vy;                           // top-left corner D
+        var cx2 = ax + ux + vx, cy2 = ay + uy + vy;               // top-right corner C
+        var ex = dx + c * (c * ux + s * vx), ey = dy + c * (c * uy + s * vy);   // apex E of the right-angled triangle
+        next.push([dx, dy, ex - dx, ey - dy]);                    // square on D to E
+        next.push([ex, ey, cx2 - ex, cy2 - ey]);                  // square on E to C
+      }
+    }
+    curL = next;
+  }
+  var pad = 0.04 * Math.max(maxx - minx, maxy - miny, 0.2);
+  return { levels: levels, box: [minx - pad, maxx + pad, miny - pad, maxy + pad] };
+}
+function gnBuild(){
+  var f = GN.fr; GN.box = null;
+  if (f === 'snow') GN.geo = kochBuild(GN.n, true);
+  else if (f === 'koch') GN.geo = kochBuild(GN.n, false);
+  else if (f === 'sier') GN.geo = sierBuild(GN.n);
+  else if (f === 'carpet') GN.geo = carpetBuild(GN.n);
+  else if (f === 'pyth'){ GN.geo = pythBuild(GN.n, GN.pa); GN.box = GN.geo.box; }
+  else if (FRS[f].kind === 'lsys'){ GN.geo = lsysBuild(LSYS[f], GN.n); GN.box = GN.geo.box; }
+  else { GN.geo = cantorBuild(GN.n); GN.box = [-0.1, 1.04, -(GN.n * 0.1 + 0.1), 0.05]; }
+}
+function gnDraw(){
+  clearCanvas();
+  var f = FRS[GN.fr], bx = GN.box || f.box, k = GN.k;
+  var s0 = Math.min(W / (bx[1]-bx[0]), H / (bx[3]-bx[2])) * 0.92;
+  var cx = (bx[0]+bx[1])/2, cy = (bx[2]+bx[3])/2;
+  function X(x){ return W/2 + (x - cx) * s0; }
+  function Y(y){ return H/2 - (y - cy) * s0; }
+  ctx.setTransform(k, 0, 0, k, W/2*(1-k) + GN.ox, H/2*(1-k) + GN.oy);
+  var g = GN.geo, i, j, t;
+  var lw = DPR * 1.5 / k;
+  if (GN.fr === 'snow' || GN.fr === 'koch'){
+    var closed = g.closed, pts = g.pts;
+    if (closed){
+      ctx.fillStyle = BASEFILL;
+      if (GN.colour){
+        ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(1), Y(0)); ctx.lineTo(X(0.5), Y(S3)); ctx.closePath(); ctx.fill();
+      } else {
+        ctx.beginPath();
+        for (i = 0; i < pts.length; i++){ if (i === 0) ctx.moveTo(X(pts[i][0]), Y(pts[i][1])); else ctx.lineTo(X(pts[i][0]), Y(pts[i][1])); }
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    if (GN.colour){
+      for (j = 0; j < g.tris.length; j++){
+        var tk = g.tris[j];
+        ctx.fillStyle = GENCOL[j % GENCOL.length]; ctx.beginPath();
+        for (i = 0; i < tk.length; i += 6){
+          ctx.moveTo(X(tk[i]), Y(tk[i+1])); ctx.lineTo(X(tk[i+2]), Y(tk[i+3])); ctx.lineTo(X(tk[i+4]), Y(tk[i+5])); ctx.closePath();
+        }
+        ctx.fill();
+      }
+    }
+    ctx.strokeStyle = '#eaf1ff'; ctx.lineWidth = Math.max(lw * (GN.n > 4 ? 0.6 : 1), 0.6 * DPR / k); ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (i = 0; i < pts.length; i++){ if (i === 0) ctx.moveTo(X(pts[i][0]), Y(pts[i][1])); else ctx.lineTo(X(pts[i][0]), Y(pts[i][1])); }
+    if (closed) ctx.closePath();
+    ctx.stroke();
+  } else if (GN.fr === 'sier'){
+    ctx.fillStyle = BASEFILL; ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(1), Y(0)); ctx.lineTo(X(0.5), Y(S3)); ctx.closePath(); ctx.fill();
+    for (j = 0; j < g.holes.length; j++){
+      var h = g.holes[j]; ctx.fillStyle = GN.colour ? GENCOL[j % GENCOL.length] : BG; ctx.beginPath();
+      for (i = 0; i < h.length; i += 6){
+        ctx.moveTo(X(h[i]), Y(h[i+1])); ctx.lineTo(X(h[i+2]), Y(h[i+3])); ctx.lineTo(X(h[i+4]), Y(h[i+5])); ctx.closePath();
+      }
+      ctx.fill();
+    }
+  } else if (GN.fr === 'carpet'){
+    ctx.fillStyle = BASEFILL; ctx.fillRect(X(0), Y(1), s0, s0);
+    for (j = 0; j < g.holes.length; j++){
+      var hs = g.holes[j]; ctx.fillStyle = GN.colour ? GENCOL[j % GENCOL.length] : BG; ctx.beginPath();
+      for (i = 0; i < hs.length; i += 3){ ctx.rect(X(hs[i]), Y(hs[i+1] + hs[i+2]), hs[i+2]*s0, hs[i+2]*s0); }
+      ctx.fill();
+    }
+  } else if (GN.fr === 'pyth'){
+    var lv = g.levels, L, qq, sx, sy, ux, uy, vx, vy;
+    ctx.lineJoin = 'miter';
+    for (L = 0; L < lv.length; L++){
+      ctx.fillStyle = (GN.colour && L > 0) ? GENCOL[(L - 1) % GENCOL.length] : BASEFILL;
+      ctx.beginPath();
+      for (j = 0; j < lv[L].length; j++){
+        qq = lv[L][j]; sx = qq[0]; sy = qq[1]; ux = qq[2]; uy = qq[3]; vx = -uy; vy = ux;
+        ctx.moveTo(X(sx), Y(sy)); ctx.lineTo(X(sx + ux), Y(sy + uy));
+        ctx.lineTo(X(sx + ux + vx), Y(sy + uy + vy)); ctx.lineTo(X(sx + vx), Y(sy + vy)); ctx.closePath();
+      }
+      ctx.fill();
+      if (GN.n <= 9){ ctx.strokeStyle = 'rgba(11,18,32,.75)'; ctx.lineWidth = DPR * 1.2 / k; ctx.stroke(); }
+    }
+  } else if (f.kind === 'lsys'){
+    var P = g.pts, np = P.length / 2, segs = np - 1;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.lineWidth = Math.max(DPR * (segs > 15000 ? 0.9 : 1.8) / k, 0.5 * DPR / k);
+    if (segs < 1){
+      ctx.fillStyle = '#eaf1ff'; ctx.beginPath(); ctx.arc(X(0), Y(0), 4 * DPR / k, 0, 6.2832); ctx.fill();
+    } else if (GN.colour){
+      var per = Math.ceil(segs / Math.min(240, segs)), nb = Math.ceil(segs / per), b0;
+      for (b0 = 0; b0 < nb; b0++){
+        var s1 = b0 * per, s2 = Math.min(segs, s1 + per);
+        ctx.strokeStyle = 'hsl(' + Math.round(b0 / nb * 300) + ',85%,60%)'; ctx.beginPath();
+        ctx.moveTo(X(P[2*s1]), Y(P[2*s1+1]));
+        for (i = s1 + 1; i <= s2; i++) ctx.lineTo(X(P[2*i]), Y(P[2*i+1]));
+        ctx.stroke();
+      }
+    } else {
+      ctx.strokeStyle = '#eaf1ff'; ctx.beginPath(); ctx.moveTo(X(P[0]), Y(P[1]));
+      for (i = 1; i < np; i++) ctx.lineTo(X(P[2*i]), Y(P[2*i+1]));
+      ctx.stroke();
+    }
+  } else if (GN.fr === 'cantor'){
+    var rr, row, hh = 0.07;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.font = (0.05 * s0) + 'px system-ui,Arial';
+    for (rr = 0; rr <= GN.n; rr++){
+      row = g.rows[rr];
+      var y0 = -rr * 0.1;
+      ctx.fillStyle = GN.colour && rr > 0 ? GENCOL[(rr - 1) % GENCOL.length] : '#5b8fc7';
+      ctx.beginPath();
+      for (i = 0; i < row.length; i += 2) ctx.rect(X(row[i]), Y(y0), Math.max((row[i+1] - row[i]) * s0, 1.4 * DPR / k), hh * s0);
+      ctx.fill();
+      ctx.fillStyle = '#9fb0cc'; ctx.fillText(String(rr), X(-0.02), Y(y0 - hh / 2));
+    }
+  }
+  ctx.setTransform(1,0,0,1,0,0);
+}
+function gnTable(){
+  var f = FRS[GN.fr], h = '<table class="tbl"><thead><tr><th>n</th>', n;
+  f.cols.forEach(function(c){ h += '<th>' + c.h + '<small>' + c.f + '</small></th>'; });
+  h += '</tr></thead><tbody>';
+  for (n = 0; n <= GN.n; n++){
+    var hide = GN.predict && n === GN.n && n > 0 && !GN.revealed;
+    h += '<tr class="' + (n === GN.n ? 'cur' : '') + (hide ? ' hid' : '') + '"><td>' + n + '</td>';
+    f.cols.forEach(function(c){ h += '<td>' + (hide ? '?' : num4(c.v(n))) + '</td>'; });
+    h += '</tr>';
+  }
+  h += '<tr class="lim"><td>∞</td>';
+  f.cols.forEach(function(c){ h += '<td>' + c.lim + '</td>'; });
+  h += '</tr></tbody></table>';
+  var w = $('gnTblWrap'); w.innerHTML = h; w.scrollTop = w.scrollHeight;
+  $('gnRevealRow').hidden = !(GN.predict && GN.n > 0 && !GN.revealed);
+}
+function gnUpdate(redraw){
+  var f = FRS[GN.fr];
+  $('gnRule').textContent = f.rule;
+  $('gnLabel').textContent = 'Generation ' + GN.n;
+  var lg = '';
+  if (GN.colour && f.kind !== 'lsys') for (var k = 1; k <= GN.n; k++) lg += '<span><i style="background:' + GENCOL[(k-1) % GENCOL.length] + '"></i>' + k + '</span>';
+  $('gnLegend').innerHTML = lg;
+  $('gnColourTxt').textContent = f.kind === 'lsys' ? 'Colour along the curve (rainbow from start to end)' : 'Colour each new generation';
+  var Ss = f.Ss || String(f.S);
+  $('gnPARow').hidden = (GN.fr !== 'pyth');
+  $('gnDim').innerHTML = f.dimHTML ? f.dimHTML() : 'Dimension ' + (f.dimNote ? f.dimNote + ' ' : '') + '= log ' + f.N + ' &divide; log ' + Ss +
+    ' = <b>' + (Math.log(f.N) / Math.log(f.S)).toFixed(3) + '</b><br><span style="color:var(--muted)">Each generation has ' + f.N + ' copies at 1/' + Ss + ' of the size.</span>' +
+    (f.dimExtra ? '<br><span style="color:var(--muted)">' + f.dimExtra + '</span>' : '');
+  $('gnAsk').innerHTML = f.ask.map(function(q){ return '<li>' + q + '</li>'; }).join('');
+  $('gnPick').querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-f') === GN.fr); });
+  gnTable();
+  hud.textContent = f.label + ' - generation ' + GN.n;
+  if (redraw !== false){ gnBuild(); gnDraw(); }
+}
+function gnSetN(n){
+  var f = FRS[GN.fr]; n = Math.max(0, Math.min(f.max, n));
+  if (n === GN.n) return;
+  GN.n = n; GN.revealed = false; gnUpdate();
+}
+function gnResetView(){ GN.k = 1; GN.ox = 0; GN.oy = 0; if (GN.geo) gnDraw(); }
+function gnInit(){
+  onSlider('gnPA', function(v){ GN.pa = v; GN.revealed = false; gnUpdate(); }, function(v){ return v + '°'; });
+  $('gnPick').addEventListener('click', function(e){
+    var f = e.target.getAttribute && e.target.getAttribute('data-f'); if (!f) return;
+    GN.fr = f; GN.n = Math.min(GN.n, FRS[f].max); GN.revealed = false; GN.geo = null; gnResetView(); gnUpdate();
+  });
+  $('gnDown').addEventListener('click', function(){ gnSetN(GN.n - 1); });
+  $('gnUp').addEventListener('click', function(){ gnSetN(GN.n + 1); });
+  $('gnReset').addEventListener('click', gnResetView);
+  $('gnColour').addEventListener('change', function(){ GN.colour = this.checked; gnUpdate(); });
+  $('gnPredict').addEventListener('change', function(){ GN.predict = this.checked; GN.revealed = false; gnTable(); });
+  $('gnReveal').addEventListener('click', function(){ GN.revealed = true; gnTable(); });
+  $('gnTblWrap').addEventListener('click', function(e){
+    var tr = e.target.closest && e.target.closest('tr.hid'); if (tr){ GN.revealed = true; gnTable(); }
+  });
+  document.addEventListener('keydown', function(e){
+    if (cur !== 'gen') return;
+    var tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+    if (e.key === 'ArrowRight') gnSetN(GN.n + 1);
+    else if (e.key === 'ArrowLeft') gnSetN(GN.n - 1);
+  });
+  /* pan and zoom */
+  cv.addEventListener('wheel', function(e){
+    if (cur !== 'gen') return; e.preventDefault();
+    var p = eventPos(e), f = e.deltaY < 0 ? 1.15 : 1/1.15; gnZoomAt(p.px, p.py, f);
+  }, {passive:false});
+  cv.addEventListener('pointerdown', function(e){
+    if (cur !== 'gen') return; cv.setPointerCapture(e.pointerId);
+    var p = eventPos(e); GN.ptrs[e.pointerId] = {x:p.px, y:p.py}; GN.pinch = 0;
+  });
+  cv.addEventListener('pointermove', function(e){
+    if (cur !== 'gen' || !GN.ptrs[e.pointerId]) return;
+    var p = eventPos(e), ids = Object.keys(GN.ptrs);
+    if (ids.length === 1){
+      GN.ox += p.px - GN.ptrs[e.pointerId].x; GN.oy += p.py - GN.ptrs[e.pointerId].y;
+      GN.ptrs[e.pointerId] = {x:p.px, y:p.py}; gnDraw();
+    } else if (ids.length >= 2){
+      GN.ptrs[e.pointerId] = {x:p.px, y:p.py};
+      var a = GN.ptrs[ids[0]], b = GN.ptrs[ids[1]], d = Math.hypot(a.x-b.x, a.y-b.y);
+      if (GN.pinch > 0 && d > 0) gnZoomAt((a.x+b.x)/2, (a.y+b.y)/2, d / GN.pinch);
+      GN.pinch = d;
+    }
+  });
+  function up(e){ delete GN.ptrs[e.pointerId]; GN.pinch = 0; }
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('dblclick', function(){ if (cur === 'gen') gnResetView(); });
+}
+function gnZoomAt(px, py, f){
+  var nk = Math.max(0.3, Math.min(400, GN.k * f)); f = nk / GN.k;
+  // keep the point under the pointer fixed
+  var qx = (px - (W/2*(1-GN.k) + GN.ox)) / GN.k, qy = (py - (H/2*(1-GN.k) + GN.oy)) / GN.k;
+  GN.k = nk;
+  GN.ox = px - qx * nk - W/2*(1-nk); GN.oy = py - qy * nk - H/2*(1-nk);
+  gnDraw();
+}
+var GNm = {
+  activate: function(){ gnUpdate(); },
+  deactivate: function(){},
+  onResize: function(){ gnDraw(); }
+};
+
+/* ====================================================================
+   TREE
+   ==================================================================== */
+var TR = { A:25, r:0.72, d:9, b:2, j:0, wind:false, leaf:'leaves', seed:12345, s:1, cx:0, cy:0, raf:0, t:0 };
+function mulberry32(a){
+  return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function trBuild(t, useWind){
+  var rng = mulberry32(TR.seed), segs = [], tips = [], k;
+  for (k = 0; k <= TR.d; k++) segs.push([]);
+  var A = TR.A * Math.PI / 180, r = TR.r, b = TR.b, J = TR.j, d = TR.d;
+  function walk(x, y, len, ang, lev){
+    if (useWind) ang += 0.03 * Math.sin(t * 1.7 + lev * 0.55) * (lev / d + 0.2);
+    var x2 = x + Math.sin(ang) * len, y2 = y + Math.cos(ang) * len;
+    segs[lev].push(x, y, x2, y2);
+    if (lev >= d){ tips.push(x2, y2, len); return; }
+    var i, off, f, jj;
+    for (i = 0; i < b; i++){
+      off = b === 2 ? (i === 0 ? -A : A) : (i - 1) * A;
+      f = 1 + (rng() - 0.5) * J * 0.5; jj = (rng() - 0.5) * J * 0.7;
+      walk(x2, y2, len * r * f, ang + off + jj, lev + 1);
+    }
+  }
+  walk(0, 0, 1, 0, 0);
+  return { segs: segs, tips: tips };
+}
+function trFit(){
+  var g = trBuild(0, false), minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+  g.segs.forEach(function(a){ for (var i = 0; i < a.length; i += 2){
+    if (a[i] < minx) minx = a[i]; if (a[i] > maxx) maxx = a[i];
+    if (a[i+1] < miny) miny = a[i+1]; if (a[i+1] > maxy) maxy = a[i+1]; } });
+  var s = Math.min(W * 0.9 / Math.max(0.1, maxx - minx), H * 0.9 / Math.max(0.1, maxy - miny));
+  TR.s = s; TR.cx = (minx + maxx) / 2; TR.cy = (miny + maxy) / 2;
+}
+function trDraw(t){
+  clearCanvas();
+  var g = trBuild(t, TR.wind), s = TR.s, k, i;
+  function X(x){ return W/2 + (x - TR.cx) * s; }
+  function Y(y){ return H/2 - (y - TR.cy) * s; }
+  ctx.lineCap = 'round';
+  for (k = 0; k <= TR.d; k++){
+    var a = g.segs[k], f = TR.d > 0 ? k / TR.d : 0;
+    var rr = Math.round(lerp(120, 70, f)), gg = Math.round(lerp(80, 170, f)), bb = Math.round(lerp(45, 70, f));
+    ctx.strokeStyle = 'rgb(' + rr + ',' + gg + ',' + bb + ')';
+    ctx.lineWidth = Math.max(DPR * 0.9, 0.085 * s * Math.pow(TR.r, k));
+    ctx.beginPath();
+    for (i = 0; i < a.length; i += 4){ ctx.moveTo(X(a[i]), Y(a[i+1])); ctx.lineTo(X(a[i+2]), Y(a[i+3])); }
+    ctx.stroke();
+  }
+  if (TR.leaf !== 'none'){
+    var tp = g.tips, cols = TR.leaf === 'leaves' ? ['#4fbf63','#6fd47a','#3aa957'] : ['#ff9ecf','#ffc2e0','#ff7fb8'];
+    var c;
+    for (c = 0; c < 3; c++){
+      ctx.fillStyle = cols[c]; ctx.beginPath();
+      for (i = c * 3; i < tp.length; i += 9){
+        var rad = Math.max(1.5 * DPR, tp[i+2] * s * 0.36);
+        ctx.moveTo(X(tp[i]) + rad, Y(tp[i+1])); ctx.arc(X(tp[i]), Y(tp[i+1]), rad, 0, 6.2832);
+      }
+      ctx.fill();
+    }
+  }
+}
+function trInfo(){
+  var b = TR.b, r = TR.r, d = TR.d;
+  var branches = (Math.pow(b, d + 1) - 1) / (b - 1), tips = Math.pow(b, d), br = b * r;
+  var total = Math.abs(br - 1) < 1e-9 ? d + 1 : (Math.pow(br, d + 1) - 1) / (br - 1);
+  var t = 'Branches: <b>' + commas(branches) + '</b> (twigs at the tips: ' + commas(tips) + ')<br>' +
+          'Total length of all branches: <b>' + total.toFixed(2) + '</b> trunks<br>';
+  if (br < 1) t += 'Keep going for ever and the total settles to <b>' + (1 / (1 - br)).toFixed(2) + '</b> trunks, because ' + b + ' &times; ' + r.toFixed(2) + ' = ' + br.toFixed(2) + ' is less than 1.';
+  else t += 'Keep going for ever and the total grows without limit, because ' + b + ' &times; ' + r.toFixed(2) + ' = ' + br.toFixed(2) + ' is 1 or more.';
+  if (TR.j > 0) t += '<br><span style="color:var(--muted)">(Counts are for the tree with no randomness.)</span>';
+  $('trInfo').innerHTML = t;
+}
+function trRefresh(refit){
+  if (refit){ trFit(); }
+  trInfo();
+  if (!TR.wind) trDraw(0);
+}
+function trLoop(ts){
+  if (!TR.wind) return;
+  TR.t = ts / 1000; trDraw(TR.t);
+  TR.raf = requestAnimationFrame(trLoop);
+}
+function trInit(){
+  onSlider('trA', function(v){ TR.A = v; trRefresh(true); }, function(v){ return v + '°'; });
+  onSlider('trR', function(v){ TR.r = v; trRefresh(true); }, function(v){ return v.toFixed(2); });
+  onSlider('trD', function(v){ TR.d = v; trRefresh(true); });
+  onSlider('trJ', function(v){ TR.j = v; trRefresh(true); }, function(v){ return v.toFixed(2); });
+  $('trB').addEventListener('click', function(e){
+    var b = +(e.target.getAttribute && e.target.getAttribute('data-b')); if (!b) return;
+    TR.b = b;
+    $('trB').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', +x.getAttribute('data-b') === b); });
+    var maxD = b === 3 ? 9 : 12; $('trD').max = maxD;
+    if (TR.d > maxD){ TR.d = maxD; setSlider('trD', maxD); }
+    trRefresh(true);
+  });
+  $('trL').addEventListener('change', function(){ TR.leaf = this.value; trRefresh(false); });
+  $('trShuffle').addEventListener('click', function(){ TR.seed = Math.floor(Math.random() * 1e9); trRefresh(true); });
+  $('trWind').addEventListener('change', function(){
+    TR.wind = this.checked; cancelAnimationFrame(TR.raf);
+    if (TR.wind) TR.raf = requestAnimationFrame(trLoop); else trDraw(0);
+  });
+}
+var TRm = {
+  activate: function(){ hud.textContent = ''; trRefresh(true); if (TR.wind) TR.raf = requestAnimationFrame(trLoop); },
+  deactivate: function(){ cancelAnimationFrame(TR.raf); },
+  onResize: function(){ trRefresh(true); if (TR.wind){ cancelAnimationFrame(TR.raf); TR.raf = requestAnimationFrame(trLoop); } }
+};
+
+/* ====================================================================
+   MANDELBROT (same behaviour as the stand-alone Mandelbrot explorer)
+   ==================================================================== */
+var MD = { cx:-0.5, cy:0, scale:0.01, scale0:0.01, rid:0, img:null, data:null, palette:null,
+           rendering:false, pendingSave:false, lastMouse:null, jC:null, jPending:false,
+           drag:null, warnTimer:0, snap:document.createElement('canvas') };
+var MD_BLACK = 0xff000000, MD_MINSCALE = 2e-14;
+var MD_PAL_DEFS = [
+  [[.5,.5,.5],[.5,.5,.5],[1,1,1],[0,.10,.20]],     // fire
+  [[.2,.4,.6],[.3,.4,.4],[1,1,1],[0,.15,.30]],     // ocean
+  [[.5,.5,.5],[.5,.5,.5],[1,1,1],[0,.33,.67]],     // rainbow
+  [[.5,.5,.5],[.5,.5,.5],[2,1,0.5],[.5,.2,.25]],   // electric
+  null                                              // greyscale
+];
+function mdBuildPalette(k){
+  var p = new Uint32Array(1024), d = MD_PAL_DEFS[k];
+  for (var i = 0; i < 1024; i++){
+    var t = i / 1024, r, g, b;
+    if (!d){ var v = Math.round(255 * (0.5 + 0.5 * Math.cos(2 * Math.PI * t))); r = g = b = v; }
+    else {
+      var c = [0, 1, 2].map(function(j){ return d[0][j] + d[1][j] * Math.cos(2 * Math.PI * (d[2][j] * t + d[3][j])); });
+      if (k === 0){ c = [c[0] * 1.0 + 0.15, c[1] * 0.75, c[2] * 0.45]; }
+      r = Math.max(0, Math.min(255, Math.round(c[0] * 255)));
+      g = Math.max(0, Math.min(255, Math.round(c[1] * 255)));
+      b = Math.max(0, Math.min(255, Math.round(c[2] * 255)));
+    }
+    p[i] = (255 << 24) | (b << 16) | (g << 8) | r;
+  }
+  return p;
+}
+MD.palette = mdBuildPalette(0);
+
+function mdMaxIter(){ return Math.min(5000, Math.floor(150 + 60 * Math.log(MD.scale0 / MD.scale) / Math.LN2)); }
+function mdColour(cr, ci, max, pal){
+  pal = pal || MD.palette;
+  var q = (cr - 0.25) * (cr - 0.25) + ci * ci;
+  if (q * (q + (cr - 0.25)) < 0.25 * ci * ci) return MD_BLACK;          // main cardioid
+  if ((cr + 1) * (cr + 1) + ci * ci < 0.0625) return MD_BLACK;          // period-2 bulb
+  var zr = 0, zi = 0, zr2 = 0, zi2 = 0, n = 0;
+  while (n < max && zr2 + zi2 <= 10000){
+    zi = 2 * zr * zi + ci; zr = zr2 - zi2 + cr; zr2 = zr * zr; zi2 = zi * zi; n++;
+  }
+  if (n >= max) return MD_BLACK;
+  var mu = n + 1 - Math.log(0.5 * Math.log(zr2 + zi2) / Math.LN2) / Math.LN2;
+  return pal[((mu * 6) | 0) & 1023];
+}
+function mdEscape(cr, ci, max){
+  var zr = 0, zi = 0, n = 0, t;
+  while (n < max && zr * zr + zi * zi <= 4){ t = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t; n++; }
+  return n >= max ? -1 : n;
+}
+
+// coarse pass first, then the full picture in chunks so the page stays responsive
+function mdRender(){
+  var id = ++MD.rid, max = mdMaxIter(), y = 0, B = 8, x, yy, xx, v, bx, by;
+  var img = ctx.createImageData(W, H), data = new Uint32Array(img.data.buffer);
+  MD.img = img; MD.data = data;
+  for (yy = 0; yy < H; yy += B){
+    var ci = MD.cy + (yy - H / 2) * MD.scale;
+    for (xx = 0; xx < W; xx += B){
+      v = mdColour(MD.cx + (xx - W / 2) * MD.scale, ci, Math.min(max, 300));
+      for (by = yy; by < yy + B && by < H; by++) for (bx = xx; bx < xx + B && bx < W; bx++) data[by * W + bx] = v;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  mdInfoStatic();
+  function step(){
+    if (id !== MD.rid) return;
+    var t0 = performance.now(), y0 = y;
+    while (y < H && performance.now() - t0 < 12){
+      var ci2 = MD.cy + (y - H / 2) * MD.scale, row = y * W;
+      for (x = 0; x < W; x++) data[row + x] = mdColour(MD.cx + (x - W / 2) * MD.scale, ci2, max);
+      y++;
+    }
+    ctx.putImageData(img, 0, 0, 0, y0, W, y - y0);
+    if (y < H) setTimeout(step, 0);
+    else { MD.rendering = false; if (MD.pendingSave){ MD.pendingSave = false; mdSavePicture(); } }
+  }
+  MD.rendering = true;
+  setTimeout(step, 0);
+}
+function mdSavePicture(){
+  if (MD.rendering){ MD.pendingSave = true; return; }
+  downloadCanvas(cv, baseName() + '.png');
+}
+// High-resolution save: re-computes the current view at up to 4x width and height
+function mdSaveHighRes(btn){
+  if (hiBusy) return;
+  hiBusy = true;
+  var S = hiScale(), w = W * S, h = H * S, label = btn.textContent;
+  var vcx = MD.cx, vcy = MD.cy, vs = MD.scale / S, max = mdMaxIter(), pal = MD.palette;
+  var name = baseName() + '-HighRes-' + w + 'x' + h + '.png';
+  var off = document.createElement('canvas'); off.width = w; off.height = h;
+  var octx = off.getContext('2d'), im = octx.createImageData(w, h), d = new Uint32Array(im.data.buffer), y = 0, x;
+  function step(){
+    var t0 = performance.now();
+    while (y < h && performance.now() - t0 < 20){
+      var ci = vcy + (y - h / 2) * vs, row = y * w;
+      for (x = 0; x < w; x++) d[row + x] = mdColour(vcx + (x - w / 2) * vs, ci, max, pal);
+      y++;
+    }
+    if (y < h){ btn.textContent = 'Rendering ' + Math.round(100 * y / h) + '%'; setTimeout(step, 0); }
+    else {
+      octx.putImageData(im, 0, 0);
+      downloadCanvas(off, name);
+      btn.textContent = label; hiBusy = false;
+    }
+  }
+  btn.textContent = 'Rendering 0%';
+  setTimeout(step, 0);
+}
+
+function mdFmt(x){ return (Math.abs(x) < 1e-4 && x !== 0) ? x.toExponential(6) : x.toFixed(Math.max(4, Math.min(15, Math.ceil(-Math.log(MD.scale) / Math.LN10) + 3))); }
+function mdInfoStatic(){
+  if (!MD.lastMouse) $('mdInfo').innerHTML = 'Zoom: <b>&times;' + Math.round(MD.scale0 / MD.scale).toLocaleString('en-GB') + '</b><br>Move the pointer over the picture.';
+  else mdUpdateInfo(MD.lastMouse.x, MD.lastMouse.y);
+}
+function mdUpdateInfo(px, py){
+  var cr = MD.cx + (px - W / 2) * MD.scale, ci = MD.cy + (py - H / 2) * MD.scale, n = mdEscape(cr, ci, mdMaxIter());
+  $('mdInfo').innerHTML = 'Zoom: <b>&times;' + Math.round(MD.scale0 / MD.scale).toLocaleString('en-GB') + '</b><br>' +
+    'c = <b>' + mdFmt(cr) + (ci < 0 ? ' &minus; ' : ' + ') + mdFmt(Math.abs(ci)) + 'i</b><br>' +
+    (n < 0 ? 'Stays bounded: <b>in the set</b>' : 'Escapes after <b>' + n + '</b> iteration' + (n === 1 ? '' : 's'));
+}
+
+// Julia set preview for the point under the pointer
+function mdDrawJulia(){
+  MD.jPending = false; if (!MD.jC) return;
+  var jctx = $('mdJulia').getContext('2d');
+  var S = 170, im = jctx.createImageData(S, S), d = new Uint32Array(im.data.buffer), max = 90, i, j, pal = MD.palette;
+  for (j = 0; j < S; j++) for (i = 0; i < S; i++){
+    var zr = (i - S / 2) * 3.2 / S, zi = (j - S / 2) * 3.2 / S, zr2 = zr * zr, zi2 = zi * zi, n = 0, t;
+    while (n < max && zr2 + zi2 <= 100){ t = zr2 - zi2 + MD.jC[0]; zi = 2 * zr * zi + MD.jC[1]; zr = t; zr2 = zr * zr; zi2 = zi * zi; n++; }
+    d[j * S + i] = n >= max ? MD_BLACK : pal[(n * 14) & 1023];
+  }
+  jctx.putImageData(im, 0, 0);
+}
+function mdQueueJulia(cr, ci){ MD.jC = [cr, ci]; if (!MD.jPending){ MD.jPending = true; requestAnimationFrame(mdDrawJulia); } }
+
+function mdShowWarn(){
+  var w = $('mdWarn'); w.style.display = 'block';
+  clearTimeout(MD.warnTimer); MD.warnTimer = setTimeout(function(){ w.style.display = 'none'; }, 4000);
+}
+function mdZoomAt(px, py, factor, centre){
+  var cr = MD.cx + (px - W / 2) * MD.scale, ci = MD.cy + (py - H / 2) * MD.scale;
+  var ns = MD.scale / factor; if (factor > 1 && ns < MD_MINSCALE){ mdShowWarn(); return; }
+  if (ns > MD.scale0 * 1.5) ns = MD.scale0 * 1.5;
+  if (centre){ MD.cx = cr; MD.cy = ci; } else { MD.cx = cr - (px - W / 2) * ns; MD.cy = ci - (py - H / 2) * ns; }
+  MD.scale = ns; mdRender();
+}
+function mdFit(){
+  var old = MD.scale0; MD.scale0 = Math.max(3.5 / W, 2.6 / H);
+  MD.scale = (old === 0.01 || !old) ? MD.scale0 : MD.scale * MD.scale0 / old;
+  mdRender();
+}
+function mdInit(){
+  cv.addEventListener('contextmenu', function(e){ if (cur === 'mandel') e.preventDefault(); });
+  cv.addEventListener('pointerdown', function(e){
+    if (cur !== 'mandel') return;
+    var q = eventPos(e), p = { x: q.px, y: q.py };
+    if (e.button === 2){ mdZoomAt(p.x, p.y, 0.5, true); return; }
+    cv.setPointerCapture(e.pointerId);
+    MD.snap.width = W; MD.snap.height = H; MD.snap.getContext('2d').drawImage(cv, 0, 0);
+    MD.drag = { x: p.x, y: p.y, moved: false, dx: 0, dy: 0 };
+  });
+  cv.addEventListener('pointermove', function(e){
+    if (cur !== 'mandel') return;
+    var q = eventPos(e), p = { x: q.px, y: q.py }; MD.lastMouse = p;
+    var drag = MD.drag;
+    if (drag){
+      drag.dx = p.x - drag.x; drag.dy = p.y - drag.y;
+      if (Math.abs(drag.dx) + Math.abs(drag.dy) > 5) drag.moved = true;
+      if (drag.moved){
+        MD.rid++; // cancel any running render
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.drawImage(MD.snap, drag.dx, drag.dy);
+      }
+      return;
+    }
+    mdUpdateInfo(p.x, p.y);
+    if ($('mdJtog').checked) mdQueueJulia(MD.cx + (p.x - W / 2) * MD.scale, MD.cy + (p.y - H / 2) * MD.scale);
+  });
+  cv.addEventListener('pointerup', function(e){
+    if (cur !== 'mandel' || !MD.drag) return;
+    var q = eventPos(e), drag = MD.drag;
+    if (drag.moved){ MD.cx -= drag.dx * MD.scale; MD.cy -= drag.dy * MD.scale; mdRender(); }
+    else mdZoomAt(q.px, q.py, 2, true);
+    MD.drag = null;
+  });
+  cv.addEventListener('pointerleave', function(){
+    if (cur !== 'mandel') return;
+    if (!MD.drag){ MD.lastMouse = null; mdInfoStatic(); }
+  });
+  cv.addEventListener('wheel', function(e){
+    if (cur !== 'mandel') return;
+    e.preventDefault(); var q = eventPos(e);
+    mdZoomAt(q.px, q.py, e.deltaY < 0 ? 1.3 : 1 / 1.3, false);
+  }, { passive: false });
+
+  $('mdZin').onclick = function(){ mdZoomAt(W / 2, H / 2, 2, true); };
+  $('mdZout').onclick = function(){ mdZoomAt(W / 2, H / 2, 0.5, true); };
+  $('mdReset').onclick = function(){ MD.cx = -0.5; MD.cy = 0; MD.scale = MD.scale0; mdRender(); };
+  $('mdPlaces').onchange = function(){
+    if (!this.value) return;
+    var a = this.value.split(',').map(Number); MD.cx = a[0]; MD.cy = a[1]; MD.scale = a[2] / Math.min(W, H * 1.35);
+    if (a[2] > 3) MD.scale = MD.scale0;
+    this.selectedIndex = 0; mdRender();
+  };
+  $('mdPal').onchange = function(){ MD.palette = mdBuildPalette(+this.value); mdRender(); if (MD.jC) mdDrawJulia(); };
+  $('mdJtog').onchange = function(){
+    var on = this.checked;
+    $('mdJulia').classList.toggle('on', on); $('mdJLabel').classList.toggle('on', on);
+  };
+}
+var MDm = {
+  activate: function(){ mdFit(); },
+  deactivate: function(){ MD.rid++; MD.drag = null; MD.pendingSave = false; $('mdWarn').style.display = 'none'; },
+  onResize: function(){ mdFit(); }
+};
+
+/* ====================================================================
+   SAVING (every tab)
+   ==================================================================== */
+var hiBusy = false;
+var BG32 = ((255 << 24) | (32 << 16) | (18 << 8) | 11) >>> 0;   // #0b1220
+function rgb32(r, g, b){ return ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0; }
+function hex32(h){ return rgb32(parseInt(h.substr(1, 2), 16), parseInt(h.substr(3, 2), 16), parseInt(h.substr(5, 2), 16)); }
+function hsl32(h, s, l){
+  var a = s * Math.min(l, 1 - l);
+  function f(n){ var k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); }
+  return rgb32(Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255));
+}
+function downloadCanvas(canvas, name){
+  canvas.toBlob(function(blob){
+    if (!blob) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }, 'image/png');
+}
+function slug(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+function baseName(){
+  var b = 'Fractal-Explorer-';
+  if (cur === 'chaos') return b + 'Chaos-Game-' + CH.n + '-corners';
+  if (cur === 'fern') return b + 'Fern';
+  if (cur === 'gen') return b + slug(FRS[GN.fr].label) + '-generation-' + GN.n;
+  if (cur === 'tree') return b + 'Tree';
+  return b + 'Mandelbrot-zoom-' + Math.round(MD.scale0 / MD.scale);
+}
+function saveImage(){
+  if (cur === 'mandel'){ mdSavePicture(); return; }
+  downloadCanvas(cv, baseName() + '.png');
+}
+// 4 times the width and height where the device allows it
+function hiScale(){
+  var cw = W / DPR, ch = H / DPR, S = 4;
+  while (S > 1 && (cw * S > 8000 || ch * S > 8000 || cw * S * ch * S > 60e6)) S--;
+  return S;
+}
+// run a drawing routine against a temporary bigger canvas
+function withCanvas(w, h, scale, fn){
+  var off = document.createElement('canvas'); off.width = w; off.height = h;
+  var c0 = ctx, w0 = W, h0 = H, d0 = DPR;
+  ctx = off.getContext('2d'); W = w; H = h; DPR = scale;
+  try { fn(); } finally { ctx = c0; W = w0; H = h0; DPR = d0; }
+  return off;
+}
+function plotDot(d, x, y, sz, col){
+  var a, b, xx, yy;
+  for (b = 0; b < sz; b++){
+    yy = y + b; if (yy < 0 || yy >= H) continue;
+    for (a = 0; a < sz; a++){ xx = x + a; if (xx >= 0 && xx < W) d[yy * W + xx] = col; }
+  }
+}
+// chaos game: plays it again with more dots so the big picture is crisp
+function chStill(f){
+  var v = chMakeVerts(), N = v.length, k, i;
+  var cols = v.map(function(_, j){ return chColStr(j, N); });
+  clearCanvas();
+  var n = CH.count > 0 ? Math.min(8e6, Math.round(CH.count * f * f / 2)) : 0;
+  if (n > 0){
+    var im = ctx.createImageData(W, H), d = new Uint32Array(im.data.buffer);
+    d.fill(BG32);
+    var c32 = [];
+    for (k = 0; k < N; k++) c32.push(CH.col ? hsl32(Math.round(k * 360 / N), 0.85, 0.62) : rgb32(53, 208, 192));
+    var x = 0, y = 0, last = -1, dsz = Math.max(1, Math.round(DPR / 2));
+    for (k = 0; k < N; k++){ x += v[k][0]; y += v[k][1]; }
+    x /= N; y /= N;
+    for (i = -10; i < n; i++){
+      var pick;
+      do { pick = Math.floor(Math.random() * N); } while (CH.norep && pick === last && N > 1);
+      last = pick; x += (v[pick][0] - x) * CH.r; y += (v[pick][1] - y) * CH.r;
+      if (i >= 0) plotDot(d, Math.floor(x), Math.floor(y), dsz, c32[pick]);
+    }
+    ctx.putImageData(im, 0, 0);
+  }
+  chDrawCorners(v, cols);
+}
+// fern: same idea, using the rules that are switched on
+function feStill(f){
+  var fit = feFit();
+  clearCanvas();
+  var act = FE.maps.filter(function(m){ return m.on && m.p > 0; });
+  if (!act.length) return;
+  var tot = 0, cum = [];
+  act.forEach(function(m){ tot += m.p; cum.push(tot); });
+  var c32 = act.map(function(m){
+    var idx = FE.maps.indexOf(m);
+    return FE.colour ? hex32(FE_COLS[idx % FE_COLS.length]) : rgb32(110, 231, 160);
+  });
+  var n = Math.min(1e7, Math.round(Math.max(FE.count, 100000) * f * f / 2));
+  var im = ctx.createImageData(W, H), d = new Uint32Array(im.data.buffer);
+  d.fill(BG32);
+  var x = 0, y = 0, dsz = Math.max(1, Math.round(DPR / 2)), i, j, m, nx, ny;
+  for (i = 0; i < n; i++){
+    var r = Math.random() * tot; j = 0;
+    while (j < cum.length - 1 && r >= cum[j]) j++;
+    m = act[j]; nx = m.a * x + m.b * y + m.e; ny = m.c * x + m.d * y + m.f; x = nx; y = ny;
+    if (!isFinite(x) || !isFinite(y) || Math.abs(x) > 1e6 || Math.abs(y) > 1e6){ x = 0; y = 0; continue; }
+    plotDot(d, Math.floor(fit.ox + x * fit.s), Math.floor(fit.oy - y * fit.s), dsz, c32[j]);
+  }
+  ctx.putImageData(im, 0, 0);
+}
+function hiResCanvas(S){
+  var w = Math.round(W / DPR * S), h = Math.round(H / DPR * S), f = w / W;
+  if (cur === 'chaos') return withCanvas(w, h, S, function(){ chStill(f); });
+  if (cur === 'fern') return withCanvas(w, h, S, function(){ feStill(f); });
+  if (cur === 'tree') return withCanvas(w, h, S, function(){
+    var s0 = TR.s, cx0 = TR.cx, cy0 = TR.cy;
+    try { trFit(); trDraw(TR.wind ? TR.t : 0); } finally { TR.s = s0; TR.cx = cx0; TR.cy = cy0; }
+  });
+  var ox = GN.ox, oy = GN.oy;
+  return withCanvas(w, h, S, function(){
+    GN.ox = ox * f; GN.oy = oy * f;
+    try { gnDraw(); } finally { GN.ox = ox; GN.oy = oy; }
+  });
+}
+function saveHighRes(){
+  if (hiBusy) return;
+  var btn = $('saveHi');
+  if (cur === 'mandel'){ mdSaveHighRes(btn); return; }
+  hiBusy = true;
+  var label = btn.textContent; btn.textContent = 'Rendering…';
+  setTimeout(function(){
+    var msg = label;
+    try {
+      var off = hiResCanvas(hiScale());
+      downloadCanvas(off, baseName() + '-HighRes-' + off.width + 'x' + off.height + '.png');
+    } catch (err){ msg = 'Too big for this device'; }
+    btn.textContent = msg; hiBusy = false;
+    if (msg !== label) setTimeout(function(){ btn.textContent = label; }, 2500);
+  }, 40);
+}
+$('saveImg').addEventListener('click', saveImage);
+$('saveHi').addEventListener('click', saveHighRes);
+
+/* ====================================================================
+   TABS
+   ==================================================================== */
+var MODS = { chaos: CHm, fern: FEm, gen: GNm, tree: TRm, mandel: MDm };
+var cur = null;
+function showTab(id){
+  if (cur) MODS[cur].deactivate();
+  cur = id;
+  document.body.setAttribute('data-tab', id);
+  document.querySelectorAll('#tabs button').forEach(function(b){ b.setAttribute('aria-selected', b.getAttribute('data-tab') === id ? 'true' : 'false'); });
+  document.querySelectorAll('.tabpanel').forEach(function(p){ p.classList.toggle('on', p.id === 'p-' + id); });
+  $('panel').scrollTop = 0;
+  hud.textContent = '';
+  ctx.setTransform(1,0,0,1,0,0);
+  resize();
+  MODS[id].activate();
+}
+$('tabs').addEventListener('click', function(e){
+  var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) showTab(t);
+});
+var rzTimer = 0;
+function handleResize(){
+  clearTimeout(rzTimer);
+  rzTimer = setTimeout(function(){ if (cur && resize()) MODS[cur].onResize(); }, 120);
+}
+if (window.ResizeObserver) new ResizeObserver(handleResize).observe(stage);
+window.addEventListener('resize', handleResize);
+
+chInit(); feInit(); gnInit(); trInit(); mdInit();
+showTab('chaos');
+})();
+</script>
+</body>
+</html>
