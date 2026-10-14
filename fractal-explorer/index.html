@@ -18,8 +18,13 @@ header{display:flex;align-items:center;gap:14px;padding:8px 14px;background:var(
   border-bottom:1px solid var(--line);flex-wrap:wrap}
 h1{font-size:22px;margin:0;letter-spacing:.3px;white-space:nowrap}
 h1 span{color:var(--accent)}
+.hdr-right{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-left:auto}
 .saves{display:flex;gap:6px;flex-wrap:wrap}
-nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.saves .btn{padding:7px 12px;font-size:14px;min-height:40px}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1d2a44;border:1px solid var(--accent);color:var(--text);padding:9px 16px;border-radius:10px;font-size:14px;max-width:90vw;text-align:center;display:none;z-index:50;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+#toast.on{display:block}
+#toast.bad{border-color:var(--bad)}
+nav{display:flex;gap:6px;flex-wrap:wrap}
 nav button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;
   padding:9px 16px;font-size:16px;cursor:pointer;min-height:42px}
 nav button[aria-selected="true"]{background:var(--accent);color:#04201d;border-color:var(--accent);font-weight:700}
@@ -113,6 +118,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
 <body>
 <header>
   <h1>Fractal <span>Explorer</span></h1>
+  <div class="hdr-right">
   <nav id="tabs">
     <button data-tab="chaos">Chaos Game</button>
     <button data-tab="fern">Fern</button>
@@ -123,8 +129,13 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
   <div class="saves">
     <button class="btn" id="saveImg" title="Download the picture as a PNG">Save Image</button>
     <button class="btn" id="saveHi" title="Download the picture again at up to 4 times the width and height (16 times the pixels)">Save High Res</button>
+    <button class="btn" id="expBtn" title="Save every setting on every tab to a small file you can load again later">Export settings</button>
+    <button class="btn" id="impBtn" title="Load a settings file you saved earlier">Import settings</button>
+    <input type="file" id="impFile" accept=".json,application/json" hidden>
+  </div>
   </div>
 </header>
+<div id="toast" role="status"></div>
 <main>
   <div id="left">
     <div id="mdBar" class="mdonly">
@@ -324,6 +335,7 @@ function setSlider(id, v){
   if (out) out.textContent = FMT[id] ? FMT[id](v) : v;
 }
 function commas(n){ return n.toLocaleString('en-GB'); }
+function escHtml(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function num4(v){
   if (!isFinite(v)) return '–';
   if (Number.isInteger(v)) return commas(v);
@@ -527,7 +539,7 @@ function feBuildTable(){
   var h = '<thead><tr><th></th><th>Rule</th><th>a</th><th>b</th><th>c</th><th>d</th><th>e</th><th>f</th><th>p</th></tr></thead><tbody>';
   FE.maps.forEach(function(m, i){
     h += '<tr><td><input type="checkbox" data-i="' + i + '" data-k="on"' + (m.on ? ' checked' : '') + '></td>' +
-         '<td class="nm"><span class="dot" style="background:' + FE_COLS[i % FE_COLS.length] + '"></span>' + m.nm + '</td>';
+         '<td class="nm"><span class="dot" style="background:' + FE_COLS[i % FE_COLS.length] + '"></span>' + escHtml(m.nm) + '</td>';
     ['a','b','c','d','e','f','p'].forEach(function(k){
       h += '<td><input type="number" step="0.01" data-i="' + i + '" data-k="' + k + '" value="' + (Math.round(m[k]*1000)/1000) + '"></td>';
     });
@@ -1089,9 +1101,13 @@ function gnZoomAt(px, py, f){
   gnDraw();
 }
 var GNm = {
-  activate: function(){ gnUpdate(); },
+  activate: function(){
+    GN.cw = W; GN.ch = H;
+    if (GN.pendingPan){ GN.ox = GN.pendingPan[0] * W; GN.oy = GN.pendingPan[1] * H; GN.pendingPan = null; }
+    gnUpdate();
+  },
   deactivate: function(){},
-  onResize: function(){ gnDraw(); }
+  onResize: function(){ GN.cw = W; GN.ch = H; gnDraw(); }
 };
 
 /* ====================================================================
@@ -1356,6 +1372,10 @@ function mdZoomAt(px, py, factor, centre){
 function mdFit(){
   var old = MD.scale0; MD.scale0 = Math.max(3.5 / W, 2.6 / H);
   MD.scale = (old === 0.01 || !old) ? MD.scale0 : MD.scale * MD.scale0 / old;
+  if (MD.pendingZoom){   // a settings file was loaded: magnification is relative to the whole-set view
+    MD.scale = MD.scale0 / Math.max(1 / 1.5, Math.min(MD.pendingZoom, MD.scale0 / MD_MINSCALE));
+    MD.pendingZoom = 0;
+  }
   mdRender();
 }
 function mdInit(){
@@ -1558,6 +1578,161 @@ function saveHighRes(){
 }
 $('saveImg').addEventListener('click', saveImage);
 $('saveHi').addEventListener('click', saveHighRes);
+
+/* ====================================================================
+   EXPORT / IMPORT SETTINGS (every tab, one small JSON file)
+   ==================================================================== */
+var toastTimer = 0;
+function toast(msg, bad){
+  var t = $('toast'); t.textContent = msg; t.className = 'on' + (bad ? ' bad' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.className = ''; }, bad ? 7000 : 4500);
+}
+// a number from a file: must be finite and is held inside the allowed range; otherwise the current value is kept
+function clampNum(v, lo, hi, keep, int){
+  if (typeof v !== 'number' || !isFinite(v)) return keep;
+  v = Math.max(lo, Math.min(hi, v));
+  return int ? Math.round(v) : v;
+}
+function pickBool(v, keep){ return typeof v === 'boolean' ? v : keep; }
+
+function collectSettings(){
+  var fr = FRS[GN.fr];
+  return {
+    app: 'Fractal Explorer',
+    version: 1,
+    saved: new Date().toISOString(),
+    tab: cur,
+    chaos: { corners: CH.n, jumpFraction: CH.r, addMidpoints: CH.mid, neverRepeatCorner: CH.norep,
+             colourByCorner: CH.col, speed: CH.sp },
+    fern: { colourByRule: FE.colour, speed: FE.sp,
+            rules: FE.maps.map(function(m){
+              return { name: m.nm, a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f, p: m.p, on: !!m.on };
+            }) },
+    generations: { fractal: GN.fr, fractalName: fr.label, generation: GN.n, colour: GN.colour, predictMode: GN.predict,
+                   pythagorasAngle: GN.pa, zoom: GN.k,
+                   panX: GN.pendingPan ? GN.pendingPan[0] : (GN.cw ? GN.ox / GN.cw : 0),
+                   panY: GN.pendingPan ? GN.pendingPan[1] : (GN.ch ? GN.oy / GN.ch : 0) },
+    tree: { angle: TR.A, shrinkRatio: TR.r, splits: TR.d, branchesEach: TR.b, randomness: TR.j,
+            tips: TR.leaf, wind: TR.wind, randomSeed: TR.seed },
+    mandelbrot: { centreRe: MD.cx, centreIm: MD.cy, magnification: MD.pendingZoom ? Math.min(MD.pendingZoom, MD.scale0 / MD_MINSCALE) : MD.scale0 / MD.scale,
+                  palette: +$('mdPal').value, juliaInset: $('mdJtog').checked }
+  };
+}
+function exportSettings(){
+  try {
+    var s = collectSettings(), txt = JSON.stringify(s, null, 2);
+    var blob = new Blob([txt], { type: 'application/json' });
+    var d = new Date(), pad = function(n){ return (n < 10 ? '0' : '') + n; };
+    var name = 'Fractal-Explorer-settings-' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+               '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.json';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    toast('Settings for all five tabs saved as ' + name);
+  } catch (err){ toast('Sorry, the settings could not be saved.', true); }
+}
+
+var TAB_NAMES = { chaos: 'Chaos Game', fern: 'Fern', gen: 'Generations', tree: 'Tree', mandel: 'Mandelbrot' };
+// each applier reads one section of the file; anything missing or out of range falls back to the current value
+function applyChaos(o){
+  CH.n = clampNum(o.corners, 3, 8, CH.n, true);
+  CH.r = clampNum(o.jumpFraction, 0.1, 0.9, CH.r);
+  CH.mid = pickBool(o.addMidpoints, CH.mid);
+  CH.norep = pickBool(o.neverRepeatCorner, CH.norep);
+  CH.col = pickBool(o.colourByCorner, CH.col);
+  CH.sp = clampNum(o.speed, 0, CH.speeds.length - 1, CH.sp, true);
+  setSlider('chN', CH.n); setSlider('chR', CH.r); setSlider('chSp', CH.sp);
+  $('chMid').checked = CH.mid; $('chNoRep').checked = CH.norep; $('chCol').checked = CH.col;
+}
+function applyFern(o){
+  if (Array.isArray(o.rules) && o.rules.length){
+    var maps = [];
+    o.rules.slice(0, 8).forEach(function(r, i){
+      if (!r || typeof r !== 'object') return;
+      var m = { nm: typeof r.name === 'string' && r.name ? r.name.slice(0, 40) : 'Rule ' + (i + 1), on: pickBool(r.on, true) };
+      ['a','b','c','d','e','f'].forEach(function(k){ m[k] = clampNum(r[k], -100, 100, 0); });
+      m.p = clampNum(r.p, 0, 1, 0);
+      maps.push(m);
+    });
+    if (maps.length){ FE.maps = maps; FE.preset = 'custom'; feBuildTable(); }
+  }
+  FE.colour = pickBool(o.colourByRule, FE.colour);
+  FE.sp = clampNum(o.speed, 0, FE.speeds.length - 1, FE.sp, true);
+  $('feCol').checked = FE.colour; setSlider('feSp', FE.sp);
+  FE.run = true;
+}
+function applyGen(o){
+  if (typeof o.fractal === 'string' && Object.prototype.hasOwnProperty.call(FRS, o.fractal)) GN.fr = o.fractal;
+  GN.n = clampNum(o.generation, 0, FRS[GN.fr].max, Math.min(GN.n, FRS[GN.fr].max), true);
+  GN.colour = pickBool(o.colour, GN.colour);
+  GN.predict = pickBool(o.predictMode, GN.predict);
+  GN.pa = clampNum(o.pythagorasAngle, 15, 75, GN.pa, true);
+  GN.k = clampNum(o.zoom, 0.3, 400, 1);
+  GN.pendingPan = [clampNum(o.panX, -50, 50, 0), clampNum(o.panY, -50, 50, 0)];
+  GN.ox = 0; GN.oy = 0;                       // the pan is placed once the canvas size is known (see GNm.activate)
+  GN.revealed = false; GN.geo = null;
+  setSlider('gnPA', GN.pa);
+  $('gnColour').checked = GN.colour; $('gnPredict').checked = GN.predict;
+}
+function applyTree(o){
+  TR.b = o.branchesEach === 3 ? 3 : (o.branchesEach === 2 ? 2 : TR.b);
+  var maxD = TR.b === 3 ? 9 : 12;
+  $('trD').max = maxD;
+  TR.A = clampNum(o.angle, 5, 90, TR.A, true);
+  TR.r = clampNum(o.shrinkRatio, 0.4, 0.85, TR.r);
+  TR.d = clampNum(o.splits, 1, maxD, Math.min(TR.d, maxD), true);
+  TR.j = clampNum(o.randomness, 0, 1, TR.j);
+  if (o.tips === 'none' || o.tips === 'leaves' || o.tips === 'blossom') TR.leaf = o.tips;
+  TR.wind = pickBool(o.wind, TR.wind);
+  TR.seed = clampNum(o.randomSeed, 0, 4294967295, TR.seed, true);
+  setSlider('trA', TR.A); setSlider('trR', TR.r); setSlider('trD', TR.d); setSlider('trJ', TR.j);
+  $('trB').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', +x.getAttribute('data-b') === TR.b); });
+  $('trL').value = TR.leaf; $('trWind').checked = TR.wind;
+}
+function applyMandel(o){
+  MD.cx = clampNum(o.centreRe, -3, 3, MD.cx);
+  MD.cy = clampNum(o.centreIm, -3, 3, MD.cy);
+  MD.pendingZoom = clampNum(o.magnification, 1 / 1.5, 1e15, 1);     // limited again against the deepest allowed zoom in mdFit
+  var p = clampNum(o.palette, 0, MD_PAL_DEFS.length - 1, +$('mdPal').value, true);
+  $('mdPal').value = p; MD.palette = mdBuildPalette(p);
+  var j = pickBool(o.juliaInset, $('mdJtog').checked);
+  $('mdJtog').checked = j; $('mdJulia').classList.toggle('on', j); $('mdJLabel').classList.toggle('on', j);
+}
+function importSettings(text){
+  var o;
+  try { o = JSON.parse(text); } catch (err){ toast('That file is not a settings file (it could not be read as JSON).', true); return; }
+  if (!o || typeof o !== 'object' || Array.isArray(o) || o.app !== 'Fractal Explorer'){
+    toast('That file does not look like a Fractal Explorer settings file.', true); return;
+  }
+  var done = [];
+  function go(key, label, fn){
+    if (o[key] && typeof o[key] === 'object' && !Array.isArray(o[key])){
+      try { fn(o[key]); done.push(label); } catch (err){ /* a damaged section is skipped */ }
+    }
+  }
+  go('chaos', 'Chaos Game', applyChaos);
+  go('fern', 'Fern', applyFern);
+  go('generations', 'Generations', applyGen);
+  go('tree', 'Tree', applyTree);
+  go('mandelbrot', 'Mandelbrot', applyMandel);
+  if (!done.length){ toast('That settings file has nothing in it that this version can use.', true); return; }
+  var tab = (typeof o.tab === 'string' && Object.prototype.hasOwnProperty.call(MODS, o.tab)) ? o.tab : cur;
+  showTab(tab);
+  toast('Settings loaded: ' + done.join(', ') + '. Showing the ' + TAB_NAMES[tab] + ' tab.' +
+        (o.version > 1 ? ' (Saved by a newer version, so some values may be ignored.)' : ''));
+}
+$('expBtn').addEventListener('click', exportSettings);
+$('impBtn').addEventListener('click', function(){ $('impFile').click(); });
+$('impFile').addEventListener('change', function(){
+  var f = this.files && this.files[0], inp = this;
+  if (!f) return;
+  if (f.size > 1000000){ toast('That file is too large to be a settings file.', true); inp.value = ''; return; }
+  var rd = new FileReader();
+  rd.onload = function(){ importSettings(String(rd.result)); inp.value = ''; };
+  rd.onerror = function(){ toast('That file could not be read.', true); inp.value = ''; };
+  rd.readAsText(f);
+});
 
 /* ====================================================================
    TABS
