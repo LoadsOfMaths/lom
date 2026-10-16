@@ -27,9 +27,9 @@ h1 span{color:var(--accent)}
 #fab button:active{background:var(--accent);color:#04201d}
 #fab .fabz{display:none}
 body.focus #fab{display:flex}
-body.focus[data-tab="mandel"] #fab .fabz{display:flex}
+body.focus[data-tab="mandel"] #fab .fabz, body.focus[data-tab="fern"] #fab .fabz, body.focus[data-tab="gen"] #fab .fabz{display:flex}
 body.focus header, body.focus #mdBar, body.focus #panel, body.focus #mdHelp{display:none !important}
-body.focus #hud{left:66px}
+body.focus #hud{top:66px}
 body.focus #left{flex:1 !important;height:auto !important}
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1d2a44;border:1px solid var(--accent);color:var(--text);padding:9px 16px;border-radius:10px;font-size:14px;max-width:90vw;text-align:center;display:none;z-index:50;box-shadow:0 4px 18px rgba(0,0,0,.5)}
 #toast.on{display:block}
@@ -69,6 +69,7 @@ body[data-tab="gen"] #panel{width:450px;max-width:56vw}
 .tabpanel{display:none}
 .tabpanel.on{display:block}
 h2{font-size:20px;margin:2px 0 6px;color:var(--accent2)}
+h3.sub{font-size:16px;margin:14px 0 4px;color:var(--accent2)}
 .lead{margin:0 0 10px;color:var(--muted);font-size:14.5px;line-height:1.4}
 .row{display:flex;align-items:center;gap:8px;margin:9px 0}
 .row label{min-width:92px;font-size:14.5px}
@@ -154,6 +155,9 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
         <button class="btn big" id="mdZin" title="Zoom in">+</button>
         <button class="btn big" id="mdZout" title="Zoom out">&minus;</button>
         <button class="btn" id="mdReset">Reset</button>
+        <button class="btn" id="mdRotL" title="Turn the picture anticlockwise (Shift + scroll also turns it)" aria-label="Turn anticlockwise">&#8634;</button>
+        <button class="btn" id="mdRotR" title="Turn the picture clockwise" aria-label="Turn clockwise">&#8635;</button>
+        <button class="btn" id="mdUp" title="Turn the picture back upright">Upright</button>
       </div>
       <div class="grp">
         <label>Go to
@@ -188,6 +192,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
         <button id="fabMenu" aria-label="Show the controls" title="Show the controls">&#9776;</button>
         <button id="fabIn" class="fabz" aria-label="Zoom in" title="Zoom in">+</button>
         <button id="fabOut" class="fabz" aria-label="Zoom out" title="Zoom out">&minus;</button>
+        <button id="fabUp" class="fabz" aria-label="Turn the picture upright" title="Turn the picture upright" style="display:none">&#8634;</button>
       </div>
       <div id="mdWarn">Maximum zoom reached. The computer can only store numbers to about 15 significant figures, so it cannot go any deeper.</div>
     </div>
@@ -244,6 +249,10 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
         <button class="btn small" data-p="thely">Another fern</button>
         <button class="btn small" data-p="sier">Triangle (3 rules)</button>
       </div>
+      <h3 class="sub">Zoom in and turn</h3>
+      <p class="lead">Pinch, scroll or drag the picture to zoom, turn and move it (Shift + scroll turns it; double-click starts again). Or jump to the part each rule builds:</p>
+      <div class="presets" id="feZoomTo"></div>
+      <p class="lead" id="feZoomMsg"></p>
       <div class="tblwrap"><table class="tbl ifs" id="feTable"></table></div>
       <div class="card">Each rule turns a point (x, y) into a new point:<br>
         <span class="mono">x′ = ax + by + e</span><br><span class="mono">y′ = cx + dy + f</span><br>
@@ -542,12 +551,12 @@ var FE_PRESETS = {
   ]
 };
 var FE_COLS = ['#ffb84d','#6ee7a0','#ff6b9a','#4d9fff','#c77dff','#f6e05e'];
-var FE = { maps:[], x:0, y:0, count:0, run:true, raf:0, sp:2, speeds:[100,500,2000,5000,20000], colour:false,
+var FE = { k:1, rot:0, fx:0, fy:0, ptrs:{}, g:null, remain:false, snap:document.createElement('canvas'), maps:[], x:0, y:0, count:0, run:true, raf:0, sp:2, speeds:[100,500,2000,5000,20000], colour:false,
            ox:0, oy:0, s:1, preset:'barnsley' };
-var FE_MAX = 600000;
+var FE_MAX = 600000, FE_KMAX = 2000;
 
 function feLoadPreset(name){
-  FE.preset = name;
+  FE.preset = name; FE.k = 1; FE.rot = 0; FE.fx = 0; FE.fy = 0; $('feZoomMsg').innerHTML = '';
   FE.maps = FE_PRESETS[name].map(function(m){ var o = {}; for (var k in m) o[k] = m[k]; return o; });
   feBuildTable(); feRefit();
 }
@@ -562,6 +571,7 @@ function feBuildTable(){
     h += '</tr>';
   });
   $('feTable').innerHTML = h + '</tbody>';
+  feBuildZoom();
 }
 function feChoose(onlyOn){
   var tot = 0, i, m;
@@ -598,8 +608,15 @@ function feReset(){
   hud.textContent = 'Points: 0';
   if (FE.run) feLoop();
 }
+// plain fit (FE.s, FE.ox, FE.oy) followed by the viewer's zoom, turn and slide: screen = (A1 x + B1 y + E1, A2 x + B2 y + E2)
+function feCoef(fit, w, h){
+  var cK = FE.k * Math.cos(FE.rot), sK = FE.k * Math.sin(FE.rot), dx0 = fit.ox - w / 2, dy0 = fit.oy - h / 2;
+  return [cK * fit.s, sK * fit.s, w / 2 + FE.fx * w + cK * dx0 - sK * dy0,
+          sK * fit.s, -cK * fit.s, h / 2 + FE.fy * h + sK * dx0 + cK * dy0];
+}
 function feLoop(){
   if (!FE.run) return;
+  var cf = feCoef({ s: FE.s, ox: FE.ox, oy: FE.oy }, W, H);
   var n = FE.speeds[FE.sp], sz = Math.max(1, Math.round(DPR)), i;
   var useCol = FE.colour;
   if (!useCol) ctx.fillStyle = '#6ee7a0';
@@ -610,14 +627,119 @@ function feLoop(){
     if (!isFinite(FE.x) || !isFinite(FE.y) || Math.abs(FE.x) > 1e6 || Math.abs(FE.y) > 1e6){ FE.x = 0; FE.y = 0; continue; }
     if (FE.count < 15 && false) continue;
     if (useCol) ctx.fillStyle = FE_COLS[k % FE_COLS.length];
-    ctx.fillRect(Math.floor(FE.ox + FE.x * FE.s), Math.floor(FE.oy - FE.y * FE.s), sz, sz);
+    ctx.fillRect(Math.floor(cf[0] * FE.x + cf[1] * FE.y + cf[2]), Math.floor(cf[3] * FE.x + cf[4] * FE.y + cf[5]), sz, sz);
     FE.count++;
   }
   hud.textContent = 'Points: ' + commas(FE.count);
-  if (FE.count >= FE_MAX){ FE.run = false; $('feRun').textContent = 'Run'; hud.textContent += ' (paused)'; return; }
+  if (FE.count >= FE_MAX * Math.min(10, Math.max(1, FE.k * FE.k))){ FE.run = false; $('feRun').textContent = 'Run'; hud.textContent += ' (paused)'; return; }
   FE.raf = requestAnimationFrame(feLoop);
 }
+function feViewChanged(){ FE.run = true; $('feRun').textContent = 'Pause'; feReset(); updateFabUp(); }
+function feViewReset(){ FE.k = 1; FE.rot = 0; FE.fx = 0; FE.fy = 0; feViewChanged(); }
+// apply a movement of the picture on screen: size change f, turn r (radians) about (m0x, m0y), ending at (mx, my)
+function feApply(f, r, m0x, m0y, mx, my){
+  var k0 = FE.k;
+  FE.k = Math.max(0.3, Math.min(FE_KMAX, FE.k * f)); f = FE.k / k0;
+  if (Math.abs(wrapAng(FE.rot + r)) < 5 * Math.PI / 180) r = -FE.rot;     // finish upright when nearly upright
+  var c = Math.cos(r) * f, n = Math.sin(r) * f;
+  var ox = FE.fx * W, oy = FE.fy * H, dx = W / 2 + ox - m0x, dy = H / 2 + oy - m0y;
+  FE.fx = (mx + c * dx - n * dy - W / 2) / W; FE.fy = (my + n * dx + c * dy - H / 2) / H;
+  FE.rot = wrapAng(FE.rot + r); if (Math.abs(FE.rot) < 1e-9) FE.rot = 0;
+  feViewChanged();
+}
+// zoom and turn so that the part of the fern built by rule i fills the screen the way the whole fern does
+function feZoomPiece(i){
+  var m = FE.maps[i]; if (!m) return;
+  var det = m.a * m.d - m.b * m.c, r = Math.sqrt(Math.abs(det)); if (r < 1e-3) return;
+  var wx = (W / 2 - FE.ox) / FE.s, wy = (FE.oy - H / 2) / FE.s;                 // the world point at the middle of the plain view
+  var px = m.a * wx + m.b * wy + m.e, py = m.c * wx + m.d * wy + m.f;           // where this rule puts it
+  FE.k = Math.max(0.3, Math.min(FE_KMAX, 1 / r)); FE.rot = Math.atan2(-m.b, m.d);
+  var dx = FE.ox + FE.s * px - W / 2, dy = FE.oy - FE.s * py - H / 2, cK = FE.k * Math.cos(FE.rot), sK = FE.k * Math.sin(FE.rot);
+  FE.fx = -(cK * dx - sK * dy) / W; FE.fy = -(sK * dx + cK * dy) / H;
+  feViewChanged();
+  $('feZoomMsg').innerHTML = 'Showing the part built by <b>' + escHtml(m.nm) + '</b>, magnified &times;' + (1 / r).toFixed(1) + (det < 0 ? ' (it comes out as a mirror image)' : '') +
+    '. Does it look like the whole fern?';
+}
+function feBuildZoom(){
+  var h = '<button class="btn small" data-z="-1">Whole fern</button>';
+  FE.maps.forEach(function(m, i){
+    if (Math.abs(m.a * m.d - m.b * m.c) > 1e-4) h += '<button class="btn small" data-z="' + i + '">' + escHtml(m.nm) + '</button>';
+  });
+  $('feZoomTo').innerHTML = h;
+}
+function feGestures(){
+  function startSnap(){
+    cancelAnimationFrame(FE.raf);
+    FE.snap.width = W; FE.snap.height = H; FE.snap.getContext('2d').drawImage(cv, 0, 0);
+  }
+  function preview(P){
+    var c = P.f * Math.cos(P.r), n = P.f * Math.sin(P.r);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+    ctx.setTransform(c, n, -n, c, P.mx - (c * P.m0x - n * P.m0y), P.my - (n * P.m0x + c * P.m0y));
+    ctx.drawImage(FE.snap, 0, 0); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  cv.addEventListener('pointerdown', function(e){
+    if (cur !== 'fern') return;
+    cv.setPointerCapture(e.pointerId);
+    var q = eventPos(e), p = { x: q.px, y: q.py }; FE.ptrs[e.pointerId] = p;
+    var ids = Object.keys(FE.ptrs);
+    if (ids.length === 1){ startSnap(); FE.g = { f: 1, r: 0, m0x: p.x, m0y: p.y, mx: p.x, my: p.y, pinch: false }; }
+    else if (ids.length === 2){
+      var a = FE.ptrs[ids[0]], b = FE.ptrs[ids[1]], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      // keep what the first finger has already moved, then carry on as a pinch from the current picture
+      FE.snap.width = W; FE.snap.height = H; var sc = FE.snap.getContext('2d'); sc.fillStyle = BG; sc.fillRect(0, 0, W, H);
+      sc.drawImage(cv, 0, 0);
+      var dx0 = FE.g ? FE.g.mx - FE.g.m0x : 0, dy0 = FE.g ? FE.g.my - FE.g.m0y : 0;
+      if (FE.g && (dx0 || dy0)) feApplyQuiet(1, 0, FE.g.m0x, FE.g.m0y, FE.g.mx, FE.g.my);
+      FE.g = { f: 1, r: 0, m0x: mx, m0y: my, mx: mx, my: my, pinch: true, d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)),
+               ang: Math.atan2(b.y - a.y, b.x - a.x), acc: 0, on: false };
+    }
+  });
+  // same as feApply but without redrawing yet (the picture on screen is already showing the move)
+  function feApplyQuiet(f, r, m0x, m0y, mx, my){
+    var run = FE.run, rs = feReset; feReset = function(){}; var ul = updateFabUp; updateFabUp = function(){};
+    try { feApply(f, r, m0x, m0y, mx, my); } finally { feReset = rs; updateFabUp = ul; FE.run = run; }
+  }
+  cv.addEventListener('pointermove', function(e){
+    if (cur !== 'fern' || !FE.ptrs[e.pointerId] || !FE.g) return;
+    var q = eventPos(e), p = { x: q.px, y: q.py }; FE.ptrs[e.pointerId] = p;
+    var ids = Object.keys(FE.ptrs), G = FE.g;
+    if (!G.pinch){ G.mx = p.x; G.my = p.y; }
+    else if (ids.length >= 2){
+      var a = FE.ptrs[ids[0]], b = FE.ptrs[ids[1]];
+      G.mx = (a.x + b.x) / 2; G.my = (a.y + b.y) / 2;
+      G.f = Math.max(0.3 / FE.k, Math.min(FE_KMAX / FE.k, Math.hypot(a.x - b.x, a.y - b.y) / G.d0));
+      var ang = Math.atan2(b.y - a.y, b.x - a.x), da = wrapAng(ang - G.ang); G.ang = ang;
+      if (G.on) G.r += da;
+      else { G.acc += da; if (Math.abs(G.acc) > ROT_DEAD){ G.on = true; G.r = G.acc - (G.acc > 0 ? ROT_DEAD : -ROT_DEAD); } }
+    } else return;
+    preview(G);
+  });
+  function end(e){
+    if (cur !== 'fern' || !FE.ptrs[e.pointerId]) return;
+    delete FE.ptrs[e.pointerId];
+    var left = Object.keys(FE.ptrs).length, G = FE.g;
+    if (G && !FE.remain){
+      FE.g = null; FE.remain = left > 0;
+      if (G.f !== 1 || G.r || G.mx !== G.m0x || G.my !== G.m0y) feApply(G.f, G.r, G.m0x, G.m0y, G.mx, G.my);
+      else if (FE.run) feLoop();   // a tap: carry on drawing
+    } else if (FE.remain && !left) FE.remain = false;
+  }
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  cv.addEventListener('wheel', function(e){
+    if (cur !== 'fern') return; e.preventDefault();
+    var q = eventPos(e);
+    if (e.shiftKey) feApply(1, ((e.deltaY || e.deltaX) < 0 ? -5 : 5) * Math.PI / 180, q.px, q.py, q.px, q.py);
+    else feApply(e.deltaY < 0 ? 1.25 : 1 / 1.25, 0, q.px, q.py, q.px, q.py);
+  }, { passive: false });
+  cv.addEventListener('dblclick', function(){ if (cur === 'fern') feViewReset(); });
+}
 function feInit(){
+  feGestures();
+  $('feZoomTo').addEventListener('click', function(e){
+    var z = e.target.getAttribute && e.target.getAttribute('data-z'); if (z === null || z === undefined) return;
+    if (+z < 0){ feViewReset(); $('feZoomMsg').innerHTML = ''; } else feZoomPiece(+z);
+  });
   onSlider('feSp', function(v){ FE.sp = v; }, function(v){ return commas(FE.speeds[v]) + ' / frame'; });
   $('feRun').addEventListener('click', function(){
     FE.run = !FE.run; this.textContent = FE.run ? 'Pause' : 'Run';
@@ -787,7 +909,7 @@ var LSYS = {
   arrow: { axiom:'A', rules:{A:'B-A-B', B:'A+B+A'}, angle:60, draw:'AB', start:function(n){ return n % 2 ? 60 : 0; } },
   hilbert: { axiom:'A', rules:{A:'-BF+AFA+FB-', B:'+AF-BFB-FA+'}, angle:90, draw:'F', start:function(){ return 0; } }
 };
-var GN = { fr:'snow', n:3, colour:true, predict:false, revealed:false, k:1, ox:0, oy:0, geo:null, box:null, pa:45, ptrs:{}, pinch:0 };
+var GN = { rot:0, fr:'snow', n:3, colour:true, predict:false, revealed:false, k:1, ox:0, oy:0, geo:null, box:null, pa:45, ptrs:{}, pinch:0 };
 
 function kochBuild(n, closed){
   var pts = closed ? [[0,0],[1,0],[0.5,S3]] : [[0,0],[1,0]];
@@ -919,13 +1041,15 @@ function gnBuild(){
   else { GN.geo = cantorBuild(GN.n); GN.box = [-0.1, 1.04, -(GN.n * 0.1 + 0.1), 0.05]; }
 }
 function gnDraw(){
+  updateFabUp();
   clearCanvas();
   var f = FRS[GN.fr], bx = GN.box || f.box, k = GN.k;
   var s0 = Math.min(W / (bx[1]-bx[0]), H / (bx[3]-bx[2])) * 0.92;
   var cx = (bx[0]+bx[1])/2, cy = (bx[2]+bx[3])/2;
   function X(x){ return W/2 + (x - cx) * s0; }
   function Y(y){ return H/2 - (y - cy) * s0; }
-  ctx.setTransform(k, 0, 0, k, W/2*(1-k) + GN.ox, H/2*(1-k) + GN.oy);
+  var rc = k * Math.cos(GN.rot), rs = k * Math.sin(GN.rot);
+  ctx.setTransform(rc, rs, -rs, rc, W/2 + GN.ox - (rc * W/2 - rs * H/2), H/2 + GN.oy - (rs * W/2 + rc * H/2));
   var g = GN.geo, i, j, t;
   var lw = DPR * 1.5 / k;
   if (GN.fr === 'snow' || GN.fr === 'koch'){
@@ -1060,7 +1184,7 @@ function gnSetN(n){
   if (n === GN.n) return;
   GN.n = n; GN.revealed = false; gnUpdate();
 }
-function gnResetView(){ GN.k = 1; GN.ox = 0; GN.oy = 0; if (GN.geo) gnDraw(); }
+function gnResetView(){ GN.k = 1; GN.ox = 0; GN.oy = 0; GN.rot = 0; if (GN.geo) gnDraw(); }
 function gnInit(){
   onSlider('gnPA', function(v){ GN.pa = v; GN.revealed = false; gnUpdate(); }, function(v){ return v + '°'; });
   $('gnPick').addEventListener('click', function(e){
@@ -1085,7 +1209,9 @@ function gnInit(){
   /* pan and zoom */
   cv.addEventListener('wheel', function(e){
     if (cur !== 'gen') return; e.preventDefault();
-    var p = eventPos(e), f = e.deltaY < 0 ? 1.15 : 1/1.15; gnZoomAt(p.px, p.py, f);
+    var p = eventPos(e);
+    if (e.shiftKey){ gnAbout(p.px, p.py, 1, ((e.deltaY || e.deltaX) < 0 ? -5 : 5) * Math.PI / 180); return; }   // shift + wheel turns the picture
+    gnZoomAt(p.px, p.py, e.deltaY < 0 ? 1.15 : 1/1.15);
   }, {passive:false});
   cv.addEventListener('pointerdown', function(e){
     if (cur !== 'gen') return; cv.setPointerCapture(e.pointerId);
@@ -1100,22 +1226,46 @@ function gnInit(){
     } else if (ids.length >= 2){
       GN.ptrs[e.pointerId] = {x:p.px, y:p.py};
       var a = GN.ptrs[ids[0]], b = GN.ptrs[ids[1]], d = Math.hypot(a.x-b.x, a.y-b.y);
-      if (GN.pinch > 0 && d > 0) gnZoomAt((a.x+b.x)/2, (a.y+b.y)/2, d / GN.pinch);
-      GN.pinch = d;
+      var mx = (a.x+b.x)/2, my = (a.y+b.y)/2, ang = Math.atan2(b.y-a.y, b.x-a.x), dr = 0;
+      if (GN.pang !== undefined){
+        var da = wrapAng(ang - GN.pang);
+        if (GN.pon) dr = da;
+        else { GN.pacc += da; if (Math.abs(GN.pacc) > ROT_DEAD){ GN.pon = true; dr = GN.pacc - (GN.pacc > 0 ? ROT_DEAD : -ROT_DEAD); } }
+      } else { GN.pacc = 0; GN.pon = false; }
+      GN.pang = ang;
+      if (GN.pinch > 0 && d > 0){
+        if (GN.pmid){ GN.ox += mx - GN.pmid[0]; GN.oy += my - GN.pmid[1]; }   // moving both fingers together drags the picture
+        gnAbout(mx, my, d / GN.pinch, dr);
+      }
+      GN.pinch = d; GN.pmid = [mx, my];
     }
   });
-  function up(e){ delete GN.ptrs[e.pointerId]; GN.pinch = 0; }
+  function up(e){
+    delete GN.ptrs[e.pointerId]; GN.pinch = 0; GN.pang = undefined; GN.pmid = null;
+    if (GN.rot && Math.abs(GN.rot) < 5 * Math.PI / 180){ GN.rot = 0; gnDraw(); }   // finish upright when nearly upright
+  }
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('dblclick', function(){ if (cur === 'gen') gnResetView(); });
 }
-function gnZoomAt(px, py, f){
-  var nk = Math.max(0.3, Math.min(400, GN.k * f)); f = nk / GN.k;
-  // keep the point under the pointer fixed
-  var qx = (px - (W/2*(1-GN.k) + GN.ox)) / GN.k, qy = (py - (H/2*(1-GN.k) + GN.oy)) / GN.k;
-  GN.k = nk;
-  GN.ox = px - qx * nk - W/2*(1-nk); GN.oy = py - qy * nk - H/2*(1-nk);
-  gnDraw();
+// where the drawing's own point (x, y) lands on screen
+function gnScreen(x, y){
+  var rc = GN.k * Math.cos(GN.rot), rs = GN.k * Math.sin(GN.rot), dx = x - W/2, dy = y - H/2;
+  return [W/2 + GN.ox + rc * dx - rs * dy, H/2 + GN.oy + rs * dx + rc * dy];
 }
+// the drawing's own point that is shown at screen position (px, py)
+function gnLocal(px, py){
+  var c = Math.cos(GN.rot) / GN.k, n = Math.sin(GN.rot) / GN.k, dx = px - W/2 - GN.ox, dy = py - H/2 - GN.oy;
+  return [W/2 + c * dx + n * dy, H/2 - n * dx + c * dy];
+}
+// change the zoom and/or turn, keeping the point under (px, py) where it is
+function gnAbout(px, py, f, dRot, noDraw){
+  var q = gnLocal(px, py);
+  GN.k = Math.max(0.3, Math.min(400, GN.k * f));
+  GN.rot = wrapAng(GN.rot + dRot);
+  var t = gnScreen(q[0], q[1]); GN.ox += px - t[0]; GN.oy += py - t[1];
+  if (!noDraw) gnDraw();
+}
+function gnZoomAt(px, py, f){ gnAbout(px, py, f, 0); }
 var GNm = {
   activate: function(){
     GN.cw = W; GN.ch = H;
@@ -1239,10 +1389,23 @@ var TRm = {
 /* ====================================================================
    MANDELBROT (same behaviour as the stand-alone Mandelbrot explorer)
    ==================================================================== */
-var MD = { cx:-0.5, cy:0, scale:0.01, scale0:0.01, rid:0, img:null, data:null, palette:null,
+var MD = { cx:-0.5, cy:0, scale:0.01, scale0:0.01, rot:0, rid:0, img:null, data:null, palette:null,
            rendering:false, pendingSave:false, lastMouse:null, jC:null, jPending:false,
            drag:null, warnTimer:0, snap:document.createElement('canvas') };
 var MD_BLACK = 0xff000000, MD_MINSCALE = 2e-14;
+var ROT_DEAD = 8 * Math.PI / 180;      // a twist smaller than this is ignored, so a pinch does not tilt the picture by accident
+function wrapAng(a){ while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
+// the point of the complex plane shown at screen position (px, py); the picture may be turned by MD.rot
+function mdToPlane(px, py){
+  var sx = (px - W / 2) * MD.scale, sy = (py - H / 2) * MD.scale, c = Math.cos(MD.rot), n = Math.sin(MD.rot);
+  return [MD.cx + c * sx + n * sy, MD.cy - n * sx + c * sy];
+}
+// slide the view by a drag of (dx, dy) screen pixels
+function mdPan(dx, dy){
+  var c = Math.cos(MD.rot), n = Math.sin(MD.rot);
+  MD.cx -= (c * dx + n * dy) * MD.scale; MD.cy -= (-n * dx + c * dy) * MD.scale;
+}
+function mdRotDeg(){ return Math.round(MD.rot * 180 / Math.PI * 10) / 10; }
 var MD_PAL_DEFS = [
   [[.5,.5,.5],[.5,.5,.5],[1,1,1],[0,.10,.20]],     // fire
   [[.2,.4,.6],[.3,.4,.4],[1,1,1],[0,.15,.30]],     // ocean
@@ -1291,12 +1454,14 @@ function mdEscape(cr, ci, max){
 // coarse pass first, then the full picture in chunks so the page stays responsive
 function mdRender(){
   var id = ++MD.rid, max = mdMaxIter(), y = 0, B = 8, x, yy, xx, v, bx, by;
+  var rc = Math.cos(MD.rot), rs = Math.sin(MD.rot), sc = MD.scale, mcx = MD.cx, mcy = MD.cy, sx, sy;
   var img = ctx.createImageData(W, H), data = new Uint32Array(img.data.buffer);
   MD.img = img; MD.data = data;
   for (yy = 0; yy < H; yy += B){
-    var ci = MD.cy + (yy - H / 2) * MD.scale;
+    sy = (yy - H / 2) * sc;
     for (xx = 0; xx < W; xx += B){
-      v = mdColour(MD.cx + (xx - W / 2) * MD.scale, ci, Math.min(max, 300));
+      sx = (xx - W / 2) * sc;
+      v = mdColour(mcx + rc * sx + rs * sy, mcy - rs * sx + rc * sy, Math.min(max, 300));
       for (by = yy; by < yy + B && by < H; by++) for (bx = xx; bx < xx + B && bx < W; bx++) data[by * W + bx] = v;
     }
   }
@@ -1306,8 +1471,8 @@ function mdRender(){
     if (id !== MD.rid) return;
     var t0 = performance.now(), y0 = y;
     while (y < H && performance.now() - t0 < 12){
-      var ci2 = MD.cy + (y - H / 2) * MD.scale, row = y * W;
-      for (x = 0; x < W; x++) data[row + x] = mdColour(MD.cx + (x - W / 2) * MD.scale, ci2, max);
+      var row = y * W; sy = (y - H / 2) * sc;
+      for (x = 0; x < W; x++){ sx = (x - W / 2) * sc; data[row + x] = mdColour(mcx + rc * sx + rs * sy, mcy - rs * sx + rc * sy, max); }
       y++;
     }
     ctx.putImageData(img, 0, 0, 0, y0, W, y - y0);
@@ -1326,15 +1491,15 @@ function mdSaveHighRes(btn){
   if (hiBusy) return;
   hiBusy = true;
   var S = hiScale(), w = W * S, h = H * S, label = btn.textContent;
-  var vcx = MD.cx, vcy = MD.cy, vs = MD.scale / S, max = mdMaxIter(), pal = MD.palette;
+  var vcx = MD.cx, vcy = MD.cy, vs = MD.scale / S, max = mdMaxIter(), pal = MD.palette, rc = Math.cos(MD.rot), rs = Math.sin(MD.rot);
   var name = baseName() + '-HighRes-' + w + 'x' + h + '.png';
   var off = document.createElement('canvas'); off.width = w; off.height = h;
   var octx = off.getContext('2d'), im = octx.createImageData(w, h), d = new Uint32Array(im.data.buffer), y = 0, x;
   function step(){
     var t0 = performance.now();
     while (y < h && performance.now() - t0 < 20){
-      var ci = vcy + (y - h / 2) * vs, row = y * w;
-      for (x = 0; x < w; x++) d[row + x] = mdColour(vcx + (x - w / 2) * vs, ci, max, pal);
+      var sy = (y - h / 2) * vs, row = y * w;
+      for (x = 0; x < w; x++){ var sx = (x - w / 2) * vs; d[row + x] = mdColour(vcx + rc * sx + rs * sy, vcy - rs * sx + rc * sy, max, pal); }
       y++;
     }
     if (y < h){ btn.textContent = 'Rendering ' + Math.round(100 * y / h) + '%'; setTimeout(step, 0); }
@@ -1349,13 +1514,15 @@ function mdSaveHighRes(btn){
 }
 
 function mdFmt(x){ return (Math.abs(x) < 1e-4 && x !== 0) ? x.toExponential(6) : x.toFixed(Math.max(4, Math.min(15, Math.ceil(-Math.log(MD.scale) / Math.LN10) + 3))); }
+function mdRotTxt(){ return MD.rot ? ' &nbsp; Turned: <b>' + mdRotDeg() + '&deg;</b>' : ''; }
 function mdInfoStatic(){
-  if (!MD.lastMouse) $('mdInfo').innerHTML = 'Zoom: <b>&times;' + Math.round(MD.scale0 / MD.scale).toLocaleString('en-GB') + '</b><br>Move the pointer over the picture.';
+  updateFabUp();
+  if (!MD.lastMouse) $('mdInfo').innerHTML = 'Zoom: <b>&times;' + Math.round(MD.scale0 / MD.scale).toLocaleString('en-GB') + '</b>' + mdRotTxt() + '<br>Move the pointer over the picture.';
   else mdUpdateInfo(MD.lastMouse.x, MD.lastMouse.y);
 }
 function mdUpdateInfo(px, py){
-  var cr = MD.cx + (px - W / 2) * MD.scale, ci = MD.cy + (py - H / 2) * MD.scale, n = mdEscape(cr, ci, mdMaxIter());
-  $('mdInfo').innerHTML = 'Zoom: <b>&times;' + Math.round(MD.scale0 / MD.scale).toLocaleString('en-GB') + '</b><br>' +
+  var pt = mdToPlane(px, py), cr = pt[0], ci = pt[1], n = mdEscape(cr, ci, mdMaxIter());
+  $('mdInfo').innerHTML = 'Zoom: <b>&times;' + Math.round(MD.scale0 / MD.scale).toLocaleString('en-GB') + '</b>' + mdRotTxt() + '<br>' +
     'c = <b>' + mdFmt(cr) + (ci < 0 ? ' &minus; ' : ' + ') + mdFmt(Math.abs(ci)) + 'i</b><br>' +
     (n < 0 ? 'Stays bounded: <b>in the set</b>' : 'Escapes after <b>' + n + '</b> iteration' + (n === 1 ? '' : 's'));
 }
@@ -1379,11 +1546,20 @@ function mdShowWarn(){
   clearTimeout(MD.warnTimer); MD.warnTimer = setTimeout(function(){ w.style.display = 'none'; }, 4000);
 }
 function mdZoomAt(px, py, factor, centre){
-  var cr = MD.cx + (px - W / 2) * MD.scale, ci = MD.cy + (py - H / 2) * MD.scale;
+  var pt = mdToPlane(px, py), cr = pt[0], ci = pt[1];
   var ns = MD.scale / factor; if (factor > 1 && ns < MD_MINSCALE){ mdShowWarn(); return; }
   if (ns > MD.scale0 * 1.5) ns = MD.scale0 * 1.5;
-  if (centre){ MD.cx = cr; MD.cy = ci; } else { MD.cx = cr - (px - W / 2) * ns; MD.cy = ci - (py - H / 2) * ns; }
-  MD.scale = ns; mdRender();
+  MD.scale = ns;
+  if (centre){ MD.cx = cr; MD.cy = ci; }
+  else { var c0 = mdToPlane(px, py); MD.cx += cr - c0[0]; MD.cy += ci - c0[1]; }   // keep the point under the pointer fixed
+  mdRender();
+}
+// turn the picture by deg degrees about a screen point
+function mdTurn(deg, px, py){
+  var pt = mdToPlane(px, py);
+  MD.rot = wrapAng(MD.rot + deg * Math.PI / 180); if (Math.abs(MD.rot) < 1e-9) MD.rot = 0;
+  var c1 = mdToPlane(px, py); MD.cx += pt[0] - c1[0]; MD.cy += pt[1] - c1[1];
+  mdRender();
 }
 function mdFit(){
   var old = MD.scale0; MD.scale0 = Math.max(3.5 / W, 2.6 / H);
@@ -1409,11 +1585,12 @@ function mdInit(){
       MD.drag = { x: p.x, y: p.y, moved: false, dx: 0, dy: 0 };
     } else if (ids.length === 2){
       // second finger down: switch from dragging to pinching
-      if (MD.drag && MD.drag.moved){ MD.cx -= MD.drag.dx * MD.scale; MD.cy -= MD.drag.dy * MD.scale; }
+      if (MD.drag && MD.drag.moved) mdPan(MD.drag.dx, MD.drag.dy);
       MD.drag = null; MD.rid++;
       MD.snap.width = W; MD.snap.height = H; MD.snap.getContext('2d').drawImage(cv, 0, 0);
       var a = MD.ptrs[ids[0]], b = MD.ptrs[ids[1]], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-      MD.pinch = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), mx0: mx, my0: my, mx: mx, my: my, f: 1 };
+      MD.pinch = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), mx0: mx, my0: my, mx: mx, my: my, f: 1,
+                   ang: Math.atan2(b.y - a.y, b.x - a.x), acc: 0, on: false, rot: 0 };
     }
   });
   cv.addEventListener('pointermove', function(e){
@@ -1426,8 +1603,12 @@ function mdInit(){
         var a = MD.ptrs[pid[0]], b = MD.ptrs[pid[1]];
         P.mx = (a.x + b.x) / 2; P.my = (a.y + b.y) / 2;
         P.f = mdPinchLimit(Math.hypot(a.x - b.x, a.y - b.y) / P.d0);
+        var ang = Math.atan2(b.y - a.y, b.x - a.x), da = wrapAng(ang - P.ang); P.ang = ang;
+        if (P.on) P.rot += da;
+        else { P.acc += da; if (Math.abs(P.acc) > ROT_DEAD){ P.on = true; P.rot = P.acc - (P.acc > 0 ? ROT_DEAD : -ROT_DEAD); } }
+        var pc = P.f * Math.cos(P.rot), ps = P.f * Math.sin(P.rot);
         ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-        ctx.setTransform(P.f, 0, 0, P.f, P.mx - P.mx0 * P.f, P.my - P.my0 * P.f);
+        ctx.setTransform(pc, ps, -ps, pc, P.mx - (pc * P.mx0 - ps * P.my0), P.my - (ps * P.mx0 + pc * P.my0));
         ctx.drawImage(MD.snap, 0, 0);
         ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
@@ -1444,7 +1625,7 @@ function mdInit(){
       return;
     }
     mdUpdateInfo(p.x, p.y);
-    if ($('mdJtog').checked) mdQueueJulia(MD.cx + (p.x - W / 2) * MD.scale, MD.cy + (p.y - H / 2) * MD.scale);
+    if ($('mdJtog').checked){ var jp = mdToPlane(p.x, p.y); mdQueueJulia(jp[0], jp[1]); }
   });
   function mdPinchEnd(e){
     if (cur !== 'mandel' || !MD.ptrs[e.pointerId]) return;
@@ -1452,8 +1633,9 @@ function mdInit(){
     var left = Object.keys(MD.ptrs).length;
     if (MD.pinch){
       var P = MD.pinch; MD.pinch = null;
-      var cr = MD.cx + (P.mx0 - W / 2) * MD.scale, ci = MD.cy + (P.my0 - H / 2) * MD.scale, ns = MD.scale / P.f;
-      MD.cx = cr - (P.mx - W / 2) * ns; MD.cy = ci - (P.my - H / 2) * ns; MD.scale = ns;
+      var pt = mdToPlane(P.mx0, P.my0), ns = MD.scale / P.f;
+      MD.rot = mdSnapRot(MD.rot + P.rot); MD.scale = ns;
+      var c1 = mdToPlane(P.mx, P.my); MD.cx += pt[0] - c1[0]; MD.cy += pt[1] - c1[1];   // the point first held between the fingers now sits under them
       MD.pinchRemain = left > 0;   // the finger still down must not count as a tap or a drag
       mdRender();
       return true;
@@ -1461,6 +1643,8 @@ function mdInit(){
     if (MD.pinchRemain){ if (!left) MD.pinchRemain = false; return true; }
   }
   cv.addEventListener('pointercancel', function(e){ mdPinchEnd(e); MD.drag = null; });
+  // turn the view, finishing upright if it is within a few degrees of upright
+  function mdSnapRot(r){ r = wrapAng(r); return Math.abs(r) < 5 * Math.PI / 180 ? 0 : r; }
   // keeps a pinch inside the deepest zoom and the widest view; returns the allowed size change
   function mdPinchLimit(f){
     var ns = MD.scale / f;
@@ -1472,7 +1656,7 @@ function mdInit(){
     if (mdPinchEnd(e)) return;
     if (cur !== 'mandel' || !MD.drag) return;
     var q = eventPos(e), drag = MD.drag;
-    if (drag.moved){ MD.cx -= drag.dx * MD.scale; MD.cy -= drag.dy * MD.scale; mdRender(); }
+    if (drag.moved){ mdPan(drag.dx, drag.dy); mdRender(); }
     else mdZoomAt(q.px, q.py, 2, true);
     MD.drag = null;
   });
@@ -1483,17 +1667,21 @@ function mdInit(){
   cv.addEventListener('wheel', function(e){
     if (cur !== 'mandel') return;
     e.preventDefault(); var q = eventPos(e);
+    if (e.shiftKey){ mdTurn((e.deltaY || e.deltaX) < 0 ? -5 : 5, q.px, q.py); return; }   // shift + wheel turns the picture
     mdZoomAt(q.px, q.py, e.deltaY < 0 ? 1.3 : 1 / 1.3, false);
   }, { passive: false });
 
   $('mdZin').onclick = function(){ mdZoomAt(W / 2, H / 2, 2, true); };
   $('mdZout').onclick = function(){ mdZoomAt(W / 2, H / 2, 0.5, true); };
-  $('mdReset').onclick = function(){ MD.cx = -0.5; MD.cy = 0; MD.scale = MD.scale0; mdRender(); };
+  $('mdReset').onclick = function(){ MD.cx = -0.5; MD.cy = 0; MD.scale = MD.scale0; MD.rot = 0; mdRender(); };
+  $('mdRotL').onclick = function(){ mdTurn(-15, W / 2, H / 2); };
+  $('mdRotR').onclick = function(){ mdTurn(15, W / 2, H / 2); };
+  $('mdUp').onclick = function(){ mdTurn(-MD.rot * 180 / Math.PI, W / 2, H / 2); };
   $('mdPlaces').onchange = function(){
     if (!this.value) return;
     var a = this.value.split(',').map(Number); MD.cx = a[0]; MD.cy = a[1]; MD.scale = a[2] / Math.min(W, H * 1.35);
     if (a[2] > 3) MD.scale = MD.scale0;
-    this.selectedIndex = 0; mdRender();
+    this.selectedIndex = 0; MD.rot = 0; mdRender();
   };
   $('mdPal').onchange = function(){ MD.palette = mdBuildPalette(+this.value); mdRender(); if (MD.jC) mdDrawJulia(); };
   $('mdJtog').onchange = function(){
@@ -1598,7 +1786,8 @@ function feStill(f){
     var idx = FE.maps.indexOf(m);
     return FE.colour ? hex32(FE_COLS[idx % FE_COLS.length]) : rgb32(110, 231, 160);
   });
-  var n = Math.min(1e7, Math.round(Math.max(FE.count, 100000) * f * f / 2));
+  var n = Math.min(1.2e7, Math.round(Math.max(FE.count, 100000) * f * f / 2 * Math.min(10, Math.max(1, FE.k * FE.k))));
+  var cf = feCoef(fit, W, H);
   var im = ctx.createImageData(W, H), d = new Uint32Array(im.data.buffer);
   d.fill(BG32);
   var x = 0, y = 0, dsz = Math.max(1, Math.round(DPR / 2)), i, j, m, nx, ny;
@@ -1607,7 +1796,7 @@ function feStill(f){
     while (j < cum.length - 1 && r >= cum[j]) j++;
     m = act[j]; nx = m.a * x + m.b * y + m.e; ny = m.c * x + m.d * y + m.f; x = nx; y = ny;
     if (!isFinite(x) || !isFinite(y) || Math.abs(x) > 1e6 || Math.abs(y) > 1e6){ x = 0; y = 0; continue; }
-    plotDot(d, Math.floor(fit.ox + x * fit.s), Math.floor(fit.oy - y * fit.s), dsz, c32[j]);
+    plotDot(d, Math.floor(cf[0] * x + cf[1] * y + cf[2]), Math.floor(cf[3] * x + cf[4] * y + cf[5]), dsz, c32[j]);
   }
   ctx.putImageData(im, 0, 0);
 }
@@ -1669,18 +1858,18 @@ function collectSettings(){
     tab: cur,
     chaos: { corners: CH.n, jumpFraction: CH.r, addMidpoints: CH.mid, neverRepeatCorner: CH.norep,
              colourByCorner: CH.col, speed: CH.sp },
-    fern: { colourByRule: FE.colour, speed: FE.sp,
+    fern: { colourByRule: FE.colour, speed: FE.sp, zoom: FE.k, rotationDegrees: Math.round(FE.rot * 1800 / Math.PI) / 10, panX: FE.fx, panY: FE.fy,
             rules: FE.maps.map(function(m){
               return { name: m.nm, a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f, p: m.p, on: !!m.on };
             }) },
     generations: { fractal: GN.fr, fractalName: fr.label, generation: GN.n, colour: GN.colour, predictMode: GN.predict,
-                   pythagorasAngle: GN.pa, zoom: GN.k,
+                   pythagorasAngle: GN.pa, zoom: GN.k, rotationDegrees: Math.round(GN.rot * 1800 / Math.PI) / 10,
                    panX: GN.pendingPan ? GN.pendingPan[0] : (GN.cw ? GN.ox / GN.cw : 0),
                    panY: GN.pendingPan ? GN.pendingPan[1] : (GN.ch ? GN.oy / GN.ch : 0) },
     tree: { angle: TR.A, shrinkRatio: TR.r, splits: TR.d, branchesEach: TR.b, randomness: TR.j,
             tips: TR.leaf, wind: TR.wind, randomSeed: TR.seed },
     mandelbrot: { centreRe: MD.cx, centreIm: MD.cy, magnification: MD.pendingZoom ? Math.min(MD.pendingZoom, MD.scale0 / MD_MINSCALE) : MD.scale0 / MD.scale,
-                  palette: +$('mdPal').value, juliaInset: $('mdJtog').checked }
+                  rotationDegrees: mdRotDeg(), palette: +$('mdPal').value, juliaInset: $('mdJtog').checked }
   };
 }
 function exportSettings(){
@@ -1722,6 +1911,9 @@ function applyFern(o){
     });
     if (maps.length){ FE.maps = maps; FE.preset = 'custom'; feBuildTable(); }
   }
+  FE.k = clampNum(o.zoom, 0.3, FE_KMAX, 1);
+  FE.rot = clampNum(o.rotationDegrees, -360, 360, 0) * Math.PI / 180; FE.rot = Math.abs(FE.rot) < 1e-9 ? 0 : wrapAng(FE.rot);
+  FE.fx = clampNum(o.panX, -1e4, 1e4, 0); FE.fy = clampNum(o.panY, -1e4, 1e4, 0);
   FE.colour = pickBool(o.colourByRule, FE.colour);
   FE.sp = clampNum(o.speed, 0, FE.speeds.length - 1, FE.sp, true);
   $('feCol').checked = FE.colour; setSlider('feSp', FE.sp);
@@ -1734,6 +1926,7 @@ function applyGen(o){
   GN.predict = pickBool(o.predictMode, GN.predict);
   GN.pa = clampNum(o.pythagorasAngle, 15, 75, GN.pa, true);
   GN.k = clampNum(o.zoom, 0.3, 400, 1);
+  GN.rot = clampNum(o.rotationDegrees, -360, 360, 0) * Math.PI / 180; GN.rot = Math.abs(GN.rot) < 1e-9 ? 0 : wrapAng(GN.rot);
   GN.pendingPan = [clampNum(o.panX, -50, 50, 0), clampNum(o.panY, -50, 50, 0)];
   GN.ox = 0; GN.oy = 0;                       // the pan is placed once the canvas size is known (see GNm.activate)
   GN.revealed = false; GN.geo = null;
@@ -1759,6 +1952,7 @@ function applyMandel(o){
   MD.cx = clampNum(o.centreRe, -3, 3, MD.cx);
   MD.cy = clampNum(o.centreIm, -3, 3, MD.cy);
   MD.pendingZoom = clampNum(o.magnification, 1 / 1.5, 1e15, 1);     // limited again against the deepest allowed zoom in mdFit
+  MD.rot = clampNum(o.rotationDegrees, -360, 360, 0) * Math.PI / 180; MD.rot = Math.abs(MD.rot) < 1e-9 ? 0 : wrapAng(MD.rot);
   var p = clampNum(o.palette, 0, MD_PAL_DEFS.length - 1, +$('mdPal').value, true);
   $('mdPal').value = p; MD.palette = mdBuildPalette(p);
   var j = pickBool(o.juliaInset, $('mdJtog').checked);
@@ -1802,14 +1996,28 @@ $('impFile').addEventListener('change', function(){
 /* ====================================================================
    PICTURE-ONLY VIEW (hide the controls)
    ==================================================================== */
+function updateFabUp(){
+  var r = cur === 'mandel' ? MD.rot : cur === 'gen' ? GN.rot : cur === 'fern' ? FE.rot : 0;
+  $('fabUp').style.display = r ? '' : 'none';
+}
 function setFocus(on, quiet){
   document.body.classList.toggle('focus', on);
   if (on && !quiet) toast('Controls hidden. Tap the \u2630 button to bring them back.');
 }
 $('focusBtn').addEventListener('click', function(){ setFocus(true); });
 $('fabMenu').addEventListener('click', function(){ setFocus(false); });
-$('fabIn').addEventListener('click', function(){ mdZoomAt(W / 2, H / 2, 2, true); });
-$('fabOut').addEventListener('click', function(){ mdZoomAt(W / 2, H / 2, 0.5, true); });
+function fabZoom(f){
+  if (cur === 'mandel') mdZoomAt(W / 2, H / 2, f, true);
+  else if (cur === 'gen') gnZoomAt(W / 2, H / 2, f);
+  else if (cur === 'fern') feApply(f, 0, W / 2, H / 2, W / 2, H / 2);
+}
+$('fabIn').addEventListener('click', function(){ fabZoom(cur === 'mandel' ? 2 : 1.5); });
+$('fabOut').addEventListener('click', function(){ fabZoom(cur === 'mandel' ? 0.5 : 1 / 1.5); });
+$('fabUp').onclick = function(){
+  if (cur === 'mandel') mdTurn(-MD.rot * 180 / Math.PI, W / 2, H / 2);
+  else if (cur === 'gen') gnAbout(W / 2, H / 2, 1, -GN.rot);
+  else if (cur === 'fern') feApply(1, -FE.rot, W / 2, H / 2, W / 2, H / 2);
+};
 // a phone turned on its side has no room for the controls, so go to picture-only; turning it upright brings them back
 var landscapePhone = window.matchMedia('(orientation: landscape) and (max-height: 520px)');
 if (landscapePhone.matches) setFocus(true, true);
@@ -1832,6 +2040,7 @@ function showTab(id){
   ctx.setTransform(1,0,0,1,0,0);
   resize();
   MODS[id].activate();
+  updateFabUp();
 }
 $('tabs').addEventListener('click', function(e){
   var t = e.target.getAttribute && e.target.getAttribute('data-tab'); if (t) showTab(t);
