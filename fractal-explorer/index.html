@@ -21,6 +21,16 @@ h1 span{color:var(--accent)}
 .hdr-right{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-left:auto}
 .saves{display:flex;gap:6px;flex-wrap:wrap}
 .saves .btn{padding:7px 12px;font-size:14px;min-height:40px}
+/* picture-only view: hides the header, toolbar and side panel so the picture fills the screen */
+#fab{position:absolute;left:10px;top:10px;display:none;gap:8px;z-index:20}
+#fab button{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:rgba(8,13,24,.82);color:var(--text);font-size:24px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+#fab button:active{background:var(--accent);color:#04201d}
+#fab .fabz{display:none}
+body.focus #fab{display:flex}
+body.focus[data-tab="mandel"] #fab .fabz{display:flex}
+body.focus header, body.focus #mdBar, body.focus #panel, body.focus #mdHelp{display:none !important}
+body.focus #hud{left:66px}
+body.focus #left{flex:1 !important;height:auto !important}
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1d2a44;border:1px solid var(--accent);color:var(--text);padding:9px 16px;border-radius:10px;font-size:14px;max-width:90vw;text-align:center;display:none;z-index:50;box-shadow:0 4px 18px rgba(0,0,0,.5)}
 #toast.on{display:block}
 #toast.bad{border-color:var(--bad)}
@@ -131,6 +141,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
     <button class="btn" id="saveHi" title="Download the picture again at up to 4 times the width and height (16 times the pixels)">Save High Res</button>
     <button class="btn" id="expBtn" title="Save every setting on every tab to a small file you can load again later">Export settings</button>
     <button class="btn" id="impBtn" title="Load a settings file you saved earlier">Import settings</button>
+    <button class="btn" id="focusBtn" title="Hide the controls so the picture fills the screen">Hide controls</button>
     <input type="file" id="impFile" accept=".json,application/json" hidden>
   </div>
   </div>
@@ -171,8 +182,13 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
     <div id="stage"><canvas id="cv"></canvas><div id="hud"></div>
       <div id="mdJLabel" class="mdonly">Julia set for this c</div>
       <canvas id="mdJulia" class="mdonly" width="170" height="170"></canvas>
-      <div id="mdHelp" class="mdonly"><b>Click</b> to zoom in on a point &middot; <b>Right-click</b> to zoom out &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom at the pointer</div>
+      <div id="mdHelp" class="mdonly"><b>Click</b> to zoom in on a point &middot; <b>Right-click</b> to zoom out &middot; <b>Drag</b> to move &middot; <b>Scroll</b> or <b>pinch</b> to zoom</div>
       <div id="mdInfo" class="mdonly">Move the pointer over the picture.</div>
+      <div id="fab">
+        <button id="fabMenu" aria-label="Show the controls" title="Show the controls">&#9776;</button>
+        <button id="fabIn" class="fabz" aria-label="Zoom in" title="Zoom in">+</button>
+        <button id="fabOut" class="fabz" aria-label="Zoom out" title="Zoom out">&minus;</button>
+      </div>
       <div id="mdWarn">Maximum zoom reached. The computer can only store numbers to about 15 significant figures, so it cannot go any deeper.</div>
     </div>
   </div>
@@ -1379,18 +1395,44 @@ function mdFit(){
   mdRender();
 }
 function mdInit(){
+  MD.ptrs = {}; MD.pinch = null; MD.pinchRemain = false;
   cv.addEventListener('contextmenu', function(e){ if (cur === 'mandel') e.preventDefault(); });
   cv.addEventListener('pointerdown', function(e){
     if (cur !== 'mandel') return;
     var q = eventPos(e), p = { x: q.px, y: q.py };
     if (e.button === 2){ mdZoomAt(p.x, p.y, 0.5, true); return; }
     cv.setPointerCapture(e.pointerId);
-    MD.snap.width = W; MD.snap.height = H; MD.snap.getContext('2d').drawImage(cv, 0, 0);
-    MD.drag = { x: p.x, y: p.y, moved: false, dx: 0, dy: 0 };
+    MD.ptrs[e.pointerId] = p;
+    var ids = Object.keys(MD.ptrs);
+    if (ids.length === 1){
+      MD.snap.width = W; MD.snap.height = H; MD.snap.getContext('2d').drawImage(cv, 0, 0);
+      MD.drag = { x: p.x, y: p.y, moved: false, dx: 0, dy: 0 };
+    } else if (ids.length === 2){
+      // second finger down: switch from dragging to pinching
+      if (MD.drag && MD.drag.moved){ MD.cx -= MD.drag.dx * MD.scale; MD.cy -= MD.drag.dy * MD.scale; }
+      MD.drag = null; MD.rid++;
+      MD.snap.width = W; MD.snap.height = H; MD.snap.getContext('2d').drawImage(cv, 0, 0);
+      var a = MD.ptrs[ids[0]], b = MD.ptrs[ids[1]], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      MD.pinch = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), mx0: mx, my0: my, mx: mx, my: my, f: 1 };
+    }
   });
   cv.addEventListener('pointermove', function(e){
     if (cur !== 'mandel') return;
     var q = eventPos(e), p = { x: q.px, y: q.py }; MD.lastMouse = p;
+    if (MD.ptrs[e.pointerId]) MD.ptrs[e.pointerId] = p;
+    if (MD.pinch){
+      var pid = Object.keys(MD.ptrs), P = MD.pinch;
+      if (pid.length >= 2){
+        var a = MD.ptrs[pid[0]], b = MD.ptrs[pid[1]];
+        P.mx = (a.x + b.x) / 2; P.my = (a.y + b.y) / 2;
+        P.f = mdPinchLimit(Math.hypot(a.x - b.x, a.y - b.y) / P.d0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+        ctx.setTransform(P.f, 0, 0, P.f, P.mx - P.mx0 * P.f, P.my - P.my0 * P.f);
+        ctx.drawImage(MD.snap, 0, 0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      return;
+    }
     var drag = MD.drag;
     if (drag){
       drag.dx = p.x - drag.x; drag.dy = p.y - drag.y;
@@ -1404,7 +1446,30 @@ function mdInit(){
     mdUpdateInfo(p.x, p.y);
     if ($('mdJtog').checked) mdQueueJulia(MD.cx + (p.x - W / 2) * MD.scale, MD.cy + (p.y - H / 2) * MD.scale);
   });
+  function mdPinchEnd(e){
+    if (cur !== 'mandel' || !MD.ptrs[e.pointerId]) return;
+    delete MD.ptrs[e.pointerId];
+    var left = Object.keys(MD.ptrs).length;
+    if (MD.pinch){
+      var P = MD.pinch; MD.pinch = null;
+      var cr = MD.cx + (P.mx0 - W / 2) * MD.scale, ci = MD.cy + (P.my0 - H / 2) * MD.scale, ns = MD.scale / P.f;
+      MD.cx = cr - (P.mx - W / 2) * ns; MD.cy = ci - (P.my - H / 2) * ns; MD.scale = ns;
+      MD.pinchRemain = left > 0;   // the finger still down must not count as a tap or a drag
+      mdRender();
+      return true;
+    }
+    if (MD.pinchRemain){ if (!left) MD.pinchRemain = false; return true; }
+  }
+  cv.addEventListener('pointercancel', function(e){ mdPinchEnd(e); MD.drag = null; });
+  // keeps a pinch inside the deepest zoom and the widest view; returns the allowed size change
+  function mdPinchLimit(f){
+    var ns = MD.scale / f;
+    if (ns < MD_MINSCALE){ ns = MD_MINSCALE; mdShowWarn(); }
+    if (ns > MD.scale0 * 1.5) ns = MD.scale0 * 1.5;
+    return MD.scale / ns;
+  }
   cv.addEventListener('pointerup', function(e){
+    if (mdPinchEnd(e)) return;
     if (cur !== 'mandel' || !MD.drag) return;
     var q = eventPos(e), drag = MD.drag;
     if (drag.moved){ MD.cx -= drag.dx * MD.scale; MD.cy -= drag.dy * MD.scale; mdRender(); }
@@ -1438,7 +1503,7 @@ function mdInit(){
 }
 var MDm = {
   activate: function(){ mdFit(); },
-  deactivate: function(){ MD.rid++; MD.drag = null; MD.pendingSave = false; $('mdWarn').style.display = 'none'; },
+  deactivate: function(){ MD.rid++; MD.drag = null; MD.ptrs = {}; MD.pinch = null; MD.pinchRemain = false; MD.pendingSave = false; $('mdWarn').style.display = 'none'; },
   onResize: function(){ mdFit(); }
 };
 
@@ -1733,6 +1798,23 @@ $('impFile').addEventListener('change', function(){
   rd.onerror = function(){ toast('That file could not be read.', true); inp.value = ''; };
   rd.readAsText(f);
 });
+
+/* ====================================================================
+   PICTURE-ONLY VIEW (hide the controls)
+   ==================================================================== */
+function setFocus(on, quiet){
+  document.body.classList.toggle('focus', on);
+  if (on && !quiet) toast('Controls hidden. Tap the \u2630 button to bring them back.');
+}
+$('focusBtn').addEventListener('click', function(){ setFocus(true); });
+$('fabMenu').addEventListener('click', function(){ setFocus(false); });
+$('fabIn').addEventListener('click', function(){ mdZoomAt(W / 2, H / 2, 2, true); });
+$('fabOut').addEventListener('click', function(){ mdZoomAt(W / 2, H / 2, 0.5, true); });
+// a phone turned on its side has no room for the controls, so go to picture-only; turning it upright brings them back
+var landscapePhone = window.matchMedia('(orientation: landscape) and (max-height: 520px)');
+if (landscapePhone.matches) setFocus(true, true);
+if (landscapePhone.addEventListener) landscapePhone.addEventListener('change', function(e){ setFocus(e.matches, true); });
+else if (landscapePhone.addListener) landscapePhone.addListener(function(e){ setFocus(e.matches, true); });
 
 /* ====================================================================
    TABS
