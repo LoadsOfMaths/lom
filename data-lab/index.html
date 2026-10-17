@@ -438,7 +438,7 @@
           <select id="cContext"></select>
         </label>
         <label class="f">How many measurements?
-          <select id="cN"><option value="rand" selected>Random (31–1001)</option><option>31</option><option>51</option><option>101</option><option>201</option><option>501</option><option>1001</option></select>
+          <select id="cN"><option value="rand" selected>Random (32–1000)</option><option>40</option><option>80</option><option>100</option><option>200</option><option>500</option><option>1000</option></select>
         </label>
         <label class="f">Type of data
           <span class="seg" id="cModeSeg"><button data-m="random" class="on">Random</button><button data-m="biased">Biased</button></span>
@@ -467,7 +467,8 @@
             <span class="wv" id="cWval"></span>
             <button class="btn sec" id="cWp" aria-label="Wider classes">+</button>
             <button class="btn sec" id="cEdit">✎ Edit classes</button>
-            <div class="cnote">Each class includes its lower boundary but not its upper boundary: <b>30 ≤ x &lt; 40</b> means 30 or more, but less than 40. So there are no gaps and no overlaps.</div>
+            <button class="btn sec" id="cVar" title="Let the app choose classes of different widths">🎲 Varied widths</button>
+            <div class="cnote">Each class includes its lower boundary but not its upper boundary: <b>30 ≤ x &lt; 40</b> means 30 or more, but less than 40. So there are no gaps and no overlaps. The app starts with <b>varied</b> class widths (multiples of 2 or 5): use <b>−</b> and <b>+</b> for equal widths, or 🎲 for a new set of varied widths. On the Histogram view you can also edit the boundaries and watch the bars resize.</div>
           </div>
           <div style="margin-bottom:10px"><span class="seg" id="cViewSeg"><button data-v="ft" class="on">Table &amp; mean</button><button data-v="hist">Histogram</button><button data-v="cf">Cumulative freq.</button><button data-v="bx">Box plot</button></span></div>
           <div id="cFT">
@@ -2295,6 +2296,7 @@
     $("cWm").disabled=C.busy||(!C.mixed&&C.wi<=0);
     $("cWp").disabled=C.busy||(!C.mixed&&C.wi>=C.widths.length-1);
     $("cEdit").disabled=C.busy;
+    $("cVar").disabled=C.busy;
     $("cEdit").textContent=C.edit?"✓ Done editing":"✎ Edit classes";
   }
   function cStatus(html,cls){
@@ -2308,14 +2310,44 @@
   }
   function cWidthLabel(){
     var c=CCTX[C.ctx];
-    if(C.mixed)return "mixed widths";
+    if(C.mixed)return "varied widths";
     return cNum(C.B[1]-C.B[0])+" "+c.unit;
+  }
+  function cStepFor(c){
+    var ST=[0.1,0.2,0.5,1,2,5,10,20,50,100,200,500,1000,2000,5000,10000],R=c.max-c.min,u=Math.pow(10,-c.dp),i;
+    for(i=0;i<ST.length;i++)if(ST[i]>=u-1e-9&&R/ST[i]<=30)return ST[i];
+    return ST[ST.length-1];
+  }
+  function cFreqFor(B,data){
+    var f=[],i,j;
+    for(i=0;i<B.length-1;i++)f.push(0);
+    data.forEach(function(v){for(j=B.length-2;j>=0;j--)if(v>=B[j]-1e-9){f[j]++;break}});
+    return f;
+  }
+  /* varied class widths: whole multiples (1, 2, 4 or 5) of a base step, narrower in the middle, wider in the tails */
+  function cVarBounds(c,data){
+    var s=cStepFor(c),mn=Math.min.apply(null,data),mx=Math.max.apply(null,data),
+        lo=cRound(Math.floor(mn/s+1e-9)*s,4),T=Math.floor((mx-lo)/s+1e-9)+1,t,B,pos,p,pool,k,n,ws;
+    for(t=0;t<800;t++){
+      B=[lo];pos=0;
+      while(pos<T){
+        p=(pos+0.5)/T;
+        pool=(p>0.3&&p<0.7)?[1,1,2,2,4]:[2,4,4,5];
+        k=pool[Math.floor(Math.random()*pool.length)];
+        pos+=k;B.push(cRound(lo+pos*s,4));
+      }
+      n=B.length-1;
+      if(n<5||n>9||pos-T>2)continue;
+      ws={};for(k=0;k<n;k++)ws[cRound(B[k+1]-B[k],4)]=1;
+      if(Object.keys(ws).length<2)continue;
+      if(cFreqFor(B,data).every(function(x){return x>0}))return B;
+    }
+    return null;
   }
   function cGenerate(){
     cStop();closeOverlay();
     var c=CCTX[C.ctx],span=c.max-c.min,n,arr=[],i,v,u,centre;
-    n=C.nsel==="rand"?Math.round(30*Math.pow(1000/30,Math.random())):+C.nsel;
-    if(n%2===0)n++;
+    n=C.nsel==="rand"?Math.max(32,4*Math.round(30*Math.pow(1000/30,Math.random())/4)):+C.nsel;
     centre=0.4+Math.random()*0.2;
     for(i=0;i<n;i++){
       if(C.mode==="biased"){
@@ -2329,8 +2361,14 @@
       arr.push(v);
     }
     C.data=arr;C.dp=c.dp;
-    C.widths=cNiceWidths(c);C.wi=cDefaultWi(c,C.widths);C.mixed=false;C.edit=false;
-    C.B=cBounds(c,C.widths[C.wi]);
+    C.widths=cNiceWidths(c);C.wi=cDefaultWi(c,C.widths);C.mixed=false;C.edit=false;C.s=cStepFor(c);
+    var vb=cVarBounds(c,arr);
+    if(vb){C.B=vb;C.mixed=true}else C.B=cBounds(c,C.widths[C.wi]);
+    /* avoid a cumulative frequency of exactly N/2, which would make the median class ambiguous */
+    var run=0,hit=false;
+    cFreqFor(C.B,arr).forEach(function(x){run+=x;if(run*2===arr.length)hit=true});
+    if(hit&&(C.tries=(C.tries||0)+1)<30)return cGenerate();
+    C.tries=0;
     renderC(false);
   }
   function cRows(){
@@ -2356,9 +2394,11 @@
     cButtons();
   }
   function cRebin(){
-    var wasDone=C.idx>=C.data.length&&C.data.length>0;
+    var wasDone=C.idx>=C.data.length&&C.data.length>0,
+        keep=wasDone&&H.placed.length>0&&H.placed.every(Boolean),st=H.step,ar=H.areas,ed=H.edit;
     cStop();closeOverlay();
     renderC(wasDone);
+    if(keep&&hComplete())hRestore(st,ar,ed);
   }
   function cAdvance(count,quiet){
     var n=C.data.length,box=$("cData");
@@ -2417,6 +2457,18 @@
   $("cWm").addEventListener("click",function(){cSetWidth(-1)});
   $("cWp").addEventListener("click",function(){cSetWidth(1)});
   $("cEdit").addEventListener("click",function(){C.edit=!C.edit;cButtons();ftC.render()});
+  $("cVar").addEventListener("click",function(){
+    if(C.busy)return;
+    var nb=cVarBounds(CCTX[C.ctx],C.data);
+    if(!nb)return;
+    C.B=nb;C.mixed=true;C.edit=false;cRebin();
+  });
+  function cApplyBounds(nb){
+    var w0=nb[1]-nb[0],j;
+    C.B=nb;C.mixed=false;
+    for(j=1;j<nb.length-1;j++)if(Math.abs((nb[j+1]-nb[j])-w0)>1e-9){C.mixed=true;break}
+    cRebin();
+  }
   $("cTable").addEventListener("click",function(e){
     var b=e.target.closest("[data-ct]");if(!b||b.disabled||C.busy)return;
     var p=b.getAttribute("data-ct").split(":"),op=p[0],i=+p[1];
@@ -2430,21 +2482,109 @@
 
 
   /* ----- histogram (Continuous tab) ----- */
-  var H={step:0,F:[],placed:[],temp:null,areas:false,celebrated:false,msg:null,tm:null};
+  var H={step:0,F:[],placed:[],temp:null,areas:false,celebrated:false,msg:null,tm:null,edit:false,Q:null};
   C.view="ft";
   function hComplete(){return C.data.length>0&&C.idx>=C.data.length}
   function hW(i){return cRound(C.B[i+1]-C.B[i],4)}
   function hLab(i){return cNum(C.B[i])+" ≤ x < "+cNum(C.B[i+1])}
+  var QN=["lower quartile (Q1)","median","upper quartile (Q3)"],QS=["Q1","Median","Q3"],QD=["N ÷ 4","N ÷ 2","3N ÷ 4"],QF=["¼","½","¾"];
+  function hCap(t){return t.charAt(0).toUpperCase()+t.slice(1)}
+  function hQNew(){return {i:0,s:0,v:"",res:[null,null,null],done:false}}
+  /* the bar containing a quartile, and the working to find it from the areas */
+  function hQinfo(i){
+    var N=C.data.length,T=N*(i+1)/4,cum=0,m=0,bef=0,k,n=C.B.length-1;
+    for(k=0;k<n;k++){if(cum+C.freq[k]>=T-1e-9){m=k;bef=cum;break}cum+=C.freq[k]}
+    var w=hW(m),h=C.freq[m]/w,need=T-bef,wd=need/h;
+    return {T:T,m:m,bef:bef,need:need,w:w,h:h,wd:wd,est:C.B[m]+wd};
+  }
+  function hQField(){return !!(H.step===2&&H.Q&&!H.Q.done&&H.Q.s!==1)}
+  function hQexp(){var q=hQinfo(H.Q.i);return [q.T,null,q.bef,q.need,q.wd,q.est][H.Q.s]}
+  function hQtol(){var q=hQinfo(H.Q.i);return H.Q.s>=4?0.03*q.w+0.005:0.005+1e-9}
+  function hQHint(q){
+    var Q=H.Q,N=C.data.length;
+    switch(Q.s){
+      case 0:return "Not quite – the "+QN[Q.i]+" is "+QF[Q.i]+" of the way through, so the area to its left is "+QD[Q.i]+" (N = "+N+").";
+      case 2:return "Not quite – add up the areas (frequencies) of all the bars to the left of the bar you chose.";
+      case 3:return "Not quite – we need "+cNum(cRound(q.T,2))+" in total and already have "+q.bef+" from the bars on the left. Subtract.";
+      case 4:return "Not quite – the part we need has area "+cNum(cRound(q.need,2))+" and height "+cNum(cRound(q.h,2))+". Width = area ÷ height (2 d.p. if needed).";
+      default:return "Not quite – the line is this far across the bar: add the width to the lower boundary, "+cNum(C.B[q.m])+".";
+    }
+  }
+  function hQCheck(){
+    var Q=H.Q;if(!hQField())return;
+    var val=parseFloat(Q.v),q=hQinfo(Q.i);
+    if(Q.v===""||isNaN(val)){H.msg={type:"bad",text:"Type an answer first."};hRender();return}
+    if(Math.abs(val-hQexp())<=hQtol()){hQNext();return}
+    H.msg={type:"bad",text:hQHint(q)};Q.v="";hRender();
+  }
+  function hQNext(){
+    var Q=H.Q,i=Q.i;
+    if(Q.s===5){
+      Q.res[i]=cRound(hQinfo(i).est,2);Q.v="";
+      if(i>=2){Q.done=true;H.msg=null;hRender();hQFinish();return}
+      Q.i=i+1;Q.s=0;H.msg={type:"good",text:"✓ "+QS[i]+" ≈ "+cNum(Q.res[i])+". Now the "+QN[i+1]+"."};hRender();return;
+    }
+    Q.s++;Q.v="";H.msg={type:"good",text:"✓ Correct!"};hRender();
+  }
+  function hQTap(k){
+    var Q=H.Q;if(H.step!==2||!Q||Q.done||Q.s!==1)return;
+    var q=hQinfo(Q.i),cum=0,j;
+    for(j=0;j<=k;j++)cum+=C.freq[j];
+    if(k===q.m){Q.s=2;Q.v="";H.msg={type:"good",text:"✓ Yes – the "+QN[Q.i]+" lies in "+hLab(k)+"."}}
+    else if(k<q.m)H.msg={type:"bad",text:"Not quite – the bars up to and including that one only add up to an area of "+cum+", which is less than "+cNum(cRound(q.T,2))+". Look further right."};
+    else H.msg={type:"bad",text:"Not quite – the bars before that one already add up to at least "+cNum(cRound(q.T,2))+". Look further left."};
+    hRender();
+  }
+  function hQFinish(){
+    var r=H.Q.res;
+    $("celSub").textContent="You've estimated the quartiles from the histogram.";
+    $("modeText").textContent="Q1 ≈ "+cNum(r[0])+" · Median ≈ "+cNum(r[1])+" · Q3 ≈ "+cNum(r[2])+" · IQR ≈ "+cNum(cRound(r[2]-r[0],2));
+    $("thinkText").textContent="Think: why do we have to assume the values are spread evenly inside each bar? Try editing the boundaries – do the quartile estimates change?";
+    showOv();confetti();
+  }
+  function hCanMove(j,d){
+    var s=C.s,nb=cRound(C.B[j]+d*s,4),n=C.B.length-1,mn=Math.min.apply(null,C.data),mx=Math.max.apply(null,C.data);
+    if(j>0&&nb<C.B[j-1]+s-1e-9)return false;
+    if(j<n&&nb>C.B[j+1]-s+1e-9)return false;
+    if(j===0&&nb>mn+1e-9)return false;
+    if(j===n&&nb<=mx+1e-9)return false;
+    if(nb<-1e-9&&CCTX[C.ctx].min>=0)return false;
+    return true;
+  }
+  function hEditHTML(){
+    var n=C.B.length-1,s=C.s,u=esc(CCTX[C.ctx].unit),i,h;
+    function mv(j){
+      return "<button class='btn sec' style='padding:2px 10px' data-he='m:"+j+":-1'"+(hCanMove(j,-1)?"":" disabled")+" aria-label='Move boundary down'>◀</button> <b>"+cNum(C.B[j])+"</b> "+
+             "<button class='btn sec' style='padding:2px 10px' data-he='m:"+j+":1'"+(hCanMove(j,1)?"":" disabled")+" aria-label='Move boundary up'>▶</button>";
+    }
+    h="<div class='qcard'><b>Edit the class boundaries.</b> Each ◀ ▶ moves a boundary by "+cNum(s)+" "+u+". The bars resize so that each <b>area</b> still equals its frequency."+(H.step===2?" (Changing a boundary restarts the quartile working.)":"")+
+      "<table class='gtab ft' style='margin-top:8px'><tr><th>Class</th><th class='gf'>Lower boundary</th><th class='gf'>Width</th><th class='gf'>Frequency</th><th class='gf'></th></tr>";
+    for(i=0;i<n;i++){
+      var k=Math.round(hW(i)/s);
+      h+="<tr><td style='white-space:nowrap'>"+hLab(i)+"</td><td class='gf' style='width:auto;white-space:nowrap'>"+mv(i)+"</td><td class='gf'>"+cNum(hW(i))+"</td><td class='gf'>"+C.freq[i]+"</td><td class='gf' style='width:auto;white-space:nowrap'>"+
+        "<span class='rt'><button data-he='s:"+i+"'"+(k>=2&&n<12?"":" disabled")+">Split</button><button data-he='g:"+i+"'"+(i<n-1&&n>3?"":" disabled")+">Merge ↓</button></span></td></tr>";
+    }
+    h+="<tr><td>Top boundary</td><td class='gf' style='width:auto;white-space:nowrap'>"+mv(n)+"</td><td colspan='3'></td></tr></table></div>";
+    return h;
+  }
+  function hRestore(st,ar,ed){
+    clearTimeout(H.tm);
+    H.F.forEach(function(f){f.ok=true;f.v=String(cRound(f.exp,2))});
+    H.placed=H.placed.map(function(){return true});
+    H.step=st;H.areas=ar;H.edit=ed;H.celebrated=true;H.temp=null;H.Q=hQNew();
+    H.msg={type:"good",text:"Class boundaries changed – the bars have been redrawn so each area still equals its frequency."};
+    hRender();
+  }
   function hReset(){
     clearTimeout(H.tm);
-    H.step=0;H.temp=null;H.areas=false;H.celebrated=false;H.msg=null;H.placed=[];H.F=[];
+    H.step=0;H.temp=null;H.areas=false;H.celebrated=false;H.msg=null;H.placed=[];H.F=[];H.edit=false;H.Q=hQNew();
     if(hComplete())for(var i=0;i<C.B.length-1;i++){H.F.push({v:"",ok:false,exp:C.freq[i]/hW(i)});H.placed.push(false)}
     hRender();
   }
   function hCur(){for(var i=0;i<H.F.length;i++)if(!H.F[i].ok)return i;return -1}
-  function hActive(){return C.view==="hist"&&hComplete()&&H.step===0&&hCur()>=0}
+  function hActive(){return C.view==="hist"&&hComplete()&&((H.step===0&&hCur()>=0)||hQField())}
   function hKey(k){
-    var f=H.F[hCur()];if(!f)return;
+    var f=H.step===2?(hQField()?H.Q:null):H.F[hCur()];if(!f)return;
     if(k==="enter"){hCheck();return}
     if(k==="back")f.v=f.v.slice(0,-1);
     else if(k==="."){if(f.v.indexOf(".")<0&&f.v.length<8)f.v+=(f.v===""?"0.":".")}
@@ -2452,6 +2592,7 @@
     H.msg=null;hRender();
   }
   function hCheck(){
+    if(H.step===2){hQCheck();return}
     var i=hCur(),f=H.F[i];if(!f)return;
     var val=parseFloat(f.v);
     if(f.v===""||isNaN(val)){H.msg={type:"bad",text:"Type an answer first."};hRender();return}
@@ -2490,13 +2631,30 @@
         var hh=H.F[i].exp;
         h+="<rect x='"+x0.toFixed(1)+"' y='"+Y(hh).toFixed(1)+"' width='"+(x1-x0).toFixed(1)+"' height='"+(ph*hh/sc.top).toFixed(1)+"' style='fill:var(--blue)' fill-opacity='.85' stroke='#fff' stroke-width='1.5'/>";
         if(x1-x0>26)h+="<text x='"+((x0+x1)/2).toFixed(1)+"' y='"+(Y(hh)-5).toFixed(1)+"' text-anchor='middle' font-size='13' font-weight='700' fill='#1b2a4a'>"+cNum(cRound(hh,2))+"</text>";
-        if(H.areas&&x1-x0>34)h+="<text x='"+((x0+x1)/2).toFixed(1)+"' y='"+(Y(hh/2)+5).toFixed(1)+"' text-anchor='middle' font-size='13' fill='#fff' font-weight='700'>area "+C.freq[i]+"</text>";
+        if((H.areas||H.step===2)&&x1-x0>34)h+="<text x='"+((x0+x1)/2).toFixed(1)+"' y='"+(Y(hh/2)+5).toFixed(1)+"' text-anchor='middle' font-size='13' fill='#fff' font-weight='700'>area "+C.freq[i]+"</text>";
       }else if(H.temp&&H.temp.i===i){
         h+="<rect x='"+x0.toFixed(1)+"' y='"+Y(H.temp.v).toFixed(1)+"' width='"+(x1-x0).toFixed(1)+"' height='"+(ph*H.temp.v/sc.top).toFixed(1)+"' fill='#f59e0b' fill-opacity='.75' stroke='#fff' stroke-width='1.5'/>";
       }
-      if(!H.placed[i])h+="<rect data-c='"+i+"' x='"+x0.toFixed(1)+"' y='"+HV.T+"' width='"+(x1-x0).toFixed(1)+"' height='"+ph+"' fill='#4c8bf5' fill-opacity='0.04'/>";
+      if(!H.placed[i]||(H.step===2&&H.Q&&!H.Q.done&&H.Q.s===1))h+="<rect data-c='"+i+"' x='"+x0.toFixed(1)+"' y='"+HV.T+"' width='"+(x1-x0).toFixed(1)+"' height='"+ph+"' fill='#4c8bf5' fill-opacity='0.04'/>";
     }
     h+="<line x1='"+HV.L+"' x2='"+HV.L+"' y1='"+HV.T+"' y2='"+(HV.T+ph)+"' stroke='#1b2a4a' stroke-width='2'/><line x1='"+HV.L+"' x2='"+(HV.W-HV.R)+"' y1='"+(HV.T+ph)+"' y2='"+(HV.T+ph)+"' stroke='#1b2a4a' stroke-width='2'/>";
+    if(H.step===2&&H.Q){
+      var Qd=H.Q,jj;
+      for(jj=0;jj<3;jj++){
+        var shown=Qd.done||jj<Qd.i,curq=!Qd.done&&jj===Qd.i;
+        if(!(shown||(curq&&Qd.s>=2)))continue;
+        var qi=hQinfo(jj),bx0=X(C.B[qi.m]),bx1=X(C.B[qi.m+1]),by=Y(qi.h),bh=ph*qi.h/sc.top;
+        if(shown||(curq&&Qd.s>=5)){
+          var ex=X(qi.est);
+          h+="<rect x='"+bx0.toFixed(1)+"' y='"+by.toFixed(1)+"' width='"+(ex-bx0).toFixed(1)+"' height='"+bh.toFixed(1)+"' fill='#f59e0b' fill-opacity='.9' stroke='#b45309' stroke-width='1.5' pointer-events='none'/>";
+          if(shown){
+            h+="<line x1='"+ex.toFixed(1)+"' x2='"+ex.toFixed(1)+"' y1='"+HV.T+"' y2='"+(HV.T+ph)+"' stroke='#dc2626' stroke-width='2.5' stroke-dasharray='6 4' pointer-events='none'/>";
+            h+="<text x='"+(ex+(ex>HV.W-100?-5:5)).toFixed(1)+"' y='"+(HV.T+12+(jj%2)*15)+"' text-anchor='"+(ex>HV.W-100?"end":"start")+"' font-size='13' font-weight='800' fill='#b91c1c' paint-order='stroke' stroke='#fff' stroke-width='4' pointer-events='none'>"+QS[jj]+" ≈ "+cNum(cRound(qi.est,2))+"</text>";
+          }
+        }
+        if(curq)h+="<rect x='"+bx0.toFixed(1)+"' y='"+by.toFixed(1)+"' width='"+(bx1-bx0).toFixed(1)+"' height='"+bh.toFixed(1)+"' fill='none' stroke='#f59e0b' stroke-width='4' pointer-events='none'/>";
+      }
+    }
     var lastX=-99;
     for(i=0;i<C.B.length;i++){
       var xx=X(C.B[i]);
@@ -2516,8 +2674,10 @@
     var el=$("cHist");if(!el)return;
     if(C.view!=="hist"){return}
     if(!hComplete()){el.innerHTML="<div class='lockmsg'>Process the data first – tap <b>One by one</b> or <b>All at once</b>. Then we'll turn the finished frequency table into a histogram.</div>";return}
+    var allP=H.placed.length>0&&H.placed.every(Boolean);
     var h="<div class='pills'><button class='pill"+(H.step===0?" active":"")+(hCur()<0?" done":"")+"' data-hs='0'>"+(hCur()<0?"✓ ":"1 ")+"Frequency density</button>"+
-      "<button class='pill"+(H.step===1?" active":"")+(hCur()>=0?" locked":"")+"' data-hs='1'>2 Draw the bars</button></div>";
+      "<button class='pill"+(H.step===1?" active":"")+(allP?" done":"")+(hCur()>=0?" locked":"")+"' data-hs='1'>"+(allP?"✓ ":"2 ")+"Draw the bars</button>"+
+      "<button class='pill"+(H.step===2?" active":"")+(H.Q.done?" done":"")+(!allP?" locked":"")+"' data-hs='2'>"+(H.Q.done?"✓ ":"3 ")+"Quartiles</button></div>";
     var cur=hCur(),i,n=H.F.length;
     if(H.step===0){
       h+="<div class='stepin'><h3>Step 1 – Frequency density</h3><p>In a histogram the <b>area</b> of a bar shows the frequency – not its height. The height is the <b>frequency density</b>:</p><div class='eq'>frequency density = frequency ÷ class width</div></div>";
@@ -2532,13 +2692,41 @@
       h+="</table>";
       if(cur>=0)h+=hKeypad();
       else h+="<div style='margin-top:10px'><button class='btn go' data-ha='next'>Next: draw the bars →</button></div>";
-    }else{
+    }else if(H.step===1){
       var placedN=H.placed.filter(Boolean).length,done=placedN===n;
       h+="<div class='stepin'><h3>Step 2 – Draw the bars</h3><p>Tap inside a class column at the height of its <b>frequency density</b>. The bars touch, because the classes have no gaps.</p></div>";
       h+="<div class='fdchips'>"+H.F.map(function(f,j){return "<span>"+hLab(j)+": <b>"+cNum(cRound(f.exp,2))+"</b></span>"}).join("")+"</div>";
       h+=xhBar()+hChart();
-      h+="<div class='row' style='margin-top:10px'>"+(done?"<button class='btn' data-ha='areas'>"+(H.areas?"Hide":"Show")+" bar areas</button><button class='btn go' data-ha='again'>New data</button>":"<button class='btn sec' data-ha='help'>🛟 Draw the next bar for me</button>")+"</div>";
+      h+="<div class='row' style='margin-top:10px'>"+(done?"<button class='btn' data-ha='areas'>"+(H.areas?"Hide":"Show")+" bar areas</button><button class='btn sec' data-ha='edit'>✎ "+(H.edit?"Hide":"Edit")+" class boundaries</button><button class='btn go' data-ha='quart'>Next: quartiles →</button><button class='btn sec' data-ha='again'>New data</button>":"<button class='btn sec' data-ha='help'>🛟 Draw the next bar for me</button>")+"</div>";
       if(done&&H.areas)h+="<p>Area of a bar = class width × frequency density = <b>frequency</b>. The areas add up to <b>"+C.data.length+"</b>, the total frequency.</p>";
+      if(done&&H.edit)h+=hEditHTML();
+    }else{
+      var Q=H.Q,N=C.data.length,qdone=Q.done,qi=qdone?2:Q.i,q=hQinfo(qi),jq,un=esc(CCTX[C.ctx].unit);
+      h+="<div class='stepin'><h3>Step 3 – Quartiles from the areas</h3><p>The <b>area</b> of each bar is its frequency, so the areas add up to <i>N</i> = <b>"+N+"</b>. A quarter of the area lies to the left of the <b>lower quartile</b>, half to the left of the <b>median</b> and three-quarters to the left of the <b>upper quartile</b>. We find where a <b>vertical line</b> must cut a bar to split off exactly the right area.</p></div>";
+      h+="<div class='fdchips'>"+C.freq.map(function(f,j){return "<span>"+hLab(j)+": area <b>"+f+"</b></span>"}).join("")+"</div>";
+      for(jq=0;jq<3;jq++)if(qdone||jq<Q.i){var qj=hQinfo(jq);h+="<div class='qrow dn'>✓ "+hCap(QN[jq])+": area "+cNum(cRound(qj.T,2))+" → inside "+hLab(qj.m)+" → ≈ <b>"+cNum(cRound(qj.est,2))+"</b> "+un+"</div>"}
+      if(!qdone){
+        var qbx=function(sx,ex){
+          if(Q.s>sx)return "<span class='abox sm ok'>"+ex+"</span>";
+          return "<span class='abox sm active'>"+esc(Q.v)+"</span><button class='lifebelt sm' data-hq='1' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>";
+        },tT=cNum(cRound(q.T,2)),tN=cNum(cRound(q.need,2)),tH=cNum(cRound(q.h,2));
+        h+="<div class='qrow'><b>"+hCap(QN[qi])+"</b></div>";
+        h+="<div class='qrow'>Area needed to the left = "+QF[qi]+" of <i>N</i> = "+QD[qi]+" = "+qbx(0,tT)+"</div>";
+        if(Q.s===1)h+="<div class='qrow'>Add up the areas from the left. Tap the <b>bar</b> where the total first reaches "+tT+". <button class='btn sec' data-ha='qbar'>🛟 Show me the bar</button></div>";
+        else if(Q.s>1)h+="<div class='qrow dn'>✓ The line goes through the bar "+hLab(q.m)+", which has height (frequency density) "+tH+".</div>";
+        if(Q.s>=2)h+="<div class='qrow'>Total area of the bars to the left of this bar = "+qbx(2,q.bef)+"</div>";
+        if(Q.s>=3)h+="<div class='qrow'>Area still needed inside this bar = "+tT+" − "+q.bef+" = "+qbx(3,tN)+"</div>";
+        if(Q.s>=4)h+="<div class='qrow'>Cut the bar with a vertical line. The part on its left is a rectangle with area "+tN+" and height "+tH+". Width = area ÷ height = "+tN+" ÷ "+tH+" = "+qbx(4,cNum(cRound(q.wd,2)))+" "+un+"</div>";
+        if(Q.s>=5)h+="<div class='qrow'>"+QS[qi]+" ≈ lower boundary + width = "+cNum(C.B[q.m])+" + "+cNum(cRound(q.wd,2))+" = "+qbx(5,cNum(cRound(q.est,2)))+" "+un+"</div>";
+        if(hQField())h+=hKeypad()+"<div style='height:10px'></div>";
+      }else{
+        var rr=Q.res;
+        h+="<div class='warn' style='background:#e8f5ec;border-color:var(--green)'><b>Summary:</b> Q1 ≈ "+cNum(rr[0])+" · Median ≈ "+cNum(rr[1])+" · Q3 ≈ "+cNum(rr[2])+" · Interquartile range ≈ "+cNum(cRound(rr[2]-rr[0],2))+" "+un+"</div>";
+        h+="<p>These are only <b>estimates</b>, because we assumed the values are spread evenly inside each bar.</p>";
+      }
+      h+=xhBar()+hChart();
+      h+="<div class='row' style='margin-top:10px'><button class='btn sec' data-ha='edit'>✎ "+(H.edit?"Hide":"Edit")+" class boundaries</button>"+(qdone?"<button class='btn go' data-ha='again'>New data</button>":"")+"</div>";
+      if(H.edit)h+=hEditHTML();
     }
     h+=hFFBar();
     if(H.msg)h+="<div class='fmsg "+H.msg.type+"'>"+H.msg.text+"</div>";
@@ -2569,6 +2757,7 @@
   function hFFBar(){
     if(!hComplete())return "";
     if(H.step===0)return hCur()>=0?ffBar(true,true):"";
+    if(H.step===2)return H.Q.done?"":ffBar(false,true);
     return H.placed.every(Boolean)?"":ffBar(false,true);
   }
   function hFF(kind){
@@ -2578,6 +2767,10 @@
       if(kind==="ground")H.step=1;
       hRender();return;
     }
+    if(H.step===2){
+      for(var jf=0;jf<3;jf++)H.Q.res[jf]=cRound(hQinfo(jf).est,2);
+      H.Q.i=2;H.Q.s=5;H.Q.done=true;H.Q.v="";hRender();hQFinish();return;
+    }
     H.placed=H.placed.map(function(){return true});H.temp=null;
     hRender();hFinish();
   }
@@ -2585,6 +2778,7 @@
     var t;
     if((t=e.target.closest("[data-ff]"))){hFF(t.getAttribute("data-ff"));return}
     if((t=e.target.closest("[data-c]"))){
+      if(H.step===2){hQTap(+t.getAttribute("data-c"));return}
       var svg=$("hSvg"),r=svg.getBoundingClientRect(),sc=hScale(),ph=HV.H-HV.T-HV.B;
       if(!r.height)return;
       var sy=(e.clientY-r.top)/r.height*HV.H;
@@ -2595,15 +2789,30 @@
       H.F[i].ok=true;if(hCur()<0)H.msg={type:"good",text:"✓ All the frequency densities are done. Now draw the bars."};
       hRender();return;
     }
+    if((t=e.target.closest("[data-he]"))){
+      var hp=t.getAttribute("data-he").split(":"),hb=C.B.slice();
+      if(hp[0]==="m"){var hj=+hp[1],hd=+hp[2];if(!hCanMove(hj,hd))return;hb[hj]=cRound(hb[hj]+hd*C.s,4)}
+      else if(hp[0]==="s"){var hi2=+hp[1],hk=Math.round(hW(hi2)/C.s);if(hk<2)return;hb.splice(hi2+1,0,cRound(C.B[hi2]+Math.floor(hk/2)*C.s,4))}
+      else if(hp[0]==="g"){hb.splice(+hp[1]+1,1)}
+      cApplyBounds(hb);return;
+    }
+    if((t=e.target.closest("[data-hq]"))){
+      if(hQField()){H.Q.v=String(cRound(hQexp(),2));H.msg=null;hRender()}
+      return;
+    }
     if((t=e.target.closest("[data-k]"))){hKey(t.getAttribute("data-k"));return}
     if((t=e.target.closest("[data-hs]"))){
       var s2=+t.getAttribute("data-hs");
+      if(s2===2&&!H.placed.every(Boolean)){H.msg={type:"bad",text:"Draw all the bars first."};hRender();return}
       if(s2===1&&hCur()>=0){H.msg={type:"bad",text:"Finish the frequency densities first."};hRender();return}
       H.step=s2;H.msg=null;hRender();return;
     }
     if((t=e.target.closest("[data-ha]"))){
       var a=t.getAttribute("data-ha");
       if(a==="next"){H.step=1;H.msg=null;hRender()}
+      else if(a==="quart"){H.step=2;H.msg=null;hRender()}
+      else if(a==="edit"){H.edit=!H.edit;hRender()}
+      else if(a==="qbar"){hQTap(hQinfo(H.Q.i).m)}
       else if(a==="areas"){H.areas=!H.areas;hRender()}
       else if(a==="again")cGenerate();
       else if(a==="help"){
