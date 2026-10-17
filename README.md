@@ -12,6 +12,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Block Shift | `block-shift/` |
 | Bouncer | `bouncer/` |
 | Brain Gym | `brain-gym/` |
+| Chocolate Biscuits | `chocolate-biscuits/` |
 | Count Protracula's Coffin Quiz | `coffin-quiz/` |
 | Dance Floor Filler | `dance-floor-filler/` |
 | Data Lab | `data-lab/` |

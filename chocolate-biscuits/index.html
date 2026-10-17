@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="color-scheme" content="dark">
+<title>Chocolate Biscuits</title>
+<style>
+:root {
+  --bg: #1d1f24; --panel: rgba(38,41,49,.82); --panel-edge: rgba(255,255,255,.08);
+  --ink: #e6e8f1; --muted: #9ba2b8; --accent: #c0b6ff; --accent-soft: rgba(192,182,255,.17);
+  --moon: #f4e8b8; --ok: #a9e7cf; --rose: #ffb3c4; --choc: #e3b27a; --r: 18px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body {
+  margin: 0; height: 100%; background: var(--bg); color: var(--ink); position: fixed; inset: 0; width: 100%;
+  font-family: "Nunito","Avenir Next","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  overflow: hidden; overscroll-behavior: none; user-select: none; -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; }
+#board { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; cursor: pointer; }
+.panel {
+  background: var(--panel); border: 1px solid var(--panel-edge); border-radius: var(--r);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 10px 34px rgba(0,0,0,.30);
+}
+.top { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 5; display: flex; gap: 8px; align-items: center; justify-content: space-between; pointer-events: none; }
+.top > * { pointer-events: auto; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 6px 16px 6px 12px; min-height: 52px; }
+.logo { font-size: 26px; line-height: 1; filter: drop-shadow(0 0 8px rgba(227,178,122,.5)); }
+.bname { font-weight: 800; font-size: 17px; letter-spacing: .2px; color: #eef0f8; white-space: nowrap; }
+.stats { display: flex; gap: 4px; padding: 5px 8px; min-height: 52px; align-items: center; }
+.stat { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 62px; padding: 0 8px; line-height: 1.05; }
+.stat .k { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.stat .v { font-size: 21px; font-weight: 800; color: var(--moon); font-variant-numeric: tabular-nums; }
+.stat.best .v { color: var(--ok); }
+.tools { display: flex; align-items: center; gap: 2px; padding: 4px; }
+.ibtn { width: 44px; height: 44px; border: 0; border-radius: 13px; background: transparent; cursor: pointer; display: inline-grid; place-items: center; color: #d6d9e8; transition: background .15s, color .15s; flex: none; }
+.ibtn:hover { background: rgba(255,255,255,.07); color: #fff; }
+.ibtn:active { background: rgba(255,255,255,.12); }
+.ibtn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ibtn.on { color: var(--moon); background: rgba(244,232,184,.12); }
+.ibtn:focus-visible, .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pill { border: 0; cursor: pointer; padding: 11px 22px; border-radius: 14px; font-weight: 800; font-size: 16px; background: rgba(255,255,255,.08); color: #e6e8f1; min-height: 44px; transition: background .15s; }
+.pill:hover { background: rgba(255,255,255,.14); }
+.pill.go { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(192,182,255,.35); padding: 13px 38px; font-size: 18px; }
+.pill.go:hover { background: rgba(192,182,255,.28); }
+
+.bottom { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 5; display: flex; justify-content: center; pointer-events: none; }
+.goal { display: flex; align-items: center; gap: 10px; padding: 8px 18px 8px 12px; font-weight: 700; font-size: 15px; color: var(--muted); max-width: 100%; }
+.goal b { color: var(--choc); }
+.ge { font-size: 22px; line-height: 1; }
+
+.banner { position: fixed; left: 50%; top: 42%; transform: translate(-50%,-50%) scale(.92); z-index: 8; padding: 16px 30px; text-align: center; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; max-width: 92vw; }
+.banner.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+.banner b { display: block; font-size: 28px; font-weight: 800; color: var(--moon); letter-spacing: .2px; }
+.banner small { display: block; margin-top: 4px; font-size: 15px; color: var(--ok); font-weight: 700; }
+
+.overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(18,19,23,.62); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); padding: 16px; }
+.card { padding: 26px 30px 28px; max-width: 440px; text-align: center; }
+.card.small { padding: 24px 40px 28px; }
+.card h1 { margin: 4px 0 12px; font-size: 30px; font-weight: 800; color: #f1f2fa; }
+.card p { margin: 0 0 12px; font-size: 16.5px; line-height: 1.5; color: #c9cde0; }
+.card b { color: var(--moon); }
+.card .warn { color: var(--rose); }
+.card .big { font-size: 56px; line-height: 1.1; filter: drop-shadow(0 0 14px rgba(227,178,122,.5)); }
+.card .final { font-size: 18px; }
+.card .go { margin-top: 8px; }
+
+@media (max-width: 760px) {
+  .bname { display: none; } .brand { padding: 6px 12px; min-height: 52px; }
+  .top { gap: 6px; }
+}
+@media (max-width: 520px) {
+  .stat.best { display: none; } .logo { display: none; } .brand { display: none; }
+  .top { justify-content: space-between; }
+  .stat { min-width: 58px; } .ibtn { width: 42px; height: 42px; }
+  .goal { font-size: 14px; padding: 7px 14px 7px 10px; }
+  .card { padding: 22px 20px 24px; } .card h1 { font-size: 26px; } .card p { font-size: 15.5px; }
+}
+@media (max-height: 460px) {
+  .goal { display: none; } .card .big { display: none; } .card p { margin-bottom: 8px; font-size: 14.5px; }
+}
+
+.stat.life .v { display: flex; align-items: center; gap: 4px; height: 26px; }
+.stat.life .v b { font-size: 15px; color: var(--rose); font-weight: 800; }
+.stat.life svg { width: 18px; height: 18px; fill: var(--rose); filter: drop-shadow(0 0 6px rgba(255,179,196,.55)); transition: opacity .3s, fill .3s; }
+.card.life { max-width: 560px; width: 100%; padding: 20px 22px 22px; }
+.card.life .lbl { font-size: 13px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--rose); }
+.card.life .q { font-size: 44px; font-weight: 800; color: #f1f2fa; margin: 10px 0 12px; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.02; font-size: .86em; }
+.frac span:first-child { border-bottom: 3px solid currentColor; padding: 0 6px 2px; }
+.frac span:last-child { padding-top: 2px; }
+.card.life .bar { height: 8px; border-radius: 6px; background: rgba(255,255,255,.08); overflow: hidden; margin: 0 4px 16px; }
+.card.life .bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--moon), var(--rose)); border-radius: 6px; }
+.opts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.opt { flex: 1 1 86px; min-width: 76px; min-height: 64px; border: 0; border-radius: 15px; cursor: pointer; font-size: 28px; font-weight: 800; background: rgba(255,255,255,.08); color: #eef0f8; transition: background .12s, transform .08s; }
+.opt:hover { background: rgba(192,182,255,.2); } .opt:active { transform: scale(.96); }
+.opt:disabled { cursor: default; }
+.opt.right { background: rgba(169,231,207,.30); box-shadow: inset 0 0 0 2px var(--ok); color: #eafff6; }
+.opt.wrong { background: rgba(255,120,140,.28); box-shadow: inset 0 0 0 2px var(--rose); }
+.card.life .res { min-height: 28px; margin-top: 14px; font-size: 18px; font-weight: 800; color: var(--moon); }
+@media (max-width: 520px) {
+  .stat { min-width: 50px; padding: 0 5px; } .stats { padding: 5px 6px; gap: 2px; } .tools { padding: 3px; } .ibtn { width: 40px; height: 40px; }
+  .card.life { padding: 16px 14px 18px; } .card.life .q { font-size: 36px; } .opt { font-size: 25px; min-height: 58px; flex-basis: 28%; }
+}
+@media (max-height: 520px) { .card.life .q { font-size: 30px; margin: 6px 0 8px; } .opt { min-height: 48px; } .card.life .bar { margin-bottom: 10px; } }
+
+</style>
+</head>
+<body>
+
+<canvas id="board" aria-label="Chocolate Biscuits game board" tabindex="0"></canvas>
+
+<header class="top">
+  <div class="panel brand">
+    <span class="logo" aria-hidden="true">🍪</span>
+    <span class="bname">Chocolate Biscuits</span>
+  </div>
+  <div class="panel stats" aria-live="off">
+    <div class="stat"><span class="k">Level</span><span class="v" id="vLevel">1</span></div>
+    <div class="stat"><span class="k">Score</span><span class="v" id="vScore">0</span></div>
+    <div class="stat life" id="lifeStat" title="Lifeline"><span class="k">Life</span><span class="v"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.800-8 11-8 11z"/></svg><b id="lifeSecs">5s</b></span></div>
+    <div class="stat best"><span class="k">Best</span><span class="v" id="vBest">0</span></div>
+  </div>
+  <div class="panel tools" role="toolbar" aria-label="Game controls">
+    <button class="ibtn" id="btnPause" title="Pause (Space)" aria-label="Pause">
+      <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+    </button>
+    <button class="ibtn" id="btnSfx" title="Sound effects on / off" aria-label="Sound effects" aria-pressed="true">
+      <svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="sfxWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><line id="sfxSlash" x1="3" y1="3" x2="21" y2="21" stroke-width="2.2" style="display:none"/></svg>
+    </button>
+    <button class="ibtn" id="btnMusic" title="Music on / off (M)" aria-label="Music" aria-pressed="false">
+      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><line id="musicSlash" x1="3" y1="3" x2="21" y2="21" stroke-width="2.2"/></svg>
+    </button>
+    <button class="ibtn" id="btnRestart" title="Start a new game" aria-label="New game">
+      <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="panel banner" id="banner" role="status" aria-live="polite"><b id="bnTitle"></b><small id="bnSub"></small></div>
+
+<div class="bottom"><div class="panel goal" id="goal"><span class="ge">🍪</span><span id="goalTxt">Match three <b>chocolate biscuits</b> to collapse the pile</span></div></div>
+
+<div class="overlay" id="intro">
+  <div class="panel card">
+    <div class="big">🍪</div>
+    <h1>Chocolate Biscuits</h1>
+    <p>Swap two neighbouring treats to line up <b>three or more</b> of the same, across or down. Gaps close up as they clear.</p>
+    <p>Match three <b>🍪 chocolate biscuits</b> and the whole pile collapses, ready for the next level.</p>
+    <p class="warn">The pile creeps downwards all the time. Don't let it reach the bottom!</p>
+    <p>If it does, take a <b>lifeline</b>: answer a fractions question in 5 seconds to clear the bottom three rows. You can use it again, but it gets shorter each time (it resets every level).</p>
+    <button class="pill go" id="btnStart">Play</button>
+  </div>
+</div>
+
+<div class="overlay" id="lifeOv" hidden>
+  <div class="panel card life">
+    <div class="lbl" id="lifeLbl">Last chance! Answer in 5 seconds</div>
+    <div class="q" id="lifeQ"></div>
+    <div class="bar"><i id="lifeBar"></i></div>
+    <div class="opts" id="lifeOpts"></div>
+    <div class="res" id="lifeRes"></div>
+  </div>
+</div>
+
+<div class="overlay" id="pauseOv" hidden>
+  <div class="panel card small">
+    <h1>Paused</h1>
+    <button class="pill go" id="btnResume">Carry on</button>
+  </div>
+</div>
+
+<div class="overlay" id="overOv" hidden>
+  <div class="panel card">
+    <div class="big">🫖</div>
+    <h1>The pile got you!</h1>
+    <p class="final">You reached <b>level <span id="oLevel">1</span></b> and scored <b id="oScore">0</b></p>
+    <p id="oBest" class="warn"></p>
+    <button class="pill go" id="btnAgain">Have another go</button>
+  </div>
+</div>
+
+<script>
+/* "Late Night Lounge in Db": a 32-bar slow swing written as code (Rhodes comping, walking bass, brushes) */
+const COMPOSER = (() => {
+  'use strict';
+  const BPM = 66, BARS = 32;
+  const PC = { C: 0, Db: 1, D: 2, Eb: 3, E: 4, F: 5, Gb: 6, G: 7, Ab: 8, A: 9, Bb: 10, B: 11 };
+
+  // Rhodes voicings (rootless: the bass player has the root) and bass chord tones, as semitones above the root
+  const Q = {
+    maj9: { v: [4, 7, 11, 14], b: [0, 4, 7, 11], n: 'maj9' },
+    lyd:  { v: [4, 11, 14, 18], b: [0, 4, 7, 11], n: 'maj7#11' },
+    min9: { v: [3, 7, 10, 14], b: [0, 3, 7, 10], n: 'm9' },
+    dom13: { v: [4, 10, 14, 21], b: [0, 4, 7, 10], n: '13' },
+    alt:  { v: [4, 10, 13, 20], b: [0, 4, 7, 10], n: '7b9' },
+  };
+  const chord = (root, q) => ({ root, q, pc: PC[root] });
+
+  // each bar: one chord, or two chords of two beats each
+  const A = [
+    [chord('Db', 'maj9')], [chord('Bb', 'min9')], [chord('Eb', 'min9')], [chord('Ab', 'dom13')],
+    [chord('Db', 'maj9')], [chord('Gb', 'lyd')], [chord('Eb', 'min9'), chord('Ab', 'dom13')], [chord('Db', 'maj9'), chord('Bb', 'alt')],
+  ];
+  const B = [
+    [chord('Eb', 'min9')], [chord('Ab', 'dom13')], [chord('Db', 'maj9')], [chord('Bb', 'min9')],
+    [chord('Gb', 'lyd')], [chord('Gb', 'min9')], [chord('Db', 'maj9'), chord('Bb', 'alt')], [chord('Eb', 'min9'), chord('Ab', 'dom13')],
+  ];
+  const FORM = [].concat(A, B, A, B);
+
+  function rng(seed) {
+    return () => {
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* smooth voice-leading: choose the octave of each voice so the hand moves as little as possible */
+  function voice(prev, pc, ivs) {
+    const LO = 53, HI = 77;
+    const pcs = ivs.map(i => (pc + i) % 12);
+    const cand = pcs.map(p => { const a = []; for (let m = LO; m <= HI; m++) if (m % 12 === p) a.push(m); return a; });
+    let best = null, bestCost = 1e9;
+    const pick = [];
+    (function rec(i) {
+      if (i === 4) {
+        const s = pick.slice().sort((a, b) => a - b);
+        for (let k = 1; k < 4; k++) if (s[k] - s[k - 1] < 2) return;
+        const span = s[3] - s[0];
+        if (span > 17 || span < 7) return;
+        let cost = span * 0.15 + Math.abs((s[0] + s[1] + s[2] + s[3]) / 4 - 65) * 0.55;
+        if (prev) for (let k = 0; k < 4; k++) cost += Math.abs(s[k] - prev[k]) * (k === 3 ? 1.7 : 1);
+        else cost += Math.abs(s[3] - 70) * 1.2;
+        if (cost < bestCost) { bestCost = cost; best = s; }
+        return;
+      }
+      for (const m of cand[i]) { pick[i] = m; rec(i + 1); }
+    })(0);
+    return best || cand.map(a => a[0]).sort((a, b) => a - b);
+  }
+
+  const nearPc = (pc, ref, lo, hi) => {
+    let best = null, bd = 1e9;
+    for (let m = lo; m <= hi; m++) if (m % 12 === pc) { const d = Math.abs(m - ref); if (d < bd) { bd = d; best = m; } }
+    return best;
+  };
+
+  // comping rhythms: [position in beats, length in beats, loudness]. swung off-beats sit at +0.667
+  const PATS = [
+    { w: 3, hits: [[0, 3.7, 1]] },
+    { w: 3, hits: [[0, 1.45, 1], [1.667, 2.1, 0.8]] },
+    { w: 3, hits: [[0, 2.5, 1], [2.667, 1.2, 0.74]] },
+    { w: 2, hits: [[0, 1.6, 1], [2, 1.5, 0.82], [3.667, 0.3, 0.55]] },
+  ];
+
+  function compose() {
+    const R = rng(1957);
+    const ev = [], info = [];
+    let prevV = null, prevBass = 38, lastPat = -1;
+
+    for (let bar = 0; bar < BARS; bar++) {
+      const cs = FORM[bar], next = FORM[(bar + 1) % BARS][0];
+      const t0 = bar * 4, sec = Math.floor(bar / 8), lvl = [1, 2, 3, 2][sec];
+      const row = { bar: bar + 1, chords: cs.map(c => c.root + Q[c.q].n), voicings: [], bass: [] };
+
+      /* ---- Rhodes ---- */
+      const voicings = cs.map(c => (prevV = voice(prevV, c.pc, Q[c.q].v)));
+      row.voicings = voicings.slice();
+      let hits = [];
+      if (cs.length === 2) hits = [[0, 0, 1.9, 1], [1, 2, 1.9, 0.9]];
+      else {
+        let p; do { let r = R() * 11, acc = 0; p = 0; for (let i = 0; i < PATS.length; i++) { acc += PATS[i].w; if (r < acc) { p = i; break; } } } while (p === lastPat && p === 3);
+        lastPat = p;
+        hits = PATS[p].hits.map(h => [0, h[0], h[1], h[2]]);
+        // a little twinkle over long held chords
+        if (p === 0 && R() < 0.55) {
+          const v = voicings[0], up = n => (n + 12 <= 84 ? n + 12 : n);
+          const pitches = [up(v[3]), up(v[2]), v[3] - 0].slice(0, 3);
+          [2.667, 3, 3.333].forEach((pos, i) => ev.push([t0 + pos + (R() - 0.5) * 0.02, 0, 1.3, pitches[i], 34 + Math.round(R() * 8)]));
+        }
+      }
+      for (const h of hits) {
+        const v = voicings[h[0]];
+        v.forEach((m, i) => {
+          const vel = Math.round((46 + lvl * 3 + R() * 7) * (0.7 + 0.3 * h[3]) * (i === 3 ? 1.06 : 1));
+          ev.push([t0 + h[1] + i * 0.012 + (R() - 0.5) * 0.03, 0, h[2], m, vel]);
+        });
+      }
+
+      /* ---- walking bass ---- */
+      const lo = 33, hi = 51, nx = next.pc;
+      const notes = [];
+      const approach = (ref) => {
+        const a = nearPc((nx + 1) % 12, ref, lo, hi), b = nearPc((nx + 11) % 12, ref, lo, hi);
+        if (a === ref) return b;
+        if (b === ref) return a;
+        return Math.abs(a - ref) <= Math.abs(b - ref) ? a : b;
+      };
+      const pull = m => Math.round(m * 0.7 + 41 * 0.3);          // gently steer the line back to the middle of the bass
+      if (cs.length === 1) {
+        const c = cs[0], bt = Q[c.q].b, r = c.pc;
+        const n0 = nearPc(r, pull(prevBass), lo, hi);
+        const pats = [[1, 2], [2, 1], [1, 3], [2, 3], [3, 2]];
+        const [a, b] = pats[Math.floor(R() * pats.length)];
+        let n1 = nearPc((r + bt[a]) % 12, n0, lo, hi);
+        let n2 = nearPc((r + bt[b]) % 12, n1, lo, hi);
+        if (n2 === n1) n2 = nearPc((r + bt[2]) % 12, n1 + 3, lo, hi);
+        let n3 = approach(n2);
+        notes.push(n0, n1, n2, n3);
+      } else {
+        const c1 = cs[0], c2 = cs[1];
+        const n0 = nearPc(c1.pc, pull(prevBass), lo, hi);
+        const n1 = nearPc((c1.pc + Q[c1.q].b[R() < 0.5 ? 1 : 2]) % 12, n0, lo, hi);
+        const n2 = nearPc(c2.pc, n1, lo, hi);
+        notes.push(n0, n1, n2, approach(n2));
+      }
+      prevBass = notes[3];
+      notes.forEach((m, i) => {
+        const vel = Math.round((i === 0 ? 80 : 66) + R() * 8);
+        ev.push([t0 + i + (R() - 0.5) * 0.024, 1, 0.9, m, vel]);
+      });
+      row.bass = notes;
+      // a soft swung pick-up now and then
+      if (R() < 0.18) ev.push([t0 + 2.667 + (R() - 0.5) * 0.01, 1, 0.25, notes[1], 36]);
+
+      /* ---- brushes (tracks 3: 36 kick, 51 swish, 38 sweep, 44 pedal hat, 37 tap) ---- */
+      const jit = () => (R() - 0.5) * 0.02;
+      [0, 1, 2, 3].forEach(b => ev.push([t0 + b + jit(), 3, 0.5, 51, Math.round((b % 2 ? 36 : 44) + R() * 6 + lvl * 2)]));
+      [1.667, 3.667].forEach(b => ev.push([t0 + b + jit(), 3, 0.3, 51, Math.round(26 + R() * 6 + lvl * 2)]));
+      if (lvl >= 2) [1, 3].forEach(b => ev.push([t0 + b + jit(), 3, 0.4, 38, Math.round(34 + R() * 6 + lvl * 2)]));
+      [1, 3].forEach(b => ev.push([t0 + b + jit(), 3, 0.1, 44, Math.round(28 + R() * 6)]));
+      if (lvl >= 2) ev.push([t0 + jit(), 3, 0.3, 36, Math.round(30 + R() * 6)]);
+      if (lvl >= 3 && R() < 0.6) ev.push([t0 + 2 + jit(), 3, 0.3, 36, Math.round(22 + R() * 6)]);
+      if (lvl >= 3 && R() < 0.5) ev.push([t0 + (R() < 0.5 ? 0.667 : 2.667) + jit(), 3, 0.1, 37, Math.round(20 + R() * 6)]);
+
+      info.push(row);
+    }
+    ev.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[3] - b[3]);
+    for (const e of ev) if (e[0] < 0) e[0] = 0.001;       // never before the loop start
+    return { bpm: BPM, len: BARS * 4, ev, info };
+  }
+
+  return { compose, BPM, BARS };
+})();
+if (typeof module !== 'undefined') module.exports = COMPOSER;
+
+</script>
+<script>
+// Chocolate Biscuits: pure game logic (no DOM). Grid is rows x cols; row 0 is the top (newest) row.
+// A cell is "empty" when t(cell) < 0. Pass t = c => c.t for object cells.
+const BB_CORE = (() => {
+  const COLS = 8, ROWS = 11, NTYPES = 6, BISCUIT = 0;
+  const ident = v => (v === null || v === undefined ? -1 : v);
+
+  function findMatches(g, t = ident) {
+    const R = g.length, hit = new Set(), runs = [];
+    const val = (r, c) => (r < 0 || r >= R || c < 0 || c >= g[r].length ? -1 : t(g[r][c]));
+    for (let r = 0; r < R; r++) for (let c = 0; c < g[r].length; c++) {
+      const v = val(r, c); if (v < 0) continue;
+      if (c === 0 || val(r, c - 1) !== v) {            // start of horizontal run
+        let n = 1; while (val(r, c + n) === v) n++;
+        if (n >= 3) { const cells = []; for (let i = 0; i < n; i++) cells.push([r, c + i]); runs.push({ type: v, cells }); }
+      }
+      if (r === 0 || val(r - 1, c) !== v) {            // start of vertical run
+        let n = 1; while (val(r + n, c) === v) n++;
+        if (n >= 3) { const cells = []; for (let i = 0; i < n; i++) cells.push([r + i, c]); runs.push({ type: v, cells }); }
+      }
+    }
+    for (const run of runs) for (const [r, c] of run.cells) hit.add(r * 100 + c);
+    return { cells: [...hit].map(k => [Math.floor(k / 100), k % 100]), runs, biscuit: runs.some(x => x.type === BISCUIT) };
+  }
+
+  function swapCells(g, a, b) { const t = g[a[0]][a[1]]; g[a[0]][a[1]] = g[b[0]][b[1]]; g[b[0]][b[1]] = t; }
+
+  // Would swapping a and b (both occupied, adjacent) make a match?
+  function swapMakesMatch(g, a, b, t = ident) {
+    if (t(g[a[0]][a[1]]) < 0 || t(g[b[0]][b[1]]) < 0) return false;
+    if (t(g[a[0]][a[1]]) === t(g[b[0]][b[1]])) return false;
+    swapCells(g, a, b); const m = findMatches(g, t).cells.length > 0; swapCells(g, a, b); return m;
+  }
+
+  function findMove(g, t = ident) {
+    const R = g.length, moves = [];
+    for (let r = 0; r < R; r++) for (let c = 0; c < g[r].length; c++) {
+      if (t(g[r][c]) < 0) continue;
+      if (c + 1 < g[r].length && swapMakesMatch(g, [r, c], [r, c + 1], t)) moves.push([[r, c], [r, c + 1]]);
+      if (r + 1 < R && swapMakesMatch(g, [r, c], [r + 1, c], t)) moves.push([[r, c], [r + 1, c]]);
+    }
+    return moves;
+  }
+
+  // Close gaps: cells rise towards the top of their column, then empty columns between
+  // occupied ones close up sideways (the nearer edge slides in).
+  function settle(g, t = ident) {
+    const R = g.length, C = g[0].length;
+    for (let c = 0; c < C; c++) {
+      const col = []; for (let r = 0; r < R; r++) if (t(g[r][c]) >= 0) col.push(g[r][c]);
+      for (let r = 0; r < R; r++) g[r][c] = r < col.length ? col[r] : null;
+    }
+    const emptyCol = c => { for (let r = 0; r < R; r++) if (t(g[r][c]) >= 0) return false; return true; };
+    for (let guard = 0; guard < C * 2; guard++) {
+      let lo = -1, hi = -1; for (let c = 0; c < C; c++) if (!emptyCol(c)) { if (lo < 0) lo = c; hi = c; }
+      let gap = -1; for (let c = lo + 1; c < hi; c++) if (emptyCol(c)) { gap = c; break; }
+      if (gap < 0) break;
+      const leftSide = gap - lo, rightSide = hi - gap;
+      if (leftSide <= rightSide) { for (let c = gap; c > lo; c--) for (let r = 0; r < R; r++) g[r][c] = g[r][c - 1]; for (let r = 0; r < R; r++) g[r][lo] = null; }
+      else { for (let c = gap; c < hi; c++) for (let r = 0; r < R; r++) g[r][c] = g[r][c + 1]; for (let r = 0; r < R; r++) g[r][hi] = null; }
+    }
+  }
+
+  function count(g, type, t = ident) { let n = 0; for (const row of g) for (const v of row) if (t(v) === type) n++; return n; }
+  function lowestRow(g, t = ident) { for (let r = g.length - 1; r >= 0; r--) for (const v of g[r]) if (t(v) >= 0) return r; return -1; }
+
+  // A fresh row of types that makes no new match with the rows below it (below = the existing top rows).
+  function newRow(below, rnd = Math.random, t = ident, cols = COLS) {
+    const row = [], biscuits = below.reduce((n, rw) => n + rw.filter(v => t(v) === BISCUIT).length, 0);
+    const pBiscuit = biscuits < 4 ? 0.16 : 0.08;
+    for (let c = 0; c < cols; c++) {
+      let v, tries = 0;
+      do {
+        v = rnd() < pBiscuit ? BISCUIT : 1 + Math.floor(rnd() * (NTYPES - 1));
+        tries++;
+      } while (tries < 40 && (
+        (c >= 2 && row[c - 1] === v && row[c - 2] === v) ||
+        (below.length >= 2 && t(below[0][c]) === v && t(below[1][c]) === v)));
+      row.push(v);
+    }
+    return row;
+  }
+
+  function levelSpeed(L) { return Math.min(0.6, 0.07 * Math.pow(1.25, L - 1)); }   // rows per second
+  function startRows(L) { return Math.min(7, 5 + Math.floor((L - 1) / 3)); }
+
+  // Plain-number fresh pile with no matches and at least one move.
+  function newPile(L, rnd = Math.random) {
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const rows = [], n = startRows(L);
+      for (let i = 0; i < n; i++) rows.unshift(newRow(rows, rnd));
+      const pad = []; for (let r = 0; r < ROWS; r++) pad.push(r < rows.length ? rows[r] : new Array(COLS).fill(null));
+      if (findMatches(pad).cells.length === 0 && findMove(pad).length > 0 && count(pad, BISCUIT) >= 3) return pad;
+    }
+    return null;
+  }
+
+  // ---- Lifeline: "n/d of whole" questions, always a whole-number answer, with five plausible options
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const range = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
+  function questionSpec(L) {
+    if (L <= 2) return { unit: true, dens: [2, 3, 4], maxWhole: 12, kmin: 1 };                 // 1/4 of 8
+    if (L <= 4) return { unit: true, dens: [2, 3, 4, 5, 6, 8, 10], maxWhole: 60, kmin: 3 };   // 1/5 of 35
+    if (L <= 6) return { unit: false, dens: [3, 4, 5], maxWhole: 20, kmin: 2 };               // 2/3 of 12
+    if (L <= 8) return { unit: false, dens: [3, 4, 5, 6, 8], maxWhole: 40, kmin: 2 };         // 3/4 of 32
+    if (L <= 11) return { unit: false, dens: range(3, 10), maxWhole: 80, kmin: 3 };           // 3/5 of 45
+    return { unit: false, dens: range(3, 12), maxWhole: 120, kmin: 3 };                       // 7/12 of 96
+  }
+  function question(L, rnd = Math.random) {
+    const sp = questionSpec(L), pick = a => a[Math.floor(rnd() * a.length)];
+    const den = pick(sp.dens);
+    const k = pick(range(sp.kmin, Math.max(sp.kmin, Math.floor(sp.maxWhole / den))));
+    const whole = den * k, share = k;
+    let num = 1;
+    if (!sp.unit) num = pick(range(2, den - 1).filter(n => gcd(n, den) === 1));
+    const answer = num * share;
+    const cand = [];
+    if (sp.unit) {
+      cand.push(whole - answer, answer * 2, answer + 1, answer - 1, Math.round(whole / (den + 1)), den > 2 ? Math.round(whole / (den - 1)) : answer + 2, answer + den, whole - den);
+    } else {
+      cand.push(share, whole - answer, share * (num + 1), share * (num - 1), Math.round(whole / num), answer + 1, answer - 1, answer + share + 1);
+    }
+    let uniq = []; for (const c of cand) if (Number.isInteger(c) && c > 0 && c !== answer && !uniq.includes(c)) uniq.push(c);
+    const head = uniq.slice(0, 6); for (let i = head.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [head[i], head[j]] = [head[j], head[i]]; }
+    uniq = head.concat(uniq.slice(6));
+    for (let d = 2; uniq.length < 4; d++) for (const c of [answer + d, answer - d]) if (c > 0 && c !== answer && !uniq.includes(c) && uniq.length < 4) uniq.push(c);
+    const options = [answer, ...uniq.slice(0, 4)];
+    for (let i = options.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [options[i], options[j]] = [options[j], options[i]]; }
+    return { num, den, whole, answer, options };
+  }
+
+  return { question, COLS, ROWS, NTYPES, BISCUIT, findMatches, swapCells, swapMakesMatch, findMove, settle, count, lowestRow, newRow, levelSpeed, startRows, newPile };
+})();
+if (typeof module !== 'undefined') module.exports = BB_CORE;
+
+</script>
+<script>
+/* Late Night Lounge: Rhodes, walking bass and brushes, played by a small Web Audio synth */
+const Music = (() => {
+  'use strict';
+  const S = COMPOSER.compose();
+  const SPB = 60 / S.bpm;                 // seconds per beat
+  const LOOP = S.len * SPB;               // loop length in seconds (about 1 min 56 s)
+  const GAIN = 0.62;                      // overall level: kept deliberately quiet
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  let ctx = null, chain = null, sess = null;
+  let timer = null, idx = 0, loopStart = 0, playing = false, vol = 0.55, posBeats = 0;
+  const levels = { ep: 1, bass: 1, drum: 1 };      // mixer trims (1 = the balance I mixed)
+  const BASE = { ep: 1, bass: 1, drum: 0.7 };
+  let octave = true;                                // bass doubled an octave up
+
+  /* ---------- shared chain: soft plate reverb, warm low-pass, gentle compression ---------- */
+  function makeIR(c) {
+    const len = Math.floor(c.sampleRate * 2.8), buf = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < len; i++) {
+        lp += ((Math.random() * 2 - 1) - lp) * 0.28;                 // dark, smooth tail
+        const pre = i < 0.012 * c.sampleRate ? 0 : 1;
+        d[i] = lp * pre * Math.pow(1 - i / len, 3.4) * Math.min(1, i / 900);
+      }
+    }
+    return buf;
+  }
+  function makeNoise(c) {
+    const len = c.sampleRate * 3, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+  function buildChain(c) {
+    const master = c.createGain(); master.gain.value = vol * vol * GAIN;
+    const comp = c.createDynamicsCompressor();
+    comp.threshold.value = -24; comp.knee.value = 26; comp.ratio.value = 2.6; comp.attack.value = 0.03; comp.release.value = 0.35;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6800; lp.Q.value = 0.3;
+    const mix = c.createGain();
+    const conv = c.createConvolver(); conv.buffer = makeIR(c);
+    const wet = c.createGain(); wet.gain.value = 0.8;
+    mix.connect(lp); conv.connect(wet); wet.connect(lp);
+    lp.connect(comp); comp.connect(master); master.connect(c.destination);
+    return { master, mix, conv, noise: makeNoise(c) };
+  }
+
+  // one "session" per play/pause so that scheduled-but-unplayed notes die with a pause
+  function buildSession(c, ch) {
+    const out = c.createGain(); out.gain.value = 0;
+    const lfos = [];
+    const feed = (node, send) => {                 // node -> dry mix + reverb send
+      node.connect(out);
+      const s = c.createGain(); s.gain.value = send; node.connect(s); s.connect(ch.conv);
+    };
+    // Rhodes bus: slow auto-pan + light chorus, so the chords shimmer instead of sitting still
+    const ep = c.createGain(); ep.gain.value = levels.ep;
+    let epHead = ep;
+    if (c.createStereoPanner) {
+      const pan = c.createStereoPanner();
+      const l = c.createOscillator(), lg = c.createGain();
+      l.frequency.value = 0.2; lg.gain.value = 0.26; l.connect(lg); lg.connect(pan.pan); l.start(); lfos.push(l);
+      ep.connect(pan); epHead = pan;
+    }
+    const epOut = c.createGain();
+    epHead.connect(epOut);
+    const cl = c.createOscillator(); cl.frequency.value = 0.33; cl.start(); lfos.push(cl);
+    [[0.017, 0.0022, 0.30], [0.024, -0.0026, 0.30]].forEach(([base, depth, level]) => {
+      const d = c.createDelay(0.06); d.delayTime.value = base;
+      const dg = c.createGain(); dg.gain.value = depth; cl.connect(dg); dg.connect(d.delayTime);
+      const lv = c.createGain(); lv.gain.value = level;
+      epHead.connect(d); d.connect(lv); lv.connect(epOut);
+    });
+    feed(epOut, 0.38);
+    // upright bass bus: a little body around 100 Hz
+    const bass = c.createGain(); bass.gain.value = levels.bass;
+    const body = c.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 100; body.gain.value = 3.5; body.Q.value = 0.9;
+    bass.connect(body); feed(body, 0.04);
+    // brushes
+    const drum = c.createGain(); drum.gain.value = BASE.drum * levels.drum; feed(drum, 0.5);
+    const echo = c.createDelay(2); echo.delayTime.value = SPB * 0.667;     // soft swung echo
+    const fb = c.createGain(); fb.gain.value = 0.3;
+    const elp = c.createBiquadFilter(); elp.type = 'lowpass'; elp.frequency.value = 3200;
+    const ew = c.createGain(); ew.gain.value = 0.3;
+    drum.connect(echo); echo.connect(elp); elp.connect(fb); fb.connect(echo); elp.connect(ew); feed(ew, 0.3);
+    return { out, ep, bass, drum, lfos };
+  }
+
+  /* ---------- voices ---------- */
+  function vEP(c, out, t, dur, m, vel) {                 // FM electric piano: soft bark, bell-like tine, slow decay
+    const f = mtof(m), v = vel / 127;
+    const g = c.createGain(), lp = c.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 0.2;
+    lp.frequency.value = Math.min(7000, 1100 + f * 3 + v * 2600);
+    const car = c.createOscillator(); car.type = 'sine'; car.frequency.value = f;
+    const body = c.createOscillator(); body.type = 'sine'; body.frequency.value = f;
+    const bg = c.createGain();
+    bg.gain.setValueAtTime(f * (0.35 + 1.9 * v * v), t);
+    bg.gain.setTargetAtTime(f * 0.07, t, 0.16);
+    body.connect(bg); bg.connect(car.frequency);
+    const tine = c.createOscillator(); tine.type = 'sine'; tine.frequency.value = f * 14;
+    const tg = c.createGain();
+    tg.gain.setValueAtTime(f * 0.6 * v, t); tg.gain.setTargetAtTime(0.0001, t, 0.035);
+    tine.connect(tg); tg.connect(car.frequency);
+    car.connect(g); g.connect(lp); lp.connect(out);
+    const peak = 0.43 * (0.25 + v), tau = Math.max(0.7, Math.min(2.4, 1.7 * Math.sqrt(261 / f)));
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.004);
+    g.gain.setTargetAtTime(peak * 0.14, t + 0.004, tau);
+    g.gain.setTargetAtTime(0, t + dur, 0.16);
+    const end = t + dur + 1.2;
+    car.start(t); body.start(t); tine.start(t);
+    car.stop(end); body.stop(end); tine.stop(end);
+  }
+
+  function vBass(c, out, t, dur, m, vel) {               // plucked upright: round fundamental, quick string snap
+    const f = mtof(m), v = vel / 127;
+    const g = c.createGain(), lp = c.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 0.8;
+    lp.frequency.setValueAtTime(f * 7, t); lp.frequency.exponentialRampToValueAtTime(f * 2.6, t + 0.2);
+    const o1 = c.createOscillator(); o1.type = 'triangle';
+    o1.frequency.setValueAtTime(f * 1.012, t); o1.frequency.setTargetAtTime(f, t, 0.02);
+    const o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = f;
+    const g2 = c.createGain(); g2.gain.value = 0.85;
+    const o3 = c.createOscillator(); o3.type = 'sawtooth'; o3.frequency.value = f;
+    const g3 = c.createGain(); g3.gain.setValueAtTime(0.1, t); g3.gain.setTargetAtTime(0.0001, t, 0.05);
+    o1.connect(g); o2.connect(g2); g2.connect(g); o3.connect(g3); g3.connect(g);
+    g.connect(lp); lp.connect(out);
+    const peak = 0.5 * (0.3 + v);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.01);
+    g.gain.setTargetAtTime(peak * 0.5, t + 0.01, 0.5);
+    g.gain.setTargetAtTime(0, t + dur, 0.07);
+    const end = t + dur + 0.6;
+    [o1, o2, o3].forEach(o => { o.start(t); o.stop(end); });
+  }
+
+  function vDrum(c, out, noise, t, m, vel) {              // brushes: 36 feather kick, 51 swish, 38 sweep, 44 pedal hat, 37 tap
+    const v = vel / 127;
+    if (m === 36) {
+      const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 200;
+      o.type = 'sine'; o.frequency.setValueAtTime(105, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.18);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25 * (0.3 + v), t + 0.022);
+      g.gain.setTargetAtTime(0, t + 0.01, 0.07);
+      o.connect(lp); lp.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
+      return;
+    }
+    const src = c.createBufferSource(); src.buffer = noise;
+    const f1 = c.createBiquadFilter(), g = c.createGain();
+    let len = 0.5;
+    if (m === 51) {                                        // brush swish: soft attack, silky tail
+      f1.type = 'bandpass'; f1.frequency.value = 5200; f1.Q.value = 0.55;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.42 * v, t + 0.075); g.gain.setTargetAtTime(0, t + 0.08, 0.1);
+    } else if (m === 38) {                                 // sweep across the snare head
+      f1.type = 'bandpass'; f1.frequency.setValueAtTime(2000, t); f1.frequency.linearRampToValueAtTime(3600, t + 0.28); f1.Q.value = 0.5;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.52 * v, t + 0.19); g.gain.setTargetAtTime(0, t + 0.2, 0.1);
+      len = 0.8;
+    } else if (m === 44) {                                 // pedal hi-hat: a dry chick
+      f1.type = 'highpass'; f1.frequency.value = 5200; f1.Q.value = 0.4;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.35 * v, t + 0.014); g.gain.setTargetAtTime(0, t + 0.016, 0.026);
+      len = 0.2;
+    } else {                                               // ghost tap
+      f1.type = 'bandpass'; f1.frequency.value = 3600; f1.Q.value = 1.1;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.35 * v, t + 0.014); g.gain.setTargetAtTime(0, t + 0.016, 0.026);
+      len = 0.2;
+    }
+    src.connect(f1); f1.connect(g); g.connect(out);
+    src.start(t, Math.random() * 2.2, len);
+  }
+
+  function playEvent(c, ch, se, e, t) {              // e = [beat, track, length in beats, pitch, velocity]
+    const dur = e[2] * SPB;
+    if (e[1] === 0) vEP(c, se.ep, t, dur, e[3], e[4]);
+    else if (e[1] === 1) { vBass(c, se.bass, t, dur, e[3], e[4]); if (octave) vBass(c, se.bass, t, dur, e[3] + 12, e[4] * 0.6); }
+    else vDrum(c, se.drum, ch.noise, t, e[3], e[4]);
+  }
+
+  /* ---------- scheduler ---------- */
+  function pump() {
+    if (!playing) return;
+    const horizon = ctx.currentTime + 1.4;
+    for (let guard = 0; guard < 500; guard++) {
+      const e = S.ev[idx], t = loopStart + e[0] * SPB;
+      if (t > horizon) break;
+      if (t >= ctx.currentTime - 0.05) playEvent(ctx, chain, sess, e, Math.max(t, ctx.currentTime));
+      idx++;
+      if (idx >= S.ev.length) { idx = 0; loopStart += LOOP; }
+    }
+  }
+
+  function start() {
+    if (playing) return;
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      chain = buildChain(ctx);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    const t0 = ctx.currentTime;
+    sess = buildSession(ctx, chain);
+    sess.out.gain.setValueAtTime(0.0001, t0);
+    sess.out.gain.linearRampToValueAtTime(1, t0 + 2.4);          // gentle fade in
+    sess.out.connect(chain.master);
+    loopStart = t0 + 0.2 - posBeats * SPB;
+    idx = 0; while (idx < S.ev.length && S.ev[idx][0] < posBeats) idx++;
+    if (idx >= S.ev.length) { idx = 0; posBeats = 0; loopStart = t0 + 0.2; }
+    playing = true;
+    pump();
+    timer = setInterval(pump, 220);
+  }
+
+  function stop() {
+    if (!playing) return;
+    playing = false;
+    clearInterval(timer); timer = null;
+    const t = ctx.currentTime, old = sess;
+    posBeats = (((t - loopStart) / SPB) % S.len + S.len) % S.len;
+    old.out.gain.cancelScheduledValues(t);
+    old.out.gain.setValueAtTime(Math.max(0.0001, old.out.gain.value), t);
+    old.out.gain.linearRampToValueAtTime(0.0001, t + 0.8);        // gentle fade out
+    setTimeout(() => {
+      try { old.out.disconnect(); } catch (e) { /* already gone */ }
+      old.lfos.forEach(l => { try { l.stop(); } catch (e) { /* already stopped */ } });
+    }, 3500);
+  }
+
+  function setVolume(v) {
+    vol = Math.max(0, Math.min(1, v));
+    if (chain) chain.master.gain.setTargetAtTime(vol * vol * GAIN, ctx.currentTime, 0.05);
+  }
+  function setLevel(name, v) {
+    if (!(name in levels)) return;
+    levels[name] = Math.max(0, Math.min(2, v));
+    if (sess && ctx) sess[name].gain.setTargetAtTime(BASE[name] * levels[name], ctx.currentTime, 0.04);
+  }
+  function setOctave(on) { octave = !!on; }
+  function chime() {                         // a soft rising Rhodes arpeggio when a puzzle is finished
+    if (!playing) return;
+    const t0 = ctx.currentTime + 0.05;
+    [73, 77, 80, 84, 89].forEach((m, i) => vEP(ctx, sess.ep, t0 + i * 0.15, 1.8, m, 62));
+  }
+
+  /* ---------- offline render (used for testing levels without a sound card) ---------- */
+  async function renderOffline(seconds, sr, fromBeat, tracks) {
+    const c = new OfflineAudioContext(2, Math.floor(seconds * (sr || 22050)), sr || 22050);
+    const ch = buildChain(c);
+    ch.master.gain.value = 0.55 * 0.55 * GAIN;
+    const se = buildSession(c, ch); se.out.gain.value = 1; se.out.connect(ch.master);
+    const b0 = fromBeat || 0;
+    for (const e of S.ev) { const t = (e[0] - b0) * SPB; if (t >= 0 && t < seconds && (!tracks || tracks.includes(e[1]))) playEvent(c, ch, se, e, t); }
+    return c.startRendering();
+  }
+
+  setVolume(0.55);
+  return {
+    start, stop, setVolume, chime, renderOffline, setLevel, setOctave,
+    get playing() { return playing; },
+    get levels() { return levels; },
+    get octave() { return octave; },
+    get volume() { return vol; },
+    LOOP, score: S,
+  };
+})();
+
+</script>
+<script>
+(() => {
+'use strict';
+const { COLS, ROWS, BISCUIT, findMatches, swapCells, findMove, settle, count, lowestRow, newRow, levelSpeed, newPile } = BB_CORE;
+const $ = id => document.getElementById(id);
+const cv = $('board'), ctx = cv.getContext('2d');
+
+const TYPES = [
+  { e: '\u{1F36A}', c: '#e3b27a' },   // chocolate biscuit
+  { e: '\u{1F9C1}', c: '#ffb3c4' },   // cupcake
+  { e: '\u{1F370}', c: '#c0b6ff' },   // cake
+  { e: '\u{1F369}', c: '#a9e7cf' },   // doughnut
+  { e: '\u{1F36E}', c: '#f4e8b8' },   // pudding
+  { e: '\u{1F967}', c: '#9fd3ff' },   // pie
+];
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif';
+const tOf = c => (c ? c.t : -1);
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } };
+
+// ---------------------------------------------------------------- state
+let grid = [], incoming = [], slide = 0;
+let level = 1, score = 0, best = parseInt(lsGet('bbBest', '0'), 10) || 0;
+let state = 'intro';              // intro idle swap swapback clear settle levelclear dropin over
+let lifeUses = 0, lq = null, lifeTimer = 0;
+const lifeLimit = () => Math.max(2, 5 - 0.5 * lifeUses);   // seconds allowed for the next lifeline this level
+let paused = false, st = { t: 0 }, chain = 0, sel = null, hint = null, idleT = 0, moving = false;
+let particles = [], floaters = [];
+let W = 0, H = 0, dpr = 1, cell = 40, bx = 0, by = 0, now = 0, shake = 0;
+const emptyGrid = () => Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
+const mk = (t, x, y) => ({ t, x, y, s: 1, a: 1, dying: 0, fall: null, delay: 0, pop: 0 });
+
+// ---------------------------------------------------------------- sound effects
+let actx = null, sfxOn = lsGet('bbSfx', '1') === '1';
+function ac() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function tone(freq, dur, type = 'sine', vol = 0.12, delay = 0, slideTo = 0) {
+  if (!sfxOn) return; const c = ac(); if (!c) return;
+  const t0 = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const PENT = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
+const note = n => 261.63 * Math.pow(2, n / 12);
+const sfx = {
+  swap() { tone(420, 0.07, 'sine', 0.06, 0, 520); },
+  bad() { tone(200, 0.16, 'triangle', 0.09, 0, 140); },
+  pop(ch) { const n = PENT[Math.min(ch - 1, PENT.length - 1)]; tone(note(n), 0.28, 'sine', 0.13); tone(note(n + 12), 0.2, 'triangle', 0.05, 0.02); },
+  level() { [0, 4, 7, 12, 16, 19].forEach((n, i) => tone(note(n + 12), 0.45, 'sine', 0.12, i * 0.09)); tone(note(-12), 0.9, 'triangle', 0.1, 0, note(-24)); },
+  over() { [7, 4, 0, -5].forEach((n, i) => tone(note(n), 0.5, 'triangle', 0.11, i * 0.2)); },
+  shuffle() { tone(300, 0.2, 'sine', 0.07, 0, 600); },
+};
+
+// ---------------------------------------------------------------- layout
+function resize() {
+  W = window.innerWidth; H = window.innerHeight; dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const topH = W <= 520 ? 62 : 72, botH = (H <= 460) ? 8 : 58;
+  const availW = W - 28, availH = H - topH - botH - 8;
+  cell = Math.max(16, Math.floor(Math.min(availW / COLS, availH / ROWS)));
+  bx = Math.round((W - cell * COLS) / 2);
+  by = Math.round(topH + (availH - cell * ROWS) / 2 + 2);
+  dirty = true;
+}
+let dirty = true;
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+
+// ---------------------------------------------------------------- game flow
+function setHUD() {
+  $('lifeSecs').textContent = lifeLimit() + 's'; $('lifeStat').title = 'Next lifeline: ' + lifeLimit() + ' seconds (it shortens each time you use it)';
+  $('vLevel').textContent = level; $('vScore').textContent = score.toLocaleString('en-GB'); $('vBest').textContent = Math.max(best, score).toLocaleString('en-GB');
+}
+function banner(title, sub, ms = 1700) {
+  $('bnTitle').textContent = title; $('bnSub').textContent = sub || '';
+  const b = $('banner'); b.classList.add('show'); clearTimeout(banner.t); banner.t = setTimeout(() => b.classList.remove('show'), ms);
+}
+function fillPile(L, drop) {
+  lifeUses = 0;
+  grid = emptyGrid();
+  const types = newPile(L) || newPile(L) || (() => { const g = emptyGrid(); for (let r = 0; r < 5; r++) for (let c = 0; c < COLS; c++) g[r][c] = (r + c * 2) % 5 + 1; return g; })();
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    if (types[r][c] === null) continue;
+    const cl = mk(types[r][c], c, drop ? r - ROWS - 2 : r);
+    if (drop) cl.delay = (ROWS - r) * 0.035 + c * 0.012;
+    grid[r][c] = cl;
+  }
+  makeIncoming(); slide = 0; sel = null; hint = null;
+}
+function makeIncoming() {
+  const below = grid.slice(0, 3).map(row => row.map(tOf));
+  const row = newRow(below, Math.random, v => (v === null || v === undefined ? -1 : v));
+  // keep biscuits findable: count what's in the pile
+  incoming = row.map((t, c) => mk(t, c, -1));
+}
+function newGame() {
+  level = 1; score = 0; chain = 0; particles = []; floaters = []; $('banner').classList.remove('show');
+  fillPile(1, true); state = 'dropin'; st = { t: 0 }; idleT = 0;
+  clearTimeout(lifeTimer); $('lifeOv').hidden = true; $('overOv').hidden = true; setHUD(); dirty = true;
+}
+function beginClear(m, ch) {
+  state = 'clear'; st = { t: 0, biscuit: m.biscuit, cells: m.cells };
+  let extra = 0; for (const run of m.runs) extra += (run.cells.length - 3) * 20;
+  const pts = m.cells.length * 10 * ch + extra * ch;
+  score += pts; if (score > best) { best = score; lsSet('bbBest', String(best)); }
+  let cx = 0, cy = 0;
+  for (const [r, c] of m.cells) {
+    const cl = grid[r][c]; cl.dying = 1e-4; cx += cl.x; cy += cl.y;
+    burst(sx(cl.x) + cell / 2, sy(cl.y) + cell / 2, TYPES[cl.t].c, 7);
+  }
+  cx /= m.cells.length; cy /= m.cells.length;
+  floaters.push({ text: '+' + pts, x: sx(cx) + cell / 2, y: sy(cy) + cell / 2, life: 0, max: 1.1, col: '#f4e8b8' });
+  if (ch > 1) floaters.push({ text: 'Chain ×' + ch, x: sx(cx) + cell / 2, y: sy(cy) - cell * 0.1, life: 0, max: 1.3, col: '#ffb3c4' });
+  sfx.pop(ch); setHUD();
+}
+function checkMatches(ch) {
+  const m = findMatches(grid, tOf);
+  if (m.cells.length) { beginClear(m, ch); return true; }
+  return false;
+}
+function finishClear() {
+  for (const [r, c] of st.cells) grid[r][c] = null;
+  if (st.biscuit) { startLevelClear(); return; }
+  settle(grid, tOf); state = 'settle'; st = { t: 0 };
+}
+function startLevelClear() {
+  const cells = []; for (const row of grid) for (const c of row) if (c) cells.push(c);
+  const freeRows = Math.max(0, ROWS - (lowestRow(grid, tOf) + 1));
+  const bonus = 250 + cells.length * 25 + freeRows * 40;
+  score += bonus; if (score > best) { best = score; lsSet('bbBest', String(best)); }
+  setHUD();
+  for (const c of cells) c.fall = { vx: (Math.random() - 0.5) * 5, vy: -2 - Math.random() * 4, vr: (Math.random() - 0.5) * 7 };
+  for (const c of incoming) c.fall = { vx: (Math.random() - 0.5) * 5, vy: -1 - Math.random() * 3, vr: (Math.random() - 0.5) * 7 };
+  for (let i = 0; i < 46; i++) {
+    particles.push({ x: bx + Math.random() * cell * COLS, y: by + cell * (1 + Math.random() * 4), vx: (Math.random() - 0.5) * 300, vy: -160 - Math.random() * 320,
+      life: 0, max: 1.6 + Math.random() * 0.8, col: TYPES[i % 6].c, emoji: TYPES[i % 6].e, size: 18 + Math.random() * 14, g: 520 });
+  }
+  banner('Level ' + level + ' complete!', 'The whole pile collapses · +' + bonus.toLocaleString('en-GB'), 2000);
+  sfx.level(); try { Music.chime(); } catch (e) { /* audio unavailable */ }
+  state = 'levelclear'; st = { t: 0 }; sel = null; hint = null; chain = 0; shake = 0.35;
+}
+function nextLevel() {
+  level++; fillPile(level, true); state = 'dropin'; st = { t: 0 }; idleT = 0; setHUD();
+  banner('Level ' + level, level === 2 ? 'The pile creeps a little faster' : 'Faster again', 1500);
+}
+function gameOver() {
+  state = 'over'; sel = null; hint = null; sfx.over();
+  if (score > best) best = score; lsSet('bbBest', String(best));
+  $('oLevel').textContent = level; $('oScore').textContent = score.toLocaleString('en-GB');
+  $('oBest').textContent = score >= best && score > 0 ? 'A new personal best!' : 'Best so far: ' + best.toLocaleString('en-GB');
+  setTimeout(() => { if (state === 'over') $('overOv').hidden = false; }, 700);
+}
+// ---- lifeline: one fractions question, 5 seconds, when the pile reaches the floor
+const fracHTML = (n, d) => '<span class="frac"><span>' + n + '</span><span>' + d + '</span></span>';
+function startLifeline() {
+  const limit = lifeLimit(); lifeUses++; setHUD(); lq = BB_CORE.question(level);
+  state = 'lifeline'; st = { t: 0, answered: false, limit };
+  $('lifeLbl').textContent = 'Last chance! Answer in ' + limit + ' seconds'; sel = null; hint = null; down = null;
+  $('lifeQ').innerHTML = fracHTML(lq.num, lq.den) + '<span>of ' + lq.whole + '</span>';
+  $('lifeOpts').innerHTML = ''; $('lifeRes').textContent = ''; $('lifeBar').style.width = '100%';
+  lq.options.forEach((o, i) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.textContent = o; b.dataset.i = i; b.setAttribute('aria-label', 'Answer ' + o);
+    b.addEventListener('click', () => answerLife(i)); $('lifeOpts').appendChild(b);
+  });
+  $('lifeOv').hidden = false; sfx.shuffle();
+}
+function answerLife(i) {
+  if (state !== 'lifeline' || st.answered) return; st.answered = true;
+  const ok = i >= 0 && lq.options[i] === lq.answer;
+  [...$('lifeOpts').children].forEach((b, j) => { b.disabled = true; if (lq.options[j] === lq.answer) b.classList.add('right'); else if (j === i) b.classList.add('wrong'); });
+  $('lifeRes').textContent = ok ? 'Saved! Well done.' : (i < 0 ? 'Time\u2019s up! ' : 'Not quite. ') + lq.num + '/' + lq.den + ' of ' + lq.whole + ' = ' + lq.answer;
+  if (ok) sfx.level(); else sfx.bad();
+  lifeTimer = setTimeout(() => { $('lifeOv').hidden = true; if (ok) rescue(); else gameOver(); }, ok ? 1000 : 2200);
+}
+function rescue() {
+  const low = lowestRow(grid, tOf), cells = [];
+  for (let r = Math.max(0, low - 2); r <= low; r++) for (let c = 0; c < COLS; c++) if (grid[r][c]) { cells.push([r, c]); grid[r][c].dying = 1e-4; burst(sx(grid[r][c].x) + cell / 2, sy(grid[r][c].y) + cell / 2, TYPES[grid[r][c].t].c, 6); }
+  state = 'clear'; st = { t: 0, biscuit: false, cells }; idleT = 0; shake = 0.25;
+  banner('Saved!', 'The bottom three rows are cleared', 1600);
+}
+function shiftRow() {
+  for (let r = ROWS - 1; r > 0; r--) grid[r] = grid[r - 1];
+  for (const row of grid) for (const c of row) if (c) c.y += 1;
+  grid[0] = incoming.map((c, i) => { c.y = 0; return c; });
+  if (sel) sel.r += 1;
+  slide -= 1; makeIncoming();
+}
+function reshuffle() {
+  const cs = []; for (const row of grid) for (const c of row) if (c) cs.push(c);
+  const types = cs.map(c => c.t);
+  const pos = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (grid[r][c]) pos.push([r, c]);
+  for (let tries = 0; tries < 300; tries++) {
+    for (let i = types.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [types[i], types[j]] = [types[j], types[i]]; }
+    pos.forEach(([r, c], i) => { grid[r][c].t = types[i]; });
+    if (!findMatches(grid, tOf).cells.length && findMove(grid, tOf).length) break;
+  }
+  for (const c of cs) c.pop = 1;
+  sfx.shuffle(); banner('Shuffled', 'No moves were left', 1100);
+}
+
+function trySwap(a, b) {
+  if (state !== 'idle' || paused) return false;
+  if (a[0] < 0 || b[0] < 0 || a[0] >= ROWS || b[0] >= ROWS || a[1] < 0 || b[1] < 0 || a[1] >= COLS || b[1] >= COLS) return false;
+  if (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) !== 1) return false;
+  const ca = grid[a[0]][a[1]], cb = grid[b[0]][b[1]]; if (!ca || !cb) return false;
+  swapCells(grid, a, b); state = 'swap'; st = { t: 0, a, b }; sel = null; hint = null; idleT = 0; sfx.swap();
+  return true;
+}
+
+// ---------------------------------------------------------------- update
+const sx = x => bx + x * cell, sy = y => by + (y + slide) * cell;
+function update(dt) {
+  if (paused || state === 'intro') { return; }
+  // easing of tiles toward their grid slots
+  moving = false;
+  const k = 1 - Math.exp(-dt * 16);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const cl = grid[r][c]; if (!cl) continue;
+    if (cl.fall) continue;
+    if (cl.delay > 0) { cl.delay -= dt; moving = true; continue; }
+    const dx = c - cl.x, dy = r - cl.y;
+    if (Math.abs(dx) < 0.004 && Math.abs(dy) < 0.004) { cl.x = c; cl.y = r; }
+    else { const kk = dy < -3 ? 1 - Math.exp(-dt * 9) : k; cl.x += dx * kk; cl.y += dy * kk; moving = true; }
+    if (cl.dying) cl.dying += dt;
+    if (cl.pop > 0) cl.pop = Math.max(0, cl.pop - dt * 3);
+  }
+  for (const c of incoming) { if (c.fall) continue; c.x = incoming.indexOf(c); c.y = -1; if (c.pop > 0) c.pop = Math.max(0, c.pop - dt * 3); }
+  // falling tiles (level collapse)
+  for (const row of grid) for (const cl of row) if (cl && cl.fall) fallStep(cl, dt);
+  for (const cl of incoming) if (cl.fall) fallStep(cl, dt);
+
+  st.t += dt;
+  switch (state) {
+    case 'idle': {
+      idleT += dt;
+      const stuck = !findMove(grid, tOf).length;
+      let n = 0; for (const row of grid) for (const c of row) if (c) n++;
+      if (stuck && n >= 18 && !st.noShuffle) { reshuffle(); st.noShuffle = true; setTimeout(() => { st.noShuffle = false; }, 400); }
+      const rush = stuck ? 7 : 1;               // nothing to play: the next row arrives early
+      slide += levelSpeed(level) * rush * dt;
+      if (lowestRow(grid, tOf) + 1 + slide > ROWS + 1e-6) { startLifeline(); break; }
+      if (slide >= 1) { shiftRow(); if (checkMatches(1)) break; }
+      if (!hint && idleT > 7 && !stuck) { const mv = findMove(grid, tOf); if (mv.length) hint = mv[Math.floor(Math.random() * mv.length)]; }
+      break;
+    }
+    case 'swap':
+      if (st.t >= 0.2) {
+        if (checkMatches(1)) { chain = 1; }
+        else { swapCells(grid, st.a, st.b); sfx.bad(); state = 'swapback'; st = { t: 0 }; }
+      }
+      break;
+    case 'swapback':
+      if (st.t >= 0.2) { state = 'idle'; st = { t: 0 }; idleT = 0; }
+      break;
+    case 'clear':
+      if (st.t >= 0.3) finishClear();
+      break;
+    case 'settle':
+      if (!moving && st.t > 0.08) {
+        chain++;
+        if (!checkMatches(chain)) { chain = 0; state = 'idle'; st = { t: 0 }; idleT = 0; }
+      }
+      break;
+    case 'lifeline':
+      $('lifeBar').style.width = Math.max(0, 100 * (1 - st.t / st.limit)) + '%';
+      if (!st.answered && st.t >= st.limit) answerLife(-1);
+      break;
+    case 'levelclear':
+      if (st.t >= 2.1) nextLevel();
+      break;
+    case 'dropin':
+      if (!moving && st.t > 0.1) { state = 'idle'; st = { t: 0 }; idleT = 0; }
+      break;
+  }
+  if (state === 'idle' && st.noShuffle === undefined) st.noShuffle = false;
+  // particles / floaters
+  for (const p of particles) { p.life += dt; p.vy += (p.g || 380) * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  particles = particles.filter(p => p.life < p.max);
+  for (const f of floaters) { f.life += dt; f.y -= 34 * dt; }
+  floaters = floaters.filter(f => f.life < f.max);
+  if (shake > 0) shake = Math.max(0, shake - dt);
+}
+function fallStep(cl, dt) {
+  const f = cl.fall; f.vy += 38 * dt; cl.x += f.vx * dt; cl.y += f.vy * dt; cl.rot = (cl.rot || 0) + f.vr * dt;
+  if (cl.y > ROWS + 3) cl.a = 0; else cl.a = 1;
+}
+function burst(x, y, col, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = 70 + Math.random() * 190;
+    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 60, life: 0, max: 0.5 + Math.random() * 0.4, col, size: 2.5 + Math.random() * 3.5 });
+  }
+}
+
+// ---------------------------------------------------------------- drawing
+function rr(x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function drawTile(cl, isIncoming) {
+  const T = TYPES[cl.t];
+  let scale = cl.s, alpha = cl.a;
+  if (cl.dying) { const p = Math.min(1, cl.dying / 0.3); scale = p < 0.25 ? 1 + p * 0.7 : 1.17 * (1 - (p - 0.25) / 0.75); alpha = 1 - Math.max(0, (p - 0.4) / 0.6); }
+  if (cl.pop) scale *= 1 + Math.sin(cl.pop * Math.PI) * 0.16;
+  if (alpha <= 0.01 || scale <= 0.02) return;
+  const cx = sx(cl.x) + cell / 2, cy = sy(cl.y) + cell / 2;
+  const isSel = sel && grid[sel.r] && grid[sel.r][sel.c] === cl;
+  const pad = cell * 0.045, size = (cell - pad * 2) * scale * (isSel ? 1.06 : 1);
+  ctx.save(); ctx.translate(cx, cy); if (cl.rot) ctx.rotate(cl.rot); ctx.globalAlpha = alpha * (isIncoming ? 0.85 : 1);
+  const choc = cl.t === BISCUIT, rad = size * 0.24;
+  rr(-size / 2, -size / 2, size, size, rad);
+  const g = ctx.createLinearGradient(0, -size / 2, 0, size / 2);
+  g.addColorStop(0, hexA(T.c, choc ? 0.42 : 0.30)); g.addColorStop(1, hexA(T.c, choc ? 0.22 : 0.13));
+  ctx.fillStyle = g; ctx.fill();
+  ctx.lineWidth = choc ? 2 : 1.2; ctx.strokeStyle = hexA(T.c, choc ? 0.85 : 0.40); ctx.stroke();
+  if (choc) { ctx.shadowColor = 'rgba(227,178,122,.55)'; ctx.shadowBlur = cell * 0.22; ctx.stroke(); ctx.shadowBlur = 0; }
+  if (isSel) { ctx.lineWidth = 3; ctx.strokeStyle = '#f4e8b8'; ctx.shadowColor = 'rgba(244,232,184,.8)'; ctx.shadowBlur = 12; ctx.stroke(); ctx.shadowBlur = 0; }
+  stamp(T.e, 0, size * 0.03, size * 0.72);
+  ctx.restore();
+}
+// Emoji are pre-rendered once, with an opaque fill, then stamped. (Drawing them straight onto the board with a
+// translucent or gradient fillStyle makes Safari and Mac Chrome paint flat tinted silhouettes instead of colour.)
+const sprites = {};
+function sprite(e) {
+  if (sprites[e]) return sprites[e];
+  const S = 160, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  g.globalAlpha = 1; g.fillStyle = '#000'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  g.font = '112px ' + EMOJI_FONT; g.fillText(e, S / 2, S * 0.76);
+  return (sprites[e] = c);
+}
+function stamp(e, x, y, size) { const sp = sprite(e); ctx.drawImage(sp, x - size / 2, y - size / 2, size, size); }
+function hexA(h, a) { const n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+function draw(ts) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  const bw = cell * COLS, bh = cell * ROWS;
+  const sh = shake > 0 ? Math.sin(ts / 22) * shake * 9 : 0;
+  ctx.save(); ctx.translate(sh, 0);
+  // board plate
+  rr(bx - 8, by - 8, bw + 16, bh + 16, 20); ctx.fillStyle = 'rgba(38,41,49,.80)'; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.stroke();
+  ctx.save(); rr(bx, by, bw, bh, 12); ctx.clip();
+  const bg = ctx.createLinearGradient(0, by, 0, by + bh); bg.addColorStop(0, '#23262e'); bg.addColorStop(1, '#1b1d23'); ctx.fillStyle = bg; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = 'rgba(255,255,255,.028)';
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if ((r + c) % 2 === 0) ctx.fillRect(bx + c * cell, by + r * cell, cell, cell);
+  // danger glow near the bottom
+  const low = lowestRow(grid, tOf) + 1 + slide, gap = ROWS - low;
+  const danger = state === 'idle' || state === 'swap' || state === 'clear' || state === 'settle' ? Math.max(0, Math.min(1, (2.6 - gap) / 2.6)) : 0;
+  const pulse = 0.5 + 0.5 * Math.sin(ts / (260 - danger * 120));
+  const dg = ctx.createLinearGradient(0, by + bh - cell * 2.2, 0, by + bh);
+  dg.addColorStop(0, 'rgba(255,120,140,0)'); dg.addColorStop(1, 'rgba(255,120,140,' + (0.10 + danger * (0.20 + 0.16 * pulse)).toFixed(3) + ')');
+  ctx.fillStyle = dg; ctx.fillRect(bx, by + bh - cell * 2.2, bw, cell * 2.2);
+  // tiles
+  for (const cl of incoming) drawTile(cl, true);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const cl = grid[r][c]; if (cl && !cl.dying) drawTile(cl, false); }
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const cl = grid[r][c]; if (cl && cl.dying) drawTile(cl, false); }
+  // hint
+  if (hint && state === 'idle') {
+    const a = 0.35 + 0.5 * (0.5 + 0.5 * Math.sin(ts / 260));
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(169,231,207,' + a.toFixed(2) + ')';
+    for (const [r, c] of hint) { const cl = grid[r] && grid[r][c]; if (cl) { rr(sx(cl.x) + 3, sy(cl.y) + 3, cell - 6, cell - 6, cell * 0.22); ctx.stroke(); } }
+  }
+  ctx.restore();
+  // floor line
+  ctx.setLineDash([7, 7]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,150,170,' + (0.45 + danger * 0.5 * pulse).toFixed(2) + ')';
+  ctx.beginPath(); ctx.moveTo(bx + 8, by + bh + 4); ctx.lineTo(bx + bw - 8, by + bh + 4); ctx.stroke(); ctx.setLineDash([]);
+  // particles
+  for (const p of particles) {
+    const a = 1 - p.life / p.max; ctx.globalAlpha = Math.max(0, a);
+    if (p.emoji) stamp(p.emoji, p.x, p.y, p.size * 1.25);
+    else { ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * a + 0.6, 0, 7); ctx.fill(); }
+  }
+  ctx.globalAlpha = 1;
+  for (const f of floaters) {
+    const a = 1 - f.life / f.max; ctx.globalAlpha = Math.max(0, Math.min(1, a * 1.6));
+    ctx.font = '800 ' + Math.round(cell * 0.46) + 'px Nunito, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(20,21,26,.8)'; ctx.strokeText(f.text, f.x, f.y); ctx.fillStyle = f.col; ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1; ctx.restore();
+}
+
+// ---------------------------------------------------------------- loop
+let last = 0;
+function frame(ts) {
+  const dt = Math.min(0.05, (ts - (last || ts)) / 1000); last = ts; now = ts;
+  update(dt); draw(ts);
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- input
+function cellAt(px, py) {
+  const c = Math.floor((px - bx) / cell), r = Math.floor((py - by) / cell - slide);
+  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return null;
+  return grid[r][c] ? [r, c] : null;
+}
+let down = null;
+cv.addEventListener('pointerdown', e => {
+  if (state !== 'idle' || paused) return;
+  const rc = cellAt(e.clientX, e.clientY); idleT = 0; hint = null;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  down = { rc, x: e.clientX, y: e.clientY, used: false, id: e.pointerId };
+  e.preventDefault();
+});
+cv.addEventListener('pointermove', e => {
+  if (!down || down.used || !down.rc || state !== 'idle') return;
+  const dx = e.clientX - down.x, dy = e.clientY - down.y;
+  if (Math.hypot(dx, dy) < cell * 0.32) return;
+  const [r, c] = down.rc;
+  const tgt = Math.abs(dx) > Math.abs(dy) ? [r, c + Math.sign(dx)] : [r + Math.sign(dy), c];
+  down.used = true; trySwap(down.rc, tgt);
+});
+function endPointer(e, cancelled) {
+  if (!down) return; const d = down; down = null;
+  if (cancelled || d.used || state !== 'idle' || paused) return;
+  const rc = cellAt(e.clientX, e.clientY); if (!rc || !d.rc) { sel = null; return; }
+  if (sel) {
+    const sr = sel.r, sc = sel.c;
+    if (sr === rc[0] && sc === rc[1]) { sel = null; return; }
+    if (Math.abs(sr - rc[0]) + Math.abs(sc - rc[1]) === 1) { trySwap([sr, sc], rc); return; }
+  }
+  sel = { r: rc[0], c: rc[1] };
+}
+cv.addEventListener('pointerup', e => endPointer(e, false));
+cv.addEventListener('pointercancel', e => endPointer(e, true));
+cv.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---------------------------------------------------------------- UI
+function setPaused(p) {
+  if (state === 'intro' || state === 'over' || state === 'lifeline') return;
+  paused = p; $('pauseOv').hidden = !p; $('btnPause').classList.toggle('on', p); last = 0;
+}
+$('btnPause').addEventListener('click', () => setPaused(!paused));
+$('btnResume').addEventListener('click', () => setPaused(false));
+function setMusicUI() {
+  const on = Music.playing; $('btnMusic').setAttribute('aria-pressed', String(on)); $('btnMusic').classList.toggle('on', on);
+  $('musicSlash').style.display = on ? 'none' : '';
+}
+function toggleMusic() { if (Music.playing) Music.stop(); else Music.start(); setMusicUI(); }
+$('btnMusic').addEventListener('click', toggleMusic);
+function setSfxUI() {
+  $('btnSfx').setAttribute('aria-pressed', String(sfxOn)); $('btnSfx').classList.toggle('on', sfxOn);
+  $('sfxSlash').style.display = sfxOn ? 'none' : ''; $('sfxWave').style.display = sfxOn ? '' : 'none';
+}
+$('btnSfx').addEventListener('click', () => { sfxOn = !sfxOn; lsSet('bbSfx', sfxOn ? '1' : '0'); setSfxUI(); if (sfxOn) { ac(); sfx.swap(); } });
+$('btnRestart').addEventListener('click', () => { paused = false; $('pauseOv').hidden = true; $('btnPause').classList.remove('on'); newGame(); });
+$('btnStart').addEventListener('click', () => { $('intro').hidden = true; ac(); newGame(); cv.focus(); });
+$('btnAgain').addEventListener('click', () => { newGame(); });
+window.addEventListener('keydown', e => {
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (state === 'lifeline') { const n = parseInt(e.key, 10); if (n >= 1 && n <= 5) answerLife(n - 1); return; }
+  if (e.key === ' ' || e.key === 'p' || e.key === 'P' || e.key === 'Escape') { if (document.activeElement && document.activeElement.tagName === 'BUTTON' && e.key === ' ') return; e.preventDefault(); setPaused(!paused); }
+  else if (e.key === 'm' || e.key === 'M') toggleMusic();
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+
+setSfxUI(); setMusicUI(); setHUD(); resize();
+grid = emptyGrid(); makeIncoming();
+requestAnimationFrame(frame);
+
+// hook for tests
+window.__bb = {
+  get state() { return state; }, get level() { return level; }, get score() { return score; }, get paused() { return paused; },
+  get slide() { return slide; }, set slide(v) { slide = v; }, get cell() { return cell; }, get bx() { return bx; }, get by() { return by; },
+  types: () => grid.map(row => row.map(tOf)),
+  setTypes(t, sl) {
+    grid = emptyGrid(); for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const v = t[r] ? t[r][c] : null; if (v !== null && v !== undefined && v >= 0) grid[r][c] = mk(v, c, r); }
+    slide = sl || 0; makeIncoming(); state = 'idle'; st = { t: 0 }; idleT = 0; sel = null; hint = null; chain = 0; paused = false;
+  },
+  speedUp(n) { for (let i = 0; i < n; i++) update(0.05); },
+  pos(r, c) { return [sx(c) + cell / 2, sy(r) + cell / 2]; },
+  get lq() { return lq; }, get lifeUsed() { return lifeUses > 0; }, get lifeUses() { return lifeUses; }, get limit() { return st.limit; },
+  hintShown: () => !!hint, selected: () => sel,
+};
+})();
+
+</script>
+</body>
+</html>
