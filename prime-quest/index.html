@@ -2,18 +2,22 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d2e">
 <title>Prime Quest | LoadsOfMaths</title>
 <style>
 :root{
+  --vh:1vh;
   --blue:#2f7bff; --blue-d:#0b3aa8; --blue-l:#8fbaff;
   --red:#ff4b4b; --red-d:#a30f1f; --red-l:#ffa0a0;
   --gold:#ffd24a; --gold-d:#b8860b;
   --ink:#0b1030;
-  --cell:clamp(32px, min(calc((100vh - 190px) / 10 - 5px), calc((100vw - 400px) / 10 - 5px)), 76px);
+  --cell:clamp(32px, min(calc((var(--vh) * 100 - 190px) / 10 - 5px), calc((100vw - 400px) / 10 - 5px)), 76px);
 }
+@supports (height:100dvh){:root{--vh:1dvh;}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;height:100%;overflow:hidden;}
+html{background:#0a0d2e;}
+html,body{margin:0;min-height:100%;overflow-x:hidden;overflow-y:auto;touch-action:manipulation;}
 body{
   font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;color:#fff;user-select:none;
   background:
@@ -26,7 +30,8 @@ body{
 @keyframes tw{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:.9;transform:scale(1.3)}}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:50;}
 
-#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:10px 16px 12px;}
+#app{position:relative;z-index:1;height:100vh;height:100dvh;min-height:420px;display:flex;flex-direction:column;
+  padding:max(10px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));}
 header{display:flex;align-items:center;gap:14px;height:64px;}
 .logo{display:flex;align-items:center;gap:10px;}
 .logo .gem{width:42px;height:42px;filter:drop-shadow(0 0 10px rgba(255,210,74,.7));}
@@ -135,9 +140,9 @@ header{display:flex;align-items:center;gap:14px;height:64px;}
 .hint{font-size:13px;color:#cdd6ff;margin-top:10px;min-height:34px;line-height:1.35;}
 
 /* ===== OVERLAYS ===== */
-.overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(5,6,25,.78);backdrop-filter:blur(5px);padding:16px;}
+.overlay{position:fixed;inset:0;height:100vh;height:100dvh;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(5,6,25,.78);backdrop-filter:blur(5px);padding:16px;}
 .overlay.hidden{display:none;}
-.card{max-width:620px;width:100%;max-height:96vh;overflow:auto;border-radius:24px;padding:26px 30px;text-align:center;
+.card{max-width:620px;width:100%;max-height:96vh;max-height:96dvh;overflow:auto;border-radius:24px;padding:26px 30px;text-align:center;
   background:linear-gradient(160deg,#2c2070,#171250);border:2px solid #7a68e0;box-shadow:0 0 50px rgba(120,90,255,.5),0 25px 60px rgba(0,0,0,.7);animation:rise .5s cubic-bezier(.3,1.4,.5,1);}
 @keyframes rise{from{transform:translateY(40px) scale(.9);opacity:0}}
 .card h2{font-family:Georgia,serif;font-size:46px;margin:0 0 4px;letter-spacing:3px;background:linear-gradient(180deg,#fff6c9,#ffd24a 55%,#d59a12);-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -164,11 +169,36 @@ header{display:flex;align-items:center;gap:14px;height:64px;}
 
 @media (max-width:900px), (max-aspect-ratio:1/1){
   :root{--cell:clamp(26px, min(calc((100vw - 70px) / 10 - 5px), 60px), 60px);}
-  html,body{overflow:auto;}
+  #app{height:auto;min-height:100vh;min-height:100dvh;}
   #main{flex-direction:column;align-items:center;}
   #panel{width:min(100%,520px);}
   header{height:auto;flex-wrap:wrap;}
   .logo h1{font-size:26px;}
+}
+
+/* phones on their side: short and wide, so everything is compacted to fit the height */
+@media (max-height:560px) and (min-aspect-ratio:1/1){
+  :root{--cell:clamp(18px, min(calc((var(--vh) * 100 - 124px) / 10), calc((100vw - 330px) / 10 - 3px)), 60px);}
+  #app{height:100vh;height:100dvh;min-height:0;padding:max(4px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));}
+  header{height:38px;flex-wrap:nowrap;gap:8px;}
+  .logo .gem{width:26px;height:26px;} .logo h1{font-size:20px;letter-spacing:2px;} .logo small{display:none;}
+  .hbtn{padding:4px 10px;font-size:12px;}
+  #main{flex-direction:row;align-items:flex-start;gap:12px;padding-top:2px;}
+  #boardWrap{padding:6px;border-radius:12px;}
+  #board{grid-template-columns:16px repeat(10,var(--cell));grid-template-rows:repeat(10,var(--cell)) 16px;gap:3px;}
+  .axis{font-size:10px;} .axis.y{padding-right:3px;}
+  .face{border-radius:6px;}
+  #panel{width:230px;gap:6px;}
+  .team{padding:5px 10px;border-radius:12px;} .team .nm{font-size:13px;} .team .tot{font-size:22px;}
+  .team.active::after{top:-8px;font-size:9px;padding:1px 7px;}
+  .track{height:12px;margin:5px 0 4px;} .track .goal{font-size:16px;top:-6px;}
+  .chips{min-height:0;max-height:28px;} .chip{font-size:10px;padding:1px 5px;}
+  #turnBox{padding:6px 8px;border-radius:12px;} #turnBox .lbl{font-size:10px;}
+  #turnTotal{font-size:36px;} .big{font-size:14px;padding:6px 16px;}
+  .btns{margin-top:2px;} .hint{font-size:11px;min-height:0;margin-top:4px;}
+  #toast{top:46px;font-size:16px;padding:8px 18px;}
+  .card{padding:14px 20px;} .card h2{font-size:32px;} .card p.tag{margin-bottom:6px;} .opt{margin:6px 0;} .card .big.go{margin-top:8px;padding:8px 28px;font-size:18px;}
+  #winCard h2{font-size:38px;}
 }
 </style>
 </head>
