@@ -35,6 +35,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Nul Points! | `nul-points/` |
 | Number Forensics | `number-forensics/` |
 | Number Memory Game | `number-memory-game/` |
+| Over & Under | `over-and-under/` |
 | Penguins & Icebergs | `penguins-and-icebergs/` |
 | Pentomino Explorer | `pentomino-explorer/` |
 | Potato | `potato/` |
