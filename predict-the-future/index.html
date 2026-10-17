@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can You Predict the Future?</title>
+<style>
+:root{--bg1:#140729;--bg2:#2b1255;--gold:#f7c948;--gold2:#c8952a;--red:#c8102e;--cream:#fff3d4;--ink:#2a1a4a;--teal:#5fd3c8;--violet:#8a6bd6}
+*{box-sizing:border-box}
+body{margin:0;font-family:Georgia,'Palatino Linotype',Palatino,serif;color:var(--cream);background:radial-gradient(ellipse at top,var(--bg2),var(--bg1) 70%) fixed;min-height:100vh;font-size:18px}
+.stars{position:fixed;inset:0;pointer-events:none;opacity:.7;background-image:radial-gradient(1.5px 1.5px at 20px 30px,#fff8,transparent),radial-gradient(1.5px 1.5px at 120px 90px,#fff6,transparent),radial-gradient(2px 2px at 220px 40px,#ffe9a8aa,transparent),radial-gradient(1px 1px at 300px 150px,#fff9,transparent);background-size:340px 200px}
+.tent-top{height:30px;background:repeating-linear-gradient(90deg,var(--red) 0 50px,var(--cream) 50px 100px);position:relative}
+.scallop{height:22px;position:relative;background:radial-gradient(circle at 25px 0,var(--red) 24px,transparent 25px) 0 0/100px 22px,radial-gradient(circle at 75px 0,var(--cream) 24px,transparent 25px) 0 0/100px 22px}
+.wrap{position:relative;max-width:1020px;margin:0 auto;padding:10px 16px 30px}
+header{display:flex;align-items:center;gap:22px;justify-content:center;flex-wrap:wrap;text-align:center;padding:6px 0}
+.ball-wrap{width:110px}
+.ball{width:96px;height:96px;margin:0 auto;border-radius:50%;background:radial-gradient(circle at 35% 28%,#fff 0,#d9f 9%,#9a7bff 36%,#3b1b8a 72%,#1a0b3d 100%);box-shadow:0 0 34px #a98cffaa,inset 0 -10px 24px #0007;animation:glow 3s ease-in-out infinite}
+.stand{width:92px;height:20px;margin:-10px auto 0;background:linear-gradient(var(--gold),var(--gold2));border-radius:6px 6px 14px 14px;box-shadow:0 3px 0 #0005}
+@keyframes glow{50%{box-shadow:0 0 54px #c9b0ffee,inset 0 -10px 24px #0007}}
+h1{margin:0;font-size:2.3rem;color:var(--gold);letter-spacing:.04em;text-shadow:0 3px 0 #6d0716,0 0 18px #f7c94855;font-variant:small-caps}
+.sub{margin:4px 0 0;font-style:italic;opacity:.9}
+h2{margin:0 0 10px;color:var(--gold);font-size:1.5rem}
+.panel{background:rgba(255,243,212,.07);border:2px solid var(--gold2);border-radius:18px;padding:16px 18px;margin:14px 0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0}
+.row.c{justify-content:center}
+.lbl{margin:10px 0 2px;opacity:.9}
+.btn{font:inherit;font-size:1.15rem;font-weight:bold;padding:11px 22px;border-radius:999px;border:3px solid var(--gold);background:linear-gradient(#e0334f,#a30c22);color:#fff;cursor:pointer;text-shadow:0 1px 2px #0008;box-shadow:0 4px 0 #6d0716}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #6d0716}
+.btn.sm{font-size:1rem;padding:7px 16px}
+.btn.alt{background:linear-gradient(#ffe08a,#e0a92b);color:#3a2500;text-shadow:none;box-shadow:0 4px 0 #8a6414}
+.btn.opt{background:rgba(255,243,212,.1);border-color:var(--gold2);box-shadow:none;color:var(--cream)}
+.btn.opt.on{background:linear-gradient(#ffe08a,#e0a92b);color:#3a2500;border-color:#fff;text-shadow:none}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.tents{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.tent{font:inherit;color:var(--cream);text-align:center;cursor:pointer;padding:0 0 14px;border:3px solid var(--gold);border-radius:14px;background:rgba(20,7,41,.6);overflow:hidden}
+.tent:before{content:"";display:block;height:22px;margin-bottom:10px;background:repeating-linear-gradient(90deg,var(--red) 0 22px,var(--cream) 22px 44px)}
+.tent:hover{background:rgba(247,201,72,.15)}
+.ti{height:56px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:2.2rem}
+.tt{font-size:1.25rem;font-weight:bold;color:var(--gold);margin:4px 8px}
+.tb{font-size:.95rem;margin:0 12px;opacity:.9}
+.coinicon{width:50px;height:50px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.5rem;color:#5a3d00;background:radial-gradient(circle at 35% 30%,#ffe590,#e0a92b)}
+input[type=text],input[type=number]{font:inherit;font-size:1.1rem;padding:8px 12px;border-radius:10px;border:2px solid var(--gold2);background:var(--cream);color:var(--ink);width:230px}
+input[type=number]{width:110px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:50px;border-radius:8px;font-weight:bold;background:var(--cream);color:#222;border:2px solid #0003;font-size:1.05rem;padding:0 3px}
+.chip.coin{border-radius:50%;width:46px;height:46px;background:radial-gradient(circle at 35% 30%,#ffe590,#e0a92b);color:#5a3d00}
+.chip.red{color:var(--red)}.chip.black{color:#111}
+.chip.hid{background:repeating-linear-gradient(45deg,#4a2a8a 0 6px,#3a1f70 6px 12px);color:#cbb8ff;border-color:var(--gold2)}
+.chip.coin.hid{background:radial-gradient(circle at 35% 30%,#6a4ab0,#2e1a60)}
+.chip.right{outline:3px solid #4ade80}.chip.wrong{outline:3px solid #ff6b6b}
+.col{display:flex;flex-direction:column;align-items:center;gap:3px;margin:3px}
+.mk{font-size:1.2rem;font-weight:bold;height:24px}.mk.y{color:#4ade80}.mk.n{color:#ff6b6b}
+.slot{width:62px;height:72px;border:3px dashed var(--gold2);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:3px;font-size:1.3rem;opacity:.9}
+.slot.f{border-style:solid;background:var(--cream)}
+.big{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:130px;padding:14px 20px;font-size:1.3rem}
+.verdict{border:3px solid var(--gold2);border-radius:16px;padding:14px 18px;margin:12px 0;text-align:center}
+.verdict.win{border-color:#ffd54a;background:rgba(255,213,74,.16)}
+.verdict.anti{border-color:#ff8aa0;background:rgba(255,100,130,.14)}
+.verdict.no{background:rgba(138,107,214,.18)}
+.verdict h3{margin:0 0 6px;font-size:1.7rem;color:var(--gold)}
+.formal{font-size:1rem;font-style:italic}
+.score{font-size:1.6rem;text-align:center;margin:6px 0}
+.score b{color:var(--gold);font-size:2.2rem}
+.stat{margin:4px 0}.stat b{color:var(--gold)}
+.hyp{background:rgba(0,0,0,.25);border-radius:12px;padding:8px 14px;font-size:1rem}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.92rem;justify-content:center}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+table{border-collapse:collapse;width:100%;font-size:1rem}
+td,th{padding:5px 10px;border-bottom:1px solid #ffffff22;text-align:left}
+details summary{cursor:pointer;color:var(--gold);font-weight:bold}
+details ul{margin:8px 0 0 18px;padding:0;font-size:1rem;line-height:1.45}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.hc{background:rgba(0,0,0,.25);border-radius:12px;padding:6px 8px;text-align:center}
+.hc.dis{opacity:.35}
+.hs{font-size:1.5rem;font-weight:bold;color:var(--gold)}
+.hrow{display:flex;gap:4px;justify-content:center;align-items:center}
+.hrow input{width:58px;text-align:center;padding:6px 4px}
+.ix{font-size:.75rem;opacity:.8}
+.chip.esp{width:152px;height:192px;border-radius:14px;border:3px solid #0004;padding:0;box-shadow:0 4px 10px #0006;font-size:3.5rem}
+.chip.esp.mid{width:96px;height:118px;border-radius:10px;font-size:2.2rem}
+.btn.card{background:var(--cream);color:#3a2500;text-shadow:none;border-color:var(--gold);box-shadow:0 4px 0 #8a6414}
+.btn.card:disabled{opacity:.25}
+.slot.esp{width:152px;height:192px;border-radius:14px;font-size:3rem}
+.small{font-size:.8rem;opacity:.75;text-align:center;margin-top:20px}
+.err{color:#ff9aa8;margin:6px 0}
+svg text{fill:var(--cream);font-family:Georgia,serif}
+@media(max-width:600px){h1{font-size:1.7rem}body{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="tent-top"></div><div class="scallop"></div>
+<div class="wrap">
+<header>
+  <div class="ball-wrap"><div class="ball"></div><div class="stand"></div></div>
+  <div>
+    <h1>Can You Predict the Future?</h1>
+    <p class="sub">Roll up! Roll up! Madame Zara's crystal ball will test your psychic powers&hellip;</p>
+  </div>
+</header>
+<main id="app"></main>
+<div class="small">For entertainment purposes only. Results are decided entirely by chance. No psychics were consulted in the making of this game.</div>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const SYMN=['Circle','Cross','Waves','Square','Star'];
+const ESPCOL=['#1f5fd1','#d62828','#7b2fbe','#1f9d3a','#e69500'];
+const ORD=['first','second','third','fourth','fifth'];
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUITS=['\u2660','\u2665','\u2666','\u2663'];
+function symSVG(i,sz,col){
+  col=col||'#3a2a6a';let b='';
+  if(i===0)b='<circle cx="20" cy="20" r="13"/>';
+  else if(i===1)b='<path d="M20 6V34M6 20H34"/>';
+  else if(i===2)b='<path d="M5 12q5-6 10 0t10 0t10 0M5 20q5-6 10 0t10 0t10 0M5 28q5-6 10 0t10 0t10 0"/>';
+  else if(i===3)b='<rect x="8" y="8" width="24" height="24"/>';
+  else{const p=[];for(let k=0;k<10;k++){const r=k%2?6:16,a=-Math.PI/2+k*Math.PI/5;p.push((20+r*Math.cos(a)).toFixed(1)+','+(21+r*Math.sin(a)).toFixed(1))}b='<polygon points="'+p.join(' ')+'"/>'}
+  return '<svg viewBox="0 0 40 40" width="'+sz+'" height="'+sz+'" fill="none" stroke="'+col+'" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">'+b+'</svg>';
+}
+const GAMES={
+  coin:{title:'The Coin Toss',blurb:'Call heads or tails. Can you beat the coin?',ns:[10,20,30],n:20,p:.5,unit:'flips',icon:'<span class="coinicon">H</span><span class="coinicon">T</span>',chance:'1 in 2 each time'},
+  cards:{title:'Red or Black?',blurb:'Name the colour of each card dealt from a shuffled pack.',ns:[10,20,26],n:20,p:.5,unit:'cards',icon:'<span style="color:#ff6b6b">\u2665</span><span>\u2660</span>',chance:'1 in 2 each time'},
+  esp25:{title:'The Full ESP Pack',blurb:'25 cards, five symbols. Name every single one.',ns:[25],n:25,p:.2,unit:'cards',icon:symSVG(4,46,'#f7c948')+symSVG(2,46,'#f7c948'),chance:'1 in 5 each time'},
+  esp5:{title:'The ESP Line-Up',blurb:'Five cards in a row. Name the order!',ns:[5],n:5,unit:'cards',icon:symSVG(0,40,'#f7c948')+symSVG(1,40,'#f7c948')+symSVG(3,40,'#f7c948'),chance:'every order equally likely'}
+};
+
+/* ---------- state ---------- */
+const S={screen:'home',game:null,n:20,mode:'live',alpha:.05,tails:1,name:'',guesses:[],truth:[],deck:[],rec:0,score:0,revealIdx:0,tally:{},tkey:null,added:false,timer:null,err:'',pend:null};
+try{const t=localStorage.getItem('cypf_tally');if(t)S.tally=JSON.parse(t)||{}}catch(e){}
+function save(){try{localStorage.setItem('cypf_tally',JSON.stringify(S.tally))}catch(e){}}
+const key=()=>S.game+'-'+S.n;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function keyLabel(k){const a=k.split('-');const g=GAMES[a[0]];return g?g.title+(g.ns.length>1?' ('+a[1]+')':''):k}
+
+/* ---------- statistics ---------- */
+function binom(n,p){const o=[];let c=1;for(let k=0;k<=n;k++){o.push(c*Math.pow(p,k)*Math.pow(1-p,n-k));c=c*(n-k)/(k+1)}return o}
+function pmfFor(g,n){return g==='esp5'?[44,45,20,10,0,1].map(x=>x/120):binom(n,GAMES[g].p)}
+function analyse(pm,s,tails,alpha){
+  const n=pm.length-1,eps=1e-12,a=tails===1?alpha:alpha/2;
+  const up=k=>{let t=0;for(let x=k;x<=n;x++)t+=pm[x];return t};
+  const lo=k=>{let t=0;for(let x=0;x<=k;x++)t+=pm[x];return t};
+  let c=null;for(let k=0;k<=n;k++){if(up(k)<=a+eps){c=k;break}}
+  if(c!==null){while(c<=n&&pm[c]<eps)c++;if(c>n)c=null}
+  let d=null;
+  if(tails===2){for(let k=n;k>=0;k--){if(lo(k)<=a+eps){d=k;break}}if(d!==null){while(d>=0&&pm[d]<eps)d--;if(d<0)d=null}}
+  const hasS=(s!==null&&s!==undefined);
+  return{a:a,c:c,d:d,pUp:hasS?up(s):null,pLo:hasS?lo(s):null,
+    sigUp:hasS&&c!==null&&s>=c,sigLo:hasS&&d!==null&&s<=d,
+    fluke:(c!==null?up(c):0)+(d!==null?lo(d):0)};
+}
+function pct(p){const v=p*100;if(v<=0)return '0%';if(v<0.01)return '<0.01%';if(v<1)return v.toFixed(2)+'%';if(v<10)return v.toFixed(1)+'%';return v.toFixed(0)+'%'}
+const lvl=()=>Math.round(S.alpha*100)+'%';
+const pmf=()=>pmfFor(S.game,S.n);
+
+/* ---------- chart ---------- */
+function chart(pm,an,obs,o){
+  o=o||{};const n=pm.length-1,W=760,H=300,L=54,R=16,T=32,Bm=50,pw=(W-L-R)/(n+1),ph=H-T-Bm;
+  let ymax,ticks=[],fmt;
+  if(o.counts){
+    const mx=Math.max.apply(null,o.counts.concat(pm.map(p=>p*o.m)));
+    ymax=Math.max(3,Math.ceil(mx));const tk=Math.max(1,Math.ceil(ymax/5));ymax=Math.ceil(ymax/tk)*tk;
+    for(let v=0;v<=ymax;v+=tk)ticks.push(v);fmt=v=>String(v);
+  }else{
+    ymax=Math.ceil(Math.max.apply(null,pm)*20)/20;
+    for(let i=0;i<=5;i++)ticks.push(ymax*i/5);fmt=v=>Math.round(v*100)+'%';
+  }
+  const y=v=>T+ph*(1-v/ymax);
+  let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Distribution of scores by pure chance">';
+  ticks.forEach(v=>{s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="#ffffff22"/><text x="'+(L-6)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="12">'+fmt(v)+'</text>'});
+  s+='<text x="'+L+'" y="16" font-size="13" opacity=".85">'+(o.counts?'Number of players (bars) and number expected by luck (white dots)':'Chance of each score if you are just guessing')+'</text>';
+  for(let x=0;x<=n;x++){
+    const val=o.counts?o.counts[x]:pm[x],h=ph*val/ymax,bx=L+x*pw+pw*.12,bw=pw*.76;
+    const rej=(an.c!==null&&x>=an.c)||(an.d!==null&&x<=an.d);
+    const fill=rej?'#f7c948':(o.counts?'#5fd3c8':'#8a6bd6');
+    s+='<rect x="'+bx+'" y="'+(y(0)-h)+'" width="'+bw+'" height="'+h+'" rx="3" fill="'+fill+'"'+(obs===x?' stroke="#fff" stroke-width="3"':'')+'/>';
+    if(!o.counts&&pm[x]===0)s+='<text x="'+(bx+bw/2)+'" y="'+(y(0)-8)+'" text-anchor="middle" font-size="11">impossible</text>';
+    if(o.counts)s+='<circle cx="'+(bx+bw/2)+'" cy="'+y(o.m*pm[x])+'" r="5" fill="#fff" stroke="#2a1a4a" stroke-width="1.5"/>';
+    if(obs===x){const ay=y(0)-h-8;s+='<path d="M'+(bx+bw/2)+' '+ay+'l-7 -11h14z" fill="#fff"/><text x="'+(bx+bw/2)+'" y="'+(ay-14)+'" text-anchor="middle" font-size="14" font-weight="bold">YOU</text>'}
+    const step=n>15?2:1;
+    if(x%step===0||x===n)s+='<text x="'+(bx+bw/2)+'" y="'+(H-Bm+18)+'" text-anchor="middle" font-size="13">'+x+'</text>';
+  }
+  s+='<text x="'+(L+(W-L-R)/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="13">Number of correct predictions</text></svg>';
+  return s;
+}
+function legend(an,counts){
+  const other=counts?'#5fd3c8':'#8a6bd6';
+  return '<div class="legend"><span><i class="sw" style="background:#f7c948"></i>Impresses the crystal ball'+(S.tails===2?' (either end)':'')+'</span><span><i class="sw" style="background:'+other+'"></i>Could easily be luck</span></div>';
+}
+
+/* ---------- small helpers for display ---------- */
+function symbolChip(v,cls,mid){return '<span class="chip esp '+(mid?'mid ':'')+(cls||'')+'">'+symSVG(v,mid?76:128,ESPCOL[v])+'</span>'}
+function guessChip(v,cls){
+  const g=S.game;
+  if(g==='coin')return '<span class="chip coin '+(cls||'')+'">'+(v?'T':'H')+'</span>';
+  if(g==='cards')return '<span class="chip '+(v?'black':'red')+' '+(cls||'')+'">'+(v?'\u2660\u2663':'\u2665\u2666')+'</span>';
+  return symbolChip(v,cls,S.game==='esp25');
+}
+function truthChip(i,hidden,cls,small){
+  const g=S.game;
+  if(hidden){
+    if(g==='coin')return '<span class="chip coin hid">?</span>';
+    if(g==='esp5'||(g==='esp25'&&!small))return '<span class="chip esp'+(g==='esp25'?' mid':'')+' hid">?</span>';
+    return '<span class="chip hid">?</span>';
+  }
+  if(g==='cards'){const c=S.deck[i];const red=(c.s===1||c.s===2);return '<span class="chip '+(red?'red':'black')+' '+(cls||'')+'">'+RANKS[c.r]+SUITS[c.s]+'</span>'}
+  return guessChip(S.truth[i],cls);
+}
+const nav=()=>'<div class="row"><button class="btn sm alt" onclick="go(\'home\')">&#8962; Home</button><button class="btn sm alt" onclick="goTally()">Class tally</button></div>';
+function controls(){
+  return '<div class="lbl">How hard should the crystal ball be to impress? (significance level)</div><div class="row">'+
+   [.1,.05,.03,.01].map(a=>'<button class="btn sm opt '+(S.alpha===a?'on':'')+'" onclick="setAlpha('+a+')">'+Math.round(a*100)+'%</button>').join('')+'</div>'+
+   '<div class="lbl">What are you testing for?</div><div class="row">'+
+   '<button class="btn sm opt '+(S.tails===1?'on':'')+'" onclick="setTails(1)">Better than chance (1-tailed)</button>'+
+   '<button class="btn sm opt '+(S.tails===2?'on':'')+'" onclick="setTails(2)">Different from chance (2-tailed)</button></div>';
+}
+function hypBox(){
+  const g=GAMES[S.game];
+  return '<div class="hyp"><div><b>Nothing psychic going on (H&#8320;):</b> you are just guessing &ndash; chance of a correct guess is '+g.chance+'.</div><div><b>Psychic powers? (H&#8321;):</b> '+
+   (S.tails===1?'you really can predict better than chance.':'you are not just guessing &ndash; you do better <i>or worse</i> than chance.')+'</div></div>';
+}
+
+/* ---------- navigation ---------- */
+function clearTimer(){if(S.timer){clearInterval(S.timer);S.timer=null}}
+function go(s){clearTimer();S.screen=s;render()}
+function goTally(){clearTimer();if(S.game&&S.tally[key()]&&S.tally[key()].length)S.tkey=key();S.screen='tally';render()}
+function pick(k){S.game=k;S.n=GAMES[k].n;S.mode='live';S.err='';S.rec=0;S.screen='setup';render()}
+function setN(n){S.n=n;render()}
+function setMode(m){S.mode=m;S.err='';render()}
+function setAlpha(a){S.alpha=a;render()}
+function setTails(t){S.tails=t;render()}
+
+/* ---------- screens ---------- */
+function home(){
+  const tents=Object.keys(GAMES).map(k=>{const g=GAMES[k];return '<button class="tent" onclick="pick(\''+k+'\')"><div class="ti">'+g.icon+'</div><div class="tt">'+g.title+'</div><div class="tb">'+g.blurb+'</div></button>'}).join('');
+  return '<div class="panel"><h2>Choose your attraction</h2><div class="tents">'+tents+'</div></div>'+
+  '<div class="row c"><button class="btn alt" onclick="goTally()">Class tally</button></div>'+
+  '<details class="panel"><summary>Teacher\'s notes: what is going on underneath</summary><ul>'+
+  '<li>Every attraction is a hypothesis test in costume: H&#8320; is "just guessing", and the crystal ball is only impressed if the score falls in the gold zone.</li>'+
+  '<li>Pupils choose the significance level (10, 5, 3 or 1%) and 1- or 2-tailed <i>before</i> playing. The results screen lets you change them afterwards, which makes a good discussion of why you must not.</li>'+
+  '<li>The class tally compares the class scores with what luck alone would produce. With 30 pure guessers at 5%, a "psychic" or two is normal.</li>'+
+  '<li>Scores come in steps, so the true chance of a fluke is usually below the level chosen (coin, 20 flips, 5% one-tailed: 15 or more, a fluke rate of about 2.1%).</li>'+
+  '<li>2-tailed brings in the anti-psychic, who is just as unlikely as a psychic.</li>'+
+  '<li>ESP line-up: exactly four right is impossible. Three or more happens about 9% of the time, so it only impresses at 10%. At 5%, 3% and 1% only a perfect line-up counts (1 in 120).</li>'+
+  '<li>Red/black and the full ESP pack are treated as independent guesses. A real pack has a fixed split, which makes only a tiny difference at these sample sizes.</li>'+
+  '<li>"Real coins and cards" mode lets pupils type in scores from hands-on trials.</li>'+
+  '<li>For a whole class at once: pick an attraction and choose "Whole class: hands up". Pupils write their predictions on paper, you reveal the sealed sequence, they mark themselves, then ask "Hands up if you scored 0? 1? 2?&hellip;" and type in each total. The chart and the "how many would luck alone give?" comparison update straight away, and "Play another round" starts again.</li></ul></details>';
+}
+
+function setup(){
+  const g=GAMES[S.game];
+  const nBtns=g.ns.length>1?'<div class="lbl">How many '+g.unit+'?</div><div class="row">'+g.ns.map(n=>'<button class="btn sm opt '+(S.n===n?'on':'')+'" onclick="setN('+n+')">'+n+'</button>').join('')+'</div>':'';
+  const modeBtns='<div class="lbl">How will you play?</div><div class="row"><button class="btn sm opt '+(S.mode==='live'?'on':'')+'" onclick="setMode(\'live\')">Let the crystal ball choose</button><button class="btn sm opt '+(S.mode==='rec'?'on':'')+'" onclick="setMode(\'rec\')">Real coins / cards (type in the score)</button><button class="btn sm opt '+(S.mode==='hands'?'on':'')+'" onclick="setMode(\'hands\')">Whole class: hands up</button></div>';
+  let go2;
+  if(S.mode==='live')go2='<div class="row c"><button class="btn" onclick="startLive()">Gaze into the ball</button></div>';
+  else if(S.mode==='hands')go2='<div class="lbl">The whole class plays at once: everyone writes their predictions on paper, you reveal the sealed sequence, they mark themselves, then &ldquo;Hands up if you scored 0? 1? 2?&hellip;&rdquo; and you type in each total.</div><div class="row c"><button class="btn" onclick="startClass()">Start the class game</button><button class="btn sm alt" onclick="handsUp()">Skip to the counter</button></div>';
+  else go2='<div class="lbl">How many did you get right out of '+S.n+'?</div><div class="row"><input type="number" id="recIn" min="0" max="'+S.n+'" value="'+S.rec+'" oninput="S.rec=this.value">'+(S.game==='esp5'?'<span style="font-size:.9rem">(exactly four is impossible!)</span>':'')+'</div><div class="err">'+esc(S.err)+'</div><div class="row c"><button class="btn" onclick="consult()">Consult the crystal ball</button></div>';
+  return nav()+'<div class="panel"><h2>'+g.title+'</h2><div class="row"><input type="text" placeholder="Player name (optional)" value="'+esc(S.name)+'" oninput="S.name=this.value" maxlength="24"></div>'+nBtns+modeBtns+controls()+'<div class="lbl">The test:</div>'+hypBox()+'</div>'+go2;
+}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a}
+function startLive(){
+  genTruth();S.screen='play';render();
+}
+function genTruth(){
+  S.guesses=[];S.added=false;S.deck=[];
+  if(S.game==='coin')S.truth=Array.from({length:S.n},()=>Math.random()<.5?1:0);
+  else if(S.game==='cards'){const d=[];for(let s=0;s<4;s++)for(let r=0;r<13;r++)d.push({r:r,s:s});shuffle(d);S.deck=d.slice(0,S.n);S.truth=S.deck.map(c=>(c.s===1||c.s===2)?0:1)}
+  else if(S.game==='esp25'){const d=[];for(let i=0;i<25;i++)d.push(i%5);S.truth=shuffle(d)}
+  else S.truth=shuffle([0,1,2,3,4]);
+}
+function consult(){
+  const v=Number(S.rec);
+  if(S.rec===''||!Number.isInteger(v)||v<0||v>S.n){S.err='Please enter a whole number from 0 to '+S.n+'.';render();return}
+  if(S.game==='esp5'&&v===4){S.err='Four in the right place is impossible, so the fifth must be right too. Try again!';render();return}
+  S.added=false;goResult(v);
+}
+function guess(v){
+  if(S.guesses.length>=S.n)return;
+  if(S.game==='esp5'&&S.guesses.indexOf(v)>=0)return;
+  S.guesses.push(v);render();
+}
+function undo(){S.guesses.pop();render()}
+
+function play(){
+  const g=GAMES[S.game],n=S.n,k=S.guesses.length;
+  const hist='<div class="row c">'+S.guesses.map(v=>guessChip(v)).join('')+'</div>';
+  if(k>=n){
+    return nav()+'<div class="panel" style="text-align:center"><h2>Your predictions are sealed!</h2><p>The future has been decided. Are you ready?</p>'+hist+
+      '<div class="row c"><button class="btn" onclick="startReveal()">Reveal the future</button><button class="btn sm alt" onclick="undo()">Change my last one</button></div></div>';
+  }
+  let body;
+  if(S.game==='coin')body='<div class="row c"><button class="btn big alt" onclick="guess(0)"><span class="coinicon">H</span>Heads</button><button class="btn big alt" onclick="guess(1)"><span class="coinicon">T</span>Tails</button></div>';
+  else if(S.game==='cards')body='<div class="row c"><button class="btn big" onclick="guess(0)"><span style="font-size:2rem">\u2665\u2666</span>Red</button><button class="btn big" style="background:linear-gradient(#444,#111)" onclick="guess(1)"><span style="font-size:2rem">\u2660\u2663</span>Black</button></div>';
+  else if(S.game==='esp25')body='<div class="row c">'+[0,1,2,3,4].map(i=>'<button class="btn big card" onclick="guess('+i+')">'+symSVG(i,110,ESPCOL[i])+SYMN[i]+'</button>').join('')+'</div>';
+  else body='<div class="row c">'+[0,1,2,3,4].map(i=>'<button class="btn big card" '+(S.guesses.indexOf(i)>=0?'disabled':'')+' onclick="guess('+i+')">'+symSVG(i,110,ESPCOL[i])+SYMN[i]+'</button>').join('')+'</div>';
+  let head,extra='';
+  if(S.game==='esp5'){
+    head='Which card is in the <b>'+ORD[k]+'</b> place?';
+    extra='<div class="row c">'+[0,1,2,3,4].map(i=>'<div class="slot esp '+(i<k?'f':'')+'">'+(i<k?symSVG(S.guesses[i],128,ESPCOL[S.guesses[i]]):(i+1))+'</div>').join('')+'</div>';
+  }else{
+    head='Prediction <b>'+(k+1)+'</b> of '+n+': what is coming next?';
+    extra=hist;
+  }
+  return nav()+'<div class="panel" style="text-align:center"><h2>'+g.title+'</h2><p>'+head+'</p>'+extra+body+
+    (k>0?'<div class="row c"><button class="btn sm alt" onclick="undo()">Undo last</button></div>':'')+'</div>';
+}
+
+function startReveal(){
+  clearTimer();S.screen='reveal';S.revealIdx=0;S.score=S.guesses.reduce((a,v,i)=>a+(v===S.truth[i]?1:0),0);
+  const ms=S.n<=5?1000:(S.n<=12?450:250);
+  render();
+  S.timer=setInterval(()=>{
+    S.revealIdx++;render();
+    if(S.revealIdx>=S.n){clearTimer();setTimeout(()=>{if(S.screen==='reveal')goResult(S.score)},1100)}
+  },ms);
+}
+function skipReveal(){clearTimer();goResult(S.score)}
+function reveal(){
+  const n=S.n,idx=S.revealIdx;let right=0,cols='';
+  for(let i=0;i<n;i++){
+    const shown=i<idx,ok=S.guesses[i]===S.truth[i];if(shown&&ok)right++;
+    cols+='<div class="col">'+guessChip(S.guesses[i])+truthChip(i,!shown,shown?(ok?'right':'wrong'):'')+'<span class="mk '+(shown?(ok?'y':'n'):'')+'">'+(shown?(ok?'\u2713':'\u2717'):'')+'</span></div>';
+  }
+  return '<div class="panel" style="text-align:center"><h2>The crystal ball reveals&hellip;</h2><div class="lbl">Top row: your prediction. Middle row: what really happened.</div><div class="row c" style="gap:2px">'+cols+'</div><div class="score">Right so far: <b>'+right+'</b></div><div class="row c"><button class="btn sm alt" onclick="skipReveal()">Skip to the result</button></div></div>';
+}
+
+function addEntry(k,name,score){
+  if(!S.tally[k])S.tally[k]=[];
+  S.tally[k].push({name:name||('Player '+(S.tally[k].length+1)),score:score});save();
+}
+function goResult(score){
+  clearTimer();S.score=score;
+  if(!S.added){addEntry(key(),S.name.trim(),score);S.added=true}
+  S.screen='result';render();
+}
+
+function verdict(an){
+  const L=lvl();
+  const claim=S.tails===1?'you can predict better than chance':'your guessing differs from chance';
+  const sig=an.sigUp||an.sigLo;
+  const formal='There is '+(sig?'sufficient':'insufficient')+' evidence at the '+L+' level to suggest '+claim+(an.sigLo?' (you did worse than chance)':'')+'.';
+  if(an.sigUp)return{cls:'win',head:'The crystal ball is AMAZED!',formal:formal};
+  if(an.sigLo)return{cls:'anti',head:'Spooky! You are an anti-psychic!',formal:formal};
+  return{cls:'no',head:'The crystal ball is unconvinced.',formal:formal};
+}
+function resultStats(an,s){
+  let l1;
+  if(S.tails===1)l1='Chance of scoring '+s+' or more by pure luck: <b>'+pct(an.pUp)+'</b>';
+  else if(an.pUp<=an.pLo)l1='Chance of scoring '+s+' or more by pure luck: <b>'+pct(an.pUp)+'</b>';
+  else l1='Chance of scoring '+s+' or fewer by pure luck: <b>'+pct(an.pLo)+'</b>';
+  const a=an.a*100,aTxt=(Math.round(a*10)/10)+'%';
+  const l2=S.tails===1?'To impress the ball, that needs to be <b>'+aTxt+'</b> or less.':'The '+lvl()+' is shared between the two ends, so each end gets <b>'+aTxt+'</b>.';
+  const l3=an.c===null&&an.d===null?'At this level not even a perfect score could impress the crystal ball!':'With these settings a pure guesser is flagged about <b>'+pct(an.fluke)+'</b> of the time'+(Math.abs(an.fluke-S.alpha)>0.0005?' (not exactly '+lvl()+', because scores jump in steps).':'.');
+  return '<div class="stat">'+l1+'</div><div class="stat">'+l2+'</div><div class="stat">'+l3+'</div>';
+}
+function result(){
+  const pm=pmf(),s=S.score,an=analyse(pm,s,S.tails,S.alpha),v=verdict(an);
+  const g=GAMES[S.game];
+  const scoreTxt=S.game==='esp5'?'<b>'+s+'</b> of the 5 cards in the right place':'You scored <b>'+s+'</b> out of '+S.n;
+  return nav()+'<div class="panel"><h2>'+g.title+(S.name.trim()?' &ndash; '+esc(S.name.trim()):'')+'</h2><div class="score">'+scoreTxt+'</div>'+
+    '<div class="verdict '+v.cls+'"><h3>'+v.head+'</h3><div class="formal">'+v.formal+'</div></div>'+
+    chart(pm,an,s)+legend(an,false)+'<div style="margin-top:10px">'+resultStats(an,s)+'</div></div>'+
+    '<div class="panel"><h2>Change the settings</h2><div class="lbl">Watch the gold zone move. In a real test you must choose these <i>before</i> you see the result &ndash; why?</div>'+controls()+'</div>'+
+    '<div class="row c"><button class="btn" onclick="nextPlayer()">Next player</button><button class="btn alt" onclick="goTally()">Class tally</button></div>'+
+    '<details class="panel"><summary>Things to talk about</summary><ul>'+
+    '<li>Does being "significant" prove psychic powers? How often would a pure guesser get flagged?</li>'+
+    '<li>Why is it cheating to pick the level after seeing the score?</li>'+
+    '<li>If every pupil in the class plays, how many "psychics" would you expect by luck alone?</li>'+
+    '<li>When would a 2-tailed test be the right choice? What does an anti-psychic tell you?</li>'+
+    (S.game==='esp5'?'<li>Why is scoring exactly four impossible? What happens to the gold zone as you change the level?</li>':'<li>Why does the actual fluke rate not match the level exactly?</li>')+
+    '</ul></details>';
+}
+function nextPlayer(){S.name='';S.err='';S.rec=0;S.screen='setup';render()}
+
+function tallyScreen(){
+  const keys=Object.keys(S.tally).filter(k=>S.tally[k].length);
+  if(S.pend&&keys.indexOf(S.pend)<0&&S.tally[S.pend])keys.push(S.pend);
+  if(!keys.length)return nav()+'<div class="panel"><h2>Class tally</h2><p>No scores yet. Play a round (or type in scores from real coins and cards) and each result is added here automatically.</p></div>';
+  if(!S.tkey||keys.indexOf(S.tkey)<0)S.tkey=keys[0];
+  const k=S.tkey,parts=k.split('-'),gk=parts[0],n=Number(parts[1]);
+  const ent=S.tally[k],m=ent.length,pm=pmfFor(gk,n),an=analyse(pm,null,S.tails,S.alpha);
+  const counts=new Array(n+1).fill(0);ent.forEach(e=>{counts[e.score]++});
+  let flagged=0;
+  const rows=ent.filter(e=>!e.h).map((e,i)=>{const a=analyse(pm,e.score,S.tails,S.alpha);const f=a.sigUp||a.sigLo;return '<tr><td>'+esc(e.name)+'</td><td>'+e.score+'</td><td>'+(a.sigUp?'<b style="color:#f7c948">Psychic!</b>':a.sigLo?'<b style="color:#ff9aa8">Anti-psychic</b>':'&ndash;')+'</td></tr>'}).join('');
+  ent.forEach(e=>{const a=analyse(pm,e.score,S.tails,S.alpha);if(a.sigUp||a.sigLo)flagged++});
+  const exp=m*an.fluke;
+  const cells=counts.map((c,x)=>{const dis=(gk==='esp5'&&x===4);return '<div class="hc'+(dis?' dis':'')+'"><div class="hs">'+x+'</div><div class="hrow"><button class="btn sm opt" '+(dis?'disabled':'')+' onclick="bump(\''+k+'\','+x+',-1)">&minus;</button><input type="number" min="0" value="'+c+'" '+(dis?'disabled':'')+' onchange="setCount(\''+k+'\','+x+',this.value)"><button class="btn sm opt" '+(dis?'disabled':'')+' onclick="bump(\''+k+'\','+x+',1)">+</button></div></div>'}).join('');
+  const handsPanel='<div class="panel"><h2>Hands up!</h2><div class="lbl">&ldquo;Hands up if you scored 0? 1? 2?&hellip;&rdquo; Type each total, or use + and &minus;. The chart below updates as you go.</div><div class="hgrid">'+cells+'</div><div class="row c"><button class="btn sm alt" onclick="newRound(\''+k+'\')">Play another round</button></div></div>';
+  const keyBtns=keys.map(x=>'<button class="btn sm opt '+(x===k?'on':'')+'" onclick="S.tkey=\''+x+'\';render()">'+keyLabel(x)+'</button>').join('');
+  const summary='<div class="stat"><b>'+flagged+'</b> of <b>'+m+'</b> players impressed the crystal ball at the '+lvl()+' level ('+(S.tails===1?'1':'2')+'-tailed).</div>'+
+    '<div class="stat">If everyone were just guessing, we would expect about <b>'+(Math.round(exp*10)/10)+'</b> ('+pct(an.fluke)+' of players).</div>';
+  return nav()+'<div class="panel"><h2>Class tally</h2><div class="row">'+keyBtns+'</div></div>'+handsPanel+'<div class="panel">'+
+    chart(pm,an,null,{counts:counts,m:m})+legend(an,true)+'<div style="margin-top:10px">'+summary+'</div></div>'+
+    '<div class="panel"><h2>Settings</h2>'+controls()+'</div>'+
+    '<div class="panel"><h2>Scores</h2><table><tr><th>Player</th><th>Score</th><th>Verdict</th></tr>'+rows+'</table>'+
+    '<div class="row"><input type="text" id="mName" placeholder="Name (optional)" maxlength="24"><input type="number" id="mScore" min="0" max="'+n+'" placeholder="Score"><button class="btn sm alt" onclick="addManual()">Add score</button></div><div class="err">'+esc(S.err)+'</div>'+
+    '<div class="row"><button class="btn sm opt" onclick="undoEntry()">Remove last</button><button class="btn sm opt" onclick="clearTally()">Clear this tally</button></div></div>';
+}
+function addManual(){
+  const k=S.tkey,n=Number(k.split('-')[1]),gk=k.split('-')[0];
+  const v=Number(document.getElementById('mScore').value),nm=document.getElementById('mName').value.trim();
+  if(document.getElementById('mScore').value===''||!Number.isInteger(v)||v<0||v>n||(gk==='esp5'&&v===4)){S.err='Enter a possible whole-number score (0 to '+n+(gk==='esp5'?', not 4':'')+').';render();return}
+  S.err='';addEntry(k,nm,v);render();
+}
+function undoEntry(){const a=S.tally[S.tkey];if(a&&a.length){a.pop();save()}render()}
+function clearTally(){if(confirm('Clear all scores for this attraction?')){if(S.pend===S.tkey)S.pend=null;delete S.tally[S.tkey];S.tkey=null;save();render()}}
+
+function handsUp(){
+  clearTimer();const k=key();S.pend=k;if(!S.tally[k])S.tally[k]=[];S.tkey=k;S.screen='tally';render();
+}
+function setCount(k,x,v){
+  v=Math.max(0,Math.min(300,Math.floor(Number(v))||0));
+  const arr=S.tally[k]||(S.tally[k]=[]);
+  let cur=arr.filter(e=>e.score===x).length;
+  while(cur<v){arr.push({name:'Hands up',score:x,h:1});cur++}
+  while(cur>v){
+    let idx=-1;
+    for(let i=arr.length-1;i>=0;i--){if(arr[i].score===x&&arr[i].h){idx=i;break}}
+    if(idx<0)for(let i=arr.length-1;i>=0;i--){if(arr[i].score===x){idx=i;break}}
+    arr.splice(idx,1);cur--;
+  }
+  save();render();
+}
+function bump(k,x,d){const c=(S.tally[k]||[]).filter(e=>e.score===x).length;setCount(k,x,c+d)}
+
+function writeHow(){
+  const n=S.n;
+  if(S.game==='coin')return 'Write the numbers 1 to '+n+' down the page and put <b>H</b> or <b>T</b> next to each one.';
+  if(S.game==='cards')return 'Write the numbers 1 to '+n+' down the page and put <b>R</b> (red) or <b>B</b> (black) next to each one.';
+  if(S.game==='esp25')return 'Write the numbers 1 to 25 down the page and name one of the five symbols for each card.';
+  return 'Write down the order you think the five cards are in, using each symbol once.';
+}
+function symKey(){
+  return '<div class="row c" style="gap:8px">'+[0,1,2,3,4].map(i=>'<div class="col">'+symbolChip(i,'',false)+'<span style="font-size:1.05rem">'+SYMN[i]+'</span></div>').join('')+'</div>';
+}
+function startClass(){clearTimer();genTruth();S.revealIdx=0;S.screen='cplay';render()}
+function cplay(){
+  const n=S.n,g=GAMES[S.game];let hid='';
+  for(let i=0;i<n;i++)hid+='<div class="col"><span class="ix">'+(i+1)+'</span>'+truthChip(i,true,'',true)+'</div>';
+  return nav()+'<div class="panel" style="text-align:center"><h2>'+g.title+' &ndash; whole class</h2><p>Everyone, write down your predictions now.<br>'+writeHow()+'</p>'+(S.game==='esp25'||S.game==='esp5'?symKey():'')+
+    '<div class="lbl">The future is sealed:</div><div class="row c" style="gap:2px">'+hid+'</div>'+
+    '<div class="row c"><button class="btn" onclick="startClassReveal()">Reveal the future</button></div></div>';
+}
+function startClassReveal(){clearTimer();S.revealIdx=0;S.screen='creveal';render()}
+function nextCard(){if(S.revealIdx<S.n){S.revealIdx++;render()}}
+function showAll(){clearTimer();S.revealIdx=S.n;render()}
+function autoReveal(){
+  clearTimer();const ms=S.n<=5?1200:(S.n<=12?800:500);
+  S.timer=setInterval(()=>{S.revealIdx++;render();if(S.revealIdx>=S.n)clearTimer()},ms);
+}
+function creveal(){
+  const n=S.n,idx=S.revealIdx;let cols='';
+  for(let i=0;i<n;i++)cols+='<div class="col"><span class="ix">'+(i+1)+'</span>'+truthChip(i,i>=idx)+(S.game==='esp5'?'<span class="ix" style="font-size:1.05rem">'+(i<idx?SYMN[S.truth[i]]:'&nbsp;')+'</span>':'')+'</div>';
+  const big=(S.game==='esp25'&&idx>0)?'<div class="col" style="margin:10px auto"><span class="ix" style="font-size:1.2rem">Card '+idx+' of '+n+'</span>'+symbolChip(S.truth[idx-1],'',false)+'<span style="font-size:1.25rem">'+SYMN[S.truth[idx-1]]+'</span></div>':'';
+  const done=idx>=n;
+  const btns=done?'<div class="lbl">Now mark your own predictions and count how many you got right. Then &ndash; hands up!</div><div class="row c"><button class="btn" onclick="handsUp()">Open the hands-up counter</button></div>'
+    :'<div class="row c"><button class="btn" onclick="nextCard()">Next</button><button class="btn sm alt" onclick="autoReveal()">Auto-reveal</button><button class="btn sm alt" onclick="showAll()">Show all</button></div>';
+  return nav()+'<div class="panel" style="text-align:center"><h2>The crystal ball reveals&hellip;</h2>'+big+btns+'<div class="row c" style="gap:2px">'+cols+'</div></div>';
+}
+function newRound(k){
+  const a=k.split('-');S.game=a[0];S.n=Number(a[1]);
+  const arr=S.tally[k]||[];
+  if(arr.some(e=>e.h)){
+    if(!confirm('Start a new round? This clears the current hands-up counts.'))return;
+    S.tally[k]=arr.filter(e=>!e.h);save();
+  }
+  startClass();
+}
+
+function render(){
+  const f={home:home,setup:setup,play:play,reveal:reveal,cplay:cplay,creveal:creveal,result:result,tally:tallyScreen}[S.screen];
+  document.getElementById('app').innerHTML=f();
+}
+render();
+</script>
+</body>
+</html>
