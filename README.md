@@ -49,6 +49,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Toast | `toast/` |
 | Triangle Tangle | `triangle-tangle/` |
 | Trio | `trio/` |
+| Whack-A-Prime | `whack-a-prime/` |
 | Whale Watching | `whale-watching/` |
 | Wildlife Line-Up | `wildlife-line-up/` |
 

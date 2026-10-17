@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whack-A-Prime</title>
+
+<style>
+:root{
+    --skyH:clamp(110px,14vh,150px);
+    --wood1:#e9c98b; --wood2:#d4a95f; --woodEdge:#8a5a2b; --ink:#3b2412;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+    font-family:"Trebuchet MS",Verdana,Arial,sans-serif;
+    color:var(--ink);
+    background:#7ccf4f;
+    user-select:none;-webkit-user-select:none;
+    touch-action:manipulation;
+}
+.hidden{display:none!important}
+
+/* ---------- Garden scene ---------- */
+#scene{position:fixed;inset:0;z-index:0;overflow:hidden}
+#sky{position:absolute;left:0;right:0;top:0;height:calc(var(--skyH) + 10px);background:linear-gradient(#8fd3ff,#d9f2ff)}
+#sun{position:absolute;top:10px;right:190px;width:76px;height:76px;border-radius:50%;
+     background:radial-gradient(circle,#fffbd0 0,#ffe066 55%,#ffcc33 100%);
+     box-shadow:0 0 40px 18px rgba(255,230,120,.55)}
+.cloud{position:absolute;height:34px;width:110px;background:#fff;border-radius:40px;opacity:.95;animation:drift linear infinite}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:50px;height:50px;left:16px;top:-24px}
+.cloud::after{width:64px;height:64px;left:44px;top:-34px}
+@keyframes drift{from{transform:translateX(-220px)}to{transform:translateX(calc(100vw + 220px))}}
+#hedge{position:absolute;left:0;right:0;top:calc(var(--skyH) - 70px);height:56px;
+     background:
+        radial-gradient(circle at 25px 28px,#2f8a3a 26px,transparent 27px) 0 0/50px 56px repeat-x,
+        linear-gradient(#2f8a3a,#2a7a33) 0 30px/100% 26px no-repeat}
+#fence{position:absolute;left:0;right:0;top:calc(var(--skyH) - 46px);height:52px}
+#fence::before{content:"";position:absolute;inset:0;border-radius:8px 8px 0 0;
+     background:repeating-linear-gradient(90deg,#fffef6 0 28px,transparent 28px 38px)}
+#fence::after{content:"";position:absolute;left:0;right:0;top:14px;height:7px;background:#ece7d2;box-shadow:0 20px 0 #ece7d2}
+#lawn{position:absolute;left:0;right:0;top:calc(var(--skyH) + 4px);bottom:0;
+     background:
+        repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 90px,rgba(0,0,0,.04) 90px 180px),
+        linear-gradient(#8fdc5a,#4ea63a)}
+#flowers{position:absolute;inset:0;overflow:hidden}
+#flowers svg{position:absolute;height:auto}
+.fly{position:absolute;font-size:30px;z-index:3;pointer-events:none;animation:flutter linear infinite}
+@keyframes flutter{
+    0%{transform:translate(-80px,0) rotate(8deg)}
+    25%{transform:translate(25vw,-30px) rotate(-8deg)}
+    50%{transform:translate(55vw,25px) rotate(8deg)}
+    75%{transform:translate(85vw,-25px) rotate(-8deg)}
+    100%{transform:translate(110vw,10px) rotate(8deg)}
+}
+
+/* ---------- Layout ---------- */
+#app{position:relative;z-index:2;height:100%;display:flex;flex-direction:column}
+#hud{height:var(--skyH);display:flex;justify-content:space-between;align-items:flex-start;padding:10px 16px;gap:12px}
+.sign{background:linear-gradient(var(--wood1),var(--wood2));border:3px solid var(--woodEdge);border-radius:12px;
+      box-shadow:0 4px 0 #6e431c;padding:6px 16px;font-weight:bold;color:var(--ink);min-width:150px}
+.sign .big{font-size:24px;line-height:1.2}
+.sign .small{font-size:15px;opacity:.85}
+#bar{height:12px;border:2px solid var(--woodEdge);border-radius:8px;background:#fff7e0;overflow:hidden;margin-top:4px}
+#fill{height:100%;width:100%;background:linear-gradient(#7fe05a,#3fae2a);transition:width .1s linear}
+#fill.low{background:linear-gradient(#ff8a7a,#e03c2c)}
+#hudBtns{display:flex;gap:10px}
+#field{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:6px 10px 10px}
+#holes{display:flex;flex-wrap:wrap;justify-content:center;align-content:center}
+.holeWrap{position:relative}
+.holeWrap svg,.hero svg{width:100%;height:100%;display:block;overflow:visible}
+
+/* ---------- Holes and moles ---------- */
+.holeSvg .mole{transform:translateY(170px);transition:transform .18s ease-out;cursor:pointer}
+.holeSvg .mole.up{transform:none}
+.mole .f,.mole .pawUp{display:none}
+.mole.neutral .f-n,.mole.happy .f-h,.mole.sad .f-s{display:inline}
+.mole.happy .pawRest,.mole.sad .pawUp{display:none}
+.mole.happy .pawUp{display:inline}
+.mole .moleBody{transition:transform .3s}
+.mole.happy .moleBody{animation:hop .28s ease-in-out infinite alternate}
+.mole.sad .moleBody{transform:translateY(8px)}
+@keyframes hop{to{transform:translateY(-9px)}}
+.star{animation:pop .5s ease-out both;transform-box:fill-box;transform-origin:center}
+@keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.4)}100%{transform:scale(1)}}
+.tear{animation:tear 1s ease-in infinite}
+@keyframes tear{0%{transform:translateY(0);opacity:1}100%{transform:translateY(34px);opacity:0}}
+.float{position:absolute;left:50%;top:6%;font-size:clamp(24px,3.4vw,46px);font-weight:900;color:#fff;
+       text-shadow:0 3px 0 #1b6b1b,0 0 10px #1b6b1b;pointer-events:none;z-index:5;animation:floatUp .9s ease-out forwards}
+@keyframes floatUp{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-80px)}}
+
+/* ---------- Buttons ---------- */
+.btn{font:inherit;font-weight:700;border:3px solid #2e6b1f;background:linear-gradient(#7fe05a,#4cbc2f);color:#103a08;
+     border-radius:14px;padding:10px 26px;font-size:22px;cursor:pointer;box-shadow:0 4px 0 #2e6b1f}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #2e6b1f}
+.btn.alt{background:linear-gradient(#f6e3b0,#e3c27c);border-color:var(--woodEdge);color:var(--ink);box-shadow:0 4px 0 var(--woodEdge)}
+.btn.alt:active{box-shadow:0 1px 0 var(--woodEdge)}
+.btn.small{padding:6px 14px;font-size:16px;border-radius:10px}
+
+/* ---------- Overlays ---------- */
+.overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+         background:rgba(20,70,20,.4);backdrop-filter:blur(3px);padding:10px}
+.card{background:#fffdf3;border:5px solid var(--woodEdge);border-radius:22px;box-shadow:0 8px 0 #6e431c,0 14px 40px rgba(0,0,0,.35);
+      padding:14px 28px 16px;text-align:center;max-width:780px;width:100%;max-height:96vh;overflow:auto}
+.card h1{margin:2px 0 4px;font-size:clamp(30px,5vw,50px);color:#2e7d32;text-shadow:0 3px 0 #c8e6b0}
+.hero{width:clamp(100px,17vh,165px);aspect-ratio:200/230;margin:0 auto}
+.how{margin:4px 0 10px;font-size:19px;line-height:1.35}
+.presets{margin-bottom:10px;font-size:17px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;text-align:left;margin:0 auto 14px;max-width:640px;font-size:18px}
+.settings label{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.settings input[type=number]{width:92px;font:inherit;font-size:18px;padding:5px 8px;border:2px solid #b79058;border-radius:8px;background:#fff}
+.settings label.chk{grid-column:1/-1;justify-content:center;cursor:pointer}
+.settings input[type=checkbox]{width:22px;height:22px}
+.brand{margin-top:10px;font-size:13px;letter-spacing:1px;color:#7a6a4a}
+.why{display:inline-block;margin-top:6px;padding:6px 14px;background:#e8f5e0;border:2px solid #9ccf7a;border-radius:12px;font-size:19px}
+.stats{display:flex;gap:12px;justify-content:center;margin:12px 0 14px;flex-wrap:wrap}
+.stat{background:linear-gradient(var(--wood1),var(--wood2));border:3px solid var(--woodEdge);border-radius:12px;padding:6px 18px;min-width:130px}
+.stat b{display:block;font-size:30px}
+.stat span{font-size:14px}
+#newBest{display:inline-block;background:#ffe066;border:3px solid #e0a800;border-radius:20px;padding:2px 14px;font-weight:bold;margin-bottom:6px}
+.btnrow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+</style>
+</head>
+
+<body>
+
+<!-- ======== Garden scene ======== -->
+<div id="scene">
+    <div id="sky">
+        <div id="sun"></div>
+        <div class="cloud" style="top:26px;animation-duration:110s;animation-delay:-20s"></div>
+        <div class="cloud" style="top:58px;transform:scale(.7);animation-duration:140s;animation-delay:-90s"></div>
+        <div class="cloud" style="top:14px;animation-duration:170s;animation-delay:-130s"></div>
+    </div>
+    <div id="hedge"></div>
+    <div id="fence"></div>
+    <div id="lawn"><div id="flowers"></div></div>
+    <div class="fly" style="top:42%;animation-duration:38s;animation-delay:-5s">🦋</div>
+    <div class="fly" style="top:68%;animation-duration:52s;animation-delay:-30s">🦋</div>
+</div>
+
+<!-- ======== Game ======== -->
+<div id="app">
+    <div id="hud">
+        <div class="sign">
+            <div class="big">Score: <span id="score">0</span></div>
+            <div class="small">Best: <span id="best">0</span></div>
+        </div>
+        <div class="sign">
+            <div class="big">Time: <span id="time">30</span></div>
+            <div id="bar"><div id="fill"></div></div>
+        </div>
+        <div id="hudBtns">
+            <button class="btn alt small" id="soundBtn" title="Sound on/off">🔊</button>
+            <button class="btn alt small" id="menuBtn">Menu</button>
+        </div>
+    </div>
+    <div id="field"><div id="holes"></div></div>
+</div>
+
+<!-- ======== Title / settings ======== -->
+<div class="overlay" id="titleOv">
+    <div class="card">
+        <div class="hero" id="heroTitle"></div>
+        <h1>Whack-A-Prime</h1>
+        <p class="how">Tap the moles holding <b>prime numbers</b> and they cheer! Tap a number that isn't prime and the mole gets sad, and it's game over.</p>
+        <div class="presets">Quick set-up:
+            <button class="btn alt small" data-preset="easy">Easy</button>
+            <button class="btn alt small" data-preset="medium">Medium</button>
+            <button class="btn alt small" data-preset="hard">Hard</button>
+            <button class="btn alt small" data-preset="mega">Mega</button>
+        </div>
+        <div class="settings">
+            <label>Largest number <input type="number" id="maxNumber" value="50" min="10" max="200"></label>
+            <label>Mole stays up (seconds) <input type="number" id="visibleTime" value="1.2" min="0.3" max="5" step="0.1"></label>
+            <label>Number of holes <input type="number" id="holeCount" value="6" min="3" max="12"></label>
+            <label>Time limit (seconds) <input type="number" id="timeLimit" value="30" min="5" max="300"></label>
+            <label class="chk"><input type="checkbox" id="infinite"> Infinite play (only a mistake ends the game)</label>
+        </div>
+        <button class="btn" id="startBtn">Start</button>
+        <div class="brand">LOADSOFMATHS</div>
+    </div>
+</div>
+
+<!-- ======== End screen ======== -->
+<div class="overlay hidden" id="endOv">
+    <div class="card">
+        <div class="hero" id="heroEnd"></div>
+        <h1 id="endTitle"></h1>
+        <p class="how" id="endMsg"></p>
+        <div id="newBest" class="hidden">New best score!</div>
+        <div class="stats">
+            <div class="stat"><b id="stScore">0</b><span>Score</span></div>
+            <div class="stat"><b id="stWhacked">0</b><span>Primes cheered</span></div>
+            <div class="stat"><b id="stMissed">0</b><span>Primes missed</span></div>
+        </div>
+        <div class="btnrow">
+            <button class="btn" id="againBtn">Play again</button>
+            <button class="btn alt" id="settingsBtn">Settings</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+const $ = id => document.getElementById(id);
+const holesEl = $('holes'), fieldEl = $('field');
+
+let uid = 0, holes = [], cfg = null, P = [], C = [], lastNum = 0;
+let score = 0, playing = false, stats = {whacked:0, missed:0}, endAt = 0, best = 0;
+let spawnT = null, tickT = null, endT = null, soundOn = true, actx = null;
+
+const PRESETS = {
+    easy:  {max:30,  vis:2.0, holes:6,  time:45},
+    medium:{max:50,  vis:1.2, holes:6,  time:30},
+    hard:  {max:100, vis:0.9, holes:9,  time:30},
+    mega:  {max:200, vis:0.8, holes:12, time:30}
+};
+
+// ---------- Maths ----------
+function isPrime(n){
+    if (n < 2) return false;
+    for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
+    return true;
+}
+function factorsOf(n){
+    const f = [];
+    for (let i = 1; i <= n; i++) if (n % i === 0) f.push(i);
+    return f;
+}
+function why(n){
+    if (n === 1) return "1 has only one factor, and a prime needs exactly two.";
+    return `Factors of ${n}: ${factorsOf(n).join(', ')}. That's more than two, so it isn't prime.`;
+}
+
+// ---------- Artwork ----------
+function tuft(x, y, s){
+    return `<path transform="translate(${x} ${y}) scale(${s})" d="M-8 0 L-6 -16 L-2 -7 L0 -20 L3 -7 L7 -15 L8 0 Z" fill="#4fae2c"/>`;
+}
+function paw(cx, cy, dir, cls){
+    const d = dir; // -1 left, +1 right
+    return `<g class="${cls}">
+        <ellipse cx="${cx}" cy="${cy}" rx="15" ry="12" fill="#f0a3b3"/>
+        <path d="M${cx + d*-12} ${cy + 6} l${d*-4} 8 M${cx + d*-3} ${cy + 10} l${d*-2} 9 M${cx + d*6} ${cy + 10} l${d*1} 9"
+              stroke="#fff8ee" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    </g>`;
+}
+function holeSVG(id, num, cls){
+    const big = String(num).length >= 3;
+    const fs = big ? 26 : 32;
+    return `<svg class="holeSvg" viewBox="0 0 200 230" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <clipPath id="clip${id}"><rect x="0" y="0" width="200" height="178"/><ellipse cx="100" cy="178" rx="62" ry="22"/></clipPath>
+  <radialGradient id="soil${id}" cx="50%" cy="30%" r="80%"><stop offset="0" stop-color="#a86f38"/><stop offset="1" stop-color="#6e431c"/></radialGradient>
+</defs>
+<ellipse cx="100" cy="208" rx="98" ry="18" fill="rgba(0,0,0,.18)"/>
+<ellipse cx="100" cy="188" rx="94" ry="38" fill="url(#soil${id})"/>
+<ellipse cx="100" cy="178" rx="67" ry="26" fill="#5a3516"/>
+<ellipse cx="100" cy="178" rx="62" ry="22" fill="#24130a"/>
+<g clip-path="url(#clip${id})">
+ <g class="mole ${cls}">
+  <g class="moleBody">
+   <ellipse cx="100" cy="150" rx="52" ry="58" fill="#6f5645"/>
+   <ellipse cx="100" cy="162" rx="34" ry="42" fill="#8d725c"/>
+   <!-- raised arms (cheering) -->
+   <g class="pawUp">
+     <line x1="68" y1="132" x2="46" y2="86" stroke="#6f5645" stroke-width="15" stroke-linecap="round"/>
+     <line x1="132" y1="132" x2="154" y2="86" stroke="#6f5645" stroke-width="15" stroke-linecap="round"/>
+   </g>
+   <circle cx="100" cy="82" r="44" fill="#6f5645"/>
+   <circle cx="64" cy="50" r="10" fill="#6f5645"/><circle cx="64" cy="50" r="5" fill="#e9a3b0"/>
+   <circle cx="136" cy="50" r="10" fill="#6f5645"/><circle cx="136" cy="50" r="5" fill="#e9a3b0"/>
+   <ellipse cx="100" cy="96" rx="24" ry="19" fill="#9a7b64"/>
+   <ellipse cx="100" cy="85" rx="11" ry="8" fill="#f09bb0"/>
+   <ellipse cx="97" cy="82" rx="3.5" ry="2" fill="#fff" opacity=".8"/>
+   <path d="M80 98 L56 92 M80 102 L56 104 M120 98 L144 92 M120 102 L144 104" stroke="#3b2a1f" stroke-width="2" stroke-linecap="round"/>
+
+   <!-- neutral face -->
+   <g class="f f-n">
+     <circle cx="82" cy="70" r="5.5" fill="#1c1109"/><circle cx="118" cy="70" r="5.5" fill="#1c1109"/>
+     <circle cx="84" cy="68" r="1.9" fill="#fff"/><circle cx="120" cy="68" r="1.9" fill="#fff"/>
+     <path d="M89 108 Q100 117 111 108" stroke="#1c1109" stroke-width="3" fill="none" stroke-linecap="round"/>
+     <rect x="94" y="109" width="6" height="8" rx="1" fill="#fff" stroke="#cfcfcf"/>
+     <rect x="100" y="109" width="6" height="8" rx="1" fill="#fff" stroke="#cfcfcf"/>
+   </g>
+   <!-- happy face -->
+   <g class="f f-h">
+     <path d="M74 74 Q82 61 90 74" stroke="#1c1109" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+     <path d="M110 74 Q118 61 126 74" stroke="#1c1109" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+     <circle cx="70" cy="92" r="7" fill="#ff8fa3" opacity=".65"/><circle cx="130" cy="92" r="7" fill="#ff8fa3" opacity=".65"/>
+     <path d="M82 106 Q100 134 118 106 Z" fill="#7a1f2b"/>
+     <ellipse cx="100" cy="119" rx="8" ry="4.5" fill="#ff7a90"/>
+     <rect x="94" y="106" width="6" height="8" rx="1" fill="#fff" stroke="#cfcfcf"/>
+     <rect x="100" y="106" width="6" height="8" rx="1" fill="#fff" stroke="#cfcfcf"/>
+     <g transform="translate(26 44)"><path class="star" d="M0 -10 L2.9 -3 L10 -3 L4.2 1.6 L6.2 9 L0 4.5 L-6.2 9 L-4.2 1.6 L-10 -3 L-2.9 -3Z" fill="#ffd21f" stroke="#e0a800" stroke-width="1"/></g>
+     <g transform="translate(176 40)"><path class="star" d="M0 -10 L2.9 -3 L10 -3 L4.2 1.6 L6.2 9 L0 4.5 L-6.2 9 L-4.2 1.6 L-10 -3 L-2.9 -3Z" fill="#ffd21f" stroke="#e0a800" stroke-width="1"/></g>
+     <g transform="translate(100 12)"><path class="star" d="M0 -8 L2.3 -2.4 L8 -2.4 L3.4 1.3 L5 7.2 L0 3.6 L-5 7.2 L-3.4 1.3 L-8 -2.4 L-2.3 -2.4Z" fill="#ffd21f" stroke="#e0a800" stroke-width="1"/></g>
+   </g>
+   <!-- sad face -->
+   <g class="f f-s">
+     <circle cx="82" cy="72" r="6" fill="#1c1109"/><circle cx="118" cy="72" r="6" fill="#1c1109"/>
+     <circle cx="84" cy="70" r="2.4" fill="#fff"/><circle cx="120" cy="70" r="2.4" fill="#fff"/>
+     <path d="M71 62 L91 54 M109 54 L129 62" stroke="#1c1109" stroke-width="4" stroke-linecap="round"/>
+     <path d="M88 118 Q100 104 112 118" stroke="#1c1109" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+     <g transform="translate(78 82)"><path class="tear" d="M0 0 q-6 9 0 13 q6 -4 0 -13z" fill="#5bc0f8"/></g>
+     <g transform="translate(122 82)"><path class="tear" style="animation-delay:.45s" d="M0 0 q-6 9 0 13 q6 -4 0 -13z" fill="#5bc0f8"/></g>
+   </g>
+
+   <!-- number plaque -->
+   <rect x="62" y="112" width="76" height="50" rx="7" fill="#efc984" stroke="#8a5a2b" stroke-width="3.5"/>
+   <circle cx="69" cy="119" r="2" fill="#8a5a2b"/><circle cx="131" cy="119" r="2" fill="#8a5a2b"/>
+   <circle cx="69" cy="155" r="2" fill="#8a5a2b"/><circle cx="131" cy="155" r="2" fill="#8a5a2b"/>
+   <text class="numTxt" x="100" y="148" text-anchor="middle" font-size="${fs}" font-weight="700" fill="#2b1709" font-family="'Trebuchet MS',Arial,sans-serif">${num}</text>
+
+   <!-- paws -->
+   ${paw(52, 152, -1, 'pawRest')}${paw(148, 152, 1, 'pawRest')}
+   <g class="pawUp">${paw(46, 84, -1, '')}${paw(154, 84, 1, '')}</g>
+  </g>
+  <rect x="30" y="16" width="140" height="190" fill="transparent"/>
+ </g>
+</g>
+<path d="M38 178 A62 22 0 0 0 162 178" fill="none" stroke="#5a3516" stroke-width="7" stroke-linecap="round"/>
+<ellipse cx="30" cy="198" rx="7" ry="4" fill="#7b4d22"/><ellipse cx="172" cy="196" rx="6" ry="4" fill="#7b4d22"/>
+<ellipse cx="48" cy="214" rx="5" ry="3" fill="#7b4d22"/><ellipse cx="156" cy="212" rx="5" ry="3" fill="#7b4d22"/>
+${tuft(20, 208, 1)}${tuft(50, 224, .9)}${tuft(150, 224, .9)}${tuft(182, 207, 1)}${tuft(100, 227, .7)}
+</svg>`;
+}
+
+function flowerSVG(petal, centre){
+    let p = '';
+    for (let k = 0; k < 8; k++) p += `<ellipse cx="20" cy="9" rx="4.2" ry="8" fill="${petal}" transform="rotate(${k*45} 20 20)"/>`;
+    return `<svg viewBox="0 0 40 60"><path d="M20 22 C20 40 18 50 20 60" stroke="#2f7d32" stroke-width="3" fill="none"/>
+        <ellipse cx="14" cy="46" rx="7" ry="3" fill="#3c9a3c" transform="rotate(-25 14 46)"/>${p}<circle cx="20" cy="20" r="6" fill="${centre}"/></svg>`;
+}
+(function scatterFlowers(){
+    const box = $('flowers');
+    const cols = ['#ffffff','#ffd1e8','#ffe066','#d6b8ff','#ff9fb2'];
+    let seed = 12345;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 40; i++){
+        const c = cols[Math.floor(rnd() * cols.length)];
+        const d = document.createElement('div');
+        d.style.cssText = `position:absolute;left:${(rnd()*96).toFixed(1)}%;top:${(rnd()*92).toFixed(1)}%;width:${22 + Math.floor(rnd()*16)}px;opacity:.95`;
+        d.innerHTML = flowerSVG(c, c === '#ffe066' ? '#e08a00' : '#ffc400');
+        box.appendChild(d);
+    }
+})();
+
+// ---------- Sound ----------
+function tone(f, t, d, type, vol, fEnd){
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f, t);
+    if (fEnd) o.frequency.linearRampToValueAtTime(fEnd, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + d + 0.05);
+}
+function sfx(kind){
+    if (!soundOn) return;
+    try {
+        if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+        if (actx.state === 'suspended') actx.resume();
+        const t = actx.currentTime;
+        if (kind === 'cheer')      [523, 659, 784].forEach((f, i) => tone(f, t + i * .08, .18, 'triangle', .18));
+        else if (kind === 'sad'){  tone(392, t, .45, 'triangle', .2, 300); tone(311, t + .45, .7, 'triangle', .2, 200); }
+        else if (kind === 'end')   [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * .12, .25, 'triangle', .16));
+    } catch(e) {}
+}
+
+// ---------- Settings ----------
+function clamp(v, a, b, d){ v = Number(v); if (!isFinite(v)) v = d; return Math.min(b, Math.max(a, v)); }
+function readCfg(){
+    const c = {
+        max:   Math.round(clamp($('maxNumber').value, 10, 200, 50)),
+        vis:   clamp($('visibleTime').value, 0.3, 5, 1.2),
+        holes: Math.round(clamp($('holeCount').value, 3, 12, 6)),
+        time:  Math.round(clamp($('timeLimit').value, 5, 300, 30)),
+        inf:   $('infinite').checked
+    };
+    $('maxNumber').value = c.max; $('visibleTime').value = c.vis;
+    $('holeCount').value = c.holes; $('timeLimit').value = c.time;
+    return c;
+}
+function bestKey(c){ return `lom_whackaprime_best_${c.max}_${c.inf ? 'inf' : c.time}`; }
+function loadBest(c){ try { return Number(localStorage.getItem(bestKey(c))) || 0; } catch(e){ return 0; } }
+function saveBest(c, v){ try { localStorage.setItem(bestKey(c), String(v)); } catch(e){} }
+
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const p = PRESETS[b.dataset.preset];
+    $('maxNumber').value = p.max; $('visibleTime').value = p.vis;
+    $('holeCount').value = p.holes; $('timeLimit').value = p.time;
+    $('infinite').checked = false; $('timeLimit').disabled = false;
+}));
+$('infinite').addEventListener('change', () => { $('timeLimit').disabled = $('infinite').checked; });
+
+// ---------- Holes ----------
+function setMood(h, m){
+    h.mole.classList.remove('neutral', 'happy', 'sad');
+    h.mole.classList.add(m);
+}
+function buildHoles(n){
+    holesEl.innerHTML = '';
+    holes = [];
+    for (let i = 0; i < n; i++){
+        const wrap = document.createElement('div');
+        wrap.className = 'holeWrap';
+        wrap.innerHTML = holeSVG(uid++, '?', 'neutral');
+        const h = {wrap, mole: wrap.querySelector('.mole'), txt: wrap.querySelector('.numTxt'),
+                   state: 'idle', num: 0, prime: false, timer: null, t2: null};
+        h.mole.addEventListener('pointerdown', e => { e.preventDefault(); hit(h); });
+        holesEl.appendChild(wrap);
+        holes.push(h);
+    }
+}
+function layout(){
+    const n = holes.length;
+    if (!n) return;
+    const W = fieldEl.clientWidth - 20, H = fieldEl.clientHeight - 10;
+    let best = 0, bc = 1;
+    for (let c = 1; c <= n; c++){
+        const r = Math.ceil(n / c);
+        const s = Math.min(W / c, H / (r * 1.15));
+        if (s > best){ best = s; bc = c; }
+    }
+    best = Math.min(best, 280);
+    holesEl.style.width = (bc * best) + 'px';
+    holes.forEach(h => { h.wrap.style.width = best + 'px'; h.wrap.style.height = (best * 1.15) + 'px'; });
+}
+window.addEventListener('resize', layout);
+
+// ---------- Gameplay ----------
+function pickNumber(){
+    const showing = new Set(holes.filter(h => h.state !== 'idle').map(h => h.num));
+    let n;
+    for (let t = 0; t < 30; t++){
+        const arr = Math.random() < 0.45 ? P : C;
+        n = arr[Math.floor(Math.random() * arr.length)];
+        if (!showing.has(n) && n !== lastNum) break;
+    }
+    lastNum = n;
+    return n;
+}
+function popUp(){
+    const free = holes.filter(h => h.state === 'idle');
+    if (!free.length) return;
+    const h = free[Math.floor(Math.random() * free.length)];
+    h.num = pickNumber();
+    h.prime = isPrime(h.num);
+    h.txt.textContent = h.num;
+    h.txt.setAttribute('font-size', String(h.num).length >= 3 ? 26 : 32);
+    setMood(h, 'neutral');
+    h.state = 'up';
+    h.mole.classList.add('up');
+    h.timer = setTimeout(() => retract(h, true), cfg.vis * 1000);
+}
+function retract(h, missed){
+    clearTimeout(h.timer);
+    if (missed && h.prime && playing && h.state === 'up') stats.missed++;
+    h.state = 'down';
+    h.mole.classList.remove('up');
+    h.t2 = setTimeout(() => { h.state = 'idle'; setMood(h, 'neutral'); }, 300);
+}
+function floatText(h, txt){
+    const d = document.createElement('div');
+    d.className = 'float';
+    d.textContent = txt;
+    h.wrap.appendChild(d);
+    setTimeout(() => d.remove(), 900);
+}
+function hit(h){
+    if (!playing || h.state !== 'up') return;
+    clearTimeout(h.timer);
+    if (h.prime){
+        score += h.num;
+        stats.whacked++;
+        $('score').textContent = score;
+        h.state = 'cheer';
+        setMood(h, 'happy');
+        floatText(h, '+' + h.num);
+        sfx('cheer');
+        h.timer = setTimeout(() => retract(h, false), 650);
+    } else {
+        wrongEnd(h);
+    }
+}
+function scheduleSpawn(){
+    spawnT = setTimeout(() => {
+        if (!playing) return;
+        popUp();
+        scheduleSpawn();
+    }, 550 + Math.random() * 350);
+}
+function tick(){
+    const left = Math.max(0, (endAt - performance.now()) / 1000);
+    $('time').textContent = Math.ceil(left);
+    $('fill').style.width = (left / cfg.time * 100) + '%';
+    $('fill').classList.toggle('low', left <= 5);
+    if (left <= 0) timeUp();
+}
+function stopAll(){
+    clearTimeout(spawnT); clearInterval(tickT); clearTimeout(endT);
+    holes.forEach(h => { clearTimeout(h.timer); clearTimeout(h.t2); });
+}
+
+function startGame(){
+    stopAll();
+    cfg = readCfg();
+    P = []; C = [];
+    for (let i = 1; i <= cfg.max; i++) (isPrime(i) ? P : C).push(i);
+    lastNum = 0;
+    score = 0;
+    stats = {whacked: 0, missed: 0};
+    best = loadBest(cfg);
+    $('score').textContent = 0;
+    $('best').textContent = best;
+    $('titleOv').classList.add('hidden');
+    $('endOv').classList.add('hidden');
+    buildHoles(cfg.holes);
+    layout();
+    sfx('none');
+    playing = true;
+    if (cfg.inf){
+        $('time').textContent = '∞';
+        $('bar').style.visibility = 'hidden';
+    } else {
+        $('bar').style.visibility = 'visible';
+        $('fill').style.width = '100%';
+        $('fill').classList.remove('low');
+        endAt = performance.now() + cfg.time * 1000;
+        $('time').textContent = cfg.time;
+        tickT = setInterval(tick, 100);
+    }
+    spawnT = setTimeout(() => { popUp(); scheduleSpawn(); }, 400);
+}
+
+function wrongEnd(h){
+    playing = false;
+    clearTimeout(spawnT); clearInterval(tickT);
+    h.state = 'sad';
+    setMood(h, 'sad');
+    sfx('sad');
+    endT = setTimeout(() => showEnd('wrong', h), 1700);
+}
+function timeUp(){
+    playing = false;
+    clearTimeout(spawnT); clearInterval(tickT);
+    $('time').textContent = 0;
+    holes.forEach(h => { if (h.state === 'up') retract(h, false); });
+    sfx('end');
+    endT = setTimeout(() => showEnd('time', null), 700);
+}
+
+function showEnd(kind, h){
+    let newBest = false;
+    if (score > best){ best = score; saveBest(cfg, best); newBest = score > 0; }
+    $('best').textContent = best;
+    const wrong = kind === 'wrong';
+    const heroNum = wrong ? h.num : P[Math.floor(Math.random() * P.length)];
+    $('heroEnd').innerHTML = holeSVG(uid++, heroNum, 'up ' + (wrong ? 'sad' : 'happy'));
+    $('endTitle').textContent = wrong ? 'Oh no!' : "Time's up!";
+    $('endMsg').innerHTML = wrong
+        ? `<b>${h.num}</b> isn't a prime number.<br><span class="why">${why(h.num)}</span>`
+        : `Well whacked! You cheered up <b>${stats.whacked}</b> prime${stats.whacked === 1 ? '' : 's'}.`;
+    $('stScore').textContent = score;
+    $('stWhacked').textContent = stats.whacked;
+    $('stMissed').textContent = stats.missed;
+    $('newBest').classList.toggle('hidden', !newBest);
+    $('endOv').classList.remove('hidden');
+}
+
+// ---------- Buttons ----------
+$('startBtn').addEventListener('click', startGame);
+$('againBtn').addEventListener('click', startGame);
+$('settingsBtn').addEventListener('click', () => {
+    $('endOv').classList.add('hidden');
+    $('titleOv').classList.remove('hidden');
+});
+$('menuBtn').addEventListener('click', () => {
+    stopAll();
+    playing = false;
+    $('endOv').classList.add('hidden');
+    $('titleOv').classList.remove('hidden');
+});
+$('soundBtn').addEventListener('click', () => {
+    soundOn = !soundOn;
+    $('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+});
+
+// Title screen mascot
+$('heroTitle').innerHTML = holeSVG(uid++, 7, 'up happy');
+})();
+</script>
+
+</body>
+</html>
