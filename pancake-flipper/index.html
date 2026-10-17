@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pancake Flipper | LoadsOfMaths</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --lom-orange: #F47B3F;
+    --lom-orange-dark: #d65f24;
+    --lom-blue: #3F73B8;
+    --lom-blue-dark: #2c548c;
+    --lom-grey: #5b6068;
+    --lom-grey-dark: #2e3136;
+
+    --ink: #2b2118;
+    --muted: #5d6671;
+
+    --pancake-light: #f3c777;
+    --pancake: #d9923a;
+    --pancake-dark: #a8651c;
+    --pancake-done: #f7d98e;
+
+    --disc-size: 58px;
+
+    --font-head: "Super Bouncer", "Fredoka", "Trebuchet MS", "Segoe UI", sans-serif;
+    --font-body: "Anak Orang", "Fredoka", "Trebuchet MS", "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile { transition: none !important; }
+    .ticker-track { animation: none !important; }
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    font-family: var(--font-body);
+    /* blue and white gingham tablecloth */
+    background-color: #ffffff;
+    background-image:
+      linear-gradient(rgba(63,115,184,0.32) 50%, transparent 50%),
+      linear-gradient(90deg, rgba(63,115,184,0.32) 50%, transparent 50%);
+    background-size: 56px 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 50px;
+  }
+
+  /* ---------- LOM ticker ---------- */
+  .ticker {
+    width: 100%;
+    background: var(--lom-orange);
+    color: #fff;
+    overflow: hidden;
+    white-space: nowrap;
+    border-bottom: 4px solid var(--lom-blue);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  }
+  .ticker-track {
+    display: inline-block;
+    padding: 7px 0;
+    font-family: var(--font-head);
+    font-size: 17px;
+    letter-spacing: 0.04em;
+    animation: tick 28s linear infinite;
+  }
+  .ticker-track span { margin: 0 22px; }
+  .ticker-track .dot { margin: 0; opacity: 0.7; }
+  @keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ---------- Header ---------- */
+  .head {
+    margin-top: 34px;
+    text-align: center;
+    padding: 14px 30px 16px;
+    background: #fff;
+    border: 4px solid var(--lom-blue);
+    border-radius: 22px;
+    box-shadow: 0 6px 0 var(--lom-blue-dark), 0 12px 22px rgba(0,0,0,0.18);
+    max-width: calc(100% - 32px);
+  }
+  .eyebrow {
+    font-family: var(--font-head);
+    font-size: 13px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--lom-orange-dark);
+    margin-bottom: 2px;
+  }
+  h1 {
+    font-family: var(--font-head);
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--lom-blue);
+    margin: 0 0 6px;
+    line-height: 1.05;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 15.5px;
+    max-width: 440px;
+    line-height: 1.45;
+    margin: 0 auto;
+  }
+
+  /* ---------- Griddle ---------- */
+  .board-panel {
+    position: relative;
+    margin: 26px 16px 0;
+    background:
+      radial-gradient(circle at 25% 20%, rgba(255,255,255,0.10), transparent 55%),
+      linear-gradient(160deg, #4a4e55, var(--lom-grey-dark));
+    border: 6px solid var(--lom-orange);
+    border-radius: 26px;
+    padding: 100px 20px 40px;
+    box-shadow:
+      inset 0 4px 14px rgba(0,0,0,0.5),
+      0 6px 0 var(--lom-orange-dark),
+      0 16px 28px rgba(0,0,0,0.3);
+    width: calc(100% - 32px);
+    max-width: 720px;
+    min-height: 320px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  #board {
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+
+  @media (max-width: 480px) {
+    .board-panel { padding: 80px 10px 30px; min-height: 260px; }
+    h1 { font-size: 32px; }
+    .head { padding: 12px 18px 14px; }
+  }
+
+  .tile-slot {
+    position: relative;
+    width: var(--disc-size);
+    height: var(--disc-size);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, rgba(0,0,0,0.38), rgba(0,0,0,0.16) 70%, transparent 75%);
+  }
+
+  .tile {
+    position: relative;
+    width: var(--disc-size);
+    height: var(--disc-size);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: calc(var(--disc-size) * 0.4);
+    color: #4a2a06;
+    text-shadow: 0 1px 0 rgba(255,236,190,0.7);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    will-change: transform;
+    background:
+      radial-gradient(circle at 70% 72%, rgba(120,60,10,0.22) 0 8%, transparent 9%),
+      radial-gradient(circle at 28% 66%, rgba(120,60,10,0.18) 0 6%, transparent 7%),
+      radial-gradient(circle at 60% 25%, rgba(120,60,10,0.16) 0 5%, transparent 6%),
+      radial-gradient(circle at 32% 28%, var(--pancake-light), var(--pancake) 60%, var(--pancake-dark) 100%);
+    box-shadow:
+      0 3px 6px rgba(0,0,0,0.45),
+      inset 0 2px 2px rgba(255,255,255,0.45),
+      inset 0 -3px 5px rgba(90,40,0,0.35);
+    transition: filter .15s, box-shadow .15s;
+  }
+
+  .tile:hover { filter: brightness(1.07); }
+
+  /* correctly placed: a golden finish with a little pat of butter */
+  .tile.correct {
+    background:
+      radial-gradient(circle at 32% 28%, #fff0c4, var(--pancake-done) 60%, #e0a94d 100%);
+    box-shadow:
+      0 3px 6px rgba(0,0,0,0.45),
+      0 0 0 3px var(--lom-blue),
+      inset 0 2px 2px rgba(255,255,255,0.6),
+      inset 0 -3px 5px rgba(120,70,10,0.25);
+  }
+
+  .card {
+    width: calc(100% - 32px);
+    max-width: 480px;
+    margin-top: 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #fff;
+    border: 4px solid var(--lom-blue);
+    border-radius: 20px;
+    padding: 18px 20px;
+    box-shadow: 0 6px 0 var(--lom-blue-dark), 0 12px 22px rgba(0,0,0,0.15);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .stats {
+    display: flex;
+    gap: 22px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .stats b {
+    display: block;
+    color: var(--lom-blue);
+    font-family: var(--font-head);
+    font-size: 24px;
+    line-height: 1.1;
+  }
+
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  button { font-family: var(--font-head); -webkit-tap-highlight-color: transparent; }
+
+  button#newGameBtn {
+    background: var(--lom-orange);
+    color: #fff;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--lom-orange-dark);
+    transition: transform .1s, box-shadow .1s;
+  }
+  button#newGameBtn:hover { background: #f78a53; }
+  button#newGameBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--lom-orange-dark); }
+
+  button.secondary-btn {
+    background: #fff;
+    color: var(--lom-blue);
+    border: 3px solid var(--lom-blue);
+    padding: 8px 18px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--lom-blue-dark);
+    transition: transform .1s, box-shadow .1s, background .15s, color .15s;
+  }
+  button.secondary-btn:hover { background: var(--lom-blue); color: #fff; }
+  button.secondary-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--lom-blue-dark); }
+  button.secondary-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+    background: #fff;
+    color: var(--lom-blue);
+  }
+
+  button#tryAgainBtn {
+    background: var(--lom-blue);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--lom-blue-dark);
+    transition: transform .1s, box-shadow .1s;
+    align-self: center;
+  }
+  button#tryAgainBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--lom-blue-dark); }
+
+  @keyframes hintPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244,123,63,0.95), 0 3px 6px rgba(0,0,0,0.45), inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -3px 5px rgba(90,40,0,0.35); }
+    50% { box-shadow: 0 0 0 12px rgba(244,123,63,0), 0 3px 6px rgba(0,0,0,0.45), inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -3px 5px rgba(90,40,0,0.35); }
+  }
+  .tile.hint { animation: hintPulse 0.9s ease-out 3; }
+
+  .anim-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-toggle {
+    position: absolute; inset: 0;
+    background: #c9ced6;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: .2s;
+  }
+  .slider-toggle:before {
+    content: "";
+    position: absolute;
+    height: 18px; width: 18px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: .2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  input:checked + .slider-toggle { background: var(--lom-orange); }
+  input:checked + .slider-toggle:before { transform: translateX(20px); }
+
+  .speed-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  input[type=range] {
+    width: 110px;
+    accent-color: var(--lom-orange);
+  }
+
+  #message {
+    min-height: 24px;
+    font-family: var(--font-head);
+    color: var(--lom-orange-dark);
+    font-size: 19px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>www.loadsofmaths.co.uk</span><span class="dot">&bull;</span><span>LoadsOfMaths</span><span class="dot">&bull;</span><span>www.loadsofmaths.co.uk</span><span class="dot">&bull;</span><span>LoadsOfMaths</span><span class="dot">&bull;</span><span>www.loadsofmaths.co.uk</span><span class="dot">&bull;</span><span>LoadsOfMaths</span><span class="dot">&bull;</span>
+    <span>www.loadsofmaths.co.uk</span><span class="dot">&bull;</span><span>LoadsOfMaths</span><span class="dot">&bull;</span><span>www.loadsofmaths.co.uk</span><span class="dot">&bull;</span><span>LoadsOfMaths</span><span class="dot">&bull;</span><span>www.loadsofmaths.co.uk</span><span class="dot">&bull;</span><span>LoadsOfMaths</span><span class="dot">&bull;</span>
+  </div>
+</div>
+
+<div class="head">
+  <div class="eyebrow">Sorting Puzzle</div>
+  <h1>Pancake Flipper</h1>
+  <div class="subtitle">Tap a pancake to flip it and every pancake before it. Get the stack into order, 1 to 10, in as few flips as you can.</div>
+</div>
+
+<div class="board-panel">
+  <div id="board"></div>
+</div>
+
+<div class="card">
+  <div class="row">
+    <div class="btn-group">
+      <button id="newGameBtn">New Game</button>
+      <button id="hintBtn" class="secondary-btn">Hint</button>
+    </div>
+    <div class="stats">
+      <div><span>Flips</span><b id="moveCount">0</b></div>
+      <div><span>Target</span><b id="targetMoves">0</b></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="anim-toggle-group">
+      <label class="switch">
+        <input type="checkbox" id="animateToggle" checked>
+        <span class="slider-toggle"></span>
+      </label>
+      <span>Flip animation</span>
+    </div>
+    <div class="speed-controls">
+      <span>Slow</span>
+      <input type="range" id="speedSlider" min="1" max="5" value="3" step="1">
+      <span>Fast</span>
+    </div>
+  </div>
+
+  <div id="message"></div>
+  <button id="tryAgainBtn" style="display:none;">Try Again</button>
+</div>
+
+<script>
+const N = 10;
+let numbers = [];
+let initialArrangement = [];
+let moveCount = 0;
+let targetMoves = 0;
+let animating = false;
+let animateEnabled = true;
+let animSpeed = 3;
+
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const board = document.getElementById('board');
+const boardPanel = document.querySelector('.board-panel');
+const moveSpan = document.getElementById('moveCount');
+const targetSpan = document.getElementById('targetMoves');
+const messageDiv = document.getElementById('message');
+const newGameBtn = document.getElementById('newGameBtn');
+const hintBtn = document.getElementById('hintBtn');
+const tryAgainBtn = document.getElementById('tryAgainBtn');
+const animateToggle = document.getElementById('animateToggle');
+const speedSlider = document.getElementById('speedSlider');
+
+animateToggle.addEventListener('change', () => { animateEnabled = animateToggle.checked; });
+speedSlider.addEventListener('input', () => { animSpeed = parseInt(speedSlider.value, 10); });
+
+// Keeps all N pancakes on a single row by shrinking the disc size (and gap)
+// to fit whatever width the board panel actually has, rather than ever
+// wrapping to a second line.
+function resizeBoardToFit() {
+  const style = getComputedStyle(boardPanel);
+  const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const borderX = parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+  const available = boardPanel.clientWidth - paddingX;
+  const gapRatio = 0.28; // gap as a fraction of disc diameter
+  let disc = available / (N + (N - 1) * gapRatio);
+  disc = Math.max(26, Math.min(58, disc));
+  const gap = disc * gapRatio;
+  document.documentElement.style.setProperty('--disc-size', disc + 'px');
+  board.style.gap = gap + 'px';
+}
+window.addEventListener('resize', resizeBoardToFit);
+
+function shuffleArray(arr) {
+  let a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// --- Optimal solver (IDA* with the "gap" heuristic) -----------------------
+// Standard approach for the pancake-sorting problem (sorting by repeated
+// prefix reversals). A virtual pancake valued N+1 is appended after the last
+// position and never moves; the heuristic counts adjacent pairs (including
+// that virtual one) that aren't consecutive values, an admissible lower
+// bound on the flips still needed. IDA* with this heuristic finds the true
+// minimum number of flips quickly for N=10.
+
+function gapHeuristic(arr) {
+  const ext = arr.concat([arr.length + 1]);
+  let gap = 0;
+  for (let i = 0; i < ext.length - 1; i++) {
+    if (Math.abs(ext[i] - ext[i + 1]) > 1) gap++;
+  }
+  return gap;
+}
+
+function solveOptimal(startArr) {
+  let bound = gapHeuristic(startArr);
+  const path = [];
+  const maxBound = 40; // safety valve, never reached in practice for N=10
+
+  function search(arr, g, lastK) {
+    const h = gapHeuristic(arr);
+    const f = g + h;
+    if (f > bound) return f;
+    if (h === 0) return 'FOUND';
+    let min = Infinity;
+    for (let k = 1; k < arr.length; k++) {
+      if (k === lastK) continue; // flipping the same prefix twice in a row is always wasteful
+      const next = arr.slice(0, k + 1).reverse().concat(arr.slice(k + 1));
+      path.push(k);
+      const t = search(next, g + 1, k);
+      if (t === 'FOUND') return 'FOUND';
+      if (t < min) min = t;
+      path.pop();
+    }
+    return min;
+  }
+
+  while (bound <= maxBound) {
+    const t = search(startArr, 0, -1);
+    if (t === 'FOUND') return path.slice();
+    bound = t;
+  }
+  return null;
+}
+
+function initGame() {
+  numbers = shuffleArray([...Array(N).keys()].map(x => x + 1));
+  initialArrangement = numbers.slice();
+  moveCount = 0;
+  animating = false;
+  messageDiv.textContent = '';
+  tryAgainBtn.style.display = 'none';
+  moveSpan.textContent = moveCount;
+  targetSpan.textContent = '\u2026';
+  renderBoard();
+  // Defer the solve so the board renders first, then fill in the true optimum.
+  setTimeout(() => {
+    const solution = solveOptimal(numbers);
+    if (solution) {
+      targetMoves = solution.length;
+      targetSpan.textContent = targetMoves;
+    }
+  }, 10);
+}
+
+function renderBoard() {
+  board.innerHTML = '';
+  numbers.forEach((num, idx) => {
+    const slot = document.createElement('div');
+    slot.className = 'tile-slot';
+    const tile = document.createElement('div');
+    tile.className = 'tile' + (num === idx + 1 ? ' correct' : '');
+    tile.textContent = num;
+    tile.dataset.idx = idx;
+    tile.addEventListener('click', () => reversePrefix(idx));
+    slot.appendChild(tile);
+    board.appendChild(slot);
+  });
+  resizeBoardToFit();
+}
+
+function reversePrefix(k) {
+  if (animating) return;
+  animating = true;
+  moveCount++;
+  moveSpan.textContent = moveCount;
+
+  const finish = () => {
+    const slice = numbers.slice(0, k + 1).reverse();
+    numbers.splice(0, k + 1, ...slice);
+    renderBoard();
+    animating = false;
+    checkWin();
+  };
+
+  if (animateEnabled && !reduceMotion && k > 0) {
+    animateRotation(k, finish);
+  } else {
+    finish();
+  }
+}
+
+// Rotates the first k+1 pancakes 180 degrees as a single rigid arc about
+// the segment's centre point, like a spatula sweeping them over. Each
+// pancake revolves around the centre (mirroring the maths of an array
+// reversal), while its own orientation never rotates, so the number always
+// stays upright.
+function animateRotation(k, onComplete) {
+  const tiles = Array.from(board.children).slice(0, k + 1).map(slot => slot.firstChild);
+  const centers = tiles.map(t => t.parentElement.offsetLeft + t.offsetWidth / 2);
+  const segCenter = (Math.min(...centers) + Math.max(...centers)) / 2;
+  const offsets = centers.map(c => c - segCenter);
+
+  const maxAbsOffset = Math.max(...offsets.map(Math.abs), 1);
+  const capHeight = 150; // px, how high the widest swing is allowed to arc
+  const vScale = Math.min(1, capHeight / maxAbsOffset);
+
+  // Stagger: pancakes near the ends of the segment start (and finish) their
+  // swing slightly ahead of those near the centre, so the row keeps a sense
+  // of spacing throughout instead of bunching at the centre line.
+  const staggerFraction = 0.35;
+
+  const duration = (3 - 0.5 * animSpeed) * 1000; // speed 1 -> 2500ms, speed 5 -> 500ms
+  const start = performance.now();
+
+  tiles.forEach(t => { t.style.transition = 'none'; });
+
+  function frame(now) {
+    let globalT = (now - start) / duration;
+    if (globalT > 1) globalT = 1;
+
+    tiles.forEach((tile, i) => {
+      const o = offsets[i];
+      const extremity = Math.abs(o) / maxAbsOffset; // 1 at the ends, 0 at the centre
+      const delay = (1 - extremity) * staggerFraction;
+      let localT = (globalT - delay) / (1 - staggerFraction);
+      if (localT < 0) localT = 0;
+      if (localT > 1) localT = 1;
+      const angle = localT * Math.PI;
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+
+      const dx = o * (cosA - 1);
+      const dy = -o * sinA * vScale;
+      tile.style.transform = `translate(${dx}px, ${dy}px)`;
+      const lift = Math.abs(dy);
+      tile.style.zIndex = 100 + Math.round(lift);
+      tile.style.boxShadow =
+        `0 ${3 + lift * 0.15}px ${8 + lift * 0.25}px rgba(0,0,0,${0.40 + Math.min(0.25, lift * 0.0025)}), ` +
+        `inset 0 2px 2px rgba(255,255,255,0.45), inset 0 -3px 5px rgba(90,40,0,0.35)`;
+    });
+
+    if (globalT < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      tiles.forEach(tile => {
+        tile.style.transform = '';
+        tile.style.zIndex = '';
+        tile.style.boxShadow = '';
+        tile.style.transition = '';
+      });
+      onComplete();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function checkWin() {
+  if (numbers.every((val, idx) => val === idx + 1)) {
+    let text = `Sorted in ${moveCount} flips!`;
+    if (targetMoves && moveCount === targetMoves) text += ' Perfect \u2013 that\u2019s the minimum!';
+    messageDiv.textContent = text;
+    tryAgainBtn.style.display = 'inline-block';
+  }
+}
+
+newGameBtn.addEventListener('click', initGame);
+
+tryAgainBtn.addEventListener('click', () => {
+  numbers = initialArrangement.slice();
+  moveCount = 0;
+  animating = false;
+  messageDiv.textContent = '';
+  tryAgainBtn.style.display = 'none';
+  moveSpan.textContent = moveCount;
+  renderBoard();
+  // Target doesn't change on Try Again since it's the same starting arrangement.
+});
+
+hintBtn.addEventListener('click', () => {
+  if (animating) return;
+  const originalLabel = hintBtn.textContent;
+  hintBtn.textContent = 'Thinking\u2026';
+  hintBtn.disabled = true;
+  setTimeout(() => {
+    const solution = solveOptimal(numbers);
+    hintBtn.textContent = originalLabel;
+    hintBtn.disabled = false;
+    if (!solution || solution.length === 0) return; // already solved
+    const k = solution[0];
+    const tile = board.children[k].firstChild;
+    tile.classList.remove('hint');
+    void tile.offsetWidth; // restart the animation if it's already running
+    tile.classList.add('hint');
+  }, 10);
+});
+
+initGame();
+</script>
+
+</body>
+</html>
