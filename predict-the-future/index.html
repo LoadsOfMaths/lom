@@ -31,7 +31,9 @@ h2{margin:0 0 10px;color:var(--gold);font-size:1.5rem}
 .btn.opt{background:rgba(255,243,212,.1);border-color:var(--gold2);box-shadow:none;color:var(--cream)}
 .btn.opt.on{background:linear-gradient(#ffe08a,#e0a92b);color:#3a2500;border-color:#fff;text-shadow:none}
 .btn:disabled{opacity:.35;cursor:not-allowed}
-.tents{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.tents{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:900px){.tents{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.tents{grid-template-columns:1fr}}
 .tent{font:inherit;color:var(--cream);text-align:center;cursor:pointer;padding:0 0 14px;border:3px solid var(--gold);border-radius:14px;background:rgba(20,7,41,.6);overflow:hidden}
 .tent:before{content:"";display:block;height:22px;margin-bottom:10px;background:repeating-linear-gradient(90deg,var(--red) 0 22px,var(--cream) 22px 44px)}
 .tent:hover{background:rgba(247,201,72,.15)}
@@ -80,6 +82,39 @@ details ul{margin:8px 0 0 18px;padding:0;font-size:1rem;line-height:1.45}
 .btn.card{background:var(--cream);color:#3a2500;text-shadow:none;border-color:var(--gold);box-shadow:0 4px 0 #8a6414}
 .btn.card:disabled{opacity:.25}
 .slot.esp{width:152px;height:192px;border-radius:14px;font-size:3rem}
+.die{display:inline-block;margin:3px;line-height:0;border-radius:16px;vertical-align:middle}
+.die.hid{display:inline-flex;align-items:center;justify-content:center;line-height:1;border-radius:14px;background:repeating-linear-gradient(45deg,#4a2a8a 0 6px,#3a1f70 6px 12px);color:#cbb8ff;border:2px solid var(--gold2);font-weight:bold}
+.die.slot0{border:3px dashed var(--gold2)}
+.die.hit{outline:4px solid #4ade80;outline-offset:2px}
+.die.new{animation:tumble .7s ease-out}
+@keyframes tumble{0%{transform:rotate(-200deg) scale(.4);opacity:0}70%{transform:rotate(12deg) scale(1.08);opacity:1}100%{transform:none}}
+.rollrow{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center;justify-content:center;margin:10px 0;padding:8px;border-radius:12px;background:rgba(0,0,0,.2)}
+.lb{display:inline-grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 32% 26%,#ffffffcc 0,#ffffff00 32%),var(--c,#f4f4f4);box-shadow:0 3px 7px #0007,inset -4px -6px 10px #0004;margin:3px;flex:none}
+.lb b{background:#fff;color:#111;border-radius:50%;width:58%;height:58%;display:grid;place-items:center;line-height:1}
+.lb.hit{outline:4px solid #4ade80;outline-offset:2px}
+.lb.hidb{background:repeating-linear-gradient(45deg,#4a2a8a 0 6px,#3a1f70 6px 12px);box-shadow:none;border:2px dashed var(--gold2)}
+.lb.hidb b{background:none;color:#cbb8ff}
+.ng{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:640px;margin:12px auto}
+.nb{font:inherit;font-weight:bold;font-size:1.1rem;aspect-ratio:1;border-radius:50%;border:2px solid var(--gold2);background:rgba(255,243,212,.1);color:var(--cream);cursor:pointer;padding:0}
+.nb.on{background:var(--gold);color:#3a2500;border-color:#fff}
+.drum{width:150px;height:150px;margin:8px auto;border-radius:50%;border:8px solid #c9d3ea;position:relative;overflow:hidden;background:radial-gradient(circle at 35% 30%,#ffffff22,#ffffff08 55%,#0003);box-shadow:inset 0 0 30px #0006,0 6px 18px #0006}
+.drum:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 35%,#2f7fe0 0 9%,transparent 10%),radial-gradient(circle at 62% 28%,#e0529c 0 9%,transparent 10%),radial-gradient(circle at 48% 62%,#f0c419 0 9%,transparent 10%),radial-gradient(circle at 25% 68%,#2fae5f 0 9%,transparent 10%),radial-gradient(circle at 72% 60%,#8a4fd0 0 9%,transparent 10%),radial-gradient(circle at 50% 40%,#f4f4f4 0 9%,transparent 10%)}
+.drum.shake{animation:dshake .12s linear infinite}
+.drum.shake:before{animation:dspin .8s linear infinite}
+@keyframes dshake{0%{transform:translate(2px,0)}50%{transform:translate(-2px,2px)}100%{transform:translate(2px,0)}}
+@keyframes dspin{to{transform:rotate(360deg)}}
+table.odds{max-width:560px;margin:12px auto 0;font-size:.95rem}
+table.odds tr.zone td{background:rgba(247,201,72,.22)}
+.chip.cup{width:50px;font-size:1.4rem;color:#fff;border-color:#fff8;text-shadow:0 1px 2px #0008}
+.chip.wc{border-radius:50%;width:48px;min-width:0;font-size:1.25rem;border-color:#0006}
+.wb{font:inherit;font-weight:bold;font-size:1.6rem;width:70px;height:70px;border-radius:50%;border:4px solid var(--gold);cursor:pointer;box-shadow:0 4px 0 #0006;padding:0}
+.wb:active{transform:translateY(2px);box-shadow:0 2px 0 #0006}
+.wspin{animation:wspin 1.2s cubic-bezier(.12,.7,.25,1) both}
+@keyframes wspin{from{transform:rotate(0deg)}to{transform:rotate(var(--to))}}
+.lift{animation:lift .45s ease-out both}
+@keyframes lift{from{transform:translateY(0)}to{transform:translateY(-36px)}}
+.cshake{animation:cwig .16s linear infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes cwig{0%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-7px) rotate(4deg)}100%{transform:translateY(0) rotate(-4deg)}}
 .small{font-size:.8rem;opacity:.75;text-align:center;margin-top:20px}
 .err{color:#ff9aa8;margin:6px 0}
 svg text{fill:var(--cream);font-family:Georgia,serif}
@@ -105,6 +140,15 @@ svg text{fill:var(--cream);font-family:Georgia,serif}
 /* ---------- data ---------- */
 const SYMN=['Circle','Cross','Waves','Square','Star'];
 const ESPCOL=['#1f5fd1','#d62828','#7b2fbe','#1f9d3a','#e69500'];
+const PIPS={1:[[50,50]],2:[[28,28],[72,72]],3:[[28,28],[50,50],[72,72]],4:[[28,28],[72,28],[28,72],[72,72]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]],6:[[28,28],[72,28],[28,50],[72,50],[28,72],[72,72]]};
+function dieSVG(v,sz,cls){
+  if(v===0)return '<span class="die hid '+(cls||'')+'" style="width:'+sz+'px;height:'+sz+'px;font-size:'+Math.round(sz*.5)+'px">?</span>';
+  let p='';PIPS[v].forEach(c=>{p+='<circle cx="'+c[0]+'" cy="'+c[1]+'" r="9" fill="'+(v===1?'#c8102e':'#2a1a4a')+'"/>'});
+  return '<span class="die '+(cls||'')+'"><svg viewBox="0 0 100 100" width="'+sz+'" height="'+sz+'"><rect x="4" y="4" width="92" height="92" rx="16" fill="#fff3d4" stroke="#0005" stroke-width="3"/>'+p+'</svg></span>';
+}
+const LPAL=['#f4f4f4','#2f7fe0','#e0529c','#2fae5f','#f0c419','#8a4fd0'];
+function lball(n,sz,cls){return '<span class="lb '+(cls||'')+'" style="--c:'+LPAL[Math.min(5,Math.floor(n/10))]+';width:'+sz+'px;height:'+sz+'px;font-size:'+Math.round(sz*.34)+'px"><b>'+n+'</b></span>'}
+function lhid(sz){return '<span class="lb hidb" style="width:'+sz+'px;height:'+sz+'px;font-size:'+Math.round(sz*.34)+'px"><b>?</b></span>'}
 const ORD=['first','second','third','fourth','fifth'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const SUITS=['\u2660','\u2665','\u2666','\u2663'];
@@ -117,15 +161,52 @@ function symSVG(i,sz,col){
   else{const p=[];for(let k=0;k<10;k++){const r=k%2?6:16,a=-Math.PI/2+k*Math.PI/5;p.push((20+r*Math.cos(a)).toFixed(1)+','+(21+r*Math.sin(a)).toFixed(1))}b='<polygon points="'+p.join(' ')+'"/>'}
   return '<svg viewBox="0 0 40 40" width="'+sz+'" height="'+sz+'" fill="none" stroke="'+col+'" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">'+b+'</svg>';
 }
+/* cups and wheel */
+const CUPCOL=['#d62828','#1f5fd1','#1f9d3a'];
+const WCOL=['#d62828','#f77f00','#f7c948','#2fae5f','#1f5fd1','#7b2fbe','#e0529c','#5fd3c8','#3d3d4e','#f4f4f4'];
+const WTXT=['#fff','#2a1a4a','#2a1a4a','#fff','#fff','#fff','#fff','#2a1a4a','#fff','#2a1a4a'];
+const STAGE={cups:1,wheel:1};
+function cupInner(i){
+  return '<path d="M32 10H68L90 90H10Z" fill="'+CUPCOL[i]+'" stroke="#0007" stroke-width="3" stroke-linejoin="round"/><path d="M38 20L26 74" stroke="#fff7" stroke-width="5" stroke-linecap="round"/><rect x="6" y="84" width="88" height="11" rx="5.5" fill="#f7c948" stroke="#8a6414" stroke-width="2"/><circle cx="50" cy="52" r="16" fill="#fff3d4" stroke="#0005" stroke-width="2"/><text x="50" y="60" text-anchor="middle" font-size="24" font-weight="bold" style="fill:#2a1a4a">'+(i+1)+'</text>';
+}
+function cupSVG(i,sz){return '<svg viewBox="0 0 100 100" width="'+sz+'" height="'+sz+'">'+cupInner(i)+'</svg>'}
+function cupsStage(pos,shaking){
+  let s='<svg viewBox="0 0 380 150" width="100%" style="max-width:430px" role="img" aria-label="Three cups"><rect x="0" y="134" width="380" height="9" rx="4.5" fill="#8a6bd6"/>';
+  for(let i=0;i<3;i++){const x=20+120*i;
+    if(i===pos&&!shaking)s+='<circle cx="'+(x+50)+'" cy="123" r="11" fill="#f7c948" stroke="#8a6414" stroke-width="2"/><circle cx="'+(x+46)+'" cy="119" r="3.5" fill="#fff9"/>';
+  }
+  for(let i=0;i<3;i++){const x=20+120*i,up=(i===pos&&!shaking);
+    s+='<g transform="translate('+x+',38)"><g class="'+(up?'lift':(shaking?'cshake':''))+'" style="'+(up?'transform:translateY(-36px)':(shaking?'animation-duration:'+(0.15+i*0.03)+'s':''))+'">'+cupInner(i)+'</g></g>';
+  }
+  return s+'</svg>';
+}
+function wheelSVG(sz,v,spin){
+  const cx=120,cy=120,r=100;let seg='',lab='',dots='';
+  const pt=(a,rr)=>[cx+rr*Math.sin(a*Math.PI/180),cy-rr*Math.cos(a*Math.PI/180)];
+  for(let i=0;i<10;i++){
+    const p0=pt(i*36,r),p1=pt(i*36+36,r),m=pt(i*36+18,r*.68);
+    seg+='<path d="M'+cx+' '+cy+' L'+p0[0].toFixed(1)+' '+p0[1].toFixed(1)+' A'+r+' '+r+' 0 0 1 '+p1[0].toFixed(1)+' '+p1[1].toFixed(1)+' Z" fill="'+WCOL[i]+'" stroke="#2a1a4a" stroke-width="2"/>';
+    lab+='<text x="'+m[0].toFixed(1)+'" y="'+(m[1]+9).toFixed(1)+'" text-anchor="middle" font-size="26" font-weight="bold" style="fill:'+WTXT[i]+'">'+(i+1)+'</text>';
+  }
+  for(let k=0;k<20;k++){const d=pt(k*18,109);dots+='<circle cx="'+d[0].toFixed(1)+'" cy="'+d[1].toFixed(1)+'" r="3.2" fill="'+(k%2?'#fff3d4':'#f7c948')+'"/>'}
+  const th=v>=0?1080-(v*36+18):0;
+  return '<svg viewBox="0 0 240 240" width="'+sz+'" height="'+sz+'" role="img" aria-label="Prize wheel numbered 1 to 10"><g class="'+(spin?'wspin':'')+'" style="transform-origin:120px 120px;transform:rotate('+th+'deg);--to:'+th+'deg"><circle cx="120" cy="120" r="114" fill="#8a1c2e" stroke="#c8952a" stroke-width="5"/>'+dots+seg+lab+'</g><circle cx="120" cy="120" r="13" fill="#f7c948" stroke="#8a6414" stroke-width="3"/><path d="M107 0H133L120 28Z" fill="#fff3d4" stroke="#2a1a4a" stroke-width="3" stroke-linejoin="round"/></svg>';
+}
+function cupChip(v,cls){return '<span class="chip cup '+(cls||'')+'" style="background:'+CUPCOL[v]+'">'+(v+1)+'</span>'}
+function wheelChip(v,cls){return '<span class="chip wc '+(cls||'')+'" style="background:'+WCOL[v]+';color:'+WTXT[v]+'">'+(v+1)+'</span>'}
 const GAMES={
   coin:{title:'The Coin Toss',blurb:'Call heads or tails. Can you beat the coin?',ns:[10,20,30],n:20,p:.5,unit:'flips',icon:'<span class="coinicon">H</span><span class="coinicon">T</span>',chance:'1 in 2 each time'},
   cards:{title:'Red or Black?',blurb:'Name the colour of each card dealt from a shuffled pack.',ns:[10,20,26],n:20,p:.5,unit:'cards',icon:'<span style="color:#ff6b6b">\u2665</span><span>\u2660</span>',chance:'1 in 2 each time'},
   esp25:{title:'The Full ESP Pack',blurb:'25 cards, five symbols. Name every single one.',ns:[25],n:25,p:.2,unit:'cards',icon:symSVG(4,46,'#f7c948')+symSVG(2,46,'#f7c948'),chance:'1 in 5 each time'},
-  esp5:{title:'The ESP Line-Up',blurb:'Five cards in a row. Name the order!',ns:[5],n:5,unit:'cards',icon:symSVG(0,40,'#f7c948')+symSVG(1,40,'#f7c948')+symSVG(3,40,'#f7c948'),chance:'every order equally likely'}
+  esp5:{title:'The ESP Line-Up',blurb:'Five cards in a row. Name the order!',ns:[5],n:5,unit:'cards',icon:symSVG(0,40,'#f7c948')+symSVG(1,40,'#f7c948')+symSVG(3,40,'#f7c948'),chance:'every order equally likely'},
+  dice:{title:'Roll the Dice',blurb:'Name four different numbers for each of three rolls. How many turn up?',ns:[12],n:12,unit:'matches',icon:dieSVG(5,44)+dieSVG(2,44),chance:'the same whichever four numbers you pick',recLbl:'What was your total number of matches over the three rolls (out of 12)?'},
+  lotto:{title:'Lucky Lottery',blurb:'Pick six numbers from 59, then watch the balls come out.',ns:[6],n:6,unit:'numbers',icon:lball(7,44)+lball(23,44)+lball(48,44),chance:'the same whichever six numbers you pick',recLbl:'How many of your six numbers matched?'},
+  cups:{title:'Which Cup?',blurb:'Three cups, one ball. Which cup is it under?',ns:[6,12,18],n:12,p:1/3,unit:'rounds',icon:cupSVG(0,46)+cupSVG(1,46)+cupSVG(2,46),chance:'1 in 3 each time'},
+  wheel:{title:'Spin the Wheel',blurb:'Ten coloured segments. Call the number before it stops!',ns:[10,20],n:10,p:.1,unit:'spins',icon:wheelSVG(54,-1),chance:'1 in 10 each time'}
 };
 
 /* ---------- state ---------- */
-const S={screen:'home',game:null,n:20,mode:'live',alpha:.05,tails:1,name:'',guesses:[],truth:[],deck:[],rec:0,score:0,revealIdx:0,tally:{},tkey:null,added:false,timer:null,err:'',pend:null};
+const S={screen:'home',game:null,n:20,mode:'live',alpha:.05,tails:1,name:'',guesses:[],truth:[],deck:[],rec:0,score:0,revealIdx:0,tally:{},tkey:null,added:false,timer:null,err:'',pend:null,dg:[],cur:[],pick:[],anim:true,busy:false,shake:false,auto:false,spinning:false};
 try{const t=localStorage.getItem('cypf_tally');if(t)S.tally=JSON.parse(t)||{}}catch(e){}
 function save(){try{localStorage.setItem('cypf_tally',JSON.stringify(S.tally))}catch(e){}}
 const key=()=>S.game+'-'+S.n;
@@ -134,7 +215,20 @@ function keyLabel(k){const a=k.split('-');const g=GAMES[a[0]];return g?g.title+(
 
 /* ---------- statistics ---------- */
 function binom(n,p){const o=[];let c=1;for(let k=0;k<=n;k++){o.push(c*Math.pow(p,k)*Math.pow(1-p,n-k));c=c*(n-k)/(k+1)}return o}
-function pmfFor(g,n){return g==='esp5'?[44,45,20,10,0,1].map(x=>x/120):binom(n,GAMES[g].p)}
+function dicePmf(){
+  const one=[16,260,660,336,24].map(x=>x/1296);let pm=[1];
+  for(let r=0;r<3;r++){const nx=new Array(pm.length+4).fill(0);for(let i=0;i<pm.length;i++)for(let j=0;j<5;j++)nx[i+j]+=pm[i]*one[j];pm=nx}
+  return pm;
+}
+function lottoPmf(){
+  const C=(n,r)=>{let c=1;for(let i=1;i<=r;i++)c=c*(n-r+i)/i;return c};
+  const tot=C(59,6),o=[];for(let m=0;m<=6;m++)o.push(C(6,m)*C(53,6-m)/tot);return o;
+}
+function pmfFor(g,n){
+  if(g==='dice')return dicePmf();
+  if(g==='lotto')return lottoPmf();
+  return g==='esp5'?[44,45,20,10,0,1].map(x=>x/120):binom(n,GAMES[g].p);
+}
 function analyse(pm,s,tails,alpha){
   const n=pm.length-1,eps=1e-12,a=tails===1?alpha:alpha/2;
   const up=k=>{let t=0;for(let x=k;x<=n;x++)t+=pm[x];return t};
@@ -179,7 +273,7 @@ function chart(pm,an,obs,o){
     const step=n>15?2:1;
     if(x%step===0||x===n)s+='<text x="'+(bx+bw/2)+'" y="'+(H-Bm+18)+'" text-anchor="middle" font-size="13">'+x+'</text>';
   }
-  s+='<text x="'+(L+(W-L-R)/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="13">Number of correct predictions</text></svg>';
+  s+='<text x="'+(L+(W-L-R)/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="13">'+(o.xlabel||'Number of correct predictions')+'</text></svg>';
   return s;
 }
 function legend(an,counts){
@@ -193,6 +287,8 @@ function guessChip(v,cls){
   const g=S.game;
   if(g==='coin')return '<span class="chip coin '+(cls||'')+'">'+(v?'T':'H')+'</span>';
   if(g==='cards')return '<span class="chip '+(v?'black':'red')+' '+(cls||'')+'">'+(v?'\u2660\u2663':'\u2665\u2666')+'</span>';
+  if(g==='cups')return cupChip(v,cls);
+  if(g==='wheel')return wheelChip(v,cls);
   return symbolChip(v,cls,S.game==='esp25');
 }
 function truthChip(i,hidden,cls,small){
@@ -220,7 +316,7 @@ function hypBox(){
 }
 
 /* ---------- navigation ---------- */
-function clearTimer(){if(S.timer){clearInterval(S.timer);S.timer=null}}
+function clearTimer(){if(S.timer){clearInterval(S.timer);S.timer=null}S.auto=false;S.busy=false;S.shake=false;S.spinning=false}
 function go(s){clearTimer();S.screen=s;render()}
 function goTally(){clearTimer();if(S.game&&S.tally[key()]&&S.tally[key()].length)S.tkey=key();S.screen='tally';render()}
 function pick(k){S.game=k;S.n=GAMES[k].n;S.mode='live';S.err='';S.rec=0;S.screen='setup';render()}
@@ -241,6 +337,10 @@ function home(){
   '<li>Scores come in steps, so the true chance of a fluke is usually below the level chosen (coin, 20 flips, 5% one-tailed: 15 or more, a fluke rate of about 2.1%).</li>'+
   '<li>2-tailed brings in the anti-psychic, who is just as unlikely as a psychic.</li>'+
   '<li>ESP line-up: exactly four right is impossible. Three or more happens about 9% of the time, so it only impresses at 10%. At 5%, 3% and 1% only a perfect line-up counts (1 in 120).</li>'+
+  '<li>Roll the Dice: pupils name four different numbers for each of three rolls, and the score is how many of their numbers turn up (up to 4 per roll, 12 in total). The odds come from all 1,296 outcomes of four dice, combined over three rolls. Naming the exact combination in one roll is 1 in 54, and the average total is about 6 out of 12.</li>'+
+  '<li>Lucky Lottery: six numbers from 59, scored by how many match the six drawn balls (the bonus ball is not used). Scores of 0 or 1 make up about 89% of results, three or more is about 1 in 92, and four or more about 1 in 2,100. A "1 in N" table sits under the chart because the tail bars are too small to see.</li>'+
+  '<li>Which Cup?: a one-in-three guess each round, so a typical 12-round score is 4. At 5% one-tailed you need 8 or more (a fluke rate of about 1.9%); at 1% you need 9 or more.</li>'+
+  '<li>Spin the Wheel: ten equal segments, a one-in-ten guess each spin. With 10 spins the average is 1, about 35% of players score 0, and 4 or more is needed at 5% and 3% (a fluke rate of about 1.3%). The small chance of success makes this one a good place to talk about rare events.</li>'+
   '<li>Red/black and the full ESP pack are treated as independent guesses. A real pack has a fixed split, which makes only a tiny difference at these sample sizes.</li>'+
   '<li>"Real coins and cards" mode lets pupils type in scores from hands-on trials.</li>'+
   '<li>For a whole class at once: pick an attraction and choose "Whole class: hands up". Pupils write their predictions on paper, you reveal the sealed sequence, they mark themselves, then ask "Hands up if you scored 0? 1? 2?&hellip;" and type in each total. The chart and the "how many would luck alone give?" comparison update straight away, and "Play another round" starts again.</li></ul></details>';
@@ -253,16 +353,22 @@ function setup(){
   let go2;
   if(S.mode==='live')go2='<div class="row c"><button class="btn" onclick="startLive()">Gaze into the ball</button></div>';
   else if(S.mode==='hands')go2='<div class="lbl">The whole class plays at once: everyone writes their predictions on paper, you reveal the sealed sequence, they mark themselves, then &ldquo;Hands up if you scored 0? 1? 2?&hellip;&rdquo; and you type in each total.</div><div class="row c"><button class="btn" onclick="startClass()">Start the class game</button><button class="btn sm alt" onclick="handsUp()">Skip to the counter</button></div>';
-  else go2='<div class="lbl">How many did you get right out of '+S.n+'?</div><div class="row"><input type="number" id="recIn" min="0" max="'+S.n+'" value="'+S.rec+'" oninput="S.rec=this.value">'+(S.game==='esp5'?'<span style="font-size:.9rem">(exactly four is impossible!)</span>':'')+'</div><div class="err">'+esc(S.err)+'</div><div class="row c"><button class="btn" onclick="consult()">Consult the crystal ball</button></div>';
-  return nav()+'<div class="panel"><h2>'+g.title+'</h2><div class="row"><input type="text" placeholder="Player name (optional)" value="'+esc(S.name)+'" oninput="S.name=this.value" maxlength="24"></div>'+nBtns+modeBtns+controls()+'<div class="lbl">The test:</div>'+hypBox()+'</div>'+go2;
+  else go2='<div class="lbl">'+(g.recLbl||('How many did you get right out of '+S.n+'?'))+'</div><div class="row"><input type="number" id="recIn" min="0" max="'+S.n+'" value="'+S.rec+'" oninput="S.rec=this.value">'+(S.game==='esp5'?'<span style="font-size:.9rem">(exactly four is impossible!)</span>':'')+'</div><div class="err">'+esc(S.err)+'</div><div class="row c"><button class="btn" onclick="consult()">Consult the crystal ball</button></div>';
+  return nav()+'<div class="panel"><h2>'+g.title+'</h2><div class="row"><input type="text" placeholder="Player name (optional)" value="'+esc(S.name)+'" oninput="S.name=this.value" maxlength="24"></div>'+nBtns+modeBtns+animBtns()+controls()+'<div class="lbl">The test:</div>'+hypBox()+'</div>'+go2;
 }
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a}
 function startLive(){
+  if(S.game==='dice'){genTruth();S.dg=[];S.cur=[];S.screen='dplay';render();return}
+  if(S.game==='lotto'){genTruth();S.pick=[];S.screen='lplay';render();return}
   genTruth();S.screen='play';render();
 }
 function genTruth(){
   S.guesses=[];S.added=false;S.deck=[];
+  if(S.game==='dice'){S.truth=[0,1,2].map(()=>[0,0,0,0].map(()=>1+Math.floor(Math.random()*6)).sort((a,b)=>a-b));return}
+  if(S.game==='lotto'){S.truth=shuffle(Array.from({length:59},(_,i)=>i+1)).slice(0,6);return}
+  if(S.game==='cups'){S.truth=Array.from({length:S.n},()=>Math.floor(Math.random()*3));return}
+  if(S.game==='wheel'){S.truth=Array.from({length:S.n},()=>Math.floor(Math.random()*10));return}
   if(S.game==='coin')S.truth=Array.from({length:S.n},()=>Math.random()<.5?1:0);
   else if(S.game==='cards'){const d=[];for(let s=0;s<4;s++)for(let r=0;r<13;r++)d.push({r:r,s:s});shuffle(d);S.deck=d.slice(0,S.n);S.truth=S.deck.map(c=>(c.s===1||c.s===2)?0:1)}
   else if(S.game==='esp25'){const d=[];for(let i=0;i<25;i++)d.push(i%5);S.truth=shuffle(d)}
@@ -292,13 +398,15 @@ function play(){
   if(S.game==='coin')body='<div class="row c"><button class="btn big alt" onclick="guess(0)"><span class="coinicon">H</span>Heads</button><button class="btn big alt" onclick="guess(1)"><span class="coinicon">T</span>Tails</button></div>';
   else if(S.game==='cards')body='<div class="row c"><button class="btn big" onclick="guess(0)"><span style="font-size:2rem">\u2665\u2666</span>Red</button><button class="btn big" style="background:linear-gradient(#444,#111)" onclick="guess(1)"><span style="font-size:2rem">\u2660\u2663</span>Black</button></div>';
   else if(S.game==='esp25')body='<div class="row c">'+[0,1,2,3,4].map(i=>'<button class="btn big card" onclick="guess('+i+')">'+symSVG(i,110,ESPCOL[i])+SYMN[i]+'</button>').join('')+'</div>';
+  else if(S.game==='cups')body='<div class="row c">'+cupsStage(-1,false)+'</div><div class="row c">'+[0,1,2].map(i=>'<button class="btn big card" onclick="guess('+i+')">'+cupSVG(i,100)+'Cup '+(i+1)+'</button>').join('')+'</div>';
+  else if(S.game==='wheel')body='<div class="row c">'+wheelSVG(210,-1,false)+'</div><div class="row c">'+[0,1,2,3,4,5,6,7,8,9].map(i=>'<button class="wb" style="background:'+WCOL[i]+';color:'+WTXT[i]+'" onclick="guess('+i+')">'+(i+1)+'</button>').join('')+'</div>';
   else body='<div class="row c">'+[0,1,2,3,4].map(i=>'<button class="btn big card" '+(S.guesses.indexOf(i)>=0?'disabled':'')+' onclick="guess('+i+')">'+symSVG(i,110,ESPCOL[i])+SYMN[i]+'</button>').join('')+'</div>';
   let head,extra='';
   if(S.game==='esp5'){
     head='Which card is in the <b>'+ORD[k]+'</b> place?';
     extra='<div class="row c">'+[0,1,2,3,4].map(i=>'<div class="slot esp '+(i<k?'f':'')+'">'+(i<k?symSVG(S.guesses[i],128,ESPCOL[S.guesses[i]]):(i+1))+'</div>').join('')+'</div>';
   }else{
-    head='Prediction <b>'+(k+1)+'</b> of '+n+': what is coming next?';
+    head=S.game==='cups'?'Round <b>'+(k+1)+'</b> of '+n+': which cup is the ball under?':(S.game==='wheel'?'Spin <b>'+(k+1)+'</b> of '+n+': where will the wheel stop?':'Prediction <b>'+(k+1)+'</b> of '+n+': what is coming next?');
     extra=hist;
   }
   return nav()+'<div class="panel" style="text-align:center"><h2>'+g.title+'</h2><p>'+head+'</p>'+extra+body+
@@ -307,6 +415,7 @@ function play(){
 
 function startReveal(){
   clearTimer();S.screen='reveal';S.revealIdx=0;S.score=S.guesses.reduce((a,v,i)=>a+(v===S.truth[i]?1:0),0);
+  if(STAGE[S.game]){render();stageAuto(600);return}
   const ms=S.n<=5?1000:(S.n<=12?450:250);
   render();
   S.timer=setInterval(()=>{
@@ -321,7 +430,7 @@ function reveal(){
     const shown=i<idx,ok=S.guesses[i]===S.truth[i];if(shown&&ok)right++;
     cols+='<div class="col">'+guessChip(S.guesses[i])+truthChip(i,!shown,shown?(ok?'right':'wrong'):'')+'<span class="mk '+(shown?(ok?'y':'n'):'')+'">'+(shown?(ok?'\u2713':'\u2717'):'')+'</span></div>';
   }
-  return '<div class="panel" style="text-align:center"><h2>The crystal ball reveals&hellip;</h2><div class="lbl">Top row: your prediction. Middle row: what really happened.</div><div class="row c" style="gap:2px">'+cols+'</div><div class="score">Right so far: <b>'+right+'</b></div><div class="row c"><button class="btn sm alt" onclick="skipReveal()">Skip to the result</button></div></div>';
+  return '<div class="panel" style="text-align:center"><h2>The crystal ball reveals&hellip;</h2>'+stageHTML()+'<div class="lbl">Top row: your prediction. Middle row: what really happened.</div><div class="row c" style="gap:2px">'+cols+'</div><div class="score">Right so far: <b>'+right+'</b></div><div class="row c"><button class="btn sm alt" onclick="skipReveal()">Skip to the result</button></div></div>';
 }
 
 function addEntry(k,name,score){
@@ -356,10 +465,10 @@ function resultStats(an,s){
 function result(){
   const pm=pmf(),s=S.score,an=analyse(pm,s,S.tails,S.alpha),v=verdict(an);
   const g=GAMES[S.game];
-  const scoreTxt=S.game==='esp5'?'<b>'+s+'</b> of the 5 cards in the right place':'You scored <b>'+s+'</b> out of '+S.n;
+  const scoreTxt=scoreText(s);
   return nav()+'<div class="panel"><h2>'+g.title+(S.name.trim()?' &ndash; '+esc(S.name.trim()):'')+'</h2><div class="score">'+scoreTxt+'</div>'+
     '<div class="verdict '+v.cls+'"><h3>'+v.head+'</h3><div class="formal">'+v.formal+'</div></div>'+
-    chart(pm,an,s)+legend(an,false)+'<div style="margin-top:10px">'+resultStats(an,s)+'</div></div>'+
+    chart(pm,an,s,{xlabel:xlg(S.game)})+legend(an,false)+(S.game==='lotto'?oddsStrip(pm,an):'')+'<div style="margin-top:10px">'+resultStats(an,s)+'</div></div>'+
     '<div class="panel"><h2>Change the settings</h2><div class="lbl">Watch the gold zone move. In a real test you must choose these <i>before</i> you see the result &ndash; why?</div>'+controls()+'</div>'+
     '<div class="row c"><button class="btn" onclick="nextPlayer()">Next player</button><button class="btn alt" onclick="goTally()">Class tally</button></div>'+
     '<details class="panel"><summary>Things to talk about</summary><ul>'+
@@ -367,7 +476,7 @@ function result(){
     '<li>Why is it cheating to pick the level after seeing the score?</li>'+
     '<li>If every pupil in the class plays, how many "psychics" would you expect by luck alone?</li>'+
     '<li>When would a 2-tailed test be the right choice? What does an anti-psychic tell you?</li>'+
-    (S.game==='esp5'?'<li>Why is scoring exactly four impossible? What happens to the gold zone as you change the level?</li>':'<li>Why does the actual fluke rate not match the level exactly?</li>')+
+    talkExtra()+
     '</ul></details>';
 }
 function nextPlayer(){S.name='';S.err='';S.rec=0;S.screen='setup';render()}
@@ -390,7 +499,7 @@ function tallyScreen(){
   const summary='<div class="stat"><b>'+flagged+'</b> of <b>'+m+'</b> players impressed the crystal ball at the '+lvl()+' level ('+(S.tails===1?'1':'2')+'-tailed).</div>'+
     '<div class="stat">If everyone were just guessing, we would expect about <b>'+(Math.round(exp*10)/10)+'</b> ('+pct(an.fluke)+' of players).</div>';
   return nav()+'<div class="panel"><h2>Class tally</h2><div class="row">'+keyBtns+'</div></div>'+handsPanel+'<div class="panel">'+
-    chart(pm,an,null,{counts:counts,m:m})+legend(an,true)+'<div style="margin-top:10px">'+summary+'</div></div>'+
+    chart(pm,an,null,{counts:counts,m:m,xlabel:xlg(gk)})+legend(an,true)+(gk==='lotto'?oddsStrip(pm,an):'')+'<div style="margin-top:10px">'+summary+'</div></div>'+
     '<div class="panel"><h2>Settings</h2>'+controls()+'</div>'+
     '<div class="panel"><h2>Scores</h2><table><tr><th>Player</th><th>Score</th><th>Verdict</th></tr>'+rows+'</table>'+
     '<div class="row"><input type="text" id="mName" placeholder="Name (optional)" maxlength="24"><input type="number" id="mScore" min="0" max="'+n+'" placeholder="Score"><button class="btn sm alt" onclick="addManual()">Add score</button></div><div class="err">'+esc(S.err)+'</div>'+
@@ -428,6 +537,8 @@ function writeHow(){
   if(S.game==='coin')return 'Write the numbers 1 to '+n+' down the page and put <b>H</b> or <b>T</b> next to each one.';
   if(S.game==='cards')return 'Write the numbers 1 to '+n+' down the page and put <b>R</b> (red) or <b>B</b> (black) next to each one.';
   if(S.game==='esp25')return 'Write the numbers 1 to 25 down the page and name one of the five symbols for each card.';
+  if(S.game==='cups')return 'Write the numbers 1 to '+n+' down the page and put <b>1</b>, <b>2</b> or <b>3</b> (the cup you pick) next to each round.';
+  if(S.game==='wheel')return 'Write the numbers 1 to '+n+' down the page and put a number from <b>1 to 10</b> (where the wheel will stop) next to each spin.';
   return 'Write down the order you think the five cards are in, using each symbol once.';
 }
 function symKey(){
@@ -435,26 +546,31 @@ function symKey(){
 }
 function startClass(){clearTimer();genTruth();S.revealIdx=0;S.screen='cplay';render()}
 function cplay(){
+  if(S.game==='dice')return dcplay();
+  if(S.game==='lotto')return lcplay();
   const n=S.n,g=GAMES[S.game];let hid='';
   for(let i=0;i<n;i++)hid+='<div class="col"><span class="ix">'+(i+1)+'</span>'+truthChip(i,true,'',true)+'</div>';
-  return nav()+'<div class="panel" style="text-align:center"><h2>'+g.title+' &ndash; whole class</h2><p>Everyone, write down your predictions now.<br>'+writeHow()+'</p>'+(S.game==='esp25'||S.game==='esp5'?symKey():'')+
+  return nav()+'<div class="panel" style="text-align:center"><h2>'+g.title+' &ndash; whole class</h2><p>Everyone, write down your predictions now.<br>'+writeHow()+'</p>'+(S.game==='esp25'||S.game==='esp5'?symKey():'')+(S.game==='wheel'?'<div class="row c">'+wheelSVG(200,-1,false)+'</div>':'')+(S.game==='cups'?'<div class="row c">'+cupsStage(-1,false)+'</div>':'')+
     '<div class="lbl">The future is sealed:</div><div class="row c" style="gap:2px">'+hid+'</div>'+
     '<div class="row c"><button class="btn" onclick="startClassReveal()">Reveal the future</button></div></div>';
 }
-function startClassReveal(){clearTimer();S.revealIdx=0;S.screen='creveal';render()}
-function nextCard(){if(S.revealIdx<S.n){S.revealIdx++;render()}}
+function startClassReveal(){clearTimer();S.revealIdx=(S.game==='lotto'&&!S.anim)?6:0;S.screen='creveal';render()}
+function nextCard(){if(STAGE[S.game])return stageStep();if(S.revealIdx<S.n){S.revealIdx++;render()}}
 function showAll(){clearTimer();S.revealIdx=S.n;render()}
 function autoReveal(){
+  if(STAGE[S.game])return stageAuto(0);
   clearTimer();const ms=S.n<=5?1200:(S.n<=12?800:500);
   S.timer=setInterval(()=>{S.revealIdx++;render();if(S.revealIdx>=S.n)clearTimer()},ms);
 }
 function creveal(){
+  if(S.game==='dice')return dreveal(false);
+  if(S.game==='lotto')return lreveal(false);
   const n=S.n,idx=S.revealIdx;let cols='';
   for(let i=0;i<n;i++)cols+='<div class="col"><span class="ix">'+(i+1)+'</span>'+truthChip(i,i>=idx)+(S.game==='esp5'?'<span class="ix" style="font-size:1.05rem">'+(i<idx?SYMN[S.truth[i]]:'&nbsp;')+'</span>':'')+'</div>';
-  const big=(S.game==='esp25'&&idx>0)?'<div class="col" style="margin:10px auto"><span class="ix" style="font-size:1.2rem">Card '+idx+' of '+n+'</span>'+symbolChip(S.truth[idx-1],'',false)+'<span style="font-size:1.25rem">'+SYMN[S.truth[idx-1]]+'</span></div>':'';
+  const big=STAGE[S.game]?stageHTML():(S.game==='esp25'&&idx>0)?'<div class="col" style="margin:10px auto"><span class="ix" style="font-size:1.2rem">Card '+idx+' of '+n+'</span>'+symbolChip(S.truth[idx-1],'',false)+'<span style="font-size:1.25rem">'+SYMN[S.truth[idx-1]]+'</span></div>':'';
   const done=idx>=n;
   const btns=done?'<div class="lbl">Now mark your own predictions and count how many you got right. Then &ndash; hands up!</div><div class="row c"><button class="btn" onclick="handsUp()">Open the hands-up counter</button></div>'
-    :'<div class="row c"><button class="btn" onclick="nextCard()">Next</button><button class="btn sm alt" onclick="autoReveal()">Auto-reveal</button><button class="btn sm alt" onclick="showAll()">Show all</button></div>';
+    :'<div class="row c"><button class="btn" '+(S.busy?'disabled ':'')+'onclick="nextCard()">Next</button><button class="btn sm alt" '+(S.busy?'disabled ':'')+'onclick="autoReveal()">Auto-reveal</button><button class="btn sm alt" onclick="showAll()">Show all</button></div>';
   return nav()+'<div class="panel" style="text-align:center"><h2>The crystal ball reveals&hellip;</h2>'+big+btns+'<div class="row c" style="gap:2px">'+cols+'</div></div>';
 }
 function newRound(k){
@@ -467,8 +583,163 @@ function newRound(k){
   startClass();
 }
 
+/* ---------- Which Cup? and Spin the Wheel: animated stage ---------- */
+const spinMs=()=>S.game==='wheel'?1300:800;
+function stageHTML(){
+  if(!STAGE[S.game])return '';
+  const idx=S.revealIdx,sp=S.spinning&&idx<S.n,wh=S.game==='wheel';
+  const v=sp?S.truth[idx]:(idx>0?S.truth[idx-1]:-1);
+  let cap;
+  if(sp)cap=wh?'Spin '+(idx+1)+' of '+S.n+'&hellip;':'Round '+(idx+1)+' of '+S.n+': shuffling&hellip;';
+  else if(idx>0)cap=wh?'Spin '+idx+': it landed on <b>'+(v+1)+'</b>':'Round '+idx+': the ball was under <b>cup '+(v+1)+'</b>';
+  else cap=wh?'Round and round she goes&hellip;':'Three cups, one ball&hellip;';
+  const pic=wh?wheelSVG(230,v,sp):cupsStage(sp?-1:v,sp);
+  return '<div style="margin:6px auto;text-align:center">'+pic+'<div class="lbl">'+cap+'</div></div>';
+}
+function stageStep(){
+  if(S.busy||S.revealIdx>=S.n)return;
+  S.busy=true;S.spinning=true;render();
+  S.timer=setTimeout(()=>{S.timer=null;S.busy=false;S.spinning=false;S.revealIdx++;render()},spinMs());
+}
+function stageAuto(delay){
+  clearTimer();S.auto=true;
+  const step=()=>{
+    if(!S.auto)return;
+    if(S.revealIdx>=S.n){
+      S.auto=false;
+      if(S.screen==='reveal')S.timer=setTimeout(()=>{if(S.screen==='reveal')goResult(S.score)},1400);
+      return;
+    }
+    S.busy=true;S.spinning=true;render();
+    S.timer=setTimeout(()=>{S.busy=false;S.spinning=false;S.revealIdx++;render();S.timer=setTimeout(step,S.game==='wheel'?900:700)},spinMs());
+  };
+  S.timer=setTimeout(step,delay||0);
+}
+
+/* ---------- shared bits for dice and lottery ---------- */
+function xlg(g){return {dice:'Total matches over the three rolls',lotto:'Numbers matched'}[g]}
+function scoreText(s){
+  if(S.game==='esp5')return '<b>'+s+'</b> of the 5 cards in the right place';
+  if(S.game==='dice')return 'You scored <b>'+s+'</b> out of 12<br><span style="font-size:1rem">(your numbers that turned up, over three rolls)</span>';
+  if(S.game==='lotto')return '<b>'+s+'</b> of your 6 numbers matched';
+  return 'You scored <b>'+s+'</b> out of '+S.n;
+}
+function talkExtra(){
+  if(S.game==='esp5')return '<li>Why is scoring exactly four impossible? What happens to the gold zone as you change the level?</li>';
+  if(S.game==='dice')return '<li>The average total is about 6 out of 12. Why is a score of 6 nothing special?</li><li>What would happen to the odds with more dice, or more rolls?</li>';
+  if(S.game==='lotto')return '<li>Does choosing birthday numbers (all 31 or under) change your chance of winning?</li><li>Why do nearly all players score 0 or 1?</li>';
+  if(S.game==='cups')return '<li>If the ball has been under cup 2 three times running, is it "due" to be somewhere else? Why not?</li><li>A real street conjuror plays this game with sleight of hand, so the ball is <i>not</i> left to chance. Why do the odds above only work for a fair game?</li>';
+  if(S.game==='wheel')return '<li>With ten spins, about 35% of players score zero. Does a score of zero mean you have no psychic powers?</li><li>If the wheel lands on 7 three times in a row, is 7 a &ldquo;hot&rdquo; number?</li>';
+  return '<li>Why does the actual fluke rate not match the level exactly?</li>';
+}
+function animBtns(){
+  if(S.game!=='lotto')return '';
+  return '<div class="lbl">How should the draw be revealed?</div><div class="row"><button class="btn sm opt '+(S.anim?'on':'')+'" onclick="setAnim(true)">Animated drum</button><button class="btn sm opt '+(!S.anim?'on':'')+'" onclick="setAnim(false)">Instant reveal</button></div>';
+}
+function setAnim(b){S.anim=b;render()}
+function oneIn(p){return p>=0.001?pct(p):(p<=0?'0':'1 in '+Math.round(1/p).toLocaleString('en-GB'))}
+function oddsStrip(pm,an){
+  const n=pm.length-1;let cells='';
+  for(let x=0;x<=n;x++){
+    let up=0;for(let y=x;y<=n;y++)up+=pm[y];
+    const rej=(an.c!==null&&x>=an.c)||(an.d!==null&&x<=an.d);
+    cells+='<tr class="'+(rej?'zone':'')+'"><td>'+x+'</td><td>'+oneIn(pm[x])+'</td><td>'+oneIn(up)+'</td></tr>';
+  }
+  return '<table class="odds"><tr><th>Matches</th><th>Chance of exactly this</th><th>Chance of this or more</th></tr>'+cells+'</table>';
+}
+
+/* ---------- Roll the Dice ---------- */
+function dmatch(g,r){return g.filter(f=>r.indexOf(f)>=0).length}
+function dscore(){let t=0;for(let i=0;i<3;i++)t+=dmatch(S.dg[i],S.truth[i]);return t}
+function dpick(v){if(S.cur.indexOf(v)>=0||S.cur.length>=4)return;S.cur.push(v);render()}
+function dundo(){if(S.cur.length)S.cur.pop();else if(S.dg.length)S.cur=S.dg.pop();render()}
+function dlock(){if(S.cur.length===4){S.dg.push(S.cur.slice().sort((a,b)=>a-b));S.cur=[];render()}}
+function dplay(){
+  const k=S.dg.length;
+  const locked=S.dg.map((g,i)=>'<div class="row c"><span class="ix" style="font-size:1rem">Roll '+(i+1)+'</span>'+g.map(v=>dieSVG(v,46)).join('')+'</div>').join('');
+  if(k>=3)return nav()+'<div class="panel" style="text-align:center"><h2>Your predictions are sealed!</h2><p>Three rolls of four dice are waiting. Ready?</p>'+locked+'<div class="row c"><button class="btn" onclick="startDiceReveal()">Roll the dice</button><button class="btn sm alt" onclick="dundo()">Change my last roll</button></div></div>';
+  const sel=S.cur.slice().sort((a,b)=>a-b);
+  let slots='';for(let i=0;i<4;i++)slots+=i<sel.length?dieSVG(sel[i],84):'<span class="die slot0" style="width:84px;height:84px"></span>';
+  const btns=[1,2,3,4,5,6].map(v=>'<button class="btn big card" '+(S.cur.indexOf(v)>=0?'disabled':'')+' onclick="dpick('+v+')">'+dieSVG(v,80)+'</button>').join('');
+  return nav()+'<div class="panel" style="text-align:center"><h2>Roll the Dice</h2><p>Roll <b>'+(k+1)+'</b> of 3: name <b>four different numbers</b> you think will turn up.</p>'+locked+'<div class="row c">'+slots+'</div><div class="row c">'+btns+'</div><div class="row c"><button class="btn" '+(S.cur.length===4?'':'disabled')+' onclick="dlock()">Lock in roll '+(k+1)+'</button>'+((S.cur.length||S.dg.length)?'<button class="btn sm alt" onclick="dundo()">Undo</button>':'')+'</div></div>';
+}
+function startDiceReveal(){clearTimer();S.screen='dreveal';S.revealIdx=0;S.score=dscore();render()}
+function dNext(){if(S.revealIdx<3){S.revealIdx++;render()}}
+function dAll(){S.revealIdx=3;render()}
+function dcplay(){
+  let rows='';for(let r=1;r<=3;r++)rows+='<div class="row c"><span class="ix" style="font-size:1rem">Roll '+r+'</span>'+[0,0,0,0].map(()=>dieSVG(0,72)).join('')+'</div>';
+  return nav()+'<div class="panel" style="text-align:center"><h2>Roll the Dice &ndash; whole class</h2><p>Everyone, write down your predictions now.<br>For each of the three rolls, write <b>four different numbers</b> from 1 to 6 &ndash; for example 1, 2, 4, 6.</p><div class="lbl">The rolls are sealed:</div>'+rows+'<div class="row c"><button class="btn" onclick="startClassReveal()">Roll the dice</button></div></div>';
+}
+function dreveal(live){
+  const idx=S.revealIdx;let rows='',tot=0;
+  for(let r=0;r<3;r++){
+    const shown=r<idx,roll=S.truth[r];let m=0;
+    if(live&&shown){m=dmatch(S.dg[r],roll);tot+=m}
+    const gd=live?'<div class="col"><span class="ix">You said</span><div>'+S.dg[r].map(v=>dieSVG(v,46,shown&&roll.indexOf(v)>=0?'hit':'')).join('')+'</div></div>':'';
+    const sz=live?72:104;
+    const rd='<div class="col"><span class="ix">'+(shown?'It was':'Roll '+(r+1))+'</span><div>'+(shown?roll.map(v=>dieSVG(v,sz,(live&&S.dg[r].indexOf(v)>=0?'hit ':'')+(r===idx-1?'new':''))).join(''):[0,0,0,0].map(()=>dieSVG(0,sz)).join(''))+'</div></div>';
+    const res=live&&shown?'<div class="score" style="margin:0"><b>'+m+'</b> of 4</div>':'';
+    rows+='<div class="rollrow">'+gd+rd+res+'</div>';
+  }
+  const done=idx>=3;let btns;
+  if(!done)btns='<div class="row c"><button class="btn" onclick="dNext()">Roll '+(idx+1)+'</button><button class="btn sm alt" onclick="dAll()">Show all</button></div>';
+  else if(live)btns='<div class="score">Total: <b>'+S.score+'</b> out of 12</div><div class="row c"><button class="btn" onclick="goResult(S.score)">See what the crystal ball thinks</button></div>';
+  else btns='<div class="lbl">Now mark your own predictions: for each roll count how many of your four numbers turned up, then add up your three rolls (out of 12). Then &ndash; hands up!</div><div class="row c"><button class="btn" onclick="handsUp()">Open the hands-up counter</button></div>';
+  return nav()+'<div class="panel" style="text-align:center"><h2>The crystal ball rolls&hellip;</h2>'+(live&&idx>0&&!done?'<div class="lbl">Total so far: '+tot+'</div>':'')+rows+btns+'</div>';
+}
+
+/* ---------- Lucky Lottery ---------- */
+function lpick(n){const i=S.pick.indexOf(n);if(i>=0)S.pick.splice(i,1);else if(S.pick.length<6)S.pick.push(n);render()}
+function lclear(){S.pick=[];render()}
+function ldip(){S.pick=shuffle(Array.from({length:59},(_,i)=>i+1)).slice(0,6);render()}
+function lscore(){return S.pick.filter(n=>S.truth.indexOf(n)>=0).length}
+function lplay(){
+  const sel=S.pick.slice().sort((a,b)=>a-b);
+  let grid='';for(let n=1;n<=59;n++)grid+='<button class="nb'+(S.pick.indexOf(n)>=0?' on':'')+'" onclick="lpick('+n+')">'+n+'</button>';
+  let tk='';for(let i=0;i<6;i++)tk+=i<sel.length?lball(sel[i],56):'<span class="lb hidb" style="width:56px;height:56px"><b>&nbsp;</b></span>';
+  return nav()+'<div class="panel" style="text-align:center"><h2>Lucky Lottery</h2><p>Pick <b>six numbers</b> from 1 to 59, or take a lucky dip.</p><div class="row c">'+tk+'</div><div class="ng">'+grid+'</div><div class="row c"><button class="btn sm alt" onclick="ldip()">Lucky dip</button><button class="btn sm alt" onclick="lclear()">Clear</button><button class="btn" '+(S.pick.length===6?'':'disabled')+' onclick="lstart()">Draw the balls</button></div></div>';
+}
+function lstart(){clearTimer();S.screen='lreveal';S.revealIdx=S.anim?0:6;S.score=lscore();render()}
+function lNext(){
+  if(S.busy||S.revealIdx>=6)return;
+  S.busy=true;S.shake=true;render();
+  S.timer=setTimeout(()=>{S.timer=null;S.busy=false;S.shake=false;S.revealIdx++;render()},1100);
+}
+function lAuto(){
+  if(S.busy||S.revealIdx>=6)return;
+  S.auto=true;
+  const step=()=>{
+    if(!S.auto||S.revealIdx>=6){S.auto=false;return}
+    S.busy=true;S.shake=true;render();
+    S.timer=setTimeout(()=>{S.busy=false;S.shake=false;S.revealIdx++;render();S.timer=setTimeout(step,450)},1100);
+  };
+  step();
+}
+function lAll(){clearTimer();S.revealIdx=6;render()}
+function lcplay(){
+  let hid='';for(let i=0;i<6;i++)hid+=lhid(64);
+  return nav()+'<div class="panel" style="text-align:center"><h2>Lucky Lottery &ndash; whole class</h2><p>Everyone, write down your numbers now.<br>Choose <b>six different numbers</b> from 1 to 59 (lucky dips allowed).</p><div class="lbl">The draw is sealed:</div><div class="row c">'+hid+'</div><div class="row c"><button class="btn" onclick="startClassReveal()">Draw the balls</button></div></div>';
+}
+function lreveal(live){
+  const idx=S.revealIdx,drawn=S.truth.slice(0,idx);
+  let balls='';
+  for(let i=0;i<6;i++)balls+=i<idx?lball(S.truth[i],68,live&&S.pick.indexOf(S.truth[i])>=0?'hit':''):lhid(68);
+  const done=idx>=6;
+  const tk=live?'<div class="lbl">Your ticket:</div><div class="row c">'+S.pick.slice().sort((a,b)=>a-b).map(n=>lball(n,50,drawn.indexOf(n)>=0?'hit':'')).join('')+'</div>':'';
+  let btns;
+  if(!done){
+    btns=S.anim?'<div class="row c"><button class="btn" '+(S.busy?'disabled':'')+' onclick="lNext()">Next ball</button><button class="btn sm alt" '+(S.busy?'disabled':'')+' onclick="lAuto()">Auto-draw</button><button class="btn sm alt" onclick="lAll()">Show all</button></div>'
+      :'<div class="row c"><button class="btn" onclick="lAll()">Show all</button></div>';
+  }else{
+    const ord='<div class="lbl">In order: '+S.truth.slice().sort((a,b)=>a-b).join(', ')+'</div>';
+    btns=ord+(live?'<div class="score"><b>'+S.score+'</b> of your six numbers matched</div><div class="row c"><button class="btn" onclick="goResult(S.score)">See what the crystal ball thinks</button></div>'
+      :'<div class="lbl">Now mark your own numbers and count how many matched. Then &ndash; hands up!</div><div class="row c"><button class="btn" onclick="handsUp()">Open the hands-up counter</button></div>');
+  }
+  return nav()+'<div class="panel" style="text-align:center"><h2>The draw</h2>'+(S.anim&&!done?'<div class="drum'+(S.shake?' shake':'')+'"></div>':'')+'<div class="row c">'+balls+'</div>'+tk+btns+'</div>';
+}
+
 function render(){
-  const f={home:home,setup:setup,play:play,reveal:reveal,cplay:cplay,creveal:creveal,result:result,tally:tallyScreen}[S.screen];
+  const f={home:home,setup:setup,play:play,reveal:reveal,dplay:dplay,dreveal:()=>dreveal(true),lplay:lplay,lreveal:()=>lreveal(true),cplay:cplay,creveal:creveal,result:result,tally:tallyScreen}[S.screen];
   document.getElementById('app').innerHTML=f();
 }
 render();
