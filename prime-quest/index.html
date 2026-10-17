@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prime Quest | LoadsOfMaths</title>
+<style>
+:root{
+  --blue:#2f7bff; --blue-d:#0b3aa8; --blue-l:#8fbaff;
+  --red:#ff4b4b; --red-d:#a30f1f; --red-l:#ffa0a0;
+  --gold:#ffd24a; --gold-d:#b8860b;
+  --ink:#0b1030;
+  --cell:clamp(32px, min(calc((100vh - 190px) / 10 - 5px), calc((100vw - 400px) / 10 - 5px)), 76px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;height:100%;overflow:hidden;}
+body{
+  font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;color:#fff;user-select:none;
+  background:
+    radial-gradient(ellipse at 20% 10%, #3a1f7a 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 90%, #0f4a7a 0%, transparent 50%),
+    linear-gradient(160deg,#0a0d2e 0%,#141040 55%,#0a1a3a 100%);
+}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+#stars i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:.2;animation:tw 3s ease-in-out infinite;}
+@keyframes tw{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:.9;transform:scale(1.3)}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:50;}
+
+#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:10px 16px 12px;}
+header{display:flex;align-items:center;gap:14px;height:64px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo .gem{width:42px;height:42px;filter:drop-shadow(0 0 10px rgba(255,210,74,.7));}
+.logo h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:34px;letter-spacing:3px;
+  background:linear-gradient(180deg,#fff6c9,#ffd24a 55%,#d59a12);-webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 0 transparent;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5));}
+.logo small{display:block;font-size:11px;letter-spacing:4px;color:#9fb2ff;margin-top:-4px;}
+.spacer{flex:1}
+.hbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:22px;padding:8px 16px;font-size:14px;cursor:pointer;transition:.15s;font-family:inherit;}
+.hbtn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px);}
+
+#main{flex:1;display:flex;gap:22px;justify-content:center;align-items:flex-start;min-height:0;padding-top:6px;}
+
+/* ===== BOARD ===== */
+#boardWrap{
+  padding:14px;border-radius:20px;position:relative;
+  background:linear-gradient(145deg,#3b2a6e,#1a1550 60%,#251a5c);
+  box-shadow:0 0 0 2px #6b57c9,0 0 0 6px #1c1655,0 0 40px rgba(110,80,255,.45),0 20px 50px rgba(0,0,0,.6),inset 0 0 30px rgba(0,0,0,.5);
+}
+#boardWrap::before,#boardWrap::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff6c9,#ffd24a 50%,#8a5d00);box-shadow:0 0 8px rgba(255,210,74,.8);}
+#boardWrap::before{top:-5px;left:-5px;} #boardWrap::after{bottom:-5px;right:-5px;}
+#board{display:grid;grid-template-columns:26px repeat(10,var(--cell));grid-template-rows:repeat(10,var(--cell)) 24px;gap:5px;}
+.axis{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;color:#a99cff;}
+.axis.y{justify-content:flex-end;padding-right:6px;}
+
+.cell{position:relative;perspective:600px;cursor:pointer;}
+.inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.3,1.3,.5,1);}
+.cell.revealed .inner{transform:rotateY(180deg);}
+.cell:not(.revealed):not(.locked):hover .inner{transform:translateY(-3px) scale(1.04);}
+.face{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.back{
+  background:
+    radial-gradient(circle at 30% 25%,rgba(255,255,255,.28),transparent 45%),
+    linear-gradient(145deg,#7a6bd6,#4a3aa8 55%,#2f2380);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -4px 0 rgba(0,0,0,.35),0 4px 8px rgba(0,0,0,.5);
+  border:1px solid #9488ec;
+}
+.back::after{content:"";width:34%;aspect-ratio:1;transform:rotate(45deg);border:2px solid rgba(255,255,255,.35);border-radius:4px;box-shadow:0 0 8px rgba(255,255,255,.2) inset;}
+.front{
+  transform:rotateY(180deg);
+  background:radial-gradient(circle at 30% 20%,#fffdf0,#f4e6b8 60%,#d9c07a);
+  box-shadow:inset 0 0 0 3px #b8934a,inset 0 0 14px rgba(120,80,0,.35),0 4px 8px rgba(0,0,0,.5);
+  color:#3a2308;font-family:Georgia,serif;font-weight:bold;font-size:calc(var(--cell) * .46);
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+}
+.cell.glow .front{animation:glow 1s ease-out;}
+@keyframes glow{0%{box-shadow:inset 0 0 0 3px #b8934a,0 0 0 rgba(255,210,74,0);}
+  30%{box-shadow:inset 0 0 0 4px #fff,0 0 30px 10px rgba(255,230,100,.95);background:radial-gradient(circle,#fffbe0,#ffe27a);}
+  100%{box-shadow:inset 0 0 0 3px #b8934a,0 0 12px 2px rgba(255,210,74,.5);}}
+.cell.confirmed .front{
+  background:radial-gradient(circle at 30% 20%,#f6fff0,#b9f0a6 60%,#6fcf5a);
+  box-shadow:inset 0 0 0 4px #2fa53a,0 0 18px 3px rgba(80,255,110,.7);color:#0c3a10;}
+.cell.confirmed .front::after{content:"✦";position:absolute;top:2px;right:6px;font-size:calc(var(--cell)*.24);color:#2fa53a;}
+.cell.flown .front{filter:grayscale(1) brightness(.75);opacity:.55;box-shadow:inset 0 0 0 3px #777;}
+.cell.flown{pointer-events:none;}
+.cell.bust .front{
+  background:radial-gradient(circle at 50% 60%,#fff3a0,#ff9a2e 45%,#d32a12 90%);color:#fff;text-shadow:0 2px 0 #7a0c00;
+  box-shadow:inset 0 0 0 4px #7a0c00,0 0 24px 6px rgba(255,90,20,.85);}
+.cell.bust .front::before{content:"🔥";position:absolute;font-size:calc(var(--cell)*.3);top:1px;left:4px;}
+.cell.bust{animation:shake .5s;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.cell.bank-blue .front{background:radial-gradient(circle at 30% 20%,#9cc6ff,#2f7bff 55%,#0b3aa8);color:#fff;text-shadow:0 2px 0 rgba(0,0,40,.6);box-shadow:inset 0 0 0 3px #bcd8ff,0 0 14px rgba(47,123,255,.7);}
+.cell.bank-red .front{background:radial-gradient(circle at 30% 20%,#ffb0b0,#ff4b4b 55%,#a30f1f);color:#fff;text-shadow:0 2px 0 rgba(60,0,0,.6);box-shadow:inset 0 0 0 3px #ffc4c4,0 0 14px rgba(255,75,75,.7);}
+.cell.bank-blue,.cell.bank-red{pointer-events:none;cursor:default;}
+.cell.unclaimed .front{background:radial-gradient(circle at 30% 20%,#fffbe0,#ffe27a 60%,#d9a620);box-shadow:inset 0 0 0 3px #b8860b,0 0 10px rgba(255,210,74,.6);}
+.cell.locked{cursor:default;}
+.cell.dim{opacity:.35;}
+
+/* ===== PANEL ===== */
+#panel{width:330px;display:flex;flex-direction:column;gap:12px;}
+.team{border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.12);transition:.3s;position:relative;}
+.team .nm{display:flex;align-items:center;gap:8px;font-weight:bold;font-size:17px;letter-spacing:1px;}
+.team .nm .flag{width:18px;height:18px;border-radius:50%;}
+.team .tot{margin-left:auto;font-family:Georgia,serif;font-size:34px;line-height:1;}
+.team.blue .flag{background:var(--blue);box-shadow:0 0 10px var(--blue);}
+.team.red .flag{background:var(--red);box-shadow:0 0 10px var(--red);}
+.team.active.blue{border-color:var(--blue);box-shadow:0 0 22px rgba(47,123,255,.6),inset 0 0 20px rgba(47,123,255,.15);background:rgba(47,123,255,.12);}
+.team.active.red{border-color:var(--red);box-shadow:0 0 22px rgba(255,75,75,.6),inset 0 0 20px rgba(255,75,75,.15);background:rgba(255,75,75,.12);}
+.team.active::after{content:"◀ YOUR GO";position:absolute;right:14px;top:-10px;font-size:11px;letter-spacing:2px;font-weight:bold;padding:2px 10px;border-radius:10px;color:#fff;}
+.team.active.blue::after{background:var(--blue);} .team.active.red::after{background:var(--red);}
+.track{position:relative;height:20px;border-radius:12px;background:rgba(0,0,0,.45);margin:10px 0 8px;box-shadow:inset 0 2px 5px rgba(0,0,0,.6);}
+.fill{height:100%;width:0;border-radius:12px;transition:width .9s cubic-bezier(.3,1.2,.4,1);position:relative;overflow:hidden;}
+.fill::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-100%);animation:shine 2.4s infinite;}
+@keyframes shine{to{transform:translateX(100%)}}
+.blue .fill{background:linear-gradient(180deg,#8fbaff,#2f7bff 50%,#0b3aa8);}
+.red .fill{background:linear-gradient(180deg,#ffa0a0,#ff4b4b 50%,#a30f1f);}
+.track .goal{position:absolute;right:-4px;top:-9px;font-size:22px;filter:drop-shadow(0 0 6px gold);}
+.chips{display:flex;flex-wrap:wrap;gap:4px;min-height:24px;max-height:76px;overflow:hidden;}
+.chip{font-size:12px;font-weight:bold;padding:2px 7px;border-radius:10px;animation:pop .4s;}
+.blue .chip{background:var(--blue-d);border:1px solid var(--blue-l);} .red .chip{background:var(--red-d);border:1px solid var(--red-l);}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+#turnBox{border-radius:18px;padding:14px;text-align:center;background:linear-gradient(160deg,rgba(255,210,74,.18),rgba(255,210,74,.04));border:2px solid rgba(255,210,74,.5);box-shadow:0 0 22px rgba(255,210,74,.2);}
+#turnBox .lbl{font-size:12px;letter-spacing:3px;color:#ffe9a0;}
+#turnTotal{font-family:Georgia,serif;font-size:64px;line-height:1.05;color:var(--gold);text-shadow:0 0 20px rgba(255,210,74,.7),0 3px 0 #7a5400;transition:transform .2s;}
+#turnTotal.bump{transform:scale(1.25);}
+#turnTotal.lost{color:#ff6a4a;text-shadow:0 0 20px rgba(255,80,40,.7);}
+.btns{display:flex;gap:10px;justify-content:center;margin-top:6px;}
+.big{font-family:inherit;font-size:19px;font-weight:bold;letter-spacing:1px;padding:11px 24px;border-radius:30px;border:0;cursor:pointer;color:#fff;transition:.15s;}
+.big:hover:not(:disabled){transform:translateY(-2px) scale(1.04);}
+.big:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(.6);}
+#bankBtn{background:linear-gradient(180deg,#5be06a,#1f9a35);box-shadow:0 5px 0 #146622,0 8px 16px rgba(0,0,0,.4);}
+#nextBtn{background:linear-gradient(180deg,#ff9a4a,#d3500d);box-shadow:0 5px 0 #8a3200,0 8px 16px rgba(0,0,0,.4);animation:throb .8s infinite;}
+@keyframes throb{50%{transform:scale(1.06)}}
+.hint{font-size:13px;color:#cdd6ff;margin-top:10px;min-height:34px;line-height:1.35;}
+
+/* ===== OVERLAYS ===== */
+.overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(5,6,25,.78);backdrop-filter:blur(5px);padding:16px;}
+.overlay.hidden{display:none;}
+.card{max-width:620px;width:100%;max-height:96vh;overflow:auto;border-radius:24px;padding:26px 30px;text-align:center;
+  background:linear-gradient(160deg,#2c2070,#171250);border:2px solid #7a68e0;box-shadow:0 0 50px rgba(120,90,255,.5),0 25px 60px rgba(0,0,0,.7);animation:rise .5s cubic-bezier(.3,1.4,.5,1);}
+@keyframes rise{from{transform:translateY(40px) scale(.9);opacity:0}}
+.card h2{font-family:Georgia,serif;font-size:46px;margin:0 0 4px;letter-spacing:3px;background:linear-gradient(180deg,#fff6c9,#ffd24a 55%,#d59a12);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.card p.tag{margin:0 0 16px;color:#b8c4ff;letter-spacing:2px;font-size:13px;}
+.opt{margin:12px 0;text-align:left;}
+.opt h3{margin:0 0 6px;font-size:13px;letter-spacing:2px;color:#ffe9a0;}
+.seg{display:flex;gap:8px;}
+.seg label{flex:1;cursor:pointer;}
+.seg input{display:none;}
+.seg span{display:block;text-align:center;padding:9px 6px;border-radius:12px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);font-size:14px;line-height:1.25;transition:.15s;}
+.seg small{display:block;font-size:11px;color:#b8c4ff;margin-top:2px;}
+.seg input:checked + span{background:linear-gradient(180deg,#5b46d8,#3a2aa8);border-color:var(--gold);box-shadow:0 0 14px rgba(255,210,74,.5);}
+.seg input:checked + span small{color:#fff;}
+.card .big.go{margin-top:14px;background:linear-gradient(180deg,#ffdf6a,#e0a017);color:#3a2300;box-shadow:0 5px 0 #8a5d00,0 10px 20px rgba(0,0,0,.4);font-size:22px;padding:13px 40px;}
+.rules{text-align:left;font-size:16px;line-height:1.6;margin:10px 0 0;padding-left:22px;}
+.rules li{margin-bottom:5px;}
+#winCard h2{font-size:54px;}
+#winCard .sc{font-family:Georgia,serif;font-size:28px;margin:8px 0 14px;}
+#toast{position:fixed;left:50%;top:84px;transform:translate(-50%,-30px);z-index:45;padding:14px 30px;border-radius:30px;font-size:22px;font-weight:bold;opacity:0;pointer-events:none;transition:.35s;text-align:center;}
+#toast.show{opacity:1;transform:translate(-50%,0);}
+#toast.bad{background:linear-gradient(180deg,#ff7a3a,#c62a0c);box-shadow:0 0 30px rgba(255,90,30,.8);}
+#toast.info{background:linear-gradient(180deg,#5b46d8,#3a2aa8);box-shadow:0 0 30px rgba(120,90,255,.8);}
+#toast.good{background:linear-gradient(180deg,#5be06a,#1f9a35);box-shadow:0 0 30px rgba(80,255,110,.7);}
+
+@media (max-width:900px), (max-aspect-ratio:1/1){
+  :root{--cell:clamp(26px, min(calc((100vw - 70px) / 10 - 5px), 60px), 60px);}
+  html,body{overflow:auto;}
+  #main{flex-direction:column;align-items:center;}
+  #panel{width:min(100%,520px);}
+  header{height:auto;flex-wrap:wrap;}
+  .logo h1{font-size:26px;}
+}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<canvas id="fx"></canvas>
+
+<div id="app">
+  <header>
+    <div class="logo">
+      <svg class="gem" viewBox="0 0 64 64"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff6c9"/><stop offset=".5" stop-color="#ffd24a"/><stop offset="1" stop-color="#b8860b"/></linearGradient></defs>
+        <path d="M32 4 L58 24 L32 60 L6 24 Z" fill="url(#g1)" stroke="#7a5400" stroke-width="2"/><path d="M6 24 H58 M32 4 L22 24 L32 60 L42 24 Z" fill="none" stroke="#7a5400" stroke-width="1.5" opacity=".6"/></svg>
+      <div><h1>PRIME QUEST</h1><small>LOADSOFMATHS</small></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="hbtn" id="rulesBtn">How to play</button>
+    <button class="hbtn" id="soundBtn">Sound: On</button>
+    <button class="hbtn" id="endBtn" style="display:none">End game</button>
+    <button class="hbtn" id="newBtn" style="display:none">New game</button>
+  </header>
+
+  <div id="main">
+    <div id="boardWrap"><div id="board"></div></div>
+    <aside id="panel">
+      <div class="team blue" id="tBlue">
+        <div class="nm"><span class="flag"></span>BLUE TEAM<span class="tot" id="blueTotal">0</span></div>
+        <div class="track"><div class="fill" id="blueBar"></div><span class="goal">🏆</span></div>
+        <div class="chips" id="bluePrimes"></div>
+      </div>
+      <div id="turnBox">
+        <div class="lbl">TURN TOTAL</div>
+        <div id="turnTotal">0</div>
+        <div class="btns">
+          <button class="big" id="bankBtn" disabled>BANK IT</button>
+          <button class="big" id="nextBtn" style="display:none">NEXT TEAM ▶</button>
+        </div>
+        <div class="hint" id="hint"></div>
+      </div>
+      <div class="team red" id="tRed">
+        <div class="nm"><span class="flag"></span>RED TEAM<span class="tot" id="redTotal">0</span></div>
+        <div class="track"><div class="fill" id="redBar"></div><span class="goal">🏆</span></div>
+        <div class="chips" id="redPrimes"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div class="overlay" id="setup">
+  <div class="card">
+    <h2>PRIME QUEST</h2>
+    <p class="tag">HUNT THE PRIMES &bull; BANK YOUR TREASURE &bull; FIRST TO 531 WINS</p>
+    <div class="opt"><h3>PLAY MODE</h3>
+      <div class="seg">
+        <label><input type="radio" name="playMode" value="memory" checked><span>Memory<small>Numbers stay put</small></span></label>
+        <label><input type="radio" name="playMode" value="shuffle"><span>Shuffle<small>Reshuffled every turn</small></span></label>
+      </div></div>
+    <div class="opt"><h3>DIFFICULTY</h3>
+      <div class="seg">
+        <label><input type="radio" name="difficulty" value="easy" checked><span>Easy<small>Multiples of 10 bust</small></span></label>
+        <label><input type="radio" name="difficulty" value="hard"><span>Hard<small>Multiples of 5 bust</small></span></label>
+      </div></div>
+    <div class="opt"><h3>PRIME FLASH</h3>
+      <div class="seg">
+        <label><input type="radio" name="primeFlash" value="on" checked><span>On<small>Primes flash when found</small></span></label>
+        <label><input type="radio" name="primeFlash" value="off"><span>Off<small>Primes incognito</small></span></label>
+      </div></div>
+    <button class="big go" id="startBtn">START THE QUEST</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="rules">
+  <div class="card">
+    <h2 style="font-size:36px">HOW TO PLAY</h2>
+    <ul class="rules">
+      <li>Click a tile to turn it over and reveal its number.</li>
+      <li>Found a prime? Click it <b>again</b> to collect it for your Turn Total.</li>
+      <li>Click <b>Bank it</b> to add your Turn Total to your Quest Points. That ends your go.</li>
+      <li>Click a non-prime a second time and you <b>bust</b>. So does turning over a multiple of 10 (Easy) or 5 (Hard). Bust and you lose everything in your Turn Total.</li>
+      <li>With Prime Flash on, a prime you do not collect straight away flies off and is lost for the turn.</li>
+      <li>The first team to reach <b>531</b> Quest Points wins. There are 530 points on either side of the primes up to 100, so claim a majority!</li>
+    </ul>
+    <button class="big go" id="rulesClose">LET'S GO</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="winner">
+  <div class="card" id="winCard">
+    <h2 id="winTitle">BLUE WINS!</h2>
+    <div class="sc" id="winScore"></div>
+    <p class="tag" id="winNote"></p>
+    <button class="big go" id="againBtn">PLAY AGAIN</button>
+  </div>
+</div>
+
+<script>
+/* ===== STATE ===== */
+const WIN_SCORE = 531;
+let grid = [], cells = [];
+let revealedThisTurn = new Set(), revealedPrimes = new Set(), confirmed = new Set(), flown = new Set();
+let banked = { blue: new Set(), red: new Set() };
+let totals = { blue: 0, red: 0 };
+let currentTeam = "blue", turnTotal = 0, busted = false, gameOver = false, started = false;
+let playMode = "memory", difficulty = "easy", flashOn = true, soundOn = true;
+const $ = id => document.getElementById(id);
+
+const isPrime = n => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+const bustMod = () => difficulty === "easy" ? 10 : 5;
+const isBustNumber = v => v % bustMod() === 0;
+const isBanked = i => banked.blue.has(i) || banked.red.has(i);
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } }
+
+/* ===== SOUND ===== */
+let ac = null;
+function tone(f, d = .12, type = "sine", v = .08, t0 = 0) {
+  if (!soundOn) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + t0;
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d);
+  } catch (e) {}
+}
+const sfx = {
+  flip: () => tone(380, .08, "triangle", .06),
+  prime: () => { tone(660, .12, "sine", .09); tone(990, .2, "sine", .08, .09); },
+  collect: () => { tone(784, .1, "triangle", .09); tone(1047, .1, "triangle", .09, .08); tone(1319, .2, "triangle", .09, .16); },
+  fly: () => { tone(500, .25, "sine", .05); tone(300, .3, "sine", .04, .1); },
+  bust: () => { tone(160, .35, "sawtooth", .1); tone(110, .5, "sawtooth", .1, .12); tone(70, .6, "square", .06, .25); },
+  bank: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .18, "triangle", .09, i * .07)),
+  win: () => [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, .25, "triangle", .1, i * .12)),
+  swap: () => { tone(440, .1, "sine", .06); tone(330, .14, "sine", .06, .09); },
+  shuf: () => [300, 400, 500, 600].forEach((f, i) => tone(f, .06, "square", .03, i * .04))
+};
+
+/* ===== PARTICLES ===== */
+const cv = $("fx"), cx = cv.getContext("2d");
+let parts = [], raf = 0;
+function sizeCanvas() { cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener("resize", sizeCanvas); sizeCanvas();
+function burst(x, y, colours, n = 24, speed = 6, opts = {}) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = (opts.up ? .4 : .3 + Math.random() * .7) * speed * (opts.up ? Math.random() : 1);
+    parts.push({ x, y, vx: opts.up ? (Math.random() - .5) * 2 : Math.cos(a) * s, vy: opts.up ? -2 - Math.random() * 4 : Math.sin(a) * s,
+      life: 1, decay: .012 + Math.random() * .02, r: 2 + Math.random() * 3.5, c: colours[Math.floor(Math.random() * colours.length)], g: opts.g ?? .12 });
+  }
+  if (!raf) raf = requestAnimationFrame(loop);
+}
+function loop() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  cx.globalCompositeOperation = "lighter";
+  parts = parts.filter(p => p.life > 0);
+  for (const p of parts) {
+    p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= .99; p.life -= p.decay;
+    cx.globalAlpha = Math.max(0, p.life); cx.fillStyle = p.c;
+    cx.beginPath(); cx.arc(p.x, p.y, p.r * p.life + .5, 0, 7); cx.fill();
+  }
+  cx.globalAlpha = 1; cx.globalCompositeOperation = "source-over";
+  raf = parts.length ? requestAnimationFrame(loop) : 0;
+  if (!raf) cx.clearRect(0, 0, cv.width, cv.height);
+}
+function centre(el) { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }
+const GOLD = ["#fff6c9", "#ffd24a", "#ffb300", "#ffffff"];
+const FIRE = ["#fff3a0", "#ff9a2e", "#ff4a1a", "#7a0c00"];
+const TEAMC = { blue: ["#8fbaff", "#2f7bff", "#ffffff", "#ffd24a"], red: ["#ffa0a0", "#ff4b4b", "#ffffff", "#ffd24a"] };
+
+/* ===== UI HELPERS ===== */
+let toastT = 0;
+function toast(msg, kind = "info", ms = 2000) {
+  const t = $("toast"); t.textContent = msg; t.className = "show " + kind;
+  clearTimeout(toastT); toastT = setTimeout(() => t.className = kind, ms);
+}
+function hint(msg) { $("hint").textContent = msg; }
+
+function makeStars() {
+  const s = $("stars");
+  for (let i = 0; i < 70; i++) {
+    const d = document.createElement("i");
+    d.style.left = Math.random() * 100 + "%"; d.style.top = Math.random() * 100 + "%";
+    d.style.animationDelay = (Math.random() * 3) + "s"; d.style.animationDuration = (2 + Math.random() * 3) + "s";
+    s.appendChild(d);
+  }
+}
+
+function drawGrid() {
+  const board = $("board"); board.innerHTML = ""; cells = [];
+  for (let row = 9; row >= 0; row--) {
+    const ay = document.createElement("div"); ay.className = "axis y"; ay.textContent = row; board.appendChild(ay);
+    for (let col = 0; col < 10; col++) {
+      const idx = row * 10 + col;
+      const c = document.createElement("div"); c.className = "cell";
+      c.innerHTML = '<div class="inner"><div class="face back"></div><div class="face front"></div></div>';
+      c.onclick = () => clickCell(idx);
+      board.appendChild(c); cells[idx] = c;
+    }
+  }
+  board.appendChild(document.createElement("div"));
+  for (let col = 0; col < 10; col++) { const ax = document.createElement("div"); ax.className = "axis x"; ax.textContent = col; board.appendChild(ax); }
+}
+const front = i => cells[i].querySelector(".front");
+
+function hideCell(i) {
+  const c = cells[i];
+  c.className = "cell";
+  setTimeout(() => { if (!c.classList.contains("revealed")) front(i).textContent = ""; }, 550);
+}
+
+/* ===== GAME FLOW ===== */
+function clickCell(idx) {
+  if (!started || busted || gameOver || isBanked(idx) || flown.has(idx)) return;
+  const c = cells[idx], v = grid[idx];
+
+  // unclaimed flashing primes fly away when you move on
+  revealedPrimes.forEach(p => {
+    if (p !== idx && !confirmed.has(p)) {
+      flown.add(p); cells[p].classList.remove("glow"); cells[p].classList.add("flown");
+      const [x, y] = centre(cells[p]); burst(x, y, ["#cccccc", "#ffffff"], 14, 3, { up: true, g: -.05 }); sfx.fly();
+    }
+  });
+  revealedPrimes.clear();
+
+  if (!revealedThisTurn.has(idx)) {
+    revealedThisTurn.add(idx);
+    front(idx).textContent = v; c.classList.add("revealed");
+    if (isBustNumber(v)) { setTimeout(() => bust(idx, `${v} is a multiple of ${bustMod()}!`), 280); return; }
+    if (isPrime(v) && flashOn) {
+      revealedPrimes.add(idx); c.classList.add("glow");
+      setTimeout(() => { const [x, y] = centre(c); burst(x, y, GOLD, 18, 4); sfx.prime(); }, 260);
+      hint("A prime! Click it again to collect it.");
+    } else { sfx.flip(); hint(flashOn ? "Not a prime. Try another tile." : "Click a tile, or click a revealed prime to collect it."); }
+    return;
+  }
+
+  if (confirmed.has(idx)) return;
+  if (isPrime(v)) {
+    confirmed.add(idx); c.classList.remove("glow"); c.classList.add("confirmed");
+    turnTotal += v; sfx.collect();
+    const [x, y] = centre(c); burst(x, y, ["#b9f0a6", "#5be06a", "#ffffff", "#ffd24a"], 22, 5);
+    hint(`Collected ${v}. Bank it, or push your luck!`);
+    updateUI(true);
+  } else { bust(idx, `${v} is not a prime!`); }
+}
+
+function bust(idx, why) {
+  if (gameOver) return;
+  const lost = turnTotal;
+  cells[idx].classList.add("bust"); busted = true; turnTotal = 0;
+  const [x, y] = centre(cells[idx]); burst(x, y, FIRE, 40, 7); sfx.bust();
+  toast("BUST! " + why, "bad", 2600);
+  hint(lost ? `You lost ${lost} points. Hand over to the other team.` : "Nothing lost. Hand over to the other team.");
+  $("turnTotal").classList.add("lost");
+  updateUI();
+}
+
+function bank() {
+  if (busted || gameOver || turnTotal === 0) return;
+  const set = banked[currentTeam], cls = "bank-" + currentTeam;
+  confirmed.forEach(i => {
+    set.add(i); cells[i].classList.remove("confirmed", "glow"); cells[i].classList.add(cls);
+    const [x, y] = centre(cells[i]); burst(x, y, TEAMC[currentTeam], 14, 5);
+  });
+  totals[currentTeam] += turnTotal; sfx.bank();
+  toast(`+${turnTotal} Quest Points!`, "good", 1500);
+  updateUI();
+  if (totals[currentTeam] >= WIN_SCORE) { setTimeout(() => endGame(currentTeam), 700); return; }
+  setTimeout(endTurn, 650);
+}
+
+function endTurn() {
+  if (gameOver) return;
+  revealedThisTurn.forEach(i => { if (!isBanked(i)) hideCell(i); });
+  revealedThisTurn.clear(); revealedPrimes.clear(); confirmed.clear(); flown.clear();
+  busted = false; turnTotal = 0;
+  currentTeam = currentTeam === "blue" ? "red" : "blue";
+  $("turnTotal").classList.remove("lost");
+  $("nextBtn").style.display = "none";
+  if (playMode === "shuffle") {
+    const movable = []; for (let i = 0; i < 100; i++) if (!isBanked(i)) movable.push(grid[i]);
+    shuffle(movable); let k = 0; for (let i = 0; i < 100; i++) if (!isBanked(i)) grid[i] = movable[k++];
+    sfx.shuf();
+  } else sfx.swap();
+  hint("Click a tile to begin.");
+  toast((currentTeam === "blue" ? "Blue" : "Red") + " team's go", "info", 1300);
+  updateUI();
+}
+
+function updateUI(bump) {
+  $("turnTotal").textContent = turnTotal;
+  if (bump) { const t = $("turnTotal"); t.classList.add("bump"); setTimeout(() => t.classList.remove("bump"), 200); }
+  $("blueTotal").textContent = totals.blue; $("redTotal").textContent = totals.red;
+  $("blueBar").style.width = Math.min(100, totals.blue / WIN_SCORE * 100) + "%";
+  $("redBar").style.width = Math.min(100, totals.red / WIN_SCORE * 100) + "%";
+  $("tBlue").classList.toggle("active", currentTeam === "blue" && !gameOver);
+  $("tRed").classList.toggle("active", currentTeam === "red" && !gameOver);
+  $("bankBtn").disabled = busted || gameOver || turnTotal === 0;
+  $("nextBtn").style.display = busted && !gameOver ? "inline-block" : "none";
+  $("bankBtn").style.display = busted && !gameOver ? "none" : "inline-block";
+  for (const t of ["blue", "red"]) {
+    const el = $(t + "Primes"), list = [...banked[t]].map(i => grid[i]).sort((a, b) => a - b);
+    if (el.dataset.n !== String(list.length)) { el.innerHTML = list.map(n => `<span class="chip">${n}</span>`).join(""); el.dataset.n = list.length; }
+  }
+}
+
+function endGame(winner) {
+  if (gameOver) return;
+  gameOver = true; busted = true; started = true;
+  $("nextBtn").style.display = "none"; $("bankBtn").style.display = "inline-block"; $("bankBtn").disabled = true;
+  // reveal the primes nobody claimed
+  for (let i = 0; i < 100; i++) {
+    if (isBanked(i)) continue;
+    cells[i].classList.add("locked");
+    if (isPrime(grid[i])) { front(i).textContent = grid[i]; cells[i].className = "cell revealed unclaimed locked"; }
+    else { cells[i].className = "cell locked dim"; }
+  }
+  updateUI();
+  const b = totals.blue, r = totals.red;
+  if (!winner) winner = b === r ? null : (b > r ? "blue" : "red");
+  const title = $("winTitle");
+  if (winner) {
+    title.textContent = (winner === "blue" ? "BLUE" : "RED") + " WINS!";
+    title.style.backgroundImage = winner === "blue" ? "linear-gradient(180deg,#d6e6ff,#2f7bff 60%,#0b3aa8)" : "linear-gradient(180deg,#ffd6d6,#ff4b4b 60%,#a30f1f)";
+    $("winNote").textContent = totals[winner] >= WIN_SCORE ? "QUEST COMPLETE!" : "FINAL WHISTLE";
+    sfx.win(); fireworks(winner);
+  } else { title.textContent = "IT'S A DRAW!"; title.style.backgroundImage = ""; $("winNote").textContent = "EVENLY MATCHED"; }
+  $("winScore").innerHTML = `<span style="color:var(--blue-l)">Blue ${b}</span> &nbsp;&ndash;&nbsp; <span style="color:var(--red-l)">Red ${r}</span>`;
+  setTimeout(() => $("winner").classList.remove("hidden"), 1200);
+  $("newBtn").style.display = "inline-block"; $("endBtn").style.display = "none";
+}
+
+function fireworks(team) {
+  let n = 0;
+  const id = setInterval(() => {
+    burst(innerWidth * (.15 + Math.random() * .7), innerHeight * (.15 + Math.random() * .5), [...TEAMC[team], ...GOLD], 60, 8, { g: .06 });
+    if (++n > 14) clearInterval(id);
+  }, 380);
+}
+
+function newGame() {
+  playMode = document.querySelector('input[name="playMode"]:checked').value;
+  difficulty = document.querySelector('input[name="difficulty"]:checked').value;
+  flashOn = document.querySelector('input[name="primeFlash"]:checked').value === "on";
+  grid = Array.from({ length: 100 }, (_, i) => i + 1); shuffle(grid);
+  totals = { blue: 0, red: 0 }; banked = { blue: new Set(), red: new Set() };
+  revealedThisTurn.clear(); revealedPrimes.clear(); confirmed.clear(); flown.clear();
+  currentTeam = "blue"; turnTotal = 0; busted = false; gameOver = false; started = true;
+  $("turnTotal").classList.remove("lost");
+  $("bluePrimes").dataset.n = ""; $("redPrimes").dataset.n = "";
+  drawGrid(); updateUI();
+  $("endBtn").style.display = "inline-block"; $("newBtn").style.display = "inline-block";
+  hint("Click a tile to begin.");
+  toast("Blue team starts!", "info", 1400);
+}
+
+/* ===== WIRING ===== */
+$("startBtn").onclick = () => { $("setup").classList.add("hidden"); newGame(); };
+$("againBtn").onclick = () => { $("winner").classList.add("hidden"); $("setup").classList.remove("hidden"); };
+$("newBtn").onclick = () => { if (!gameOver && !confirm("Abandon this game and start a new one?")) return; $("winner").classList.add("hidden"); $("setup").classList.remove("hidden"); };
+$("endBtn").onclick = () => { if (confirm("End the game now? The team with most points wins.")) endGame(null); };
+$("bankBtn").onclick = bank;
+$("nextBtn").onclick = endTurn;
+$("rulesBtn").onclick = () => $("rules").classList.remove("hidden");
+$("rulesClose").onclick = () => $("rules").classList.add("hidden");
+$("soundBtn").onclick = () => { soundOn = !soundOn; $("soundBtn").textContent = "Sound: " + (soundOn ? "On" : "Off"); };
+
+makeStars();
+drawGrid();   // decorative board behind the setup screen
+</script>
+</body>
+</html>
