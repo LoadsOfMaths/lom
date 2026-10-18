@@ -20,6 +20,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Dave | `dave/` |
 | Dice Games | `dice-games/` |
 | Erno | `erno/` |
+| Factris | `factris/` |
 | Fractal Explorer | `fractal-explorer/` |
 | Fraction Blaster | `fraction-blaster/` |
 | Fraction Fight Night | `fraction-fight-night/` |
