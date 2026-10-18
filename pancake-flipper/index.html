@@ -563,6 +563,12 @@
   .racestats b { color: var(--ink); font-family: var(--font-head); }
   .racenote { margin-top: 12px; font-size: 14px; color: var(--ink); line-height: 1.45; }
 
+  .cross {
+    width: calc(100% - 32px); max-width: 480px; margin-top: 22px; text-align: center; font-size: 15px; color: var(--ink);
+    background: #fff; border: 4px solid var(--lom-blue); border-radius: 20px; padding: 12px 16px;
+    box-shadow: 0 6px 0 var(--lom-blue-dark), 0 12px 22px rgba(0,0,0,0.15);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;
+  }
   @media (prefers-reduced-motion: reduce) { .bar { transition: none !important; } }
   @media (max-width: 480px) {
     .barsArea { height: 190px; }
@@ -629,6 +635,7 @@
   <div id="message"></div>
   <button id="tryAgainBtn" style="display:none;">Try Again</button>
 </div>
+<div class="cross">Want to see how a computer would sort the stack? <button type="button" class="smallbtn" id="goSortBtn">Watch Pancake sort</button></div>
 </section>
 
 <section id="tab-sort" class="tab-panel" role="tabpanel" aria-labelledby="tabSortBtn" hidden>
@@ -672,7 +679,7 @@
         <div class="auxwrap" id="auxWrap" hidden><div id="auxRows"></div></div>
         <div class="legend" aria-hidden="true">
           <span><em class="l-cmp"></em>Being compared</span>
-          <span><em class="l-hl"></em>Just swapped / moved</span>
+          <span><em class="l-hl"></em>Just swapped / moved / flipped</span>
           <span><em class="l-pivot"></em>Pivot</span>
           <span><em class="l-mark"></em>Marker</span>
           <span><em class="l-partial"></em>Sorted section so far</span>
@@ -681,7 +688,7 @@
         <div class="status" id="statusMsg" aria-live="polite"></div>
         <div class="counters">
           <div>Comparisons<b id="cComp">0</b></div>
-          <div>Swaps / moves<b id="cMoves">0</b></div>
+          <div><span id="cMovesLbl">Swaps</span><b id="cMoves">0</b></div>
           <div>Step<b id="cStep">0</b></div>
         </div>
       </div>
@@ -707,7 +714,7 @@
       <div class="sxcard">
         <h3>Pseudocode</h3>
         <div class="code" id="codeBox" aria-label="Pseudocode for this sort"></div>
-        <p class="codenote">The highlighted line is the one being carried out. Positions are numbered from 0, as in most programming languages, and &divide; means whole-number division.</p>
+        <p class="codenote" id="codeNote">The highlighted line is the one being carried out. Positions are numbered from 0, as in most programming languages, and &divide; means whole-number division.</p>
       </div>
       <div class="sxcard about" id="aboutBox"></div>
     </div>
@@ -990,7 +997,7 @@ initGame();
    Each sort is a generator that works on a shared state object and yields
    one event per comparison / swap / move (or a free "info" event). A trace
    of snapshots is recorded up front, so students can play, step forwards,
-   step back and scrub, and the six sorts can be raced on the same list.
+   step back and scrub, and the sorts can be raced on the same list.
    ===================================================================== */
 
 var $ = function (id) { return document.getElementById(id); };
@@ -1002,7 +1009,7 @@ function swp(st, i, j) {
 }
 function fillRange(arr, lo, hi, v) { for (var k = lo; k <= hi; k++) arr[k] = v; }
 
-/* ---------------------------- the six sorts --------------------------- */
+/* ---------------------------- the sorts --------------------------- */
 
 function* bubbleRun(st) {
   var a = st.a, n = a.length;
@@ -1193,6 +1200,49 @@ function* shellRun(st) {
   st.badge = '';
 }
 
+function flipPrefix(st, k) {
+  for (var i = 0, j = k; i < j; i++, j--) {
+    var t = st.a[i]; st.a[i] = st.a[j]; st.a[j] = t;
+    t = st.ids[i]; st.ids[i] = st.ids[j]; st.ids[j] = t;
+  }
+}
+function range(lo, hi) { var r = []; for (var k = lo; k <= hi; k++) r.push(k); return r; }
+
+function* pancakeRun(st) {
+  var a = st.a, n = a.length;
+  if (n < 2) return;
+  st.markLabel = 'max';
+  for (var size = n; size >= 2; size--) {
+    var max = 0;
+    st.mark = 0; st.lo = 0; st.hi = size - 1;
+    for (var j = 1; j < size; j++) {
+      var bigger = a[j] > a[max], newMax = bigger ? j : max, tail = '';
+      if (j === size - 1 && newMax === size - 1) {
+        st.sorted[size - 1] = true;
+        tail = ' ' + a[size - 1] + ' is already at the bottom of the unsorted pancakes, so no flips are needed.';
+      }
+      var old = max;
+      st.mark = newMax;
+      yield { kind: 'cmp', line: 1, cmp: [j, old],
+        msg: 'Looking for the biggest of the first ' + size + ': compare ' + a[j] + ' with the biggest so far (' + a[old] + '). ' +
+          (bigger ? a[j] + ' is bigger, so it becomes the new biggest.' : a[old] + ' is still the biggest.') + tail };
+      max = newMax;
+    }
+    st.mark = -1;
+    if (max !== size - 1) {
+      var v = a[max];
+      if (max !== 0) {
+        flipPrefix(st, max);
+        yield { kind: 'swap', line: 3, swap: range(0, max),
+          msg: 'Flip the top ' + (max + 1) + ' pancakes, down to the ' + v + '. The biggest is now on top.' };
+      }
+      flipPrefix(st, size - 1); st.sorted[size - 1] = true;
+      yield { kind: 'swap', line: 4, swap: range(0, size - 1),
+        msg: 'Flip all ' + size + ' unsorted pancakes. The ' + v + ' lands at the bottom, in its final place.' };
+    }
+  }
+}
+
 var ALGOS = [
   { key: 'bubble', name: 'Bubble sort', run: bubbleRun, unit: 'swaps',
     code: ['last ← n − 1', 'REPEAT', '    swapped ← false', '    FOR i ← 0 TO last − 1', '        IF list[i] > list[i+1] THEN', '            swap list[i] and list[i+1]', '            swapped ← true', '    last ← last − 1', 'UNTIL swapped = false'],
@@ -1241,7 +1291,17 @@ var ALGOS = [
     good: 'Much quicker than plain insertion sort on longer lists, and only a small change to it.',
     bad: 'How fast it is depends on the gaps chosen, and this simple choice can still be slow in bad cases.',
     work: 'Somewhere between n × log₂ n and n², depending on the gaps and the list.',
-    meet: 'A neat example of improving a simple idea; appears in some Decision Mathematics and computing courses.' }
+    meet: 'A neat example of improving a simple idea; appears in some Decision Mathematics and computing courses.' },
+  { key: 'pancake', name: 'Pancake sort', run: pancakeRun, unit: 'flips',
+    code: ['FOR size ← n TO 2', '    max ← position of the biggest of list[0 .. size−1]', '    IF max ≠ size − 1 THEN', '        IF max ≠ 0 THEN flip list[0 .. max]', '        flip list[0 .. size−1]'],
+    note: '“flip list[0 .. k]” means reverse the order of those items, just like sliding a spatula under the top of a stack of pancakes and turning it over.',
+    tag: 'The Pancake Flipper game, solved by a computer: the only move allowed is flipping the top of the stack.',
+    how: 'This is the move you make in the Pancake Flipper game. Find the biggest pancake in the unsorted part, flip it up to the top, then flip the whole unsorted part so that pancake lands at the bottom. Repeat with one fewer pancake each time.',
+    good: 'Needs at most 2n − 3 flips for n pancakes, however jumbled the stack starts. A simple method that always works.',
+    bad: 'Not always the fewest flips. The Target in the game is the true minimum, found by a clever search, and finding that minimum is a hard problem for long stacks.',
+    work: 'Finding the biggest takes about n² ÷ 2 comparisons in total, but there are at most 2n − 3 flips.',
+    meet: 'Pancake sorting is a classic computer science puzzle: how do you sort when the only operation allowed is flipping the front of the list?',
+    extra: true }
 ];
 
 /* ------------------------------ trace --------------------------------- */
@@ -1397,7 +1457,7 @@ function rate() { return RATES[S.speed - 1]; }
 var main, raceViews = [], raceEls = [];
 var el = {};
 ['sxChips','presetSel','sizeSel','viewBars','viewNums','newListBtn','customIn','useListBtn','customMsg','sxGrid','singleView','raceView','raceGrid','raceNote',
- 'benchRoot','auxWrap','auxRows','statusMsg','cComp','cMoves','cStep','btnReset','btnBack','btnPlay','btnStep','sxSpeed','scrub','codeBox','aboutBox'
+ 'cMovesLbl','codeNote','benchRoot','auxWrap','auxRows','statusMsg','cComp','cMoves','cStep','btnReset','btnBack','btnPlay','btnStep','sxSpeed','scrub','codeBox','aboutBox'
 ].forEach(function (k) { el[k] = $(k); });
 
 function maxPos() { return S.race ? S.maxT : S.traces[S.ai].entries.length - 1; }
@@ -1430,7 +1490,7 @@ function buildRace() {
     var card = document.createElement('div'); card.className = 'racecard';
     card.innerHTML = '<div class="racehead"><b></b><span class="rank" hidden></span></div>' +
       '<div class="bench"></div>' +
-      '<div class="racestats"><span>Comparisons <b class="rc">0</b></span><span>' + (a.unit === 'moves' ? 'Moves' : 'Swaps') + ' <b class="rm">0</b></span>' +
+      '<div class="racestats"><span>Comparisons <b class="rc">0</b></span><span>' + (a.unit === 'moves' ? 'Moves' : a.unit === 'flips' ? 'Flips' : 'Swaps') + ' <b class="rm">0</b></span>' +
       '<button type="button" class="smallbtn" style="padding:2px 10px;font-size:13px">Explore</button></div>';
     card.querySelector('b').textContent = a.name;
     card.querySelector('button').addEventListener('click', function () { selectAlgo(i); });
@@ -1491,12 +1551,14 @@ function render() {
   if (tr.algo.key === 'merge') renderAux(e);
   el.statusMsg.textContent = e.msg;
   el.cComp.textContent = e.c; el.cMoves.textContent = e.m;
+  el.cMovesLbl.textContent = tr.algo.unit === 'moves' ? 'Moves' : tr.algo.unit === 'flips' ? 'Flips' : 'Swaps';
   el.cStep.textContent = S.pos + ' / ' + (tr.entries.length - 1);
   var lines = el.codeBox.children;
   for (var i = 0; i < lines.length; i++) lines[i].classList.toggle('on', i === e.line);
 }
-function ordinal(n) { return ['', '1st', '2nd', '3rd', '4th', '5th', '6th'][n] || n + 'th'; }
+function ordinal(n) { return ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th'][n] || n + 'th'; }
 
+var BASE_NOTE = 'The highlighted line is the one being carried out. Positions are numbered from 0, as in most programming languages, and \u00F7 means whole-number division.';
 function renderSide() {
   var a = ALGOS[S.ai];
   el.codeBox.innerHTML = a.code.map(function (l, i) {
@@ -1504,7 +1566,11 @@ function renderSide() {
   }).join('');
   el.aboutBox.innerHTML = '<h3>' + a.name + '</h3><p class="tag">' + a.tag + '</p>' +
     '<p><b>How it works.</b> ' + a.how + '</p><p><b>Good at.</b> ' + a.good + '</p><p><b>Not so good.</b> ' + a.bad + '</p>' +
-    '<p class="work"><b>How much work?</b> ' + a.work + '</p><p><b>Where you may meet it.</b> ' + a.meet + '</p>';
+    '<p class="work"><b>How much work?</b> ' + a.work + '</p><p><b>Where you may meet it.</b> ' + a.meet + '</p>' +
+    (a.extra ? '<p><button type="button" class="smallbtn" id="goGameBtn">Play Pancake Flipper</button></p>' : '');
+  var gb = document.getElementById('goGameBtn');
+  if (gb) gb.addEventListener('click', function () { document.getElementById('tabGameBtn').click(); });
+  el.codeNote.textContent = BASE_NOTE + (a.note ? ' ' + a.note : '');
 }
 
 function selectAlgo(i) {
@@ -1592,12 +1658,13 @@ ALGOS.forEach(function (a, i) {
   el.sxChips.appendChild(b);
 });
 var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'chip race'; rb.dataset.race = '1';
-rb.textContent = '⏱ Race all six'; rb.addEventListener('click', selectRace);
+rb.textContent = '⏱ Race all seven'; rb.addEventListener('click', selectRace);
 el.sxChips.appendChild(rb);
 
 /* hooks for the tab switcher + tests */
 window.SortExplorer = {
   onHide: function () { if (S.playing) pause(); },
+  openAlgo: function (key) { for (var i = 0; i < ALGOS.length; i++) if (ALGOS[i].key === key) selectAlgo(i); },
   _ALGOS: ALGOS, _buildTrace: buildTrace, _makeData: makeData, _state: S
 };
 
@@ -1612,7 +1679,7 @@ applyDuration();
   var tabs = { game: 'tabGameBtn', sort: 'tabSortBtn' };
   var heads = {
     game: ['Sorting Puzzle', 'Pancake Flipper', 'Tap a pancake to flip it and every pancake before it. Get the stack into order, 1 to 10, in as few flips as you can.'],
-    sort: ['Algorithms', 'Sort Explorer', 'Watch six famous ways to sort a list, one step at a time. Pick a sort, press Play, then race them against each other.']
+    sort: ['Algorithms', 'Sort Explorer', 'Watch seven famous ways to sort a list, one step at a time. Pick a sort, press Play, then race them against each other.']
   };
   function show(which) {
     var g = which === 'game';
@@ -1626,6 +1693,7 @@ applyDuration();
   }
   document.getElementById('tabGameBtn').addEventListener('click', function () { show('game'); });
   document.getElementById('tabSortBtn').addEventListener('click', function () { show('sort'); });
+  document.getElementById('goSortBtn').addEventListener('click', function () { show('sort'); if (window.SortExplorer) window.SortExplorer.openAlgo('pancake'); });
 })();
 </script>
 
