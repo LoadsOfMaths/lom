@@ -105,6 +105,22 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 .sheet{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 22px;max-height:52vh;overflow:auto;background:var(--paper);color:var(--ink);border-radius:10px;padding:14px 20px}
 .sheet div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted #b9b29a;padding:4px 0;font-size:clamp(.85rem,1.4vw,1.15rem)}
 .sheet div span:last-child{font-family:"Courier New",monospace;font-weight:700;text-align:right;color:#13304f}
+/* go large: answers only, as big as the screen allows */
+.sheet .n{font-style:normal;color:#8a846f;margin-right:.35em}
+#summary.large .sumtop{display:none}
+#summary.large .sheet{
+  position:fixed;left:0;top:0;right:0;bottom:70px;z-index:20;max-height:none;overflow:hidden;border-radius:0;
+  padding:1.5vh 2vw;gap:0 3vw;align-content:space-evenly;font-size:40px;
+}
+#summary.large .sheet div{font-size:1em;white-space:nowrap;justify-content:flex-start;align-items:baseline;padding:.05em 0}
+#summary.large .sheet .pn{display:none}
+#summary.large .sheet .n{display:inline-block;min-width:1.9em;text-align:right;margin-right:.5em}
+#summary.large .sheet div span:last-child{text-align:left;color:#0b2c4d}
+#summary.large .actions{
+  position:fixed;left:0;right:0;bottom:0;height:70px;margin:0;z-index:21;align-items:center;
+  background:var(--steel);border-top:4px solid var(--yellow);
+}
+#summary.large .actions .btn.big{font-size:1.1rem;padding:.5em 1.4em}
 @media(max-width:820px){
   .levels{grid-template-columns:repeat(2,1fr)}
   .bench{grid-template-columns:1fr}
@@ -185,6 +201,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
   </div>
   <div class="sheet" id="sheet"></div>
   <div class="actions">
+    <button class="btn big" id="largeBtn">Go large</button>
     <button class="btn big" id="againBtn">Another batch</button>
     <button class="btn ghost" id="backBtn">Change settings</button>
   </div>
@@ -322,7 +339,31 @@ const $ = id=>document.getElementById(id);
 let level="easy", total=10, countdown=0, mode="reveal", paused=false;
 let quiz=[], idx=0, revealed=false, tmr=null, tLeft=0;
 
+function setLarge(on){
+  $("summary").classList.toggle("large",on);
+  $("largeBtn").textContent = on ? "Back to list" : "Go large";
+  fitLarge();
+}
+function fitLarge(){
+  const sh=$("sheet");
+  if(!$("summary").classList.contains("large")){ sh.style.fontSize=""; sh.style.gridTemplateColumns=""; return; }
+  let best={fs:0,c:1};
+  for(let c=1;c<=5 && c<=quiz.length;c++){
+    sh.style.gridTemplateColumns="repeat("+c+",1fr)";
+    let lo=8, hi=300;
+    while(hi-lo>1){
+      const mid=(lo+hi)>>1; sh.style.fontSize=mid+"px";
+      const ok = sh.scrollHeight<=sh.clientHeight+1 && sh.scrollWidth<=sh.clientWidth+1;
+      if(ok) lo=mid; else hi=mid;
+    }
+    if(lo>best.fs) best={fs:lo,c};
+  }
+  sh.style.gridTemplateColumns="repeat("+best.c+",1fr)";
+  sh.style.fontSize=best.fs+"px";
+}
+window.addEventListener("resize",fitLarge);
 function show(id){
+  if(id!=="summary"){ $("summary").classList.remove("large"); $("largeBtn").textContent="Go large"; }
   ["setup","quiz","summary"].forEach(s=>$(s).classList.toggle("on",s===id));
   $("menuBtn").style.display = id==="setup" ? "none":"";
 }
@@ -409,7 +450,9 @@ function finish(){
   quiz.forEach((q,i)=>{
     const d=document.createElement("div");
     const a=document.createElement("span"); a.className="nm";
-    a.textContent=(i+1)+". "+q.name;
+    const nn=document.createElement("i"); nn.className="n"; nn.textContent=(i+1)+".";
+    const pn=document.createElement("em"); pn.className="pn"; pn.style.fontStyle="normal"; pn.textContent=" "+q.name;
+    a.appendChild(nn); a.appendChild(pn);
     const b=document.createElement("span");
     b.textContent=q.val+" "+q.fromS+" = "+q.ans+" "+q.toS;
     d.appendChild(a); d.appendChild(b); sh.appendChild(d);
@@ -423,9 +466,11 @@ $("pauseBtn").onclick=()=>{
   $("pauseBtn").textContent = paused ? "Resume" : "Pause";
 };
 $("againBtn").onclick=start;
+$("largeBtn").onclick=()=>setLarge(!$("summary").classList.contains("large"));
 $("backBtn").onclick=()=>show("setup");
 $("menuBtn").onclick=()=>{stopTimer();show("setup");};
 document.addEventListener("keydown",e=>{
+  if(e.code==="Escape" && $("summary").classList.contains("large")){ setLarge(false); return; }
   if(!$("quiz").classList.contains("on")) return;
   if(e.code==="Space"||e.code==="Enter"){e.preventDefault();next();}
 });
