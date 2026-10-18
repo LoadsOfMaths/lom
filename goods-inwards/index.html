@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goods Inwards - Metric Conversions Starter</title>
+<style>
+:root{
+  --steel:#2b3138; --steel2:#3a424b; --steel3:#505a65;
+  --yellow:#ffc20e; --paper:#f6f0dc; --ink:#1d2329;
+  --green:#2e9e5b; --red:#c0392b;
+  --accent:#2e9e5b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:"Segoe UI",Roboto,Arial,sans-serif;
+  background:var(--steel);
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.025) 0 10px,transparent 10px 20px);
+  color:#fff; display:flex; flex-direction:column; min-height:100vh;
+}
+.stripe{height:14px;background:repeating-linear-gradient(-45deg,var(--yellow) 0 18px,#111 18px 36px);flex:none}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;flex:none}
+header h1{margin:0;font-size:clamp(1.3rem,2.6vw,2.2rem);letter-spacing:.12em;color:var(--yellow);text-transform:uppercase}
+header small{display:block;color:#c9d1d9;letter-spacing:.04em;font-size:clamp(.8rem,1.3vw,1.05rem);text-transform:none;font-weight:400}
+.btn{
+  font:inherit;font-weight:700;cursor:pointer;border:0;border-radius:10px;
+  padding:.7em 1.4em;font-size:clamp(1rem,1.8vw,1.5rem);
+  background:var(--yellow);color:#111;box-shadow:0 4px 0 #a97f00;
+}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #a97f00}
+.btn.ghost{background:var(--steel3);color:#fff;box-shadow:0 4px 0 #2a3037;font-size:clamp(.85rem,1.3vw,1.1rem);padding:.5em 1em}
+.btn.big{font-size:clamp(1.3rem,2.6vw,2.2rem);padding:.7em 2em}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 24px 24px;min-height:0}
+.screen{display:none;width:100%;max-width:1200px}
+.screen.on{display:block}
+
+/* setup */
+.panel{background:var(--steel2);border:3px solid var(--steel3);border-radius:16px;padding:22px 28px}
+.panel h2{margin:.2em 0 .5em;color:var(--yellow);font-size:clamp(1.1rem,2vw,1.6rem);letter-spacing:.06em;text-transform:uppercase}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.lvl{
+  cursor:pointer;border:4px solid transparent;border-radius:14px;padding:14px;background:#222931;color:#fff;text-align:left;font:inherit;
+}
+.lvl b{display:block;font-size:clamp(1.2rem,2.2vw,1.9rem);margin-bottom:6px}
+.lvl span{font-size:clamp(.8rem,1.25vw,1.05rem);color:#cfd6dd;line-height:1.35;display:block}
+.lvl[data-l=easy]{--c:#2e9e5b}.lvl[data-l=medium]{--c:#e6a817}.lvl[data-l=hard]{--c:#e2692c}.lvl[data-l=expert]{--c:#9b59d0}
+.lvl b{color:var(--c)}
+.lvl.sel{border-color:var(--c);background:#2d353d}
+.row{display:flex;flex-wrap:wrap;gap:36px;margin-top:18px;align-items:center}
+.opt{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.opt label{font-size:clamp(1rem,1.6vw,1.3rem);color:#d9dfe5;margin-right:4px}
+.chip{
+  font:inherit;cursor:pointer;border:3px solid var(--steel3);background:#222931;color:#fff;border-radius:999px;
+  padding:.35em 1em;font-size:clamp(1rem,1.6vw,1.3rem);font-weight:600;
+}
+.chip.sel{background:var(--yellow);color:#111;border-color:var(--yellow)}
+.startrow{text-align:center;margin-top:22px}
+
+/* quiz */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}
+.prog{font-size:clamp(1.1rem,2vw,1.7rem);font-weight:700}
+.badge{display:inline-block;padding:.15em .7em;border-radius:999px;background:var(--accent);color:#fff;margin-left:10px;font-size:.8em;text-transform:uppercase;letter-spacing:.08em}
+.timer{height:12px;background:#222931;border-radius:8px;overflow:hidden;margin-bottom:14px;visibility:hidden}
+.timer.on{visibility:visible}
+.timer i{display:block;height:100%;width:100%;background:var(--yellow);transition:width .1s linear}
+.timer.low i{background:var(--red)}
+
+.bench{display:grid;grid-template-columns:1.25fr .9fr;gap:22px;align-items:stretch}
+.label{
+  background:var(--paper);color:var(--ink);border-radius:8px;padding:18px 26px 20px;position:relative;
+  box-shadow:0 8px 0 rgba(0,0,0,.35);border-left:20px solid var(--yellow);
+}
+.label:before{content:"";position:absolute;left:-12px;top:50%;width:14px;height:14px;border-radius:50%;background:var(--steel);transform:translateY(-50%);box-shadow:inset 0 2px 3px rgba(0,0,0,.6)}
+.label .hd{display:flex;justify-content:space-between;font-size:clamp(.8rem,1.3vw,1.1rem);letter-spacing:.14em;text-transform:uppercase;color:#6b665a;border-bottom:2px dashed #b9b29a;padding-bottom:6px}
+.label .name{font-size:clamp(1.6rem,3.6vw,3.2rem);font-weight:800;line-height:1.1;margin:.4em 0 .3em}
+.label .qty{font-size:clamp(1rem,1.8vw,1.5rem);color:#4a463c;margin-bottom:.5em}
+.label .spec{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.label .spec span.k{font-size:clamp(1rem,1.8vw,1.5rem);color:#6b665a;text-transform:uppercase;letter-spacing:.1em}
+.label .spec span.v{font-size:clamp(2rem,5vw,4.4rem);font-weight:800;font-family:"Courier New",monospace;color:#13304f}
+
+.order{
+  background:#e9eef2;color:var(--ink);border-radius:8px;padding:18px 24px;box-shadow:0 8px 0 rgba(0,0,0,.35);
+  display:flex;flex-direction:column;justify-content:space-between;border-top:20px solid #3b6ea5;
+}
+.order .hd{font-size:clamp(.8rem,1.3vw,1.1rem);letter-spacing:.14em;text-transform:uppercase;color:#5a6a78;border-bottom:2px dashed #b3bfca;padding-bottom:6px}
+.order .ask{font-size:clamp(1rem,1.7vw,1.4rem);color:#3d4a56;margin-top:10px}
+.answerbox{
+  margin:10px 0;border:4px dashed #8fa1b2;border-radius:10px;padding:10px 14px;min-height:clamp(80px,14vw,150px);
+  display:flex;align-items:center;justify-content:center;font-family:"Courier New",monospace;font-weight:800;
+  font-size:clamp(1.8rem,4.6vw,4rem);color:#13304f;text-align:center;word-break:break-all;
+}
+.answerbox .q{color:#8fa1b2}
+.answerbox.rev{border-style:solid;border-color:var(--green);background:#e5f5eb;color:#145c33}
+.working{min-height:2.4em;font-size:clamp(.95rem,1.7vw,1.4rem);color:#2e3a45;text-align:center}
+.working b{color:#0b4a8a}
+.actions{display:flex;justify-content:center;gap:16px;margin-top:20px}
+
+/* summary */
+.sumtop{text-align:center;margin-bottom:12px}
+.sumtop h2{font-size:clamp(1.6rem,3.2vw,2.6rem);color:var(--yellow);margin:.2em 0;letter-spacing:.08em;text-transform:uppercase}
+.sheet{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 22px;max-height:52vh;overflow:auto;background:var(--paper);color:var(--ink);border-radius:10px;padding:14px 20px}
+.sheet div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted #b9b29a;padding:4px 0;font-size:clamp(.85rem,1.4vw,1.15rem)}
+.sheet div span:last-child{font-family:"Courier New",monospace;font-weight:700;text-align:right;color:#13304f}
+@media(max-width:820px){
+  .levels{grid-template-columns:repeat(2,1fr)}
+  .bench{grid-template-columns:1fr}
+  .sheet{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<header>
+  <h1>Goods Inwards<small>Check the label against the order form</small></h1>
+  <button class="btn ghost" id="menuBtn" style="display:none">Menu</button>
+</header>
+<main>
+
+<!-- SETUP -->
+<section class="screen on" id="setup">
+  <div class="panel">
+    <h2>1. Choose a level</h2>
+    <div class="levels">
+      <button class="lvl sel" data-l="easy"><b>Easy</b><span>Simpler examples using units of length, mass and capacity.</span></button>
+      <button class="lvl" data-l="medium"><b>Medium</b><span>Any pair of units, not just neighbours. Adds cl and mg. Up to 2 decimal places.</span></button>
+      <button class="lvl" data-l="hard"><b>Hard</b><span>Adds dm, &micro;g and GW. Up to 3 decimal places, big jumps in size.</span></button>
+      <button class="lvl" data-l="expert"><b>Expert</b><span>Everything, plus area (mm&sup2;, cm&sup2;, m&sup2;, hectares, km&sup2;) and volume (cm&sup3;, m&sup3;).</span></button>
+    </div>
+    <div class="row">
+      <div class="opt"><label>Questions:</label>
+        <button class="chip sel" data-n="10">10</button><button class="chip" data-n="20">20</button>
+      </div>
+      <div class="opt"><label>Countdown:</label>
+        <button class="chip sel" data-t="0">Off</button><button class="chip" data-t="15">15 s</button><button class="chip" data-t="30">30 s</button><button class="chip" data-t="60">60 s</button>
+      </div>
+    </div>
+    <div class="startrow"><button class="btn big" id="startBtn">Start the shift</button></div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section class="screen" id="quiz">
+  <div class="topbar">
+    <div class="prog"><span id="qNum"></span><span class="badge" id="lvlBadge"></span></div>
+    <div style="font-size:clamp(.9rem,1.4vw,1.15rem);color:#c9d1d9">Space or Enter: reveal / next</div>
+  </div>
+  <div class="timer" id="timer"><i id="timerFill"></i></div>
+  <div class="bench">
+    <div class="label">
+      <div class="hd"><span>Goods label</span><span id="partNo"></span></div>
+      <div class="name" id="pName"></div>
+      <div class="qty" id="pQty"></div>
+      <div class="spec"><span class="k" id="pAttr"></span><span class="v" id="pVal"></span></div>
+    </div>
+    <div class="order">
+      <div>
+        <div class="hd">Order form</div>
+        <div class="ask" id="ask"></div>
+      </div>
+      <div class="answerbox" id="ansBox"><span class="q">?</span></div>
+      <div class="working" id="working"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn big" id="mainBtn">Reveal answer</button>
+  </div>
+</section>
+
+<!-- SUMMARY -->
+<section class="screen" id="summary">
+  <div class="sumtop">
+    <h2>Shift complete</h2>
+    <div style="font-size:clamp(1rem,1.7vw,1.4rem);color:#cfd6dd">Answer sheet for the whole batch</div>
+  </div>
+  <div class="sheet" id="sheet"></div>
+  <div class="actions">
+    <button class="btn big" id="againBtn">Another batch</button>
+    <button class="btn ghost" id="backBtn">Change settings</button>
+  </div>
+</section>
+
+</main>
+<div class="stripe"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Components ---------- */
+const NAMES = [
+ "Left-handed flindrels","Boxes of assorted cranklets","Long-reach splindges","Metric flangits",
+ "Differential thrumbles","Pairs of opposed grivvets","Self-aligning plindels","Auxiliary vortices",
+ "Reverse-threaded clankets","Adjustable flindges","Double-ended trunnicks","High-tolerance splindrels",
+ "Compound zibbets","Half-round tanglets","Counter-rotating blimpkins","Triple-ribbed sprocklets",
+ "Fluted gribbles","Heavy-duty snurdles","Pneumatic wobblestays","Gasketed flumbars",
+ "Offset thrapples","Twin-bore quindles","Precision doddlestruts","Tapered crumblejoints",
+ "Variable-pitch zongles","Nickel-plated frobnits","Stainless sprocklocks","Hydraulic gizmatrons",
+ "Articulated blenkins","Spring-loaded wimblets","Cross-drilled fandrels","Bevelled spludgeons",
+ "Quick-release thwackles","Counter-sunk plimbets"
+];
+const QTYS = [1,2,4,6,10,12,24,50,100,150,200,250,500];
+
+/* ---------- Units: e = power of ten relative to the base unit of that group ---------- */
+const U = {
+  mm:{s:"mm",e:-3}, cm:{s:"cm",e:-2}, dm:{s:"dm",e:-1}, m:{s:"m",e:0}, km:{s:"km",e:3},
+  ug:{s:"\u00b5g",e:-6}, mg:{s:"mg",e:-3}, g:{s:"g",e:0}, kg:{s:"kg",e:3}, t:{s:"tonnes",e:6},
+  W:{s:"W",e:0}, kW:{s:"kW",e:3}, MW:{s:"MW",e:6}, GW:{s:"GW",e:9},
+  ml:{s:"ml",e:-3}, cl:{s:"cl",e:-2}, L:{s:"litres",e:0},
+  mm2:{s:"mm\u00b2",e:-6}, cm2:{s:"cm\u00b2",e:-4}, m2:{s:"m\u00b2",e:0}, ha:{s:"hectares",e:4}, km2:{s:"km\u00b2",e:6},
+  cm3:{s:"cm\u00b3",e:-3}, ml3:{s:"ml",e:-3}, L3:{s:"litres",e:0}, m3:{s:"m\u00b3",e:3}
+};
+const ATTR = {
+  length:["Length","Width","Height","Diameter","Bore","Overall length","Stroke"],
+  mass:["Mass","Net mass","Shipping mass"],
+  power:["Rated output","Peak output","Motor rating"],
+  volume:["Capacity","Oil capacity","Reservoir","Fill volume"],
+  area:["Surface area","Coating area","Plate area","Footprint"],
+  cubic:["Displacement","Capacity","Internal volume"]
+};
+
+/* groups: units listed in order of size, adj = adjacent only */
+function G(group,units,adj){return {group,units,adj:!!adj};}
+const LEVELS = {
+  easy:{ dMax:1, mMax:99, pools:[
+    G("length",["mm","cm","m","km"],true), G("mass",["g","kg","t"],true),
+    G("volume",["ml","L"],true) ]},
+  medium:{ dMax:2, mMax:999, pools:[
+    G("length",["mm","cm","m","km"]), G("mass",["mg","g","kg","t"]),
+    G("power",["W","kW","MW"]), G("volume",["ml","cl","L"]) ]},
+  hard:{ dMax:3, mMax:999, pools:[
+    G("length",["mm","cm","dm","m","km"]), G("mass",["ug","mg","g","kg","t"]),
+    G("power",["W","kW","MW","GW"]), G("volume",["ml","cl","L"]) ]},
+  expert:{ dMax:3, mMax:999, pools:[
+    G("length",["mm","cm","dm","m","km"]), G("mass",["ug","mg","g","kg","t"]),
+    G("power",["W","kW","MW","GW"]), G("volume",["ml","cl","L"]),
+    G("area",["mm2","cm2","m2","ha","km2"]), G("area",["mm2","cm2","m2","ha","km2"]),
+    G("area",["mm2","cm2","m2","ha","km2"]),
+    G("cubic",["cm3","ml3","L3","m3"]), G("cubic",["cm3","ml3","L3","m3"]) ]}
+};
+
+/* ---------- Exact decimal helpers (no floating point) ---------- */
+function shiftDec(m,d,shift){ // m * 10^(shift-d), as plain string
+  const e = shift - d, s = String(m);
+  if(e>=0) return s + "0".repeat(e);
+  const k = -e; let ip, fp;
+  if(s.length>k){ ip=s.slice(0,s.length-k); fp=s.slice(s.length-k); }
+  else { ip="0"; fp="0".repeat(k-s.length)+s; }
+  fp = fp.replace(/0+$/,"");
+  return ip + (fp?"."+fp:"");
+}
+function commas(str){
+  const p = str.split(".");
+  p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  return p.join(".");
+}
+function rnd(n){return Math.floor(Math.random()*n);}
+function pick(a){return a[rnd(a.length)];}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ---------- Question generator ---------- */
+function makeQuestion(level,name,prev){
+  const L = LEVELS[level];
+  for(let tries=0;tries<80;tries++){
+    const pool = pick(L.pools);
+    const u = pool.units;
+    let i = rnd(u.length), j;
+    if(pool.adj){ j = (i===0)?1 : (i===u.length-1)? i-1 : (Math.random()<.5? i-1:i+1); }
+    else { j = rnd(u.length); if(j===i) continue; }
+    // value
+    let d = rnd(L.dMax+1);
+    let m = 1 + rnd(L.mMax);
+    if(d>0 && m%10===0) m++;
+    if(level==="easy" && d===1 && m<10) m += 10*(1+rnd(5)); // keep values sensible
+    const from = U[u[i]], to = U[u[j]];
+    const shift = from.e - to.e;
+    if(level==="easy" && shift<0){ d=0; m=(1+rnd(99))*Math.pow(10,Math.abs(shift)-1); } // e.g. 1500 g = 1.5 kg
+    const ans = shiftDec(m,d,shift);
+    if(ans.length>11) continue;
+    const key = pool.group+u[i]+u[j];
+    if(prev && prev===key) continue;
+    const val = shiftDec(m,d,0);
+    const code = (name.replace(/^(a|the|a pair of|a box of)\s+/i,"").replace(/[^a-z]/gi,"").slice(0,2) || "XX").toUpperCase()
+                 + "-" + String(1000+rnd(9000));
+    return {
+      key, name, code, qty: pick(QTYS), attr: pick(ATTR[pool.group]),
+      val: commas(val), fromS: from.s, toS: to.s, ans: commas(ans), shift
+    };
+  }
+  return null;
+}
+function workingText(q){
+  const s = q.shift, p = Math.pow(10,Math.abs(s));
+  const P = p.toLocaleString("en-GB");
+  if(s===0) return "1 "+q.fromS+" = 1 "+q.toS+", so the number stays the same";
+  if(s>0)   return "1 "+q.fromS+" = "+P+" "+q.toS+", so <b>\u00d7 "+P+"</b>";
+  return "1 "+q.toS+" = "+P+" "+q.fromS+", so <b>\u00f7 "+P+"</b>";
+}
+function buildQuiz(level,n){
+  const names = shuffle(NAMES.slice());
+  const out=[]; let prev=null;
+  for(let k=0;k<n;k++){
+    const q = makeQuestion(level,names[k%names.length],prev);
+    if(!q){k--;continue;}
+    prev=q.key; out.push(q);
+  }
+  return out;
+}
+
+/* ---------- UI state ---------- */
+const $ = id=>document.getElementById(id);
+let level="easy", total=10, countdown=0;
+let quiz=[], idx=0, revealed=false, tmr=null, tLeft=0;
+
+function show(id){
+  ["setup","quiz","summary"].forEach(s=>$(s).classList.toggle("on",s===id));
+  $("menuBtn").style.display = id==="setup" ? "none":"";
+}
+const ACC={easy:"#2e9e5b",medium:"#e6a817",hard:"#e2692c",expert:"#9b59d0"};
+
+document.querySelectorAll(".lvl").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".lvl").forEach(x=>x.classList.remove("sel"));
+  b.classList.add("sel"); level=b.dataset.l;
+});
+document.querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("[data-n]").forEach(x=>x.classList.remove("sel"));
+  b.classList.add("sel"); total=+b.dataset.n;
+});
+document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("[data-t]").forEach(x=>x.classList.remove("sel"));
+  b.classList.add("sel"); countdown=+b.dataset.t;
+});
+
+function start(){
+  quiz = buildQuiz(level,total); idx=0;
+  document.documentElement.style.setProperty("--accent",ACC[level]);
+  $("lvlBadge").textContent=level;
+  show("quiz"); load();
+}
+function stopTimer(){ if(tmr){clearInterval(tmr);tmr=null;} }
+function load(){
+  const q = quiz[idx]; revealed=false; stopTimer();
+  $("qNum").textContent = "Item "+(idx+1)+" of "+quiz.length;
+  $("partNo").textContent = "Part no. "+q.code;
+  $("pName").textContent = q.name;
+  $("pQty").textContent = "Qty: "+q.qty;
+  $("pAttr").textContent = q.attr+":";
+  $("pVal").textContent = q.val+" "+q.fromS;
+  $("ask").innerHTML = "Enter the "+q.attr.toLowerCase()+" in <b>"+q.toS+"</b>:";
+  $("ansBox").className="answerbox"; $("ansBox").innerHTML='<span class="q">? '+q.toS+'</span>';
+  $("working").innerHTML="";
+  $("mainBtn").textContent="Reveal answer";
+  const t=$("timer"), f=$("timerFill");
+  if(countdown>0){
+    t.className="timer on"; f.style.width="100%"; tLeft=countdown*10;
+    tmr=setInterval(()=>{
+      tLeft--; f.style.width=(100*tLeft/(countdown*10))+"%";
+      t.classList.toggle("low",tLeft<=countdown*2);
+      if(tLeft<=0){stopTimer();reveal();}
+    },100);
+  } else t.className="timer";
+}
+function reveal(){
+  if(revealed) return; revealed=true; stopTimer();
+  const q=quiz[idx];
+  $("ansBox").className="answerbox rev";
+  $("ansBox").textContent=q.ans+" "+q.toS;
+  $("working").innerHTML=workingText(q);
+  $("mainBtn").textContent = idx===quiz.length-1 ? "Finish" : "Next item";
+}
+function next(){
+  if(!revealed){reveal();return;}
+  if(idx>=quiz.length-1){finish();return;}
+  idx++; load();
+}
+function finish(){
+  stopTimer();
+  const sh=$("sheet"); sh.innerHTML="";
+  quiz.forEach((q,i)=>{
+    const d=document.createElement("div");
+    const a=document.createElement("span"); a.className="nm";
+    a.textContent=(i+1)+". "+q.name+" \u2013 "+q.val+" "+q.fromS;
+    const b=document.createElement("span");
+    b.textContent=q.ans+" "+q.toS;
+    d.appendChild(a); d.appendChild(b); sh.appendChild(d);
+  });
+  show("summary");
+}
+$("startBtn").onclick=start;
+$("mainBtn").onclick=next;
+$("againBtn").onclick=start;
+$("backBtn").onclick=()=>show("setup");
+$("menuBtn").onclick=()=>{stopTimer();show("setup");};
+document.addEventListener("keydown",e=>{
+  if(!$("quiz").classList.contains("on")) return;
+  if(e.code==="Space"||e.code==="Enter"){e.preventDefault();next();}
+});
+})();
+</script>
+</body>
+</html>

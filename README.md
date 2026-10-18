@@ -23,6 +23,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Fractal Explorer | `fractal-explorer/` |
 | Fraction Blaster | `fraction-blaster/` |
 | Fraction Fight Night | `fraction-fight-night/` |
+| Goods Inwards | `goods-inwards/` |
 | Hanoi | `hanoi/` |
 | Heads or Tails | `heads-or-tails/` |
 | Higher or Lower | `higher-or-lower/` |
