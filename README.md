@@ -44,6 +44,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Pentomino Explorer | `pentomino-explorer/` |
 | Potato | `potato/` |
 | Prime Quest | `prime-quest/` |
+| Puzzle of the Day | `puzzle-of-the-day/` |
 | Recite Pi | `recite-pi/` |
 | Sports Day | `sports-day/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
