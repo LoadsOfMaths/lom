@@ -48,6 +48,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Tangram Explorer | `tangram-explorer/` |
 | The Choice | `the-choice/` |
 | Times Tables Quiz | `times-tables-quiz/` |
+| Times Tables Tile Match | `times-tables-tile-match/` |
 | Toast | `toast/` |
 | Triangle Tangle | `triangle-tangle/` |
 | Trio | `trio/` |
