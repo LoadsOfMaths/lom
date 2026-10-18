@@ -56,6 +56,9 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 }
 .chip.sel{background:var(--yellow);color:#111;border-color:var(--yellow)}
 .startrow{text-align:center;margin-top:22px}
+.modenote{margin-top:8px;color:#cfd6dd;font-size:clamp(.9rem,1.4vw,1.15rem)}
+.chip:disabled{opacity:.35;cursor:not-allowed}
+.actions .btn.ghost{align-self:center}
 
 /* quiz */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}
@@ -128,11 +131,17 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
       <button class="lvl" data-l="expert"><b>Expert</b><span>Everything, plus area (mm&sup2;, cm&sup2;, m&sup2;, hectares, km&sup2;) and volume (cm&sup3;, m&sup3;).</span></button>
     </div>
     <div class="row">
+      <div class="opt"><label>Mode:</label>
+        <button class="chip sel" data-m="reveal">Reveal each answer</button><button class="chip" data-m="auto">Auto advance</button>
+      </div>
+    </div>
+    <div class="modenote" id="modeNote">You reveal each answer yourself, then click for the next question.</div>
+    <div class="row" style="margin-top:12px">
       <div class="opt"><label>Questions:</label>
         <button class="chip sel" data-n="10">10</button><button class="chip" data-n="20">20</button>
       </div>
       <div class="opt"><label>Countdown:</label>
-        <button class="chip sel" data-t="0">Off</button><button class="chip" data-t="15">15 s</button><button class="chip" data-t="30">30 s</button><button class="chip" data-t="60">60 s</button>
+        <button class="chip sel" data-t="0" id="offChip">Off</button><button class="chip" data-t="10">10 s</button><button class="chip" data-t="15">15 s</button><button class="chip" data-t="30">30 s</button><button class="chip" data-t="60">60 s</button>
       </div>
     </div>
     <div class="startrow"><button class="btn big" id="startBtn">Start the shift</button></div>
@@ -143,7 +152,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 <section class="screen" id="quiz">
   <div class="topbar">
     <div class="prog"><span id="qNum"></span><span class="badge" id="lvlBadge"></span></div>
-    <div style="font-size:clamp(.9rem,1.4vw,1.15rem);color:#c9d1d9">Space or Enter: reveal / next</div>
+    <div style="font-size:clamp(.9rem,1.4vw,1.15rem);color:#c9d1d9" id="keyHint">Space or Enter: reveal / next</div>
   </div>
   <div class="timer" id="timer"><i id="timerFill"></i></div>
   <div class="bench">
@@ -164,6 +173,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
   </div>
   <div class="actions">
     <button class="btn big" id="mainBtn">Reveal answer</button>
+    <button class="btn ghost" id="pauseBtn" style="display:none">Pause</button>
   </div>
 </section>
 
@@ -309,7 +319,7 @@ function buildQuiz(level,n){
 
 /* ---------- UI state ---------- */
 const $ = id=>document.getElementById(id);
-let level="easy", total=10, countdown=0;
+let level="easy", total=10, countdown=0, mode="reveal", paused=false;
 let quiz=[], idx=0, revealed=false, tmr=null, tLeft=0;
 
 function show(id){
@@ -326,15 +336,28 @@ document.querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("[data-n]").forEach(x=>x.classList.remove("sel"));
   b.classList.add("sel"); total=+b.dataset.n;
 });
-document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("[data-t]").forEach(x=>x.classList.remove("sel"));
-  b.classList.add("sel"); countdown=+b.dataset.t;
+function setCountdown(n){
+  countdown=n;
+  document.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("sel",+x.dataset.t===n));
+}
+document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>setCountdown(+b.dataset.t));
+document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("[data-m]").forEach(x=>x.classList.remove("sel"));
+  b.classList.add("sel"); mode=b.dataset.m;
+  const auto = mode==="auto";
+  $("offChip").disabled = auto;
+  if(auto && countdown===0) setCountdown(10);
+  $("modeNote").textContent = auto
+    ? "Questions move on by themselves (or click Next question). Answers, with both units, appear at the end."
+    : "You reveal each answer yourself, then click for the next question.";
 });
 
 function start(){
   quiz = buildQuiz(level,total); idx=0;
   document.documentElement.style.setProperty("--accent",ACC[level]);
   $("lvlBadge").textContent=level;
+  $("keyHint").textContent = mode==="auto" ? "Space or Enter: next question" : "Space or Enter: reveal / next";
+  $("pauseBtn").style.display = mode==="auto" ? "" : "none";
   show("quiz"); load();
 }
 function stopTimer(){ if(tmr){clearInterval(tmr);tmr=null;} }
@@ -349,14 +372,17 @@ function load(){
   $("ask").innerHTML = "Enter the "+q.attr.toLowerCase()+" in <b>"+q.toS+"</b>:";
   $("ansBox").className="answerbox"; $("ansBox").innerHTML='<span class="q">? '+q.toS+'</span>';
   $("working").innerHTML="";
-  $("mainBtn").textContent="Reveal answer";
+  const auto = mode==="auto";
+  paused=false; $("pauseBtn").textContent="Pause";
+  $("mainBtn").textContent = auto ? (idx===quiz.length-1 ? "Finish" : "Next question") : "Reveal answer";
   const t=$("timer"), f=$("timerFill");
   if(countdown>0){
     t.className="timer on"; f.style.width="100%"; tLeft=countdown*10;
     tmr=setInterval(()=>{
+      if(paused) return;
       tLeft--; f.style.width=(100*tLeft/(countdown*10))+"%";
       t.classList.toggle("low",tLeft<=countdown*2);
-      if(tLeft<=0){stopTimer();reveal();}
+      if(tLeft<=0){stopTimer(); if(auto) next(); else reveal();}
     },100);
   } else t.className="timer";
 }
@@ -369,6 +395,10 @@ function reveal(){
   $("mainBtn").textContent = idx===quiz.length-1 ? "Finish" : "Next item";
 }
 function next(){
+  if(mode==="auto"){
+    if(idx>=quiz.length-1){finish();return;}
+    idx++; load(); return;
+  }
   if(!revealed){reveal();return;}
   if(idx>=quiz.length-1){finish();return;}
   idx++; load();
@@ -379,15 +409,19 @@ function finish(){
   quiz.forEach((q,i)=>{
     const d=document.createElement("div");
     const a=document.createElement("span"); a.className="nm";
-    a.textContent=(i+1)+". "+q.name+" \u2013 "+q.val+" "+q.fromS;
+    a.textContent=(i+1)+". "+q.name;
     const b=document.createElement("span");
-    b.textContent=q.ans+" "+q.toS;
+    b.textContent=q.val+" "+q.fromS+" = "+q.ans+" "+q.toS;
     d.appendChild(a); d.appendChild(b); sh.appendChild(d);
   });
   show("summary");
 }
 $("startBtn").onclick=start;
 $("mainBtn").onclick=next;
+$("pauseBtn").onclick=()=>{
+  paused=!paused;
+  $("pauseBtn").textContent = paused ? "Resume" : "Pause";
+};
 $("againBtn").onclick=start;
 $("backBtn").onclick=()=>show("setup");
 $("menuBtn").onclick=()=>{stopTimer();show("setup");};
