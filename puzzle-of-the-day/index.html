@@ -457,6 +457,15 @@ html,body{
   .py .py-ans .abx{min-width:90px;height:48px;font-size:1.4rem;}
   .py .py-ans .ab{font-size:1.4rem;}
 }
+
+/* ---- round 6: pencil marks ---- */
+.pcl{display:grid;width:100%;height:100%;padding:2px;font-size:.47em;font-weight:700;color:#5a6070;font-style:normal;}
+.pcl span{display:flex;align-items:center;justify-content:center;line-height:1;}
+.pcl span.hl{background:#ffe08a;border-radius:3px;color:#5d4a00;}
+.fk .cell,.ng .cell{position:relative;overflow:hidden;}
+.py .pcl{font-size:calc(var(--bh)*.3);padding:3px;}
+.py .br.noted{background:#fff;}
+.py .pend{font-size:.55em;font-style:italic;color:#6b6f8a;}
 </style>
 </head>
 <body>
@@ -560,12 +569,24 @@ const POTD = (function(){
     const b=document.createElement('button'); b.className='btn '+(cls||''); b.textContent=label;
     b.addEventListener('click', onClick); return b;
   }
+  /* pencil-mark grid used by Futoshiki / Number Grid: 2x2 corners for 4, 3x2 for 6, 3x3 'nine-spot die' for the rest */
+  function pencilGrid(n, set, hl){
+    const cols = n<=4 ? 2 : 3, rows = (n<=4||n===6) ? 2 : 3;
+    const g=document.createElement('div'); g.className='pcl';
+    g.style.gridTemplateColumns='repeat('+cols+',1fr)'; g.style.gridTemplateRows='repeat('+rows+',1fr)';
+    for(let d=1; d<=cols*rows; d++){
+      const sp=document.createElement('span');
+      if(d<=n && set.has(d)){ sp.textContent=d; if(hl===d) sp.className='hl'; }
+      g.appendChild(sp);
+    }
+    return g;
+  }
   /* put the tabs in a fixed order (labels not listed go last) */
   function sortTabs(order){
     modules.sort((a,b)=>{ const ia=order.indexOf(a.id), ib=order.indexOf(b.id); return (ia<0?99:ia)-(ib<0?99:ib); });
     modules.forEach(m=>tabsEl.appendChild(m.tabBtn));
   }
-  return {register, show, toast, win, confetti, fit, onResize, seg, btn, hooks, sortTabs, get active(){return active;}, modules};
+  return {register, show, toast, win, confetti, fit, onResize, seg, btn, hooks, sortTabs, pencilGrid, get active(){return active;}, modules};
 })();
 </script>
 
@@ -1916,7 +1937,9 @@ window.__fkengine={generateFutoshiki,countSolutions};
 
 const LEVELS=['Very Easy','Easy','Medium','Hard','Very Hard','Challenge'];
 let n=4, level='Easy', pz=null, user=null, sel=null, shown=false, done=false, busy=false;
-let boardEl,areaEl,msgEl,padEl,sizeSeg,diffSeg;
+let notes=null, mode='pen';
+let boardEl,areaEl,msgEl,padEl,sizeSeg,diffSeg,modeSeg;
+function freshNotes(){ return Array.from({length:n*n},()=>new Set()); }
 function setMsg(t){ msgEl.textContent=t||''; }
 function val(r,c){ return pz.given[r][c]!==null?pz.given[r][c]:user[r][c]; }
 function dup(r,c){
@@ -1945,6 +1968,7 @@ function render(){
     else if(shown){ el.classList.add('shown'); el.textContent=pz.solution[r][c]; }
     else {
       if(user[r][c]!==null){ el.textContent=user[r][c]; if(dup(r,c)) el.classList.add('conflict'); }
+      else if(notes[r*n+c].size) el.appendChild(POTD.pencilGrid(n,notes[r*n+c]));
       if(sel&&sel.r===r&&sel.c===c) el.classList.add('sel');
       el.addEventListener('click',()=>{ if(done) return; sel=(sel&&sel.r===r&&sel.c===c)?null:{r,c}; render(); });
     }
@@ -1962,19 +1986,45 @@ function render(){
     }
     boardEl.appendChild(el);
   }
-  layout();
+  layout(); updatePad();
+}
+function updatePad(){
+  padEl.querySelectorAll('button[data-d]').forEach(b=>{
+    const d=+b.dataset.d; let on=false;
+    if(mode==='pencil'&&sel&&user[sel.r][sel.c]===null) on=notes[sel.r*n+sel.c].has(d);
+    b.classList.toggle('active',on);
+  });
 }
 function buildPad(){
   padEl.innerHTML='';
   for(let d=1;d<=n;d++){
-    const b=document.createElement('button'); b.textContent=d; b.addEventListener('click',()=>press(d)); padEl.appendChild(b);
+    const b=document.createElement('button'); b.textContent=d; b.dataset.d=d; b.addEventListener('click',()=>press(d)); padEl.appendChild(b);
   }
   const e=document.createElement('button'); e.className='erase'; e.textContent='⌫'; e.addEventListener('click',()=>press(null)); padEl.appendChild(e);
 }
 function press(d){
   if(done||shown||!sel){ if(!sel&&!done&&!shown) setMsg('Tap a square first.'); return; }
   setMsg('');
-  user[sel.r][sel.c]=d; render(); check();
+  const r=sel.r, c=sel.c, k=r*n+c;
+  if(mode==='pencil'){
+    if(user[r][c]!==null&&d!==null) return;
+    if(d===null){ if(user[r][c]!==null) user[r][c]=null; else notes[k].clear(); }
+    else if(notes[k].has(d)) notes[k].delete(d); else notes[k].add(d);
+    render(); return;
+  }
+  user[r][c]=d;
+  if(d!==null){ notes[k].clear(); for(let i=0;i<n;i++){ notes[r*n+i].delete(d); notes[i*n+c].delete(d); } }
+  render(); check();
+}
+function seedNotes(){
+  if(!pz||done||shown) return;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    if(val(r,c)!==null){ notes[r*n+c]=new Set(); continue; }
+    const s=new Set(); for(let d=1;d<=n;d++) s.add(d);
+    for(let i=0;i<n;i++){ s.delete(val(r,i)); s.delete(val(i,c)); }
+    notes[r*n+c]=s;
+  }
+  render();
 }
 function check(){
   for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(val(r,c)===null) return;
@@ -1987,21 +2037,23 @@ function newPuzzle(){
     let p=null; try{ p=generateFutoshiki(n,level); }catch(e){ console.error(e); }
     busy=false;
     if(!p){ setMsg('Could not generate a puzzle, please try again.'); return; }
-    pz=p; user=Array.from({length:n},()=>Array(n).fill(null)); sel=null; shown=false; done=false;
+    pz=p; user=Array.from({length:n},()=>Array(n).fill(null)); notes=freshNotes(); sel=null; shown=false; done=false;
     buildPad(); setMsg(''); render();
   },20);
 }
 function mount(panel){
   panel.classList.add('fk');
   panel.innerHTML=`<div class="bar"></div><div class="stage"><div class="gp-wrap">
-    <div class="rules">Fill the grid so every row and column has each digit once. The point of a &lt; or &gt; sign faces the smaller number. Signs turn green when satisfied and red when broken.</div>
+    <div class="rules">Fill the grid so every row and column has each digit once. The point of a &lt; or &gt; sign faces the smaller number. Signs turn green when satisfied and red when broken. Pen puts a number in; Pencil makes small notes.</div>
     <div class="gp-area"><div class="board"></div></div><div class="pad"></div><div class="msg"></div></div></div>`;
   boardEl=panel.querySelector('.board'); areaEl=panel.querySelector('.gp-area'); padEl=panel.querySelector('.pad'); msgEl=panel.querySelector('.msg');
   sizeSeg=POTD.seg([[4,'4×4'],[5,'5×5']],n,v=>{ n=+v; newPuzzle(); });
   diffSeg=POTD.seg(LEVELS.map(l=>[l,l]),level,v=>{ level=v; newPuzzle(); });
+  modeSeg=POTD.seg([['pen','Pen'],['pencil','Pencil']],mode,v=>{ mode=v; updatePad(); });
   const sp=document.createElement('span'); sp.className='spacer';
-  panel.querySelector('.bar').append(sizeSeg.el,diffSeg.el,sp,
-    POTD.btn('Clear','secondary',()=>{ if(!pz) return; user=Array.from({length:n},()=>Array(n).fill(null)); sel=null; shown=false; done=false; setMsg(''); render(); }),
+  panel.querySelector('.bar').append(sizeSeg.el,diffSeg.el,modeSeg.el,sp,
+    POTD.btn('All Pencil Marks','secondary',seedNotes),
+    POTD.btn('Clear','secondary',()=>{ if(!pz) return; user=Array.from({length:n},()=>Array(n).fill(null)); notes=freshNotes(); sel=null; shown=false; done=false; setMsg(''); render(); }),
     POTD.btn('Show Answer','secondary',()=>{ if(!pz) return; shown=true; done=true; sel=null; setMsg('Answer shown.'); render(); }),
     POTD.btn('New Puzzle','',newPuzzle));
   POTD.onResize(areaEl,layout);
@@ -2258,7 +2310,9 @@ const CELLPOS={0:[1,1],1:[3,1],2:[5,1],3:[1,3],4:[3,3],5:[5,3],6:[1,5],7:[3,5],8
 const RATIO=[82,44,82,44,82,30,76];
 const rng=NG.makeRng(Date.now()%2147483647);
 let level='Medium', pz=null, given=null, user=null, sel=-1, shown=false, done=false, busy=false;
-let boardEl,areaEl,msgEl,padEl,diffSeg;
+let notes=null, mode='pen';
+let boardEl,areaEl,msgEl,padEl,diffSeg,modeSeg;
+function freshNotes(){ return Array.from({length:9},()=>new Set()); }
 function setMsg(t){ msgEl.textContent=t||''; }
 function val(i){ if(given[i]!==null) return given[i]; if(shown) return pz.perm[i]; return user[i]; }
 function chainOf(cells){ return pz.chains.find(c=>c.cells.join(',')===cells.join(',')); }
@@ -2291,6 +2345,7 @@ function render(){
     else if(shown){ cls+=' shown'; txt=pz.perm[i]; }
     else { txt=user[i]===null?'':user[i]; if(sel===i) cls+=' sel'; }
     const e=add(c,r,cls,txt);
+    if(given[i]===null&&!shown&&user[i]===null&&notes[i].size) e.appendChild(POTD.pencilGrid(9,notes[i]));
     if(given[i]===null&&!shown&&!done) e.addEventListener('click',()=>{ sel=(sel===i?-1:i); render(); });
   }
   let solvedCount=0;
@@ -2321,31 +2376,55 @@ function buildPad(){
 }
 function updatePad(){
   const used=new Set();
-  for(let i=0;i<9;i++){ if(i===sel) continue; if(given[i]!==null) used.add(given[i]); else if(user[i]!==null) used.add(user[i]); }
-  padEl.querySelectorAll('button[data-d]').forEach(b=>{ b.style.visibility=used.has(+b.dataset.d)?'hidden':'visible'; });
+  if(mode==='pen') for(let i=0;i<9;i++){ if(i===sel) continue; if(given[i]!==null) used.add(given[i]); else if(user[i]!==null) used.add(user[i]); }
+  padEl.querySelectorAll('button[data-d]').forEach(b=>{
+    const d=+b.dataset.d;
+    b.style.visibility=used.has(d)?'hidden':'visible';
+    b.classList.toggle('active', mode==='pencil'&&sel>=0&&user[sel]===null&&notes[sel].has(d));
+  });
 }
 function press(d){
   if(done||shown) return;
   if(sel<0){ setMsg('Tap a blank square first.'); return; }
-  setMsg(''); user[sel]=d; sel=-1; render();
+  setMsg('');
+  if(mode==='pencil'){
+    if(user[sel]!==null&&d!==null) return;
+    if(d===null){ if(user[sel]!==null) user[sel]=null; else notes[sel].clear(); }
+    else if(notes[sel].has(d)) notes[sel].delete(d); else notes[sel].add(d);
+    render(); return;
+  }
+  user[sel]=d;
+  if(d!==null){ notes[sel].clear(); for(let i=0;i<9;i++) notes[i].delete(d); }
+  sel=-1; render();
+}
+function seedNotes(){
+  if(!pz||done||shown) return;
+  const used=new Set(); for(let i=0;i<9;i++){ if(given[i]!==null) used.add(given[i]); else if(user[i]!==null) used.add(user[i]); }
+  for(let i=0;i<9;i++){
+    if(given[i]!==null||user[i]!==null){ notes[i]=new Set(); continue; }
+    const s=new Set(); for(let d=1;d<=9;d++) if(!used.has(d)) s.add(d); notes[i]=s;
+  }
+  render();
 }
 function newPuzzle(){
   pz=NG.makeUniquePuzzle(rng);
   if(!pz){ setMsg('Could not generate a puzzle, please try again.'); return; }
   given=NG.applyPrefill(pz,NG.DIFFICULTY_PREFILL[level],rng);
-  user=new Array(9).fill(null); sel=-1; shown=false; done=false; setMsg('');
+  user=new Array(9).fill(null); notes=freshNotes(); sel=-1; shown=false; done=false; setMsg('');
   buildPad(); render();
 }
 function mount(panel){
   panel.classList.add('ng');
   panel.innerHTML=`<div class="bar"></div><div class="stage"><div class="gp-wrap">
-    <div class="rules">Put the digits 1 to 9 in the grid, each once. Work left to right along rows and top to bottom down columns, one step at a time. There is no BIDMAS here!</div>
+    <div class="rules">Put the digits 1 to 9 in the grid, each once. Work left to right along rows and top to bottom down columns, one step at a time. There is no BIDMAS here! Pen puts a number in; Pencil makes small notes.</div>
     <div class="gp-area"><div class="board"></div></div><div class="pad"></div><div class="msg"></div></div></div>`;
   boardEl=panel.querySelector('.board'); areaEl=panel.querySelector('.gp-area'); padEl=panel.querySelector('.pad'); msgEl=panel.querySelector('.msg');
   diffSeg=POTD.seg(LEVELS.map(l=>[l,l]),level,v=>{ level=v; newPuzzle(); });
+  modeSeg=POTD.seg([['pen','Pen'],['pencil','Pencil']],mode,v=>{ mode=v; render(); });
   const sp=document.createElement('span'); sp.className='spacer';
-  panel.querySelector('.bar').append(diffSeg.el,sp,
-    POTD.btn('Clear','secondary',()=>{ if(!pz) return; user=new Array(9).fill(null); sel=-1; shown=false; done=false; setMsg(''); render(); }),
+  panel.querySelector('.bar').append(diffSeg.el,modeSeg.el,sp,
+    POTD.btn('All Pencil Marks','secondary',seedNotes),
+    POTD.btn('Clear','secondary',()=>{ if(!pz) return; user=new Array(9).fill(null); notes=freshNotes(); sel=-1; shown=false; done=false; setMsg(''); render(); }),
     POTD.btn('Show Answer','secondary',()=>{ if(!pz) return; shown=true; done=true; sel=-1; setMsg('Answer shown.'); render(); }),
     POTD.btn('New Puzzle','',newPuzzle));
   POTD.onResize(areaEl,layout);
@@ -4583,8 +4662,8 @@ const RANGES={
 const RDEFAULT={standard:1,negative:0,decimal:0,fraction:0,algebra:0,algebra2:0};
 const ASPECT={standard:1.5,negative:1.6,decimal:1.7,fraction:1.8,algebra:1.5,algebra2:3.3};
 let type='standard', size=5, diff='medium', rIdx=1;
-let P=null, state={}, typed={}, sel=null, done=false, revealed=false;
-let areaEl, boardEl, padEl, msgEl, ansEl, typeSeg, sizeSeg, diffSeg, rangeHost, rangeSeg;
+let P=null, state={}, typed={}, notes={}, mode='pen', sel=null, done=false, revealed=false;
+let areaEl, boardEl, padEl, msgEl, ansEl, typeSeg, sizeSeg, diffSeg, rangeHost, rangeSeg, modeSeg;
 
 function setMsg(t,bad){ msgEl.textContent=t||''; msgEl.classList.toggle('bad',!!bad); }
 function num(v){ return (v&&typeof v==='object') ? v.num/v.den : v; }
@@ -4611,7 +4690,7 @@ function newPuzzle(){
   const r=RANGES[type][rIdx]||['',1,20,'none'];
   const cfg={size,difficulty:diff,puzzleType:type,numberFilter:r[3],minVal:r[1],maxVal:r[2]};
   P=generatePuzzle(cfg);
-  state={}; typed={}; sel=null; done=false; revealed=false; setMsg('');
+  state={}; typed={}; notes={}; sel=null; done=false; revealed=false; setMsg('');
   buildPad(); render();
 }
 /* which bricks are blanks the player may fill */
@@ -4630,7 +4709,7 @@ function render(){
       const k=l+'_'+i, v=P.levels[l-1][i];
       const isVar=alg&&l===P.n&&i===P.variableIndex;
       const blank=isBlank(l,i), st=state[k];
-      let cls='br', body='';
+      let cls='br', body='', grid=false;
       if(a2&&l===P.n){
         const [A,B]=P.levelCoeffs[l-1][i];
         const e=formatExpr(A,B).replace(/-/g,'−');
@@ -4650,9 +4729,14 @@ function render(){
         cls+=' blank';
         if(revealed&&st!=='ok'){ cls+=' rev'; body=fmt(v); }
         else if(st==='ok'){ cls+=' ok'; body=fmt(v); }
-        else { if(st==='bad')cls+=' bad'; if(sel===k)cls+=' sel'; body=typed[k]||''; }
+        else {
+          if(st==='bad')cls+=' bad'; if(sel===k)cls+=' sel';
+          if(typed[k]) body=(mode==='pencil'?'<span class="pend">'+typed[k]+'</span>':typed[k]);
+          else if(notes[k]&&notes[k].length){ cls+=' noted'; grid=true; body='<div class="pcl" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr)">'+[0,1,2,3].map(j=>'<span>'+(notes[k][j]||'')+'</span>').join('')+'</div>'; }
+          else body='';
+        }
       }
-      const fs=(function(){ if(a2) return ''; const len=String(body).replace(/<[^>]*>/g,'').length; return ' style="font-size:calc(var(--bh)*'+(len<=3?.46:Math.max(.2,1.5/len))+')"'; })();
+      const fs=(function(){ if(a2||grid) return ''; const len=String(body).replace(/<[^>]*>/g,'').length; return ' style="font-size:calc(var(--bh)*'+(len<=3?.46:Math.max(.2,1.5/len))+')"'; })();
       const inter=(blank||isVar||(a2&&l===P.n&&!P.revealedMask[l-1][i]))?' data-k="'+k+'"':'';
       h+='<div class="'+cls+'"'+inter+fs+(a2?' style="font-size:calc(var(--bh)*.34)"':'')+'>'+body+'</div>';
     }
@@ -4691,26 +4775,49 @@ function buildPad(){
   if(type==='decimal') add('.','',()=>press('.'));
   if(type==='fraction') add('/','',()=>press('/'));
   add('⌫','erase',()=>press(null));
-  add('Enter','enter',enter);
+  add(mode==='pencil'?'Note':'Enter','enter',enter);
 }
 function press(d){
   if(done||revealed) return;
   if(!sel){ setMsg('Tap a blank brick first.'); return; }
   setMsg('');
   let t=typed[sel]||'';
-  if(d===null){ typed[sel]=t.slice(0,-1); render(); return; }
+  if(d===null){
+    if(mode==='pencil'&&t===''&&notes[sel]&&notes[sel].length){ notes[sel].pop(); render(); return; }
+    typed[sel]=t.slice(0,-1); render(); return;
+  }
   if(d==='-'){ t=t.startsWith('-')?t.slice(1):'-'+t; typed[sel]=t; render(); return; }
   if(t.length>=8) return;
   typed[sel]=t+d;
+  if(mode==='pencil'){ render(); return; }
   evaluate(false);
 }
-function enter(){ if(done||revealed||!sel) return; evaluate(true); }
+function noteable(k){
+  const m=/^(\d+)_(\d+)$/.exec(k||''); if(!m) return false;
+  const l=+m[1], i=+m[2];
+  if(P.puzzleType==='algebra2'&&l===P.n) return false;
+  if(P.puzzleType==='algebra'&&l===P.n&&i===P.variableIndex) return false;
+  return true;
+}
+function commitNote(){
+  if(!noteable(sel)){ setMsg('Notes can go in the empty bricks.'); return; }
+  const t=(typed[sel]||'').trim();
+  if(t===''){ setMsg('Type a possible number, then tap Note.'); return; }
+  if(isNaN(parseVal(t))){ setMsg('That is not a number I can read.',true); return; }
+  const arr=notes[sel]||(notes[sel]=[]), v=t.replace('-','\u2212'), at=arr.indexOf(v);
+  if(at>=0) arr.splice(at,1);
+  else if(arr.length>=4){ setMsg('Four notes at most - tap the delete key to remove one.'); return; }
+  else arr.push(v);
+  typed[sel]=''; setMsg(''); render();
+}
+function enter(){ if(done||revealed||!sel) return; if(mode==='pencil'){ commitNote(); return; } evaluate(true); }
+function setMode(v){ mode=v; const e=padEl&&padEl.querySelector('.enter'); if(e) e.textContent=mode==='pencil'?'Note':'Enter'; render(); }
 function evaluate(force){
   const k=sel, t=typed[k]||'';
   const want=wantFor(k), got=parseVal(t);
   const whole=(P.puzzleType!=='decimal'&&P.puzzleType!=='fraction');
   if(!isNaN(got)&&Math.abs(got-want)<1e-9){
-    state[k]='ok'; delete typed[k]; sel=null; render(); checkSolved(); return;
+    state[k]='ok'; delete typed[k]; delete notes[k]; sel=null; render(); checkSolved(); return;
   }
   const digits=t.replace(/[^0-9]/g,'').length, wantDigits=String(Math.abs(Math.round(want))).length;
   if(force ? t!=='' : (whole && digits>=wantDigits)){
@@ -4727,7 +4834,7 @@ function checkSolved(){
   else { ok=true; for(let l=1;l<=P.n;l++) for(let i=0;i<l;i++) if(isBlank(l,i)&&state[l+'_'+i]!=='ok') ok=false; }
   if(ok){ done=true; sel=null; setMsg('Solved!'); POTD.win('🎉 Pyramid solved! 🎉'); render(); }
 }
-function clearAll(){ if(!P) return; state={}; typed={}; sel=null; done=false; revealed=false; setMsg(''); render(); }
+function clearAll(){ if(!P) return; state={}; typed={}; notes={}; sel=null; done=false; revealed=false; setMsg(''); render(); }
 function showAnswers(){
   if(!P) return; revealed=true; done=true; sel=null;
   setMsg(P.puzzleType==='algebra2'?'x = '+P.x+', y = '+P.y:(P.puzzleType==='algebra'?'x = '+fmt(P.levels[P.n-1][P.variableIndex]):'Answers shown.'));
@@ -4749,10 +4856,11 @@ function mount(panel){
   typeSeg=POTD.seg(TYPES,type,v=>{ type=v; rIdx=RDEFAULT[type]; buildRange(); newPuzzle(); });
   sizeSeg=POTD.seg([3,4,5,6,7,8].map(n=>[n,n+' layers']),size,v=>{ size=+v; newPuzzle(); });
   diffSeg=POTD.seg(DIFFS,diff,v=>{ diff=v; newPuzzle(); });
+  modeSeg=POTD.seg([['pen','Pen'],['pencil','Pencil']],mode,setMode);
   rangeHost=document.createElement('span');
   const sp=document.createElement('span'); sp.className='spacer';
   const bar=panel.querySelector('.bar');
-  bar.append(typeSeg.el,sizeSeg.el,diffSeg.el,rangeHost,sp,POTD.btn('Clear','secondary',clearAll),POTD.btn('Show Answers','secondary',showAnswers),POTD.btn('New Puzzle','',newPuzzle));
+  bar.append(typeSeg.el,sizeSeg.el,diffSeg.el,modeSeg.el,rangeHost,sp,POTD.btn('Clear','secondary',clearAll),POTD.btn('Show Answers','secondary',showAnswers),POTD.btn('New Puzzle','',newPuzzle));
   rIdx=RDEFAULT[type]; buildRange();
   POTD.onResize(areaEl,layout); newPuzzle();
 }
