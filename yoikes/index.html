@@ -92,6 +92,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;fl
 .bignum{font-family:var(--bounce);font-size:clamp(6rem,24vw,11rem);color:var(--blue-d);line-height:1;margin:2px 0;min-width:2ch}
 .bignum.pop{animation:pop .35s ease-out}
 @keyframes pop{0%{transform:scale(.4);opacity:.2}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.bignum.dec{font-size:clamp(4rem,15vw,8rem)}
 .counter{font-family:var(--hand);font-size:1.3rem;color:var(--grey);min-height:1.6em}
 .msg{font-family:var(--hand);font-size:1.25rem;color:var(--red);min-height:1.5em;font-weight:bold}
 
@@ -124,6 +125,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;fl
 .cell.filled{background:#cfe3fb;border-color:var(--blue);color:var(--blue-d);cursor:default}
 .cell.shake{animation:shake .35s}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.boxes.dec{grid-template-columns:repeat(10,minmax(0,1fr))}
+.boxes.dec .cell{font-size:clamp(.62rem,1.9vw,1.1rem);letter-spacing:-.3px}
+@media(max-width:640px){.boxes.dec{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.boxes.dec .cell{font-size:1.05rem}}
 .boxes.two{grid-template-columns:repeat(2,minmax(0,140px))!important;justify-content:center;gap:16px}
 .boxes.two .cell{font-size:2.6rem}
 
@@ -163,6 +167,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;fl
 .modal.big{max-width:760px}
 .ngrid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-top:8px}
 .nc{background:#f4f6fa;border:1px solid #cdd5e3;border-radius:4px;text-align:center;padding:7px 0;font-size:clamp(.7rem,2.6vw,1rem);color:#8a94a8}
+.ngrid.dec{grid-template-columns:repeat(5,1fr)}
+.ngrid.dec .nc{font-size:1.1rem;padding:9px 0}
 .nc.called{background:var(--orange);color:#fff;border-color:var(--orange-d);font-weight:bold}
 .nc.current{background:var(--blue);border-color:var(--blue-d);color:#fff;font-weight:bold;outline:3px solid #ffd54a}
 .endmsg{font-family:var(--bounce);font-size:2.2rem;color:var(--red);text-align:center;margin:8px 0}
@@ -199,6 +205,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;fl
       <option value="standard" selected>Standard (10 boxes)</option>
       <option value="royal">Royal (20 boxes)</option>
       <option value="gambler">Gambler (2 boxes, first = 50)</option>
+      <option value="decimal">Decimal (10 boxes, 0 to 1)</option>
     </select>
   </label>
   <label>Game mode
@@ -279,7 +286,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;fl
       <li>Several students can win at once, so everyone stays in with a chance.</li>
     </ul>
     <p><strong>Variants</strong><br>
-    Standard &ndash; 10 boxes. Royal &ndash; 20 boxes. Gambler &ndash; 2 boxes, and the first number called is always 50.</p>
+    Standard &ndash; 10 boxes. Royal &ndash; 20 boxes. Gambler &ndash; 2 boxes, and the first number called is always 50. Decimal &ndash; 10 boxes, but every number is a decimal between 0 and 1 with 1, 2 or 3 decimal places (so 0.4, 0.35 and 0.399 are all in play). Time to think about place value!</p>
     <p><strong>Game modes</strong><br>
     Manual &ndash; you call the numbers with a button for a class playing on paper.<br>
     Live play &ndash; play on screen, clicking a box or &ldquo;Yoikes!&rdquo; for each number.<br>
@@ -306,6 +313,8 @@ let called = [];
 let idx = 0;
 let maxNumbers = 10;
 let variant = "standard";
+let isDec = false;
+const fmt = v => isDec ? String(v/1000) : String(v);
 let mode = "manual";
 let boxes = [];
 let bin = [];
@@ -321,7 +330,8 @@ function modeChanged(){
 
 function setVariant(){
   variant = $("variant").value;
-  maxNumbers = variant === "standard" ? 10 : variant === "royal" ? 20 : 2;
+  maxNumbers = variant === "royal" ? 20 : variant === "gambler" ? 2 : 10;
+  isDec = variant === "decimal";
 }
 
 function shuffle(a){
@@ -353,6 +363,8 @@ function startGame(){
     const rest = p.filter(n=>n!==50);
     shuffle(rest);
     pool = [50, ...rest];
+  } else if(variant === "decimal"){
+    pool = makeDecimals(maxNumbers);
   } else {
     shuffle(p);
     pool = p;
@@ -381,13 +393,28 @@ function startGame(){
   else showNextNumber();
 }
 
+// values are held as whole thousandths (0.35 -> 350) so comparisons are exact
+function makeDecimals(n){
+  const seen = new Set();
+  while(seen.size < n){
+    const d = 1 + Math.floor(Math.random()*3);          // 1, 2 or 3 decimal places
+    const top = Math.pow(10, d) - 1;                    // 9, 99, 999
+    const k = 1 + Math.floor(Math.random()*top);
+    if(d > 1 && k % 10 === 0) continue;                 // no trailing zeros (0.50 is really 0.5)
+    seen.add(k * Math.pow(10, 3-d));
+  }
+  const arr = Array.from(seen);
+  shuffle(arr);
+  return arr;
+}
+
 function renderBoxes(){
   const row = $("boxesRow");
   row.innerHTML = "";
   const n = variant === "royal" ? 20 : variant === "gambler" ? 2 : 10;
   boxes = Array(n).fill(null);
-  row.className = "boxes" + (mode === "live" ? " live" : "") + (n === 2 ? " two" : "");
-  row.style.gridTemplateColumns = n === 2 ? "" : "repeat(10, minmax(0,1fr))";
+  row.className = "boxes" + (mode === "live" ? " live" : "") + (n === 2 ? " two" : "") + (isDec ? " dec" : "");
+  row.style.gridTemplateColumns = (n === 2 || isDec) ? "" : "repeat(10, minmax(0,1fr))";
   for(let i=0;i<n;i++){
     const slot = document.createElement("div");
     slot.className = "slot";
@@ -410,7 +437,8 @@ function showNextNumber(){
   if(idx >= maxNumbers){ setTimeout(endGame, 250); return; }
   const num = pool[idx];
   const el = $("currentNumber");
-  el.textContent = num;
+  el.textContent = fmt(num);
+  el.classList.toggle("dec", isDec);
   el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
   $("counter").textContent = "Number " + (idx+1) + " of " + maxNumbers;
   if(!called.includes(num)) called.push(num);
@@ -439,7 +467,7 @@ function placeNumber(index){
     return;
   }
   boxes[index] = num;
-  cell.textContent = num;
+  cell.textContent = fmt(num);
   cell.classList.add("filled");
   updateScore();
   idx++;
@@ -449,7 +477,7 @@ function placeNumber(index){
 function addToBin(num){
   bin.push(num);
   const s = document.createElement("span");
-  s.textContent = num;
+  s.textContent = fmt(num);
   s.style.setProperty("--r", (Math.random()*14-7).toFixed(1)+"deg");
   $("yoikesList").appendChild(s);
 }
@@ -477,6 +505,8 @@ function nextNumber(){
 function buildGrid(){
   const g = $("numbersGrid");
   g.innerHTML = "";
+  g.className = "ngrid" + (isDec ? " dec" : "");
+  if(isDec) return;
   for(let i=1;i<=100;i++){
     const d = document.createElement("div");
     d.className = "nc";
@@ -486,6 +516,17 @@ function buildGrid(){
   }
 }
 function markCalled(){
+  if(isDec){
+    const g = $("numbersGrid");
+    g.innerHTML = "";
+    [...called].sort((a,b)=>a-b).forEach(v=>{
+      const d = document.createElement("div");
+      d.className = "nc called" + (active && idx < maxNumbers && v === pool[idx] ? " current" : "");
+      d.textContent = fmt(v);
+      g.appendChild(d);
+    });
+    return;
+  }
   document.querySelectorAll(".nc").forEach(c=>c.classList.remove("current"));
   for(const n of called){
     const c = $("num-"+n);
@@ -535,7 +576,7 @@ function aiChooseSlot(num){
   const valid = [];
   for(let i=0;i<n;i++){ if(boxes[i]===null && canPlaceNumber(num,i)) valid.push(i); }
   if(!valid.length) return -1;
-  const ideal = Math.floor((num-1)/100*n);
+  const ideal = isDec ? Math.min(n-1, Math.floor(num/1000*n)) : Math.floor((num-1)/100*n);
   valid.sort((a,b)=>Math.abs(a-ideal)-Math.abs(b-ideal));
   return valid[0];
 }
@@ -548,7 +589,7 @@ function aiPlaceNumber(num){
   } else {
     boxes[i] = num;
     const cell = cellAt(i);
-    cell.textContent = num;
+    cell.textContent = fmt(num);
     cell.classList.add("filled");
     updateScore();
   }
