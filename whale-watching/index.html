@@ -246,10 +246,11 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consola
 @keyframes jout{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-60px)}}
 #one .q.in{animation:jin .45s ease-out}
 #one .q.out{animation:jout .3s ease-in forwards}
-#pad{position:relative;z-index:4;background:#2b3748;padding:8px 10px;display:none;gap:6px;justify-content:center;flex-wrap:wrap}
+#pad{position:relative;z-index:4;background:#2b3748;padding:8px 10px;display:none;flex-direction:column;gap:6px;align-items:center}
 #pad.on{display:flex}
-#pad button{min-width:clamp(40px,8vw,64px);height:clamp(40px,6.5vh,56px);border-radius:10px;background:#eceff4;font-weight:700;font-size:clamp(18px,2.6vh,26px);box-shadow:0 3px 0 #000}
-#pad .o{background:var(--orange);color:#fff}
+#pad .prow{display:flex;gap:6px;justify-content:center;width:100%}
+#pad button{flex:1 1 0;min-width:0;max-width:64px;height:clamp(40px,6.5vh,56px);border-radius:10px;background:#eceff4;font-weight:700;font-size:clamp(18px,2.6vh,26px);box-shadow:0 3px 0 #000}
+#pad .o{background:var(--orange);color:#fff;max-width:110px;flex-grow:1.6}
 #score{position:absolute;inset:0;display:none;flex-direction:column;overflow:auto;z-index:6}
 #score.on{display:flex}
 #scoreScene{position:relative;flex:none;height:min(52vh,460px);display:flex;align-items:flex-end;justify-content:center}
@@ -1510,12 +1511,15 @@ function nextFrom(i){
 /* ---------- on-screen number pad (touch devices) ---------- */
 function buildPad(){
   const pad = $('#pad'); pad.innerHTML = '';
-  ['7','8','9','4','5','6','1','2','3','0','.','/','NEG','⌫','Next'].forEach(k => {
-    const b = document.createElement('button'); b.dataset.k = k;
-    b.innerHTML = k === 'NEG' ? `(${NG})` : k === 'Next' ? 'Next' : k; if(k === 'Next') b.className = 'o';
-    b.setAttribute('aria-label', {NEG:'negative', '⌫':'delete'}[k] || k);
-    b.addEventListener('pointerdown', e => e.preventDefault());
-    b.onclick = () => padPress(k); pad.appendChild(b);
+  [['1','2','3','4','5','6','7','8','9','0'], ['.','/','NEG','⌫','Next']].forEach(keys => {
+    const row = document.createElement('div'); row.className = 'prow'; pad.appendChild(row);
+    keys.forEach(k => {
+      const b = document.createElement('button'); b.dataset.k = k;
+      b.innerHTML = k === 'NEG' ? `(${NG})` : k === 'Next' ? 'Next' : k; if(k === 'Next') b.className = 'o';
+      b.setAttribute('aria-label', {NEG:'negative', '⌫':'delete'}[k] || k);
+      b.addEventListener('pointerdown', e => e.preventDefault());
+      b.onclick = () => padPress(k); row.appendChild(b);
+    });
   });
 }
 function padPress(k){
