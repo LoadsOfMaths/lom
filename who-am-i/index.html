@@ -129,6 +129,29 @@ button.danger{border-color:#7a2a31;color:#ffb3b8}
 .guess input:focus{outline:none;border-color:var(--gold)}
 input[type=number]::-webkit-inner-spin-button{display:none}
 
+
+/* ---------- auto-reveal ---------- */
+let autoOn=false, autoStart=performance.now();
+function autoReset(){ autoStart=performance.now(); }
+function autoActive(){
+  return autoOn && S.phase==='play' && S.mode!=='all' && S.shown<8 && $('overlay').classList.contains('off');
+}
+function autoUI(){
+  $('autoBox').classList.toggle('off',S.mode==='all');
+  $('btnAuto').classList.toggle('on',autoOn);
+  $('btnAuto').textContent='Auto-reveal: '+(autoOn?'on':'off');
+}
+setInterval(()=>{
+  const bar=$('autobar'), fill=bar.firstElementChild;
+  if(!autoActive()){ bar.style.visibility='hidden'; return; }
+  const total=(+$('autoSecs').value)*1000, el=performance.now()-autoStart;
+  bar.style.visibility='visible';
+  fill.style.width=Math.min(100,el/total*100)+'%';
+  if(el>=total) nextClue();
+},100);
+$('btnAuto').onclick=()=>{ autoOn=!autoOn; SFX.click(); autoReset(); autoUI(); };
+$('autoSecs').onchange=()=>{ autoReset(); $('autoSecs').blur(); };
+
 /* briefing overlay */
 #overlay{
   position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -156,6 +179,13 @@ input[type=number]::-webkit-inner-spin-button{display:none}
 .lom{margin-top:22px;font-family:Arial,Helvetica,sans-serif;font-size:clamp(.85rem,1.8vw,1.1rem);letter-spacing:.04em;color:#c9ced6}
 .lom span{opacity:.6;margin-right:.4em}
 #btnMute{padding:6px 12px;font-size:.9rem}
+#autobar{width:min(96vw, calc((100vh - 235px) * 1.65));height:6px;margin-top:6px;border-radius:3px;background:#161d2a;overflow:hidden;visibility:hidden}
+#autobar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b8922c,#f3dc8a)}
+@media (max-aspect-ratio:1/1){ #autobar{width:96vw} }
+.auto{display:flex;gap:6px;align-items:center}
+.auto select{font:inherit;font-size:clamp(.9rem,1.9vw,1.2rem);padding:9px 8px;background:#0c1018;color:var(--gold2);border:1px solid #4a5468;border-radius:8px}
+button.on{background:linear-gradient(#e2c35a,#b8922c);color:#1a1505;border-color:#f3dc8a;font-weight:bold}
+.auto.off{display:none}
 footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
 </style>
 </head>
@@ -176,10 +206,18 @@ footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
 </header>
 
 <div id="board"></div>
+<div id="autobar"><i></i></div>
 <div id="msg"></div>
 
 <div class="controls">
   <button id="btnNext" class="primary">Next clue</button>
+  <div class="auto" id="autoBox">
+    <button id="btnAuto" title="Reveal the next clue automatically">Auto-reveal: off</button>
+    <select id="autoSecs" title="Seconds between clues">
+      <option value="5">5 sec</option><option value="10">10 sec</option><option value="15" selected>15 sec</option>
+      <option value="20">20 sec</option><option value="30">30 sec</option><option value="45">45 sec</option><option value="60">60 sec</option>
+    </select>
+  </div>
   <div class="guess">
     <input id="guess" type="number" inputmode="numeric" placeholder="Number?" autocomplete="off">
     <button id="btnGuess">Name the number</button>
@@ -443,6 +481,7 @@ function render(){
   let canNext=playing&&S.mode!=='all'&&S.shown<8;
   $('btnNext').disabled=!canNext;
   $('btnNext').style.display=S.mode==='all'?'none':'';
+  if(typeof autoUI==='function') autoUI();
 }
 function say(t,cls){ const m=$('msg'); m.textContent=t; m.className=cls||''; }
 
@@ -452,7 +491,7 @@ function newMission(){
   if(S.mode==='seq') S.cellOf=CW.slice();
   else S.cellOf=shuffle(CW.slice());
   S.order=shuffle([0,1,2,3,4,5,6,7]);
-  S.shown=S.mode==='all'?8:1;
+  S.shown=S.mode==='all'?8:1; autoReset();
   $('guess').value='';
   say(S.mode==='all'?'Eight files on the table. Who am I?':'File opened. Request more intelligence when you are ready.');
   render();
@@ -461,7 +500,7 @@ function newMission(){
 }
 function nextClue(){
   if(S.phase!=='play'||S.mode==='all'||S.shown>=8) return;
-  S.shown++; SFX.reveal(); say(S.shown===8?'That is every file. No more intelligence available.':'');
+  S.shown++; autoReset(); SFX.reveal(); say(S.shown===8?'That is every file. No more intelligence available.':'');
   render();
 }
 function guess(){
