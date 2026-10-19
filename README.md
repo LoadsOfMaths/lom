@@ -28,6 +28,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Goods Inwards | `goods-inwards/` |
 | Hanoi | `hanoi/` |
 | Heads or Tails | `heads-or-tails/` |
+| Hex Connect | `hex-connect/` |
 | Higher or Lower | `higher-or-lower/` |
 | In the Middle | `in-the-middle/` |
 | Jelly Bean Disco | `jelly-bean-disco/` |
