@@ -6,7 +6,6 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 
 | Game | Folder |
 | --- | --- |
-| 24 Game | `24-game/` |
 | Angle Detective | `angle-detective/` |
 | Baked Bean Sim | `baked-bean-sim/` |
 | Block Shift | `block-shift/` |
