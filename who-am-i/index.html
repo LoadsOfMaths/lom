@@ -423,7 +423,7 @@ function visibleClues(){
   if(S.phase!=='play') return new Set([0,1,2,3,4,5,6,7]);
   if(S.mode==='all') return new Set([0,1,2,3,4,5,6,7]);
   if(S.mode==='seq'){ const s=new Set(); for(let i=0;i<S.shown;i++) s.add(i); return s; }
-  return new Set([S.order[S.shown-1]]);
+  return new Set([S.order[(S.shown-1)%8]]);
 }
 function fmt(t){ return t.replace(/(\d+)/g,'<b>$1</b>'); }
 
@@ -456,7 +456,7 @@ function render(){
   $('chipMode').textContent=L.name+' · '+MODES[S.mode];
   const playing=S.phase==='play';
   $('btnGuess').disabled=!playing; $('guess').disabled=!playing; $('btnGiveUp').disabled=!playing;
-  let canNext=playing&&S.mode!=='all'&&S.shown<8;
+  let canNext=playing&&S.mode!=='all'&&(S.mode==='rand'||S.shown<8);
   $('btnNext').disabled=!canNext;
   $('btnNext').style.display=S.mode==='all'?'none':'';
   if(typeof autoUI==='function') autoUI();
@@ -477,8 +477,15 @@ function newMission(){
   $('guess').focus();
 }
 function nextClue(){
-  if(S.phase!=='play'||S.mode==='all'||S.shown>=8) return;
-  S.shown++; autoReset(); SFX.reveal(); say(S.shown===8?'That is every file. No more intelligence available.':'');
+  if(S.phase!=='play'||S.mode==='all') return;
+  if(S.mode!=='rand'&&S.shown>=8) return;
+  if(S.mode==='rand'&&S.shown%8===0){            // every file seen: shuffle and go round again
+    const last=S.order[7]; shuffle(S.order);
+    if(S.order[0]===last){ const t=S.order[0]; S.order[0]=S.order[1]; S.order[1]=t; }
+  }
+  S.shown++; autoReset(); SFX.reveal();
+  if(S.mode==='rand') say(S.shown===8?'That is every file. Going round again until you name the number.':(S.shown>8?'Round '+(Math.floor((S.shown-1)/8)+1)+': look more carefully, Agent.':''));
+  else say(S.shown===8?'That is every file. No more intelligence available.':'');
   render();
 }
 function guess(){
@@ -488,7 +495,8 @@ function guess(){
   if(v===S.n){
     const gain=S.mode==='all'?1:Math.max(1,9-S.shown);
     S.pts+=gain; S.done++; S.phase='win'; SFX.win();
-    say('Mission accomplished, Agent! '+(S.mode==='all'?'':('Clues used: '+S.shown+' – ')) +'+'+gain+(gain===1?' point':' points')+'.','good');
+    const nag=(S.mode==='rand'&&gain===1)?' Be more observant, Agent.':'';
+    say('Mission accomplished, Agent!'+nag+' '+(S.mode==='all'?'':('Clues used: '+S.shown+' – ')) +'+'+gain+(gain===1?' point':' points')+'.','good');
     render();
   } else {
     S.attempts++; SFX.wrong();
@@ -506,7 +514,7 @@ function giveUp(){
 let autoOn=false, autoStart=performance.now();
 function autoReset(){ autoStart=performance.now(); }
 function autoActive(){
-  return autoOn && S.phase==='play' && S.mode!=='all' && S.shown<8 && $('overlay').classList.contains('off');
+  return autoOn && S.phase==='play' && S.mode!=='all' && (S.mode==='rand'||S.shown<8) && $('overlay').classList.contains('off');
 }
 function autoUI(){
   $('autoBox').classList.toggle('off',S.mode==='all');
