@@ -159,10 +159,15 @@ dialog menu{display:flex;gap:10px;justify-content:flex-end;padding:0;margin:14px
     <label>Animals:
       <select id="grp">
         <option value="all">All</option>
-        <option value="mammals">Mammals</option>
-        <option value="bats">Bats</option>
-        <option value="birds">Birds</option>
+        <option value="primates">Monkeys &amp; apes</option>
+        <option value="cats">Big cats</option>
+        <option value="savannah">Savannah animals</option>
         <option value="herps">Reptiles &amp; amphibians</option>
+        <option value="spiders">Spider Sanctuary</option>
+        <option value="aquarium">Aquarium</option>
+        <option value="mammals">British mammals</option>
+        <option value="bats">British bats</option>
+        <option value="birds">British birds</option>
       </select>
     </label>
     <menu>
@@ -228,7 +233,59 @@ const DATA=[
 ['Grass snake','🐍','length','m',0.6,1.1,3,'herps'],
 ['Adder','🐍','length','m',0.5,0.7,3,'herps'],
 ['Slow worm','🐍','length','m',0.3,0.45,3,'herps'],
-['Great crested newt','🦎','length','m',0.1,0.15,3,'herps']
+['Great crested newt','🦎','length','m',0.1,0.15,3,'herps'],
+// ---- the zoo's exotic animals (typical adult ranges, rounded) ----
+['Ring-tailed lemur','🐒','body mass','kg',2.2,3.3,3,'primates'],
+['Squirrel monkey','🐒','body mass','kg',0.5,1.1,3,'primates'],
+['Cotton-top tamarin','🐒','body mass','kg',0.4,0.5,3,'primates'],
+['Mandrill','🐒','body mass','kg',10,35,2,'primates'],
+['Chimpanzee','🐒','body mass','kg',30,70,1,'primates'],
+['Western lowland gorilla','🦍','body mass','kg',140,200,1,'primates'],
+['Lion','🦁','body mass','kg',130,250,1,'cats'],
+['Tiger','🐯','body mass','kg',100,250,1,'cats'],
+['Snow leopard','🐆','body mass','kg',25,55,2,'cats'],
+['Jaguar','🐆','body mass','kg',56,96,2,'cats'],
+['Cheetah','🐆','body mass','kg',35,65,2,'cats'],
+['Lion','🦁','head-and-body length','m',1.4,2.5,3,'cats'],
+['Tiger','🐯','head-and-body length','m',1.4,2.5,3,'cats'],
+['Cheetah','🐆','head-and-body length','m',1.1,1.5,3,'cats'],
+['Meerkat','🐾','body mass','kg',0.62,0.97,3,'savannah'],
+['Meerkat','🐾','head-and-body length','m',0.25,0.35,3,'savannah'],
+['Plains zebra','🦓','body mass','kg',230,385,1,'savannah'],
+['Plains zebra','🦓','shoulder height','m',1.1,1.45,3,'savannah'],
+['Giraffe','🦒','body mass','t',0.8,1.9,3,'savannah'],
+['Giraffe','🦒','height','m',4.3,5.7,2,'savannah'],
+['White rhino','🦏','body mass','t',1.7,2.3,3,'savannah'],
+['White rhino','🦏','shoulder height','m',1.5,1.85,3,'savannah'],
+['Hippo','🦛','body mass','t',1.3,1.8,3,'savannah'],
+['African elephant','🐘','body mass','t',2.4,6.3,3,'savannah'],
+['African elephant','🐘','shoulder height','m',2.4,3.7,3,'savannah'],
+['Ostrich','🐦','body mass','kg',100,130,1,'savannah'],
+['Ostrich','🐦','height','m',2,2.7,3,'savannah'],
+['Goliath birdeater','🕷️','body mass','g',100,175,1,'spiders'],
+['Goliath birdeater','🕷️','leg span','cm',20,30,1,'spiders'],
+['Chilean rose tarantula','🕷️','leg span','cm',11,14,1,'spiders'],
+['Mexican red-knee tarantula','🕷️','leg span','cm',10,14,1,'spiders'],
+['Brazilian wandering spider','🕷️','leg span','cm',10,15,1,'spiders'],
+['Raft spider','🕷️','body length','mm',10,22,1,'spiders'],
+['Clownfish','🐠','length','cm',7,11,1,'aquarium'],
+['Blue tang','🐟','length','cm',20,30,1,'aquarium'],
+['Lionfish','🐠','length','cm',20,38,1,'aquarium'],
+['Long-snouted seahorse','🐟','height','cm',10,21,1,'aquarium'],
+['Blacktip reef shark','🦈','length','m',1,1.8,3,'aquarium'],
+['Green sea turtle','🐢','shell length','m',0.8,1.1,3,'aquarium'],
+['Green sea turtle','🐢','body mass','kg',65,190,1,'aquarium'],
+['Humboldt penguin','🐧','body mass','kg',3.6,5.9,3,'aquarium'],
+['Komodo dragon','🦎','length','m',2,3,3,'herps'],
+['Komodo dragon','🦎','body mass','kg',50,90,1,'herps'],
+['Burmese python','🐍','length','m',3.5,5.5,3,'herps'],
+['Royal python','🐍','length','m',0.9,1.5,3,'herps'],
+['Corn snake','🐍','length','m',0.9,1.5,3,'herps'],
+['Panther chameleon','🦎','length','m',0.3,0.5,3,'herps'],
+['Leopard gecko','🦎','length','m',0.18,0.25,3,'herps'],
+['Aldabra giant tortoise','🐢','body mass','kg',150,250,1,'herps'],
+['Red-eyed tree frog','🐸','body length','mm',40,75,1,'herps'],
+['Axolotl','🦎','length','cm',15,30,1,'herps']
 ];
 function toEntry(a){return{sp:a[0],ico:a[1],meas:a[2],u:a[3],min:a[4],max:a[5],dp:a[6],grp:a[7]}}
 function rnd(a,b){return a+Math.random()*(b-a)}
@@ -268,8 +325,9 @@ function makeSet(e,n,level){
 /*ENDGEN*/
 
 (function(){
-const UNIT={kg:'kilograms (kg)',g:'grams (g)',m:'metres (m)'};
-const SITE={mammals:'the mammal house',bats:'the bat house',birds:'the aviary',herps:'the reptile and amphibian house'};
+const UNIT={kg:'kilograms (kg)',g:'grams (g)',m:'metres (m)',t:'tonnes (t)',cm:'centimetres (cm)',mm:'millimetres (mm)'};
+const SITE={mammals:'the mammal house',bats:'the bat house',birds:'the aviary',herps:'the reptile and amphibian house',
+  primates:'the monkey house',cats:'the big cat enclosure',savannah:'the savannah',spiders:'the Spider Sanctuary',aquarium:'the aquarium'};
 const WORDS={3:'Three',5:'Five',7:'Seven'};
 const ORD=['1st','2nd','3rd','4th','5th','6th','7th'];
 const PRAISE=['Well done, keeper!','Spot on, vet!','Check-up complete!','Brilliant sorting!','Top-notch record keeping!'];
