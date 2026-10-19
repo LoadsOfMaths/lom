@@ -495,8 +495,8 @@ function guess(){
   if(v===S.n){
     const gain=S.mode==='all'?1:Math.max(1,9-S.shown);
     S.pts+=gain; S.done++; S.phase='win'; SFX.win();
-    const nag=(S.mode==='rand'&&gain===1)?' Be more observant, Agent.':'';
-    say('Mission accomplished, Agent!'+nag+' '+(S.mode==='all'?'':('Clues used: '+S.shown+' – ')) +'+'+gain+(gain===1?' point':' points')+'.','good');
+    const slow=(S.mode==='rand'&&gain===1);
+    say((slow?'Mission finally accomplished. Be more observant, Agent!':'Mission accomplished, Agent!')+' '+(S.mode==='all'?'':('Clues used: '+S.shown+' – ')) +'+'+gain+(gain===1?' point':' points')+'.','good');
     render();
   } else {
     S.attempts++; SFX.wrong();
