@@ -62,9 +62,9 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Whack-A-Prime | `whack-a-prime/` |
 | Whale Watching | `whale-watching/` |
 | Who Am I? | `who-am-i/` |
-| Wildlife Line-Up | `wildlife-line-up/` |
 | X-Factor | `x-factor/` |
 | Yoikes! | `yoikes/` |
+| Zoo Check-Up | `zoo-check-up/` |
 
 ## Updating a game
 

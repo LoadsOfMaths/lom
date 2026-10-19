@@ -3,14 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wildlife Line-Up – Sorting Decimals</title>
+<title>Zoo Check-Up – Sorting Decimals</title>
 <style>
 :root{--forest:#1f3d2b;--moss:#3f6b45;--parch:#f4eedb;--card:#fffdf4;--edge:#cdbf98;--ink:#22303a;--amber:#e0a526;--orange:#c4501f;--blue:#2a5676;--zero:#17805f;--zerobg:#d9f1e4;--bad:#c0392b}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink);min-height:100vh;
  background:radial-gradient(circle at 15% 0%,#fbf7ea 0,transparent 55%),linear-gradient(180deg,#efe7cd,#e6dcba)}
-header{background:var(--forest);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 20px;flex-wrap:wrap}
+header{position:relative;color:#fff;display:flex;align-items:center;gap:12px;padding:16px 20px 20px;flex-wrap:wrap;
+ background:repeating-linear-gradient(90deg,var(--forest) 0 44px,#2c5a3d 44px 88px)}
+/* zoo-gate awning scallops along the bottom edge */
+header::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:10px;
+ background:radial-gradient(circle at 22px 0,var(--forest) 0 21px,transparent 22px) 0 0/44px 10px repeat-x,
+            radial-gradient(circle at 66px 0,#2c5a3d 0 21px,transparent 22px) 0 0/88px 10px repeat-x;z-index:2}
+/* measuring-tape strip along the top edge (centimetre ticks) */
+header::before{content:"";position:absolute;left:0;right:0;top:0;height:9px;
+ background:repeating-linear-gradient(90deg,#3a2a00 0 1px,transparent 1px 8px) 0 100%/100% 4px no-repeat,
+            repeating-linear-gradient(90deg,#3a2a00 0 1px,transparent 1px 40px) 0 100%/100% 8px no-repeat,#f2d16b}
 header h1{font-size:1.4rem;margin:0;flex:1;min-width:220px}
 header h1 small{display:block;font-size:.8rem;font-weight:400;opacity:.8}
 .pill{background:rgba(255,255,255,.14);padding:6px 14px;border-radius:999px;font-weight:700;white-space:nowrap}
@@ -18,7 +27,12 @@ header h1 small{display:block;font-size:.8rem;font-weight:400;opacity:.8}
 .hb:hover{background:#f3e7b8}
 main{display:grid;grid-template-columns:minmax(300px,430px) minmax(440px,620px);gap:24px;justify-content:center;padding:18px}
 @media(max-width:960px){main{grid-template-columns:1fr}}
-.sheet{background:#fff;border:2px solid var(--edge);border-radius:16px;padding:14px 18px;display:flex;gap:16px;align-items:center;box-shadow:0 3px 0 #d8cba4}
+main{padding-top:30px}
+/* keeper's clipboard */
+.sheet{position:relative;background:#fff;border:2px solid #b38b4d;border-top-width:26px;border-radius:14px;padding:14px 18px;display:flex;gap:16px;align-items:center;box-shadow:0 3px 0 #8f6b33;
+ background-image:repeating-linear-gradient(180deg,transparent 0 29px,rgba(42,86,118,.12) 29px 30px)}
+.sheet::before{content:"CHECK-UP RECORD";position:absolute;top:-23px;left:16px;font-size:.72rem;font-weight:800;letter-spacing:.14em;color:#fff7dd;white-space:nowrap}
+.sheet::after{content:"";position:absolute;top:-34px;left:50%;width:62px;height:16px;margin-left:-31px;border-radius:6px 6px 3px 3px;background:#c9ccd1;border:2px solid #8b9097}
 .sico{font-size:3.2rem;line-height:1}
 .sheet h2{margin:0;font-size:1.6rem;color:var(--forest)}
 .sheet .meas{font-size:1.25rem;font-weight:700;color:var(--orange);text-transform:capitalize}
@@ -94,7 +108,7 @@ dialog menu{display:flex;gap:10px;justify-content:flex-end;padding:0;margin:14px
 </head>
 <body>
 <header>
-  <h1>Wildlife Line-Up<small>Sorting decimals – find the median</small></h1>
+  <h1>🐾 Zoo Check-Up<small>Sorting decimals – find the median</small></h1>
   <span class="pill" id="score">Correct: 0 / 0</span>
   <span class="pill" id="streak">Streak: 0</span>
   <button class="hb" id="bNew">New set</button>
@@ -258,13 +272,13 @@ function makeSet(e,n,level){
 
 (function(){
 const UNIT={kg:'kilograms (kg)',g:'grams (g)',m:'metres (m)'};
-const SITE={mammals:'trapping and weighing survey',bats:'bat roost survey',birds:'ringing station',herps:'pond and hedgerow survey'};
+const SITE={mammals:'the mammal house',bats:'the bat house',birds:'the aviary',herps:'the reptile and amphibian house'};
 const WORDS={3:'Three',5:'Five',7:'Seven'};
 const ORD=['1st','2nd','3rd','4th','5th','6th','7th'];
-const PRAISE=['Excellent fieldwork!','Spot on, researcher!','Peer review passed!','Brilliant sorting!','Top-notch data handling!'];
+const PRAISE=['Well done, keeper!','Spot on, vet!','Check-up complete!','Brilliant sorting!','Top-notch record keeping!'];
 const G=12;
 let S={level:2,n:5,grp:'all'};
-try{Object.assign(S,JSON.parse(localStorage.getItem('wl_settings')||'{}'))}catch(e){}
+try{Object.assign(S,JSON.parse(localStorage.getItem('zc_settings')||'{}'))}catch(e){}
 let score=0,total=0,streak=0,last=-1;
 let P=null,order=[],mode='raw',padded=false,maxdp=0,drag=null,xd=null,H=74,areaW=300,ch=20,token=0,allDone=false,demoOn=false,hint=false,demoTimer=null;
 const $=id=>document.getElementById(id);
@@ -344,7 +358,7 @@ function newPuzzle(){
   P=e;order=cards;padded=false;mode='raw';token++;allDone=false;demoOn=true;hint=false;xd=null;clearTimeout(demoTimer);
   $('sico').textContent=e.ico;$('sname').textContent=e.sp;$('smeas').textContent=e.meas;
   $('sunit').textContent='All readings are in '+UNIT[e.u];
-  $('story').innerHTML=WORDS[S.n]+' readings of '+e.meas+' have come in from the '+SITE[e.grp]+'. Find the <b>median</b> '+e.meas+'.';
+  $('story').innerHTML='Check-up day! '+WORDS[S.n]+' readings of '+e.meas+' have come in from '+SITE[e.grp]+'. Find the <b>median</b> '+e.meas+'.';
   col.innerHTML='<div class="guide"></div>';
   col.classList.add('init');
   cards.forEach(c=>{
@@ -490,7 +504,7 @@ dlg.addEventListener('close',()=>{
     S.level=+document.querySelector('input[name=level]:checked').value;
     S.n=+document.querySelector('input[name=n]:checked').value;
     S.grp=$('grp').value;
-    try{localStorage.setItem('wl_settings',JSON.stringify(S))}catch(e){}
+    try{localStorage.setItem('zc_settings',JSON.stringify(S))}catch(e){}
     newPuzzle();
   }
 });
