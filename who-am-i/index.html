@@ -130,28 +130,6 @@ button.danger{border-color:#7a2a31;color:#ffb3b8}
 input[type=number]::-webkit-inner-spin-button{display:none}
 
 
-/* ---------- auto-reveal ---------- */
-let autoOn=false, autoStart=performance.now();
-function autoReset(){ autoStart=performance.now(); }
-function autoActive(){
-  return autoOn && S.phase==='play' && S.mode!=='all' && S.shown<8 && $('overlay').classList.contains('off');
-}
-function autoUI(){
-  $('autoBox').classList.toggle('off',S.mode==='all');
-  $('btnAuto').classList.toggle('on',autoOn);
-  $('btnAuto').textContent='Auto-reveal: '+(autoOn?'on':'off');
-}
-setInterval(()=>{
-  const bar=$('autobar'), fill=bar.firstElementChild;
-  if(!autoActive()){ bar.style.visibility='hidden'; return; }
-  const total=(+$('autoSecs').value)*1000, el=performance.now()-autoStart;
-  bar.style.visibility='visible';
-  fill.style.width=Math.min(100,el/total*100)+'%';
-  if(el>=total) nextClue();
-},100);
-$('btnAuto').onclick=()=>{ autoOn=!autoOn; SFX.click(); autoReset(); autoUI(); };
-$('autoSecs').onchange=()=>{ autoReset(); $('autoSecs').blur(); };
-
 /* briefing overlay */
 #overlay{
   position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -523,6 +501,29 @@ function giveUp(){
   if(S.phase!=='play') return;
   S.phase='lost'; SFX.lose(); say('Mission aborted. The identity is declassified.','bad'); render();
 }
+
+/* ---------- auto-reveal ---------- */
+let autoOn=false, autoStart=performance.now();
+function autoReset(){ autoStart=performance.now(); }
+function autoActive(){
+  return autoOn && S.phase==='play' && S.mode!=='all' && S.shown<8 && $('overlay').classList.contains('off');
+}
+function autoUI(){
+  $('autoBox').classList.toggle('off',S.mode==='all');
+  $('btnAuto').classList.toggle('on',autoOn);
+  $('btnAuto').textContent='Auto-reveal: '+(autoOn?'on':'off');
+}
+setInterval(()=>{
+  const bar=$('autobar'), fill=bar.firstElementChild;
+  if(!autoActive()){ bar.style.visibility='hidden'; return; }
+  const total=(+$('autoSecs').value)*1000, el=performance.now()-autoStart;
+  bar.style.visibility='visible';
+  fill.style.width=Math.min(100,el/total*100)+'%';
+  if(el>=total) nextClue();
+},100);
+$('btnAuto').onclick=()=>{ autoOn=!autoOn; SFX.click(); autoReset(); autoUI(); };
+$('autoSecs').onchange=()=>{ autoReset(); $('autoSecs').blur(); };
+
 
 /* briefing overlay */
 function syncOpts(){
