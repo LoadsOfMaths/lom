@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In the Middle</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Trebuchet MS",Verdana,Arial,sans-serif;color:#2b2118;overflow:hidden;
+  background:linear-gradient(#8fd0f2 0%,#cdeefb 55%,#7cc15a 55.1%,#5aa23e 100%);}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center}
+.screen.on{display:flex}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(2.2rem,6vw,4.4rem);color:#7a1f1f;text-shadow:3px 3px 0 #f6e2a8;letter-spacing:1px}
+.sub{font-size:clamp(1rem,2vw,1.4rem);margin-bottom:.8rem}
+#menu{padding:2.2vh 3vw;overflow:auto;justify-content:flex-start;text-align:center}
+.panel{background:rgba(255,250,235,.93);border:4px solid #8b5a2b;border-radius:18px;padding:1.2rem 1.6rem;margin:.5rem;box-shadow:0 5px 0 #6b4220;max-width:960px;width:100%}
+.panel h2{font-size:1.1rem;margin-bottom:.6rem;color:#6b4220}
+.row{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center}
+.btn{font:inherit;font-weight:bold;font-size:clamp(1rem,1.8vw,1.35rem);padding:.6rem 1.2rem;border-radius:12px;border:3px solid #6b4220;background:#f3dba0;color:#3a2410;cursor:pointer;box-shadow:0 4px 0 #6b4220}
+.btn:hover{background:#ffe9ad}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #6b4220}
+.btn.sel{background:#c0392b;color:#fff;border-color:#7a1f1f;box-shadow:0 4px 0 #7a1f1f}
+.btn.go{background:#2e8b3d;color:#fff;border-color:#1b5726;box-shadow:0 4px 0 #1b5726;font-size:1.6rem;padding:.7rem 2.4rem}
+.btn.small{font-size:.95rem;padding:.35rem .8rem}
+#game{padding:1.5vh 2vw}
+.top{display:flex;width:100%;justify-content:space-between;align-items:center;gap:1rem}
+.tag{background:rgba(255,250,235,.93);border:3px solid #8b5a2b;border-radius:12px;padding:.3rem .9rem;font-weight:bold;font-size:clamp(.9rem,1.6vw,1.3rem)}
+.dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;flex:1}
+.dot{width:14px;height:14px;border-radius:50%;background:#fff8;border:2px solid #6b4220}
+.dot.done{background:#f5c518}
+.dot.now{background:#c0392b;transform:scale(1.3)}
+.stage{flex:1;width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1vw;min-height:0}
+.board{justify-self:center;position:relative;text-align:center;padding:1.2vw 1.4vw;min-width:16vw;max-width:30vw;
+  background:repeating-linear-gradient(90deg,#c98f4f 0 14px,#b9803f 14px 16px);border:5px solid #6b4220;border-radius:10px;
+  color:#fff;font-weight:bold;text-shadow:2px 2px 0 #4a2c10;font-size:clamp(1.8rem,6vw,5rem);line-height:1.1;margin-bottom:12vh}
+.board::after{content:"";position:absolute;left:44%;top:100%;width:12%;height:12vh;background:#6b4220}
+.board.coord{font-size:clamp(1.4rem,4.2vw,3.4rem)}
+#targetWrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:0}
+#target{height:min(56vh,38vw);width:min(56vh,38vw)}
+.answer{min-height:clamp(3rem,9vh,6rem);display:flex;align-items:center;justify-content:center;font-size:clamp(1.8rem,5vw,4rem);font-weight:bold;color:#7a1f1f;
+  background:#fff7d6;border:4px solid #c0392b;border-radius:14px;padding:.1rem 1.4rem;margin-top:.5rem;opacity:0;transform:scale(.6);transition:none}
+.answer.show{opacity:1;transform:scale(1);transition:all .35s .55s}
+.work{font-size:clamp(.9rem,1.5vw,1.2rem);min-height:1.6em;color:#2b2118;font-weight:bold;margin-top:.3rem;background:#fffa;border-radius:8px;padding:0 .6rem;opacity:0;transition:none}
+.work.show{opacity:1;transition:opacity .3s .8s}
+.bottom{display:flex;gap:1rem;padding:.4rem;align-items:center}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 .1em;font-size:.8em}
+.fr span:first-child{border-bottom:.08em solid currentColor;padding:0 .2em}
+.mx{vertical-align:middle;margin-right:.1em}
+#arrow{transform:translate(-460px,300px);opacity:0}
+#arrow.fly{transition:transform .55s cubic-bezier(.2,.7,.3,1),opacity .1s;transform:translate(0,0);opacity:1}
+#end{justify-content:center;text-align:center}
+.small-note{font-size:.85rem;margin-top:.3rem;color:#5b4630}
+.tbar{width:100%;height:10px;background:#fff8;border:2px solid #6b4220;border-radius:6px;margin-top:.4rem;display:none;overflow:hidden}
+#tfill{height:100%;width:100%;background:#2e8b3d}
+.anslist{display:none;grid-template-columns:1fr 1fr;grid-auto-flow:column;gap:.4rem 2rem;max-width:none;width:96%;max-height:62vh;overflow:auto;text-align:left;font-size:1.15rem;margin-bottom:1rem}
+.anslist .qn{display:inline-block;min-width:1.9em;padding:.1em .3em;margin-right:.3em;border-radius:50%;background:#111;color:#f5c518;font-weight:bold;text-align:center;font-size:.95em}
+.anslist .fr{font-size:.95em}
+.anslist .w{font-size:.6em;color:#5b4630}
+#arrow.still{transition:none}
+.answer.still,.answer.still.show{transition:none}
+#end{padding:2vh 3vw}
+@media (max-width:700px){.stage{grid-template-columns:1fr;grid-template-rows:auto auto auto}.board{margin-bottom:2vh;max-width:70vw}.board::after{display:none}}
+</style>
+</head>
+<body>
+
+<div id="menu" class="screen on">
+  <h1>In the Middle</h1>
+  <p class="sub">Two numbers sit either side of the target. Which number hits the bullseye?</p>
+  <div class="panel"><h2>1. Choose a type of number</h2><div class="row" id="cats"></div></div>
+  <div class="panel"><h2>2. Choose a level</h2><div class="row" id="levels"></div></div>
+  <div class="panel"><h2>3. How many targets?</h2><div class="row" id="counts"></div></div>
+  <div class="panel"><h2>4. Mode</h2><div class="row" id="modes"></div><div class="row" id="secsRow" style="margin-top:.6rem"></div></div>
+  <button class="btn go" id="startBtn">Take aim!</button>
+</div>
+
+<div id="game" class="screen">
+  <div class="top">
+    <div class="tag" id="lvlTag"></div>
+    <div class="dots" id="dots"></div>
+    <div class="tag" id="qTag"></div>
+  </div>
+  <div class="tbar" id="tbar"><div id="tfill"></div></div>
+  <div class="stage">
+    <div class="board" id="left"></div>
+    <div id="targetWrap">
+      <svg id="target" viewBox="0 0 400 400">
+        <rect x="190" y="330" width="20" height="70" fill="#6b4220"/>
+        <rect x="110" y="380" width="180" height="12" rx="4" fill="#6b4220"/>
+        <circle cx="200" cy="200" r="190" fill="#f4f1e6" stroke="#444" stroke-width="3"/>
+        <circle cx="200" cy="200" r="152" fill="#2b2b2b" stroke="#111" stroke-width="2"/>
+        <circle cx="200" cy="200" r="114" fill="#2d7fd1" stroke="#111" stroke-width="2"/>
+        <circle cx="200" cy="200" r="76" fill="#d7263d" stroke="#111" stroke-width="2"/>
+        <circle cx="200" cy="200" r="38" fill="#f5c518" stroke="#111" stroke-width="2"/>
+        <circle cx="200" cy="200" r="8" fill="#f5c518" stroke="#a37d00" stroke-width="2" opacity="0"/>
+        <text id="qmark" x="200" y="214" text-anchor="middle" font-size="40" font-weight="bold" fill="#7a1f1f" font-family="Georgia,serif">?</text>
+        <g transform="translate(200,200)">
+          <g id="arrow">
+            <line x1="0" y1="0" x2="-80" y2="56" stroke="#8b5a2b" stroke-width="5" stroke-linecap="round"/>
+            <polygon points="-60,42 -90,40 -80,56" fill="#e63946" stroke="#7a1f1f" stroke-width="1"/>
+            <polygon points="-62,44 -72,72 -80,56" fill="#fff" stroke="#7a1f1f" stroke-width="1"/>
+            <polygon points="-70,49 -100,52 -86,64" fill="#e63946" stroke="#7a1f1f" stroke-width="1"/>
+          </g>
+        </g>
+      </svg>
+      <div class="answer" id="answer"></div>
+      <div class="work" id="work"></div>
+    </div>
+    <div class="board" id="right"></div>
+  </div>
+  <div class="bottom">
+    <button class="btn small" id="menuBtn">Menu</button>
+    <button class="btn small" id="pauseBtn">Pause</button>
+    <button class="btn go" id="mainBtn">Release the arrow!</button>
+  </div>
+  <p class="small-note">Students write down the number in the middle, then reveal. (Space or Enter also works.)</p>
+</div>
+
+<div id="end" class="screen">
+  <h1>Quiver empty!</h1>
+  <p class="sub" id="endMsg"></p>
+  <div class="panel anslist" id="endList"></div>
+  <div class="row"><button class="btn go" id="showBtn">Show answers</button><button class="btn go" id="againBtn">Shoot again</button><button class="btn" id="endMenuBtn">Back to menu</button></div>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+const num=n=>n<0?"\u2212"+(-n):String(n);
+const sameParity=(lo,hi)=>{let a,b;do{a=rand(lo,hi);b=rand(lo,hi);}while(a===b||(((a-b)%2)+2)%2!==0);return [a,b];};
+
+function fr(n,d){return '<span class="fr"><span>'+n+'</span><span>'+d+'</span></span>';}
+function frHTML(n,d){ // simplified improper -> mixed display
+  const w=Math.floor(n/d), r=n-w*d;
+  if(r===0) return String(w);
+  if(w===0) return fr(r,d);
+  return '<span class="mx">'+w+'</span>'+fr(r,d);
+}
+function meanFrac(n1,d1,n2,d2){let n=n1*d2+n2*d1,d=d1*d2*2,g=gcd(n,d);return [n/g,d/g];}
+
+const gen={
+  whole(max){const [a,b]=sameParity(1,max-1).sort((x,y)=>x-y);return {l:String(a),r:String(b),ans:String((a+b)/2),work:"("+a+" + "+b+") \u00f7 2 = "+(a+b)/2};},
+  int(m){let a,b;do{[a,b]=sameParity(-m,m);}while(a>=0&&b>=0);
+    if(a>b){const t=a;a=b;b=t;}
+    return {l:num(a),r:num(b),ans:num((a+b)/2),work:"("+num(a)+" + "+num(b)+") \u00f7 2 = "+num((a+b)/2)};},
+  dec(dp){const f=Math.pow(10,dp),max=20*f;let A,B,odd=Math.random()<.5;
+    do{A=rand(1,max-1);B=rand(1,max-1);}while(A===B||((((A+B)%2)!==0)!==odd));
+    if(A>B){const t=A;A=B;B=t;}
+    const S=A+B,mean=(S/2/f).toFixed(S%2===0?dp:dp+1);
+    return {l:(A/f).toFixed(dp),r:(B/f).toFixed(dp),ans:mean,work:"("+(A/f).toFixed(dp)+" + "+(B/f).toFixed(dp)+") \u00f7 2 = "+mean};},
+  frac(kind){
+    const ds=[2,3,4,5,6,8,10];
+    for(let t=0;t<500;t++){
+      let n1,d1,n2,d2,w1=0,w2=0;
+      if(kind==='unit'){d1=rand(2,10);d2=rand(2,10);n1=1;n2=1;}
+      else{d1=ds[rand(0,ds.length-1)];d2=ds[rand(0,ds.length-1)];n1=rand(1,d1-1);n2=rand(1,d2-1);
+        if(kind==='mixed'){w1=rand(1,5);w2=rand(1,5);}}
+      if(gcd(n1,d1)!==1||gcd(n2,d2)!==1) continue;
+      if(n1*d2===n2*d1&&w1===w2) continue;
+      if((w1*d1+n1)*d2>(w2*d2+n2)*d1){[w1,w2]=[w2,w1];[n1,n2]=[n2,n1];[d1,d2]=[d2,d1];}
+      const [mn,md]=meanFrac(w1*d1+n1,d1,w2*d2+n2,d2);
+      if(md>48) continue;
+      const show=(w,n,d)=>w?'<span class="mx">'+w+'</span>'+fr(n,d):fr(n,d);
+      return {l:show(w1,n1,d1),r:show(w2,n2,d2),ans:frHTML(mn,md),work:""};
+    }
+    return {l:fr(1,2),r:fr(1,4),ans:fr(3,8),work:""};
+  },
+  coord(dim,neg){
+    const lo=neg?-10:0,hi=neg?10:20;let A,B;
+    do{A=[];B=[];for(let i=0;i<dim;i++){const [a,b]=Math.random()<.2?(()=>{const v=rand(lo,hi);return [v,v];})():sameParity(lo,hi);A.push(a);B.push(b);}}
+    while(A.every((v,i)=>v===B[i])||(neg&&!A.concat(B).some(v=>v<0)));
+    for(let i=0;i<dim;i++){if(A[i]!==B[i]){if(A[i]>B[i]){const t=A;A=B;B=t;}break;}}
+    const s=p=>"("+p.map(num).join(", ")+")";
+    return {l:s(A),r:s(B),ans:s(A.map((v,i)=>(v+B[i])/2)),work:"",coord:true};
+  }
+};
+
+const cats=[
+  {name:"Positive Integers",levels:[["Under 50",()=>gen.whole(50)],["Under 100",()=>gen.whole(100)],["Under 1000",()=>gen.whole(1000)]]},
+  {name:"All Integers",levels:[["\u00b110",()=>gen.int(10)],["\u00b120",()=>gen.int(20)],["\u00b150",()=>gen.int(50)]]},
+  {name:"Decimals",levels:[["1 d.p.",()=>gen.dec(1)],["2 d.p.",()=>gen.dec(2)],["3 d.p.",()=>gen.dec(3)]]},
+  {name:"Fractions",levels:[["Unit fractions",()=>gen.frac('unit')],["Proper fractions",()=>gen.frac('proper')],["Mixed numbers",()=>gen.frac('mixed')]]},
+  {name:"Coordinates",levels:[["2D positive",()=>gen.coord(2,false)],["2D with negatives",()=>gen.coord(2,true)],["3D positive",()=>gen.coord(3,false)],["3D with negatives",()=>gen.coord(3,true)]]}
+];
+let selCat=0,selLvl=0,count=10,cur=0,q=null,revealed=false,inGame=false;
+let auto=false,secs=20,tm=null,remain=0,paused=false,results=[];
+function stopTimer(){if(tm){clearInterval(tm);tm=null;}}
+function setFill(){$("tfill").style.width=(remain/(secs*1000)*100)+"%";}
+function startTimer(){stopTimer();remain=secs*1000;paused=false;$("pauseBtn").textContent="Pause";setFill();
+  tm=setInterval(()=>{if(paused)return;remain-=100;setFill();if(remain<=0)advance();},100);}
+function advance(){cur++;if(cur>=count)finish();else nextQ();}
+
+function btns(el,items,sel,cb){el.innerHTML="";items.forEach((t,i)=>{const b=document.createElement("button");b.className="btn"+(i===sel?" sel":"");b.textContent=t;b.onclick=()=>cb(i);el.appendChild(b);});}
+function drawMenu(){
+  btns($("cats"),cats.map(c=>c.name),selCat,i=>{selCat=i;selLvl=0;drawMenu();});
+  btns($("levels"),cats[selCat].levels.map(l=>l[0]),selLvl,i=>{selLvl=i;drawMenu();});
+  btns($("counts"),["10 targets","20 targets"],count===10?0:1,i=>{count=i?20:10;drawMenu();});
+  btns($("modes"),["Reveal each answer","Auto-advance"],auto?1:0,i=>{auto=!!i;drawMenu();});
+  const sv=[10,20,30,60];
+  $("secsRow").style.display=auto?"flex":"none";
+  if(auto) btns($("secsRow"),sv.map(s=>s+" seconds each"),sv.indexOf(secs),i=>{secs=sv[i];drawMenu();});
+}
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));$(id).classList.add("on");}
+
+function start(){cur=0;inGame=true;results=[];stopTimer();show("game");
+  $("tbar").style.display=auto?"block":"none";$("pauseBtn").style.display=auto?"":"none";$("lvlTag").textContent=cats[selCat].name+": "+cats[selCat].levels[selLvl][0];
+  $("dots").innerHTML="";for(let i=0;i<count;i++){const d=document.createElement("div");d.className="dot";$("dots").appendChild(d);}
+  nextQ();}
+function nextQ(){
+  q=cats[selCat].levels[selLvl][1]();revealed=false;
+  $("left").innerHTML=q.l;$("right").innerHTML=q.r;
+  $("left").classList.toggle("coord",!!q.coord);$("right").classList.toggle("coord",!!q.coord);
+  $("answer").innerHTML=q.ans;$("answer").classList.remove("show");
+  $("work").textContent=q.work;$("work").classList.remove("show");
+  const a=$("arrow");a.classList.remove("fly");void a.getBoundingClientRect();
+  $("qmark").style.display="";
+  $("qTag").textContent="Target "+(cur+1)+" of "+count;
+  [...$("dots").children].forEach((d,i)=>{d.className="dot"+(i<cur?" done":(i===cur?" now":""));});
+  $("mainBtn").textContent="Release the arrow!";
+  $("answer").classList.remove("still");$("arrow").classList.remove("still");
+  if(auto){results.push(q);
+    $("answer").innerHTML="?";$("answer").classList.add("still","show");
+    $("arrow").classList.add("still","fly");$("qmark").style.display="none";
+    $("work").textContent="";$("mainBtn").textContent="Skip \u2192";startTimer();}
+}
+function reveal(){revealed=true;$("arrow").classList.add("fly");setTimeout(()=>{$("qmark").style.display="none";},500);
+  $("answer").classList.add("show");$("work").classList.add("show");
+  $("mainBtn").textContent=(cur+1>=count)?"Finish":"Next target \u2192";}
+function main(){
+  if(!inGame)return;
+  if(auto){advance();return;}
+  if(!revealed){reveal();return;}
+  cur++;
+  if(cur>=count){finish();}else nextQ();
+}
+function finish(){inGame=false;stopTimer();show("end");
+  const L=$("endList");
+  if(auto){
+    $("endMsg").textContent="All "+count+" arrows loosed. Ready to check your answers?";
+    L.innerHTML=results.map((r,i)=>'<div><span class="qn">'+(i+1)+'</span> '+r.l+' &nbsp;and&nbsp; '+r.r+' &rarr; <b>'+r.ans+'</b>'+(r.work?'<div class="w">'+r.work+'</div>':'')+'</div>').join("");
+    L.style.gridTemplateRows="repeat("+Math.ceil(results.length/2)+",auto)";
+    $("showBtn").style.display="";
+  }else{
+    $("endMsg").textContent="All "+count+" arrows loosed. Bullseye every time!";
+    $("showBtn").style.display="none";
+  }
+  L.style.display="none";}
+function fitList(){
+  const L=$("endList");if(!results.length)return;
+  const rows=Math.ceil(results.length/2);
+  let len=10;[...L.children].forEach(c=>{len=Math.max(len,c.textContent.length+2);});
+  const hasFrac=results.some(r=>r.l.indexOf('class="fr"')>-1||r.ans.indexOf('class="fr"')>-1);
+  const lineH=hasFrac?3.1:(results.some(r=>r.work)?2.3:1.5);
+  const fsH=(window.innerHeight*0.55)/rows/lineH;
+  const fsW=(window.innerWidth*0.96/2-70)/(len*0.52);
+  L.style.fontSize=Math.max(14,Math.min(64,fsH,fsW))+"px";
+}
+window.addEventListener("resize",()=>{if($("endList").style.display==="grid")fitList();});
+$("showBtn").onclick=()=>{$("endList").style.display="grid";$("showBtn").style.display="none";fitList();};
+$("pauseBtn").onclick=()=>{paused=!paused;$("pauseBtn").textContent=paused?"Resume":"Pause";};
+$("startBtn").onclick=start;
+$("mainBtn").onclick=main;
+$("menuBtn").onclick=()=>{inGame=false;stopTimer();show("menu");};
+$("againBtn").onclick=start;
+$("endMenuBtn").onclick=()=>show("menu");
+document.addEventListener("keydown",e=>{if(inGame&&(e.code==="Space"||e.key==="Enter"||e.key==="ArrowRight")){e.preventDefault();main();}});
+drawMenu();
+})();
+</script>
+</body>
+</html>
