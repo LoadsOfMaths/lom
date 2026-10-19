@@ -58,6 +58,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Toast | `toast/` |
 | Triangle Tangle | `triangle-tangle/` |
 | Trio | `trio/` |
+| Venn Diagrams | `venn-diagrams/` |
 | Whack-A-Prime | `whack-a-prime/` |
 | Whale Watching | `whale-watching/` |
 | Who Am I? | `who-am-i/` |
