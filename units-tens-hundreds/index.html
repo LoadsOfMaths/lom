@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Units, Tens and Hundreds – LoadsOfMaths</title>
+<style>
+:root{
+  --bg:#f6f1e7; --panel:#fffdf8; --ink:#2b2a28; --muted:#6b665c; --line:#d9cfbb;
+  --accent:#2b7a78; --accent-d:#1f5c5a; --warn:#b4561b; --good:#2e7d32;
+  --sdw:60px; --dw:20px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;-webkit-user-select:none;user-select:none}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 20px;padding:10px 20px 0;background:#2f3e46;color:#fff;flex-wrap:wrap}
+header h1{margin:0;font-size:clamp(20px,2.2vw,30px)}
+header .sub{font-size:13px;opacity:.75;margin-bottom:8px}
+.tabs{display:flex;gap:8px}
+.tab{font:inherit;font-size:clamp(16px,1.4vw,20px);padding:10px 22px;border-radius:10px 10px 0 0;border:0;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
+.tab.on{background:var(--bg);color:var(--ink);font-weight:bold}
+main{flex:1;display:flex;flex-direction:column;min-height:0}
+section{display:flex;flex-direction:column;gap:10px;padding:10px 16px 14px;flex:1;min-height:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+.grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:bold}
+.seg{display:inline-flex;border:2px solid var(--accent);border-radius:10px;overflow:hidden}
+.seg button{font:inherit;font-size:17px;min-width:40px;min-height:40px;padding:4px 12px;border:0;background:#fff;color:var(--accent-d);cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff;font-weight:bold}
+.sw{display:flex;align-items:center;gap:6px;font-size:16px;cursor:pointer;min-height:40px}
+.sw input{width:22px;height:22px;accent-color:var(--accent)}
+.sw.off{opacity:.4}
+.btn{font:inherit;font-size:16px;min-height:42px;padding:6px 16px;border-radius:10px;border:2px solid var(--accent);background:#fff;color:var(--accent-d);cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+input.txt{font:inherit;font-size:20px;width:5.4em;min-height:42px;padding:2px 10px;border:2px solid var(--line);border-radius:10px;text-align:center;-webkit-user-select:text;user-select:text;background:#fff}
+.readout{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 16px;display:flex;align-items:baseline;gap:4px 28px;flex-wrap:wrap;min-height:76px}
+.readout .big{font-size:clamp(36px,4.2vw,64px);font-weight:bold;letter-spacing:.04em;line-height:1.15}
+.readout .big sub{font-size:.4em;letter-spacing:0}
+.readout .lab{font-size:16px;color:var(--muted);font-weight:bold}
+.readout .sub{font-size:clamp(16px,1.5vw,22px)}
+.readout .note{font-size:16px;color:var(--warn);font-weight:bold}
+.readout .good{color:var(--good);font-weight:bold}
+.mat{flex:1;min-height:360px;display:flex;gap:10px}
+.col{flex:1;display:flex;flex-direction:column;background:var(--panel);border:2px solid var(--line);border-radius:12px;min-width:0;min-height:0}
+.col.c3,.col.c2{flex:1.3}
+.col.ready{border-color:var(--warn);box-shadow:0 0 0 3px rgba(180,86,27,.2)}
+.chead{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 0;gap:8px}
+.ctitle{font-size:clamp(18px,1.9vw,26px);font-weight:bold}
+.csub{font-size:14px;color:var(--muted)}
+.ccount{font-size:clamp(30px,3.2vw,48px);font-weight:bold;min-width:1.2em;text-align:right}
+.cbtns{display:flex;gap:8px;padding:4px 12px 8px;align-items:center}
+.mini{font:inherit;font-size:26px;line-height:1;width:50px;height:44px;border-radius:10px;border:2px solid var(--accent);background:#fff;color:var(--accent-d);cursor:pointer}
+.trade{margin-left:auto;font:inherit;font-size:15px;font-weight:bold;min-height:44px;padding:4px 12px;border-radius:10px;border:2px solid var(--warn);background:#fff3e6;color:var(--warn);cursor:pointer}
+.area{flex:1;overflow:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;padding:10px 12px 12px;border-top:2px dashed var(--line)}
+.blk{line-height:0;cursor:pointer}
+.blk svg{display:block;filter:drop-shadow(1px 2px 1.5px rgba(0,0,0,.25))}
+@keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes glow{0%{transform:scale(1)}50%{transform:scale(.92);filter:brightness(1.4)}100%{transform:scale(.7);opacity:.35}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.blk.pop{animation:pop .45s ease-out}
+.blk.glow{animation:glow .46s ease-in-out forwards}
+.blk.shake{animation:shake .3s}
+.bank{display:flex;justify-content:center;align-items:flex-end;flex-wrap:wrap;gap:8px clamp(16px,3.5vw,64px);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 16px}
+.bank .hint{font-size:15px;color:var(--muted);align-self:center;max-width:12em;line-height:1.35}
+.bitem{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 10px;border-radius:10px;cursor:grab;touch-action:none}
+.bitem:hover{background:#f3ead7}
+.bitem .bsv{line-height:0}
+.bitem .nm{font-size:15px;font-weight:bold}
+.bitem.lifted{opacity:.45}
+.ghost{position:fixed;transform:translate(-50%,-50%);pointer-events:none;z-index:1000;line-height:0;opacity:.92;filter:drop-shadow(3px 5px 5px rgba(0,0,0,.35))}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2f3e46;color:#fff;padding:12px 22px;border-radius:12px;font-size:18px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:2000;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+/* cards */
+.cardsMain{flex:1;display:flex;gap:14px;min-height:0;flex-wrap:wrap;align-items:flex-start}
+.stagePanel{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:20px 24px 24px calc(var(--sdw)*0.95 + 14px);flex:0 0 auto}
+.stage{position:relative;width:calc(4*var(--sdw))}
+.scard{position:absolute;right:0;display:flex;height:calc(var(--sdw)*1.5);border-radius:10px;--cw:var(--sdw);color:var(--ink);cursor:pointer;box-shadow:inset 0 0 0 3px rgba(0,0,0,.45),0 3px 8px rgba(0,0,0,.25)}
+.cell{width:var(--cw);display:flex;align-items:center;justify-content:center;font-size:calc(var(--cw)*1.25);font-weight:bold;font-family:Consolas,"Courier New",monospace}
+.cell.z{opacity:.5}
+.plus,.eq{position:absolute;left:calc(var(--sdw)*-0.85);width:calc(var(--sdw)*0.7);height:calc(var(--sdw)*1.5);display:flex;align-items:center;justify-content:center;font-size:calc(var(--sdw)*.8);color:var(--muted);pointer-events:none}
+.rule{position:absolute;left:calc(var(--sdw)*-0.85);right:0;border-top:4px solid var(--ink);pointer-events:none}
+.res{position:absolute;right:0;display:flex;--cw:var(--sdw);height:calc(var(--sdw)*1.5);pointer-events:none}
+.ph{position:absolute;left:0;right:0;top:0;height:calc(var(--sdw)*1.5);border:3px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:15px;padding:6px}
+.fans{flex:1;display:flex;flex-direction:column;gap:10px;min-width:300px}
+.frow{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 12px 12px}
+.frow h3{margin:0 0 6px;font-size:16px;color:var(--muted)}
+.fcards{display:flex;flex-wrap:wrap;gap:10px}
+.fcard{--cw:var(--dw);display:flex;padding:6px 8px;border-radius:9px;cursor:grab;touch-action:none;color:var(--ink);box-shadow:inset 0 0 0 2px rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.2)}
+.fcard.sel{outline:4px solid var(--accent);transform:translateY(-4px)}
+.fcard.lifted{opacity:.45}
+.sliderwrap{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--muted)}
+.sliderwrap input[type=range]{width:clamp(140px,16vw,260px);height:30px;accent-color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Units, Tens and Hundreds</h1>
+    <div class="sub">LoadsOfMaths &middot; Dienes place value apparatus</div>
+  </div>
+  <nav class="tabs">
+    <button class="tab on" id="tabBlocks">Blocks</button>
+    <button class="tab" id="tabCards">Place value cards</button>
+  </nav>
+</header>
+
+<main>
+<section id="blocksView">
+  <div class="bar">
+    <div class="grp"><span class="lbl">Base</span><div class="seg" id="baseSeg"></div></div>
+    <div class="grp">
+      <label class="sw"><input type="checkbox" id="swHide"><span>Hide number</span></label>
+      <label class="sw" id="wOver"><input type="checkbox" id="swOver"><span>Allow overflow</span></label>
+      <label class="sw"><input type="checkbox" id="swAuto"><span>Auto-trade</span></label>
+      <label class="sw" id="wDec"><input type="checkbox" id="swDec"><span>Show base 10 value</span></label>
+      <label class="sw" id="wWords"><input type="checkbox" id="swWords"><span>Words</span></label>
+    </div>
+    <div class="grp"><span class="lbl">Tapping a block</span>
+      <div class="seg" id="tapSeg"><button data-m="remove" class="on">Removes it</button><button data-m="break">Breaks it down</button></div>
+    </div>
+  </div>
+  <div class="bar">
+    <div class="grp"><span class="lbl" id="showLbl">Show me</span><input class="txt" id="showIn" inputmode="numeric" maxlength="4" autocomplete="off"><button class="btn primary" id="showBtn">Build it</button></div>
+    <div class="grp"><button class="btn" id="clearBtn">Clear the mat</button><button class="btn" id="chalBtn">Challenge</button><button class="btn" id="toCards">Use the cards' number</button></div>
+  </div>
+  <div class="bar" id="chalBar" hidden>
+    <div class="grp"><span class="lbl">Challenge</span>
+      <input class="txt" id="chalIn" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Type your own target number">
+      <button class="btn" id="chalSet">Set this number</button>
+      <button class="btn" id="chalRand">New random number</button>
+      <button class="btn primary" id="chalCheck">Check</button>
+      <button class="btn" id="chalDone">Finish challenge</button></div>
+  </div>
+  <div class="readout" id="bRead"></div>
+  <div class="mat" id="mat"></div>
+  <div class="bank" id="bank"></div>
+</section>
+
+<section id="cardsView" hidden>
+  <div class="bar">
+    <div class="grp">
+      <label class="sw"><input type="checkbox" id="swHideC"><span>Hide number</span></label>
+      <label class="sw"><input type="checkbox" id="swWordsC"><span>Words</span></label>
+    </div>
+    <div class="grp sliderwrap"><span>Together</span><input type="range" id="slide" min="0" max="100" value="0" aria-label="Move the cards apart"><span>Apart</span>
+      <button class="btn" id="apartBtn">Pull apart</button></div>
+    <div class="grp"><button class="btn" id="clearCards">Clear the cards</button><button class="btn" id="toBlocks">Use the blocks' number</button></div>
+  </div>
+  <div class="readout" id="cRead"></div>
+  <div class="cardsMain">
+    <div class="stagePanel" data-drop="stage"><div class="stage" id="stage"></div></div>
+    <div class="fans" id="fans"></div>
+  </div>
+</section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+function el(tag,cls){var d=document.createElement(tag);if(cls)d.className=cls;return d;}
+var root=document.documentElement;
+
+/* ---------- state ---------- */
+var S={tab:'blocks',base:10,c:[0,0,0,0],over:false,auto:false,tap:'remove',hide:false,dec:false,words:false,
+  chalOn:false,target:0,chalMsg:null,busy:false,fx:null,cards:[0,0,0,0],t:0,raf:0};
+var L={span:100,sdw:60,dw:20};
+
+/* ---------- names ---------- */
+var N10={pl:['units','tens','hundreds','thousands'],sg:['unit','ten','hundred','thousand'],title:['Units','Tens','Hundreds','Thousands']};
+var NB={pl:['units','longs','flats','cubes'],sg:['unit','long','flat','cube'],title:['Units','Longs','Flats','Cubes']};
+function nm(){return S.base===10?N10:NB;}
+function pw(b,p){return Math.pow(b,p);}
+function colName(p){return S.base===10?N10.title[p]:(pw(S.base,p)+'s');}
+function fmt(v,b){return '<span class="num">'+v.toString(b)+'</span>'+(b!==10?'<sub>'+b+'</sub>':'');}
+function total(){var t=0,p;for(p=0;p<4;p++)t+=S.c[p]*pw(S.base,p);return t;}
+function digitsOf(v,b){var d=[],i;for(i=0;i<4;i++){d.push(v%b);v=Math.floor(v/b);}return d;}
+function cardsVal(){var t=0,p;for(p=0;p<4;p++)t+=S.cards[p]*pw(10,p);return t;}
+
+/* ---------- number in words (UK) ---------- */
+var ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+var TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function b100(n){if(n<20)return ONES[n];var o=n%10;return TENS[Math.floor(n/10)]+(o?'-'+ONES[o]:'');}
+function b1000(n){var h=Math.floor(n/100),r=n%100;if(!h)return b100(r);return ONES[h]+' hundred'+(r?' and '+b100(r):'');}
+function words(n){
+  if(n===0)return 'zero';
+  var th=Math.floor(n/1000),r=n%1000,s='';
+  if(th)s=b1000(th)+' thousand';
+  if(r){s+=th?((r<100?' and ':' ')+b1000(r)):b1000(r);}
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+
+/* ---------- toast ---------- */
+var toastT=0;
+function say(msg){var t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on');},4200);}
+
+/* ---------- layout ---------- */
+function layout(){
+  L.span=Math.max(64,Math.min(120,Math.floor(Math.min(innerWidth/14,innerHeight/8.5))));
+  L.sdw=Math.round(Math.max(34,Math.min(70,innerWidth*0.044)));
+  L.dw=Math.round(Math.max(13,Math.min(26,innerWidth*0.0145)));
+  root.style.setProperty('--sdw',L.sdw+'px');
+  root.style.setProperty('--dw',L.dw+'px');
+}
+
+/* ---------- block drawing ---------- */
+var PAL=[{f:'#ecd29a',t:'#f6e4b9',s:'#cbb078'},{f:'#dcab62',t:'#ebc88e',s:'#b98846'},{f:'#c47f3f',t:'#d9a066',s:'#a2652c'},{f:'#a65c2b',t:'#c07a4c',s:'#864a1f'}];
+var CARDC=['#f4e3b2','#efc888','#e0a569','#cf8456'];
+var K=0.42,cache={};
+function dims(p){var b=S.base;return p===0?[1,1,1]:p===1?[1,b,1]:p===2?[b,b,1]:[b,b,b];}
+function blockSVG(p,s){
+  var key=p+'|'+s+'|'+S.base;if(cache[key])return cache[key];
+  var d=dims(p),w=d[0],h=d[1],dp=d[2],o=dp*s*K,W=w*s,H=h*s,c=PAL[p],i,j,q,L2='',g='';
+  g+='<polygon points="0,'+o+' '+o+',0 '+(o+W)+',0 '+W+','+o+'" fill="'+c.t+'"/>';
+  g+='<polygon points="'+W+','+o+' '+(o+W)+',0 '+(o+W)+','+H+' '+W+','+(o+H)+'" fill="'+c.s+'"/>';
+  g+='<rect x="0" y="'+o+'" width="'+W+'" height="'+H+'" fill="'+c.f+'"/>';
+  for(i=1;i<w;i++)L2+='M'+(i*s)+' '+o+'V'+(o+H);
+  for(j=1;j<h;j++)L2+='M0 '+(o+j*s)+'H'+W;
+  for(i=1;i<w;i++)L2+='M'+(i*s)+' '+o+'L'+(i*s+o)+' 0';
+  for(j=1;j<dp;j++){q=j*s*K;L2+='M'+q+' '+(o-q)+'H'+(W+q);}
+  for(j=1;j<h;j++)L2+='M'+W+' '+(o+j*s)+'L'+(W+o)+' '+(j*s);
+  for(j=1;j<dp;j++){q=j*s*K;L2+='M'+(W+q)+' '+(o-q)+'V'+(o-q+H);}
+  g+='<path d="'+L2+'" stroke="rgba(60,35,10,.38)" stroke-width="1" fill="none"/>';
+  g+='<path d="M0 '+o+'H'+W+'V'+(o+H)+'H0Z M0 '+o+'L'+o+' 0H'+(o+W)+'L'+W+' '+o+' M'+W+' '+o+'L'+(W+o)+' 0V'+H+'L'+W+' '+(o+H)+'" stroke="rgba(60,35,10,.7)" stroke-width="1.2" fill="none" stroke-linejoin="round"/>';
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(W+o)+'" height="'+(H+o)+'" viewBox="0 0 '+(W+o)+' '+(H+o)+'">'+g+'</svg>';
+  cache[key]=svg;return svg;
+}
+
+/* ---------- drag helper (tap or drag) ---------- */
+function makeDraggable(node,onTap,makeGhost,onDrop){
+  node.addEventListener('pointerdown',function(e){
+    if(e.button>0)return;
+    e.preventDefault();
+    var sx=e.clientX,sy=e.clientY,ghost=null;
+    function mv(ev){
+      if(!ghost&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){
+        ghost=makeGhost();ghost.classList.add('ghost');document.body.appendChild(ghost);node.classList.add('lifted');
+      }
+      if(ghost){ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';}
+    }
+    function end(){window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancel);node.classList.remove('lifted');}
+    function up(ev){
+      end();
+      if(ghost){ghost.remove();onDrop(document.elementFromPoint(ev.clientX,ev.clientY));}
+      else onTap();
+    }
+    function cancel(){end();if(ghost)ghost.remove();}
+    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancel);
+  });
+}
+
+/* ---------- block rules ---------- */
+function cap(p,over){
+  if(over===undefined)over=S.over;
+  if(S.auto)return S.base-1;
+  if(over)return 2*S.base+4;
+  return p===3?S.base-1:S.base;
+}
+function validArr(n){var p;for(p=0;p<4;p++)if(n[p]>cap(p))return false;return true;}
+function maxStr(){var m=pw(S.base,4)-1;return m.toString(S.base)+(S.base===10?'':' (base '+S.base+')');}
+
+function addBlock(p){
+  var b=S.base,n=nm();
+  if(S.busy)return;
+  if(S.auto){
+    var a=S.c.slice(),q,traded=-1;
+    a[p]++;
+    for(q=0;q<3;q++){while(a[q]>=b){a[q]-=b;a[q+1]++;traded=q;}}
+    if(!validArr(a)){say('That is the biggest number this can show: '+maxStr()+'.');return;}
+    S.c=a;
+    if(traded>=0){S.fx={col:traded+1,n:1};say(b+' '+n.pl[traded]+' traded for 1 '+n.sg[traded+1]+'.');}
+    render();return;
+  }
+  if(S.c[p]+1>cap(p)){
+    if(p===3&&!S.over)say('The '+colName(3)+' column is full: '+maxStr()+' is the biggest number this can show.');
+    else if(!S.over)say('Trade '+b+' '+n.pl[p]+' for 1 '+n.sg[p+1]+' first, or switch on Allow overflow.');
+    else say('That column is full.');
+    return;
+  }
+  S.c[p]++;render();
+}
+function subBlock(p){if(S.busy||S.c[p]<=0)return;S.c[p]--;render();}
+
+function trade(p){
+  var b=S.base,n=nm();
+  if(S.busy||p>2||S.c[p]<b)return;
+  if(S.c[p+1]+1>cap(p+1)){say('The '+colName(p+1)+' column is full, so there is nowhere to trade to yet.');return;}
+  S.busy=true;
+  var area=document.querySelector('#mat .col[data-col="'+p+'"] .area');
+  var blks=area?[].slice.call(area.children).slice(-b):[];
+  blks.forEach(function(x){x.classList.add('glow');});
+  setTimeout(function(){
+    S.c[p]-=b;S.c[p+1]++;S.fx={col:p+1,n:1};S.busy=false;
+    say('Traded '+b+' '+n.pl[p]+' for 1 '+n.sg[p+1]+'.');render();
+  },480);
+}
+function breakBlock(p,node){
+  var b=S.base,n=nm();
+  if(S.busy)return;
+  if(S.auto){say('Turn off Auto-trade to break blocks down.');return;}
+  if(p<1){say('A unit cube is the smallest block. Use the minus button to take it away.');return;}
+  if(S.c[p-1]+b>cap(p-1)){
+    say(S.over?'That would put more than '+cap(p-1)+' '+n.pl[p-1]+' in one column.':'There is not enough room in the '+colName(p-1)+' column. Switch on Allow overflow to break this down.');
+    return;
+  }
+  S.busy=true;node.classList.add('shake');
+  setTimeout(function(){
+    S.c[p]--;S.c[p-1]+=b;S.fx={col:p-1,n:b};S.busy=false;
+    say('Broke 1 '+n.sg[p]+' into '+b+' '+n.pl[p-1]+'.');render();
+  },300);
+}
+function tapBlock(p,node){
+  if(S.tap==='break')breakBlock(p,node);else subBlock(p);
+}
+
+function setBase(nb){
+  if(nb===S.base)return;
+  var v=total(),old=S.base;
+  S.base=nb;
+  if(v<pw(nb,4)){S.c=digitsOf(v,nb);}
+  else{S.c=[0,0,0,0];say('That quantity is too big for base '+nb+' here, so the mat has been cleared.');}
+  if(S.auto){/* digits are already simplest form */}
+  else if(!validArr(S.c)){S.c=[0,0,0,0];}
+  if(S.chalOn){S.target=randTarget();S.chalMsg=null;}
+  $('showIn').value='';
+  render();
+}
+
+/* ---------- challenge ---------- */
+function randTarget(){
+  var b=S.base,i,x,v=0;
+  for(i=3;i>=0;i--){
+    if(i===3)x=Math.random()<.15?0:1+Math.floor(Math.random()*(b-1));
+    else x=Math.random()<.28?0:Math.floor(Math.random()*b);
+    v=v*b+x;
+  }
+  return v===0?1:v;
+}
+function simplest(){var p;for(p=0;p<4;p++)if(S.c[p]>=S.base)return false;return true;}
+function chalCheck(){
+  var v=total();
+  if(v===S.target&&simplest())S.chalMsg={ok:true,text:'Yes! Your blocks make '+S.target.toString(S.base)+(S.base===10?'':' (base '+S.base+')')+'.'};
+  else if(v===S.target)S.chalMsg={ok:false,text:'The amount is right, but some columns hold '+S.base+' or more. Can you trade?'};
+  else S.chalMsg={ok:false,text:'Not quite yet. Look at each column again.'};
+  render();
+}
+
+/* ---------- rendering: blocks ---------- */
+function renderReadout(){
+  var b=S.base,v=total(),hideN=S.hide,h,i,parts=[];
+  if(S.chalOn){
+    h='<div class="lab">Build</div><div class="big">'+fmt(S.target,b)+'</div>';
+    h+=S.chalMsg?'<div class="sub'+(S.chalMsg.ok?' good':'')+'">'+S.chalMsg.text+'</div>':'<div class="sub">Use the blocks to make this number, then press Check.</div>';
+  }else if(hideN){
+    h='<div class="big">?</div><div class="sub">Say what the blocks show, then reveal the number.</div>';
+  }else{
+    for(i=3;i>=0;i--)parts.push(S.c[i]+' &times; '+pw(b,i));
+    h='<div class="big">'+fmt(v,b)+'</div><div class="sub">'+parts.join(' + ')+'</div>';
+    if(S.dec&&b!==10)h+='<div class="sub">= '+v+' in base 10</div>';
+    if(S.words&&b===10)h+='<div class="sub">'+words(v)+'</div>';
+    if(!simplest())h+='<div class="note">Some columns hold '+b+' or more. Can you trade?</div>';
+  }
+  $('bRead').innerHTML=h;
+}
+function renderMat(){
+  var mat=$('mat'),s=L.span/S.base,n=nm(),hideC=S.hide||S.chalOn,p,i;
+  mat.innerHTML='';
+  for(p=3;p>=0;p--){
+    var col=el('div','col c'+p);col.dataset.col=p;col.dataset.drop='col';
+    if(!S.auto&&p<3&&S.c[p]>=S.base)col.classList.add('ready');
+    var title=S.base===10?n.title[p]:(pw(S.base,p)+'s'),sub=S.base===10?(pw(10,p)+'s'):n.title[p];
+    var tb=(p<3&&S.c[p]>=S.base&&!S.auto)?'<button class="trade" data-act="trade" data-col="'+p+'">Trade '+S.base+' '+n.pl[p]+' for 1 '+n.sg[p+1]+'</button>':'';
+    col.innerHTML='<div class="chead"><div><div class="ctitle">'+title+'</div><div class="csub">'+sub+'</div></div><div class="ccount">'+(hideC?'?':S.c[p])+'</div></div>'+
+      '<div class="cbtns"><button class="mini" data-act="sub" data-col="'+p+'" aria-label="Take one away">&minus;</button><button class="mini" data-act="add" data-col="'+p+'" aria-label="Add one">+</button>'+tb+'</div><div class="area"></div>';
+    var area=col.querySelector('.area');
+    for(i=0;i<S.c[p];i++){var bl=el('div','blk');bl.dataset.col=p;bl.innerHTML=blockSVG(p,s);area.appendChild(bl);}
+    if(S.fx&&S.fx.col===p){[].slice.call(area.children).slice(-S.fx.n).forEach(function(x){x.classList.add('pop');});}
+    mat.appendChild(col);
+  }
+  S.fx=null;
+}
+function bankLabel(p){
+  var b=S.base;
+  if(p===0)return 'Unit cube';
+  if(p===1)return 'Strip of '+b;
+  if(p===2)return 'Flat of '+(b*b);
+  return 'Block of '+(b*b*b);
+}
+function ghostBlock(p){var g=el('div');g.innerHTML=blockSVG(p,L.span/S.base);return g;}
+function renderBank(){
+  var bank=$('bank'),p;
+  bank.innerHTML='<div class="hint">Tap a block to add it, or drag it onto its own column.</div>';
+  for(p=0;p<4;p++){(function(p){
+    var it=el('div','bitem');
+    it.innerHTML='<div class="bsv">'+blockSVG(p,L.span/S.base*0.6)+'</div><div class="nm">'+bankLabel(p)+'</div>';
+    bank.appendChild(it);
+    makeDraggable(it,function(){addBlock(p);},function(){return ghostBlock(p);},function(t){
+      var c=t&&t.closest?t.closest('[data-drop="col"]'):null;
+      if(!c)return;
+      var cp=+c.dataset.col;
+      if(cp===p)addBlock(p);else say('That block belongs in the '+colName(p)+' column.');
+    });
+  })(p);}
+}
+function syncBlockControls(){
+  var b=S.base;
+  [].forEach.call($('baseSeg').children,function(x){x.classList.toggle('on',+x.dataset.b===b);});
+  [].forEach.call($('tapSeg').children,function(x){x.classList.toggle('on',x.dataset.m===S.tap);});
+  $('swHide').checked=S.hide;$('swHideC').checked=S.hide;
+  $('swOver').checked=S.over;$('swOver').disabled=S.auto;$('wOver').classList.toggle('off',S.auto);
+  $('swAuto').checked=S.auto;
+  $('swDec').checked=S.dec;$('swDec').disabled=(b===10);$('wDec').classList.toggle('off',b===10);
+  $('swWords').checked=S.words;$('swWords').disabled=(b!==10);$('wWords').classList.toggle('off',b!==10);
+  $('swWordsC').checked=S.words;
+  $('showLbl').textContent='Show me'+(b===10?'':' (base '+b+')');
+  $('chalBar').hidden=!S.chalOn;
+  $('chalBtn').classList.toggle('primary',S.chalOn);
+}
+function renderBlocks(){syncBlockControls();renderReadout();renderMat();renderBank();}
+
+/* ---------- rendering: cards ---------- */
+function cardEl(k,p){
+  var d=el('div','fcard'),h='',i;
+  d.style.background=CARDC[p];
+  for(i=0;i<=p;i++)h+='<span class="cell'+(i?' z':'')+'">'+(i?0:k)+'</span>';
+  d.innerHTML=h;return d;
+}
+function setCard(p,k){S.cards[p]=k;renderCards();}
+function renderFans(){
+  var fans=$('fans'),p,k;
+  fans.innerHTML='';
+  for(p=3;p>=0;p--){
+    var row=el('div','frow'),wrap=el('div','fcards');
+    row.innerHTML='<h3>'+N10.title[p]+' cards</h3>';
+    for(k=1;k<=9;k++){(function(p,k){
+      var c=cardEl(k,p);
+      if(S.cards[p]===k)c.classList.add('sel');
+      wrap.appendChild(c);
+      makeDraggable(c,function(){setCard(p,S.cards[p]===k?0:k);},function(){return cardEl(k,p);},function(t){
+        if(t&&t.closest&&t.closest('[data-drop="stage"]'))setCard(p,k);
+      });
+    })(p,k);}
+    row.appendChild(wrap);fans.appendChild(row);
+  }
+}
+var stageParts={cards:[],plus:[],res:null,rule:null,eq:null,n:0};
+function renderStage(){
+  var stage=$('stage'),present=[3,2,1,0].filter(function(p){return S.cards[p]>0;}),v=cardsVal();
+  stage.innerHTML='';
+  stageParts={cards:[],plus:[],res:null,rule:null,eq:null,n:present.length};
+  present.forEach(function(p,rank){
+    var c=el('div','scard'),h='',i;
+    c.style.background=CARDC[p];c.style.zIndex=10-p;c.title='Tap to take this card away';
+    for(i=0;i<=p;i++)h+='<span class="cell'+(i?' z':'')+'">'+(i?0:S.cards[p])+'</span>';
+    c.innerHTML=h;
+    c.addEventListener('click',function(){setCard(p,0);});
+    stage.appendChild(c);stageParts.cards.push(c);
+    if(rank>0){var pl=el('div','plus');pl.textContent='+';stage.appendChild(pl);stageParts.plus.push(pl);}
+  });
+  if(!present.length){
+    var ph=el('div','ph');ph.textContent='Tap or drag place value cards here';stage.appendChild(ph);
+  }else{
+    var rule=el('div','rule'),eq=el('div','eq'),res=el('div','res'),str=String(v),i2,h2='';
+    eq.textContent='=';
+    for(i2=0;i2<str.length;i2++)h2+='<span class="cell">'+str.charAt(i2)+'</span>';
+    res.innerHTML=h2;
+    if(S.hide){rule.style.display='none';eq.style.display='none';res.style.display='none';}
+    stage.appendChild(rule);stage.appendChild(eq);stage.appendChild(res);
+    stageParts.rule=rule;stageParts.eq=eq;stageParts.res=res;
+  }
+  positionStage();
+}
+function positionStage(){
+  var ch=L.sdw*1.5,gap=12,t=S.t,n=stageParts.n,stage=$('stage');
+  stage.style.height=(ch+t*n*(ch+gap))+'px';
+  stageParts.cards.forEach(function(c,r){c.style.top=(t*r*(ch+gap))+'px';});
+  stageParts.plus.forEach(function(pl,i){pl.style.top=(t*(i+1)*(ch+gap))+'px';pl.style.opacity=t;});
+  var rt=t*n*(ch+gap);
+  if(stageParts.res){
+    stageParts.res.style.top=rt+'px';stageParts.res.style.opacity=t;
+    stageParts.eq.style.top=rt+'px';stageParts.eq.style.opacity=t;
+    stageParts.rule.style.top=(rt-gap/2-2)+'px';stageParts.rule.style.opacity=t;
+  }
+  $('apartBtn').textContent=t>=0.5?'Push together':'Pull apart';
+}
+function tweenT(to){
+  var from=S.t,t0=performance.now(),dur=520;
+  cancelAnimationFrame(S.raf);
+  function step(now){
+    var k=Math.min(1,(now-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    S.t=from+(to-from)*e;$('slide').value=Math.round(S.t*100);positionStage();
+    if(k<1)S.raf=requestAnimationFrame(step);
+  }
+  S.raf=requestAnimationFrame(step);
+}
+function renderCardReadout(){
+  var v=cardsVal(),h,parts;
+  if(S.hide){h='<div class="big">?</div><div class="sub">Say the number, then reveal it.</div>';}
+  else{
+    parts=[3,2,1,0].filter(function(p){return S.cards[p]>0;}).map(function(p){return S.cards[p]*pw(10,p);});
+    h='<div class="big">'+v+'</div><div class="sub">'+(parts.length?parts.join(' + '):'0')+'</div>';
+    if(S.words)h+='<div class="sub">'+words(v)+'</div>';
+  }
+  $('cRead').innerHTML=h;
+}
+function renderCards(){
+  $('swHide').checked=S.hide;$('swHideC').checked=S.hide;
+  $('swWords').checked=S.words;$('swWordsC').checked=S.words;
+  renderCardReadout();renderFans();renderStage();
+}
+
+/* ---------- master render ---------- */
+function render(){
+  var blocks=S.tab==='blocks';
+  $('blocksView').hidden=!blocks;$('cardsView').hidden=blocks;
+  $('tabBlocks').classList.toggle('on',blocks);$('tabCards').classList.toggle('on',!blocks);
+  if(blocks)renderBlocks();else renderCards();
+}
+
+/* ---------- events ---------- */
+function init(){
+  layout();
+  var seg=$('baseSeg'),b;
+  for(b=2;b<=10;b++){var bt=el('button');bt.textContent=b;bt.dataset.b=b;seg.appendChild(bt);}
+  seg.addEventListener('click',function(e){var t=e.target.closest('button');if(t)setBase(+t.dataset.b);});
+  $('tapSeg').addEventListener('click',function(e){var t=e.target.closest('button');if(t){S.tap=t.dataset.m;render();}});
+  $('tabBlocks').onclick=function(){S.tab='blocks';render();};
+  $('tabCards').onclick=function(){S.tab='cards';render();};
+
+  $('mat').addEventListener('click',function(e){
+    var act=e.target.closest('[data-act]');
+    if(act){var p=+act.dataset.col,a=act.dataset.act;
+      if(a==='add')addBlock(p);else if(a==='sub')subBlock(p);else if(a==='trade')trade(p);
+      return;}
+    var blk=e.target.closest('.blk');
+    if(blk)tapBlock(+blk.dataset.col,blk);
+  });
+
+  function hideChange(e){S.hide=e.target.checked;render();}
+  $('swHide').onchange=hideChange;$('swHideC').onchange=hideChange;
+  function wordsChange(e){S.words=e.target.checked;render();}
+  $('swWords').onchange=wordsChange;$('swWordsC').onchange=wordsChange;
+  $('swDec').onchange=function(e){S.dec=e.target.checked;render();};
+
+  $('swOver').onchange=function(e){
+    if(!e.target.checked){
+      var bad=false,p;
+      for(p=0;p<4;p++)if(S.c[p]>cap(p,false))bad=true;
+      if(bad){say('Trade some blocks first: a column holds more than it can without overflow.');e.target.checked=true;return;}
+    }
+    S.over=e.target.checked;render();
+  };
+  $('swAuto').onchange=function(e){
+    if(e.target.checked){
+      var a=S.c.slice(),q;
+      for(q=0;q<3;q++){while(a[q]>=S.base){a[q]-=S.base;a[q+1]++;}}
+      if(a[3]>S.base-1){say('That is too big to tidy up with Auto-trade: '+maxStr()+' is the biggest.');e.target.checked=false;return;}
+      S.c=a;S.auto=true;
+    }else S.auto=false;
+    render();
+  };
+
+  function showMe(){
+    var str=$('showIn').value.trim();
+    if(!/^[0-9]{1,4}$/.test(str)){say('Type a number with up to four digits.');return;}
+    var ds=str.split('').map(Number);
+    if(ds.some(function(d){return d>=S.base;})){say('In base '+S.base+' the only digits are 0 to '+(S.base-1)+'.');return;}
+    var c=[0,0,0,0];ds.reverse().forEach(function(d,i){c[i]=d;});
+    S.c=c;render();
+  }
+  $('showBtn').onclick=showMe;
+  $('showIn').addEventListener('keydown',function(e){if(e.key==='Enter')showMe();});
+  $('clearBtn').onclick=function(){S.c=[0,0,0,0];S.chalMsg=null;render();};
+
+  $('chalBtn').onclick=function(){
+    S.chalOn=!S.chalOn;S.chalMsg=null;
+    if(S.chalOn){S.target=randTarget();$('chalIn').value='';}
+    render();
+  };
+  $('chalDone').onclick=function(){S.chalOn=false;S.chalMsg=null;render();};
+  $('chalRand').onclick=function(){S.target=randTarget();S.chalMsg=null;$('chalIn').value='';render();};
+  function chalSet(){
+    var str=$('chalIn').value.trim();
+    if(!/^[0-9]{1,4}$/.test(str)){say('Type a number with up to four digits.');return;}
+    var ds=str.split('').map(Number),v=0;
+    if(ds.some(function(d){return d>=S.base;})){say('In base '+S.base+' the only digits are 0 to '+(S.base-1)+'.');return;}
+    ds.forEach(function(d){v=v*S.base+d;});
+    S.target=v;S.chalMsg=null;render();
+  }
+  $('chalSet').onclick=chalSet;
+  $('chalIn').addEventListener('keydown',function(e){if(e.key==='Enter')chalSet();});
+  $('chalCheck').onclick=chalCheck;
+
+  $('toCards').onclick=function(){
+    var v=cardsVal();
+    S.base=10;S.c=digitsOf(v,10);
+    if(S.auto===false&&!validArr(S.c))S.c=[0,0,0,0];
+    if(S.chalOn){S.chalMsg=null;}
+    render();say('Built '+v+' with blocks.');
+  };
+  $('toBlocks').onclick=function(){
+    if(S.base!==10){say('Switch the blocks to base 10 first. The cards only work in base 10.');return;}
+    var v=total();
+    if(v>9999){say('That is more than four cards can show.');return;}
+    S.cards=digitsOf(v,10);renderCards();say('Built '+v+' with cards.');
+  };
+  $('clearCards').onclick=function(){S.cards=[0,0,0,0];renderCards();};
+  $('slide').addEventListener('input',function(e){cancelAnimationFrame(S.raf);S.t=(+e.target.value)/100;positionStage();});
+  $('apartBtn').onclick=function(){tweenT(S.t>=0.5?0:1);};
+
+  window.addEventListener('resize',function(){layout();render();});
+  render();
+}
+init();
+})();
+</script>
+</body>
+</html>
