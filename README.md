@@ -60,6 +60,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Whale Watching | `whale-watching/` |
 | Who Am I? | `who-am-i/` |
 | Wildlife Line-Up | `wildlife-line-up/` |
+| Yoikes! | `yoikes/` |
 
 ## Updating a game
 
