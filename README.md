@@ -57,6 +57,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Trio | `trio/` |
 | Whack-A-Prime | `whack-a-prime/` |
 | Whale Watching | `whale-watching/` |
+| Who Am I? | `who-am-i/` |
 | Wildlife Line-Up | `wildlife-line-up/` |
 
 ## Updating a game

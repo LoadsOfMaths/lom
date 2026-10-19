@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who Am I? – The Name's Bond, Number Bond</title>
+<style>
+:root{
+  --bg:#07090d; --bg2:#10141c; --gold:#d8b449; --gold2:#f3dc8a; --red:#c0242f;
+  --paper:#efe6cf; --paper2:#e2d6b4; --ink:#1a1712; --steel:#7f8a9a; --green:#3fb56b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(ellipse at 50% 35%, #1b2230 0%, #0b0e14 55%, #05070a 100%);
+  color:#e8e8e8; font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;
+  display:flex; flex-direction:column; align-items:center; overflow-x:hidden;
+}
+body::after{ /* faint scanlines */
+  content:""; position:fixed; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);
+}
+header{
+  width:min(96vw,1200px); display:flex; align-items:center; justify-content:space-between;
+  padding:10px 4px 6px; gap:12px; flex-wrap:wrap;
+}
+.brand h1{
+  font-family:Georgia,"Times New Roman",serif; letter-spacing:.18em; font-size:clamp(1.3rem,3.4vw,2.2rem);
+  color:var(--gold); text-shadow:0 0 14px rgba(216,180,73,.35);
+}
+.brand p{font-style:italic;color:var(--steel);font-size:clamp(.75rem,1.6vw,1rem);letter-spacing:.06em}
+.hud{display:flex;gap:14px;align-items:center;font-size:clamp(.8rem,1.7vw,1.05rem);color:var(--gold2)}
+.hud span b{color:#fff}
+.chip{border:1px solid #3a4352;border-radius:999px;padding:3px 12px;color:var(--steel);font-size:.85em;letter-spacing:.05em;text-transform:uppercase}
+
+#board{
+  display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+  gap:clamp(6px,1.1vw,14px);
+  width:min(96vw, calc((100vh - 235px) * 1.65));
+  aspect-ratio:1.65;
+  margin-top:4px;
+}
+@media (max-aspect-ratio:1/1){ #board{ width:96vw; aspect-ratio:1/1.15; } }
+
+.tile{
+  container-type:size; position:relative; border-radius:10px; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
+  padding:3cqh 4cqw;
+}
+.tile.hidden{
+  background:linear-gradient(160deg,#171c27,#0e121a);
+  border:1px solid #2a3140;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.6);
+}
+.tile.hidden .bars{width:78%;display:flex;flex-direction:column;gap:9cqh;opacity:.9}
+.tile.hidden .bars i{display:block;height:8cqh;background:#05070a;border-radius:2px}
+.tile.hidden .bars i:nth-child(2){width:84%}
+.tile.hidden .bars i:nth-child(3){width:58%}
+.tile.hidden .lbl{position:absolute;top:6cqh;left:5cqw;font-size:max(9px,7cqh);letter-spacing:.2em;color:#4b566a}
+.tile.hidden .stamp{
+  position:absolute; right:6cqw; bottom:8cqh; font-size:max(9px,8cqh); letter-spacing:.25em;
+  color:rgba(192,36,47,.55); border:2px solid rgba(192,36,47,.45); padding:1cqh 3cqw; transform:rotate(-8deg);
+  font-weight:bold;
+}
+.tile.shown{
+  background:linear-gradient(165deg,var(--paper),var(--paper2));
+  color:var(--ink); border:1px solid #b9a978;
+  box-shadow:0 6px 18px rgba(0,0,0,.55), inset 0 0 40px rgba(120,95,40,.18);
+  animation:reveal .55s ease both;
+}
+.tile.shown::before{ /* paper clip */
+  content:""; position:absolute; top:-1px; left:8%; width:7cqw; height:15cqh; border:2px solid #8b93a3;
+  border-top:none; border-radius:0 0 6px 6px; opacity:.7;
+}
+.tile.shown .lbl{position:absolute;top:6cqh;right:5cqw;font-size:max(9px,7cqh);letter-spacing:.2em;color:#8a7b52}
+.tile.shown .txt{
+  font-family:"Courier New",Courier,monospace; font-weight:bold; line-height:1.18;
+  font-size:clamp(.85rem,min(8.6cqw,17cqh),2.7rem);
+}
+.tile.shown .txt b{color:#9b1c25;font-size:1.12em}
+@keyframes reveal{ 0%{transform:rotateX(80deg) scale(.9);opacity:0} 100%{transform:none;opacity:1} }
+
+.centre{
+  background:radial-gradient(circle at 50% 50%,#1d2635 0%,#0b0f17 70%);
+  border:2px solid var(--gold); box-shadow:0 0 26px rgba(216,180,73,.28), inset 0 0 40px rgba(0,0,0,.7);
+}
+.centre svg.rings{position:absolute;inset:0;width:100%;height:100%;opacity:.35}
+.centre .q{
+  position:relative; font-family:Georgia,serif; font-weight:bold; color:var(--gold);
+  font-size:min(40cqw,70cqh); line-height:1; text-shadow:0 0 22px rgba(216,180,73,.5);
+}
+.centre .sub{position:relative;font-size:max(10px,min(5.6cqw,9cqh));color:var(--steel);letter-spacing:.06em;margin-top:2cqh}
+.centre .badge{
+  position:relative; margin-top:3cqh; font-size:max(11px,min(7cqw,11cqh)); letter-spacing:.3em; font-weight:bold;
+  border:3px solid; padding:1cqh 4cqw; transform:rotate(-6deg);
+}
+.centre.win{border-color:var(--green);box-shadow:0 0 40px rgba(63,181,107,.5), inset 0 0 40px rgba(0,0,0,.7)}
+.centre.win .q{color:#fff;text-shadow:0 0 26px rgba(63,181,107,.8);font-size:min(36cqw,56cqh)}
+.centre.win .badge{color:var(--green);border-color:var(--green)}
+.centre.lost{border-color:var(--red);box-shadow:0 0 40px rgba(192,36,47,.5), inset 0 0 40px rgba(0,0,0,.7)}
+.centre.lost .q{color:#ff8b92;font-size:min(36cqw,56cqh)}
+.centre.lost .badge{color:var(--red);border-color:var(--red)}
+.centre.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+
+#msg{min-height:1.7em;margin:8px 0 2px;font-size:clamp(.9rem,2vw,1.25rem);color:var(--gold2);text-align:center;letter-spacing:.03em}
+#msg.bad{color:#ff8b92}
+#msg.good{color:#7fe0a3}
+
+.controls{
+  width:min(96vw,1200px); display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; padding:4px 0 14px;
+}
+button{
+  font:inherit; cursor:pointer; border-radius:8px; padding:10px 20px; font-size:clamp(.9rem,1.9vw,1.2rem);
+  border:1px solid #4a5468; background:linear-gradient(#232c3c,#151b27); color:#e8e8e8; letter-spacing:.04em;
+  transition:transform .08s, box-shadow .15s;
+}
+button:hover:not(:disabled){box-shadow:0 0 12px rgba(216,180,73,.35);border-color:var(--gold)}
+button:active:not(:disabled){transform:scale(.97)}
+button:disabled{opacity:.35;cursor:default}
+button.primary{background:linear-gradient(#e2c35a,#b8922c);color:#1a1505;border-color:#f3dc8a;font-weight:bold}
+button.danger{border-color:#7a2a31;color:#ffb3b8}
+.guess{display:flex;gap:8px;align-items:center}
+.guess input{
+  width:7.5em; font:inherit; font-size:clamp(1rem,2.2vw,1.5rem); padding:8px 10px; text-align:center;
+  background:#0c1018; color:var(--gold2); border:2px solid #4a5468; border-radius:8px;
+}
+.guess input:focus{outline:none;border-color:var(--gold)}
+input[type=number]::-webkit-inner-spin-button{display:none}
+
+/* briefing overlay */
+#overlay{
+  position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%,#1a2230 0%,#05070a 80%); padding:12px; overflow:auto;
+}
+#overlay.off{display:none}
+.card{
+  width:min(94vw,760px); text-align:center; padding:clamp(16px,3vw,34px);
+  border:1px solid #3a4352; border-radius:14px; background:rgba(10,13,19,.88);
+  box-shadow:0 0 60px rgba(0,0,0,.8), 0 0 30px rgba(216,180,73,.12);
+}
+.card .top{color:var(--red);letter-spacing:.5em;font-size:.8rem;font-weight:bold;border:2px solid var(--red);display:inline-block;padding:2px 14px;transform:rotate(-2deg)}
+.card h2{
+  font-family:Georgia,serif; color:var(--gold); letter-spacing:.2em; font-size:clamp(2rem,7vw,4rem); margin:14px 0 2px;
+  text-shadow:0 0 18px rgba(216,180,73,.4);
+}
+.card .tag{font-style:italic;color:var(--gold2);font-size:clamp(1rem,2.6vw,1.5rem);margin-bottom:6px}
+.card .how{color:var(--steel);font-size:clamp(.8rem,1.7vw,1rem);margin:8px auto 14px;max-width:34em;line-height:1.45}
+.card h3{font-size:.8rem;letter-spacing:.3em;color:var(--steel);margin:14px 0 8px;font-weight:normal}
+.opts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.opts button{min-width:7em}
+.opts button.sel{background:linear-gradient(#e2c35a,#b8922c);color:#1a1505;border-color:#f3dc8a;font-weight:bold}
+.opts small{display:block;font-weight:normal;font-size:.68em;opacity:.8}
+.card .go{margin-top:20px;font-size:clamp(1.1rem,2.4vw,1.5rem);padding:12px 34px}
+.lom{margin-top:22px;font-family:Arial,Helvetica,sans-serif;font-size:clamp(.85rem,1.8vw,1.1rem);letter-spacing:.04em;color:#c9ced6}
+.lom span{opacity:.6;margin-right:.4em}
+#btnMute{padding:6px 12px;font-size:.9rem}
+footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>WHO AM I?</h1>
+    <p>The name's Bond &ndash; Number Bond</p>
+  </div>
+  <div class="hud">
+    <span class="chip" id="chipMode"></span>
+    <span>Points: <b id="pts">0</b></span>
+    <span>Missions: <b id="done">0</b></span>
+    <button id="btnMute" title="Sound on/off">Sound: on</button>
+    <button id="btnBrief" style="padding:6px 14px;font-size:.9rem">Briefing</button>
+  </div>
+</header>
+
+<div id="board"></div>
+<div id="msg"></div>
+
+<div class="controls">
+  <button id="btnNext" class="primary">Next clue</button>
+  <div class="guess">
+    <input id="guess" type="number" inputmode="numeric" placeholder="Number?" autocomplete="off">
+    <button id="btnGuess">Name the number</button>
+  </div>
+  <button id="btnGiveUp" class="danger">Declassify</button>
+  <button id="btnNew">New mission</button>
+</div>
+<footer>FOR YOUR EYES ONLY</footer>
+
+<div id="overlay">
+  <div class="card">
+    <div class="top">TOP SECRET</div>
+    <h2>WHO AM I?</h2>
+    <div class="tag">The name's Bond &ndash; Number Bond</div>
+    <p class="how">A mystery number hides in the centre. Each of the eight files around it holds one clue &ndash;
+      none gives the game away alone, but together they pin the number down. Agent, your mission is to name it.</p>
+
+    <h3>CLEARANCE LEVEL</h3>
+    <div class="opts" id="optLevel">
+      <button data-v="1">Easy<small>numbers up to 99</small></button>
+      <button data-v="2">Medium<small>numbers up to 249</small></button>
+      <button data-v="3">Hard<small>numbers up to 999</small></button>
+    </div>
+
+    <h3>HOW THE CLUES ARE REVEALED</h3>
+    <div class="opts" id="optMode">
+      <button data-v="all">All at once</button>
+      <button data-v="seq">One by one<small>clockwise</small></button>
+      <button data-v="rand">One at a time<small>random file</small></button>
+    </div>
+
+    <button class="primary go" id="btnGo">Accept mission</button>
+    <div class="lom"><span>Secret Agent Training by</span>www.LoadsOfMaths.co.uk</div>
+  </div>
+</div>
+
+<script>
+/*ENGINE*/
+const MAXN=1000;
+const info=[null];
+for(let n=1;n<=MAXN;n++){
+  let t=0,s=0;
+  for(let d=1;d<=n;d++) if(n%d===0){t++;s+=d;}
+  let x=n,pf=[];
+  for(let p=2;p<=x;p++){ if(x%p===0){pf.push(p);while(x%p===0)x/=p;} }
+  info[n]={tau:t,sigma:s,pf:pf,omega:pf.length};
+}
+function isPrime(n){ if(n<2)return false; for(let i=2;i*i<=n;i++) if(n%i===0) return false; return true; }
+const isSq=m=>m>0&&Math.round(Math.sqrt(m))**2===m;
+const isCube=m=>m>0&&Math.round(Math.cbrt(m))**3===m;
+const isTri=m=>{ const k=Math.round((Math.sqrt(8*m+1)-1)/2); return k>0&&k*(k+1)/2===m; };
+const ds=m=>String(m).split('').map(Number);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const prod=a=>a.reduce((x,y)=>x*y,1);
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const LEVELS={
+  1:{lo:2,hi:100,minN:10,maxN:99,name:'Easy'},
+  2:{lo:2,hi:250,minN:30,maxN:249,name:'Medium'},
+  3:{lo:2,hi:999,minN:100,maxN:999,name:'Hard'}
+};
+const LIM={mult:2,factor:2,near:2};
+const MINALONE=4;
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function cands(n,lvl){
+  const c=[];
+  const add=(min,type,text,f)=>{ if(lvl>=min && f(n)) c.push({type,text,f}); };
+  const I=info[n];
+  add(1,'parity','I’m even',m=>m%2===0);
+  add(1,'parity','I’m odd',m=>m%2===1);
+  add(1,'prime','I’m a prime number',isPrime);
+  add(1,'prime','I’m not a prime number',m=>!isPrime(m));
+
+  const ks=[3,4,5,6,7,8,9,10,11,12];
+  if(lvl>=2) ks.push(13,14,15,16,18,20,25);
+  if(lvl>=3) ks.push(17,19,21,22,24,30);
+  for(const k of ks){
+    if(k>=n) continue;
+    const tx=(k<=12&&Math.random()<.5)?'I’m in the '+k+' times table':'I’m a multiple of '+k;
+    add(1,'mult',tx,m=>m%k===0);
+  }
+  const maxM=lvl===1?150:lvl===2?600:3000;
+  for(let j=2;j<=14;j++){
+    const M=n*j; if(M>maxM) break;
+    add(1,'factor',Math.random()<.5?'I’m a factor of '+M:'I divide exactly into '+M,m=>M%m===0);
+  }
+  add(1,'shape','I’m a square number',isSq);
+  add(1,'shape','I’m a cube number',isCube);
+  add(1,'shape','I’m a triangular number',isTri);
+  add(2,'notshape','I’m not a square number',m=>!isSq(m));
+  add(2,'notshape','I’m not a triangular number',m=>!isTri(m));
+
+  const D=ds(n), S=sum(D), P=prod(D), ld=D[D.length-1];
+  add(1,'dsum',Math.random()<.5?'The sum of my digits is '+S:'My digits add up to '+S,m=>sum(ds(m))===S);
+  add(1,'dpar','The sum of my digits is odd',m=>sum(ds(m))%2===1);
+  add(1,'dpar','The sum of my digits is even',m=>sum(ds(m))%2===0);
+  if(P>0) add(1,'dprod','The product of my digits is '+P,m=>prod(ds(m))===P);
+  add(1,'last','My last digit is '+ld,m=>m%10===ld);
+  add(2,'first','My first digit is '+D[0],m=>ds(m)[0]===D[0]);
+  add(3,'ndig','I have '+D.length+' digits',m=>String(m).length===D.length);
+  add(3,'pal','I read the same backwards',m=>String(m)===String(m).split('').reverse().join(''));
+  add(3,'distinct','All my digits are different',m=>new Set(ds(m)).size===ds(m).length);
+
+  const Ks=[5,10];
+  if(lvl>=2) Ks.push(20,25,50);
+  if(lvl>=3) Ks.push(100,200);
+  for(const K of Ks){
+    const dist=m=>{const r=m%K;return Math.min(r,K-r);};
+    add(1,'near','I’m one away from a multiple of '+K,m=>dist(m)===1);
+    add(1,'near','I’m two away from a multiple of '+K,m=>dist(m)===2);
+  }
+  add(1,'nearprime','I’m one away from a prime number',m=>isPrime(m-1)||isPrime(m+1));
+  add(2,'nearprime','I’m two away from a prime number',m=>isPrime(m-2)||isPrime(m+2));
+  add(2,'nearsq','I’m one away from a square number',m=>isSq(m-1)||isSq(m+1));
+  add(3,'nearsq','I’m one away from a cube number',m=>isCube(m-1)||isCube(m+1));
+
+  add(1,'pp','I’m the product of two different prime numbers',m=>info[m].omega===2&&info[m].tau===4);
+  add(2,'pp','I’m the product of three different prime numbers',m=>info[m].omega===3&&info[m].tau===8);
+
+  const a=Math.floor(Math.sqrt(n));
+  if(a*a!==n) add(2,'sqrt','My square root is between '+a+' and '+(a+1),m=>m>a*a&&m<(a+1)*(a+1));
+  const b=Math.floor(Math.cbrt(n)+1e-9);
+  if(b>=2&&b*b*b!==n) add(2,'cbrt','My cube root is between '+b+' and '+(b+1),m=>m>b*b*b&&m<(b+1)**3);
+
+  const s=lvl===1?10:lvl===2?25:50;
+  for(let i=0;i<3;i++){
+    const X=(Math.ceil(n/s)-1-i)*s; if(X>=1) add(1,'big','I’m bigger than '+X,m=>m>X);
+    const Y=(Math.floor(n/s)+1+i)*s; add(1,'small','I’m smaller than '+Y,m=>m<Y);
+  }
+  add(2,'nfact','I have exactly '+I.tau+' factors',m=>info[m].tau===I.tau);
+  add(2,'sigma','The sum of all my factors is '+I.sigma,m=>info[m].sigma===I.sigma);
+  if(I.tau>2){
+    const lo=I.pf[0], hi=I.pf[I.pf.length-1];
+    add(2,'pf','My smallest prime factor is '+lo,m=>info[m].pf[0]===lo);
+    add(2,'pf','My largest prime factor is '+hi,m=>{const p=info[m].pf;return p[p.length-1]===hi;});
+    if(I.omega>=2) add(3,'pf2','I have '+I.omega+' different prime factors',m=>info[m].omega===I.omega);
+  }
+  for(let x=2;x<=12;x++) for(let y=x+1;y<=12;y++){
+    if(y%x===0||n%x!==0||n%y!==0) continue;
+    add(2,'common','I’m a common multiple of '+x+' and '+y,m=>m%x===0&&m%y===0);
+  }
+  return c;
+}
+
+function makeClues(n,lvl){
+  const L=LEVELS[lvl];
+  const uni=[]; for(let m=L.lo;m<=L.hi;m++) uni.push(m);
+  const c=cands(n,lvl);
+  const cnt1=new Map();
+  for(const x of c) cnt1.set(x,uni.filter(x.f).length);
+  const pool=c.filter(x=>cnt1.get(x)>=MINALONE);
+  for(let t=0;t<1500;t++){
+    shuffle(pool);
+    const pick=[], used={};
+    for(const x of pool){
+      if((used[x.type]||0)>=(LIM[x.type]||1)) continue;
+      pick.push(x); used[x.type]=(used[x.type]||0)+1;
+      if(pick.length===8) break;
+    }
+    if(pick.length<8) continue;
+    const rem=uni.filter(m=>pick.every(x=>x.f(m)));
+    if(rem.length!==1) continue;
+    pick.sort((p,q)=>cnt1.get(q)-cnt1.get(p));         // weakest clue first
+    const rem4=uni.filter(m=>pick.slice(0,4).every(x=>x.f(m)));
+    if(rem4.length<2) continue;
+    return pick;
+  }
+  return null;
+}
+function generate(lvl,avoid){
+  const L=LEVELS[lvl];
+  for(let t=0;t<400;t++){
+    const n=L.minN+Math.floor(Math.random()*(L.maxN-L.minN+1));
+    if(n===avoid) continue;
+    const clues=makeClues(n,lvl);
+    if(clues) return {n,clues};
+  }
+  return null;
+}
+/*END*/
+
+
+/* ---------- sound ---------- */
+const SFX=(()=>{
+  let ctx=null, on=true;
+  function c(){ if(!ctx){ try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } } if(ctx.state==='suspended') ctx.resume(); return ctx; }
+  function tone(f,t0,dur,type,vol,f2){
+    const a=c(); if(!a||!on) return;
+    const o=a.createOscillator(), g=a.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,a.currentTime+t0);
+    if(f2) o.frequency.exponentialRampToValueAtTime(f2,a.currentTime+t0+dur);
+    g.gain.setValueAtTime(0.0001,a.currentTime+t0);
+    g.gain.exponentialRampToValueAtTime(vol||.15,a.currentTime+t0+.015);
+    g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+t0+dur);
+    o.connect(g); g.connect(a.destination); o.start(a.currentTime+t0); o.stop(a.currentTime+t0+dur+.05);
+  }
+  function noise(t0,dur,vol){
+    const a=c(); if(!a||!on) return;
+    const n=Math.floor(a.sampleRate*dur), buf=a.createBuffer(1,n,a.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+    const s=a.createBufferSource(), g=a.createGain(), f=a.createBiquadFilter();
+    f.type='highpass'; f.frequency.value=1800; g.gain.value=vol||.08;
+    s.buffer=buf; s.connect(f); f.connect(g); g.connect(a.destination); s.start(a.currentTime+t0);
+  }
+  return {
+    toggle(){ on=!on; if(on){c(); this.click();} return on; },
+    isOn(){ return on; },
+    click(){ tone(660,0,.07,'square',.06); },
+    reveal(){ noise(0,.12,.07); tone(220,0,.12,'sawtooth',.05,330); tone(880,.06,.09,'square',.05); },
+    start(){ tone(110,0,.35,'sawtooth',.08); tone(165,.12,.35,'sawtooth',.07); tone(98,.3,.6,'sine',.12); noise(.3,.25,.05); },
+    wrong(){ tone(150,0,.28,'sawtooth',.12,90); tone(140,.14,.3,'square',.07,80); },
+    win(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.11,.28,'triangle',.14)); tone(1047,.48,.7,'triangle',.12); tone(1319,.5,.7,'sine',.07); },
+    lose(){ [392,330,262,196].forEach((f,i)=>tone(f,i*.18,.35,'sawtooth',.07)); },
+    fresh(){ noise(0,.18,.06); tone(300,0,.2,'sine',.08,600); }
+  };
+})();
+
+/* ---------- game ---------- */
+const CW=[0,1,2,5,8,7,6,3];           // cells clockwise from top-left, skipping the centre (4)
+const S={level:1,mode:'seq',pts:0,done:0,n:0,clues:[],cellOf:[],shown:0,order:[],phase:'play',attempts:0,last:null};
+const $=id=>document.getElementById(id);
+const MODES={all:'All at once',seq:'One by one',rand:'One at a time'};
+
+function visibleClues(){
+  if(S.phase!=='play') return new Set([0,1,2,3,4,5,6,7]);
+  if(S.mode==='all') return new Set([0,1,2,3,4,5,6,7]);
+  if(S.mode==='seq'){ const s=new Set(); for(let i=0;i<S.shown;i++) s.add(i); return s; }
+  return new Set([S.order[S.shown-1]]);
+}
+function fmt(t){ return t.replace(/(\d+)/g,'<b>$1</b>'); }
+
+function render(){
+  const vis=visibleClues();
+  const clueAt={}; S.clues.forEach((c,i)=>{clueAt[S.cellOf[i]]=i;});
+  const L=LEVELS[S.level];
+  let html='';
+  for(let cell=0;cell<9;cell++){
+    if(cell===4){
+      let inner, cls='tile centre';
+      if(S.phase==='win'){ cls+=' win'; inner='<div class="q">'+S.n+'</div><div class="badge">IDENTIFIED</div>'; }
+      else if(S.phase==='lost'){ cls+=' lost'; inner='<div class="q">'+S.n+'</div><div class="badge">DECLASSIFIED</div>'; }
+      else inner='<div class="q">?</div><div class="sub">a whole number from '+L.lo+' to '+L.hi+'</div>';
+      html+='<div class="'+cls+'" id="centre"><svg class="rings" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">'
+        +'<g fill="none" stroke="#d8b449" stroke-width=".5"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="34"/><circle cx="50" cy="50" r="22"/>'
+        +'<path d="M50 0V100M0 50H100"/></g></svg>'+inner+'</div>';
+    } else {
+      const i=clueAt[cell];
+      if(vis.has(i)){
+        html+='<div class="tile shown"><div class="lbl">'+(S.mode==='seq'?'CLUE '+(i+1):'CLUE')+'</div><div class="txt">'+fmt(S.clues[i].text)+'</div></div>';
+      } else {
+        html+='<div class="tile hidden"><div class="lbl">'+(S.mode==='seq'?'FILE '+(i+1):'FILE')+'</div>'
+          +'<div class="bars"><i></i><i></i><i></i></div><div class="stamp">CLASSIFIED</div></div>';
+      }
+    }
+  }
+  $('board').innerHTML=html;
+  $('pts').textContent=S.pts; $('done').textContent=S.done;
+  $('chipMode').textContent=L.name+' · '+MODES[S.mode];
+  const playing=S.phase==='play';
+  $('btnGuess').disabled=!playing; $('guess').disabled=!playing; $('btnGiveUp').disabled=!playing;
+  let canNext=playing&&S.mode!=='all'&&S.shown<8;
+  $('btnNext').disabled=!canNext;
+  $('btnNext').style.display=S.mode==='all'?'none':'';
+}
+function say(t,cls){ const m=$('msg'); m.textContent=t; m.className=cls||''; }
+
+function newMission(){
+  const g=generate(S.level,S.last);
+  S.n=g.n; S.last=g.n; S.clues=g.clues; S.phase='play'; S.attempts=0;
+  if(S.mode==='seq') S.cellOf=CW.slice();
+  else S.cellOf=shuffle(CW.slice());
+  S.order=shuffle([0,1,2,3,4,5,6,7]);
+  S.shown=S.mode==='all'?8:1;
+  $('guess').value='';
+  say(S.mode==='all'?'Eight files on the table. Who am I?':'File opened. Request more intelligence when you are ready.');
+  render();
+  if(!$('overlay').classList.contains('off')) return;
+  $('guess').focus();
+}
+function nextClue(){
+  if(S.phase!=='play'||S.mode==='all'||S.shown>=8) return;
+  S.shown++; SFX.reveal(); say(S.shown===8?'That is every file. No more intelligence available.':'');
+  render();
+}
+function guess(){
+  if(S.phase!=='play') return;
+  const v=parseInt($('guess').value,10);
+  if(isNaN(v)) return;
+  if(v===S.n){
+    const gain=S.mode==='all'?1:Math.max(1,9-S.shown);
+    S.pts+=gain; S.done++; S.phase='win'; SFX.win();
+    say('Mission accomplished, Agent! '+(S.mode==='all'?'':('Clues used: '+S.shown+' – ')) +'+'+gain+(gain===1?' point':' points')+'.','good');
+    render();
+  } else {
+    S.attempts++; SFX.wrong();
+    say(v+' is not the number, Agent. Think again.','bad');
+    const c=$('centre'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+    $('guess').select();
+  }
+}
+function giveUp(){
+  if(S.phase!=='play') return;
+  S.phase='lost'; SFX.lose(); say('Mission aborted. The identity is declassified.','bad'); render();
+}
+
+/* briefing overlay */
+function syncOpts(){
+  document.querySelectorAll('#optLevel button').forEach(b=>b.classList.toggle('sel',+b.dataset.v===S.level));
+  document.querySelectorAll('#optMode button').forEach(b=>b.classList.toggle('sel',b.dataset.v===S.mode));
+}
+document.querySelectorAll('#optLevel button').forEach(b=>b.onclick=()=>{S.level=+b.dataset.v;SFX.click();syncOpts();});
+document.querySelectorAll('#optMode button').forEach(b=>b.onclick=()=>{S.mode=b.dataset.v;SFX.click();syncOpts();});
+$('btnGo').onclick=()=>{ SFX.start(); $('overlay').classList.add('off'); newMission(); };
+$('btnBrief').onclick=()=>{ syncOpts(); $('overlay').classList.remove('off'); };
+$('btnNext').onclick=nextClue;
+$('btnGuess').onclick=guess;
+$('btnGiveUp').onclick=giveUp;
+$('btnNew').onclick=()=>{ SFX.fresh(); newMission(); };
+$('btnMute').onclick=()=>{ $('btnMute').textContent='Sound: '+(SFX.toggle()?'on':'off'); };
+$('guess').addEventListener('keydown',e=>{ if(e.key==='Enter') guess(); });
+document.addEventListener('keydown',e=>{
+  if($('overlay').classList.contains('off') && e.code==='Space' && document.activeElement!==$('guess')){
+    e.preventDefault(); nextClue();
+  }
+});
+syncOpts();
+S.mode='seq'; syncOpts();
+// pre-build a mission so the board is ready behind the briefing
+newMission();
+</script>
+</body>
+</html>
