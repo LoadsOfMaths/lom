@@ -156,6 +156,8 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
 .mt:focus-visible{outline:3px solid var(--orange);outline-offset:-3px}
 .sqa{--tint:rgba(240,120,56,.18);--bd:var(--orange2)}
 .sqb{--tint:rgba(64,112,176,.12);--bd:var(--navy2);border-style:dashed}
+/* Colour letters off: black letters, grey boxes; borders (solid, dashed, dotted) still tell groups apart */
+.mono .sqa,.mono .sqb{--tint:rgba(100,110,120,.12);--bd:rgba(100,110,120,.7)}
 .given{font-size:.5em;color:var(--muted);margin-top:.35em}
 .given .n{color:var(--ink)}
 .hi{display:inline-block;color:var(--ink);font-weight:700;border:2px solid #2f7a4a;border-radius:1em;padding:0 .25em;line-height:1.1}
@@ -370,6 +372,8 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
         <option value="1.15">Large</option>
         <option value="1.3">Extra large</option>
       </select></div>
+    <div class="row inline"><input type="checkbox" id="sColour"><label for="sColour">Colour letters</label></div>
+    <div class="row"><small>Turn off for black letters and grey term boxes, on screen and on printed sheets.</small></div>
     <div class="row inline"><input type="checkbox" id="sCues"><label for="sCues">Underline cues for letters</label></div>
     <div class="row"><small>Underline cues give each letter its own line style, so the colour coding still works in black and white or for students with Colour Vision Deficiency (CVD), commonly known as colour blindness.</small></div>
     <div class="foot"><span class="build" id="build"></span><button id="closePanel" class="btn primary">Done</button></div>
@@ -1584,7 +1588,7 @@ if(typeof module!=='undefined'&&module.exports){
 function initUI(){
   const $=id=>document.getElementById(id);
   const KEY='algebraApp',OLDKEY='algebraApp.stage1';
-  const DEF={level:0,diff:1,view:'teach',count:6,letters:'xyz',div:'sign',dbl:'foil',fq:'ac',cues:false,size:1,incWork:false,pSpace:'small',pAns:'ans',pName:true};
+  const DEF={level:0,diff:1,view:'teach',count:6,letters:'xyz',div:'sign',dbl:'foil',fq:'ac',cues:false,colour:true,size:1,incWork:false,pSpace:'small',pAns:'ans',pName:true};
   let S;
   try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(OLDKEY)||'{}'));}catch(e){S=Object.assign({},DEF);}
   const QS=location.search;
@@ -1599,6 +1603,7 @@ function initUI(){
   Object.keys(PALETTE).forEach(k=>{
     const h=PALETTE[k],r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);
     css+='.v-'+k+'{color:'+h+'}.h-'+k+'{--tint:rgba('+r+','+g+','+b+',.14);--bd:rgba('+r+','+g+','+b+',.55)}';
+    css+='.mono .v-'+k+'{color:inherit}.mono .h-'+k+'{--tint:rgba(100,110,120,.12);--bd:rgba(100,110,120,.55)}';
     css+='.cues .v-'+k+'>i{text-decoration:'+UL[k]+';text-decoration-thickness:.06em;text-underline-offset:.14em}';
   });
   const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
@@ -1625,6 +1630,7 @@ function initUI(){
   function applyLook(){
     document.documentElement.style.setProperty('--scale',S.size);
     document.body.classList.toggle('cues',!!S.cues);
+    document.body.classList.toggle('mono',S.colour===false);
     redraw();
   }
 
@@ -1850,7 +1856,7 @@ function initUI(){
   /* settings panel */
   function openPanel(){
     $('sLetters').value=S.letters;$('sDiv').value=S.div;$('sDbl').value=S.dbl;$('sFq').value=S.fq;
-    $('sCount').value=String(S.count);$('sSize').value=String(S.size);$('sCues').checked=!!S.cues;
+    $('sCount').value=String(S.count);$('sSize').value=String(S.size);$('sCues').checked=!!S.cues;$('sColour').checked=S.colour!==false;
     $('build').textContent=BUILD;openOverlay('panel',$('closePanel'));
   }
   $('btnSettings').addEventListener('click',openPanel);
@@ -1864,6 +1870,7 @@ function initUI(){
   $('sCount').addEventListener('change',e=>{S.count=+e.target.value;save();SET.items=null;if(!atHome()&&S.view==='set')buildSet();});
   $('sSize').addEventListener('change',e=>{S.size=+e.target.value;save();applyLook();});
   $('sCues').addEventListener('change',e=>{S.cues=e.target.checked;save();applyLook();});
+  $('sColour').addEventListener('change',e=>{S.colour=e.target.checked;save();applyLook();});
 
   /* start: a ?code= link opens straight into its questions, otherwise the title screen */
   fillControls();applyLook();$('incWork').checked=!!S.incWork;
