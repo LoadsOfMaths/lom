@@ -126,6 +126,19 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
 .frac .nu{padding:0 .25em .05em;border-bottom:.07em solid currentColor}
 .frac .de{padding:.05em .25em 0}
 .fu{display:inline-flex;align-items:center;vertical-align:middle;white-space:nowrap}
+/* square roots, the subject of a formula, function machines (Level 12) */
+.rt{display:inline-flex;align-items:stretch;vertical-align:middle;margin:0 .08em}
+.rt .rts{width:.55em;height:auto;flex:none;overflow:visible}
+.rt.tall .rts{width:.7em}
+.rt .rts path{fill:none;stroke:currentColor;stroke-width:.07em;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.rt .rtb{display:inline-flex;align-items:center;border-top:.07em solid currentColor;padding:.12em .15em 0}
+.rt .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.sj{background:rgba(240,120,56,.15);border-radius:.25em;box-shadow:0 0 0 .045em rgba(240,120,56,.5)}
+.mono .sj{background:rgba(100,110,120,.14);box-shadow:0 0 0 .045em rgba(100,110,120,.5)}
+.fm{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.3em .35em}
+.fmb{display:inline-flex;align-items:center;white-space:nowrap;border:2px solid var(--navy2);border-radius:.35em;padding:.05em .4em;background:var(--tintb)}
+.fma{color:var(--muted)}
+.fmw{font-family:var(--sans);font-size:.75em}
 
 /* ---------- arrows (SVG overlay drawn from the rendered terms) ---------- */
 .arw{position:relative;display:inline-block}
@@ -237,6 +250,7 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
 .pq.sp-large>li{min-height:62mm}
 .pn{font-family:var(--heading);color:var(--navy2);font-size:12pt;min-width:7mm}
 .pq .math{font-size:17pt}
+.pq .given{font-size:.72em;color:#444}
 .pa .math{font-size:15pt}
 .pa.work{grid-template-columns:1fr}
 .pa.work>li{display:block;break-inside:auto;border-bottom:0;padding:2mm 0 3mm}
@@ -363,6 +377,12 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
         <option value="insp">Inspection (try factor pairs)</option>
       </select>
       <small>The ac method and inspection only differ for ax² + bx + c; for x² + bx + c both use the pair method.</small></div>
+    <div class="row"><label for="sRf">Rearranging formulae: working shown</label>
+      <select id="sRf">
+        <option value="bal">Balance (do the same to both sides)</option>
+        <option value="fm">Function machine</option>
+      </select>
+      <small>A function machine only works when the subject appears once; otherwise the balance method is used.</small></div>
     <div class="row"><small>You can also switch method in the working itself, using the buttons on its first step.</small></div>
     <div class="row"><label for="sCount">Questions in a set</label>
       <select id="sCount"><option>4</option><option>6</option><option>8</option><option>10</option><option>12</option><option>16</option><option>20</option></select></div>
@@ -425,13 +445,14 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
 <script>
 "use strict";
 /* =====================================================================
-   ALGEBRA LAB  (Stages 1-6)  LoadsOfMaths
+   ALGEBRA LAB  (Stages 1-8)  LoadsOfMaths
    Sections:  1 RNG   2 Term model   3 Renderer + arrows   4 Level 1
               5 Level 2   6 Levels 3-5 (single brackets)   7 Level 6 (substitution)
               8 Levels 7-8 (double brackets)   9 Levels 9-10 (factorising quadratics)   9b Level 11 (algebraic fractions)
+              9c Level 12 (rearranging formulae)
               10 Level registry, self-test, set seeds and codes   11 UI (title screen, teach, set, print)
    ===================================================================== */
-const BUILD = 'Stage 7: levels 1-11, codes, print';
+const BUILD = 'Stage 8: levels 1-12, codes, print';
 
 /* ---------- 1. Seeded random numbers ---------- */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -1631,10 +1652,385 @@ function genAlgFrac(R,d,ctx){
   };
 }
 
+/* ---------- 9c. Level 12: rearranging formulae ----------
+   A formula is a tree: {t:'n',v} a number, {t:'pi'}, {t:'l',L} a letter, {t:'add',a:[{s:±1,e}]},
+   {t:'mul',f:[factors],h} (h: times ½), {t:'frac',n,d}, {t:'sq',e}, {t:'rt',e}, and {t:'poly',p:terms}
+   for an expression in the term model. Every step of the working is an equation of two trees, so it can be
+   drawn, described in words and checked numerically. When the subject appears once, the working peels
+   operations off the subject's side, last one first: on both sides (balance) or as a reversed function
+   machine. When it appears twice, it is collected on one side and factorised out.
+   A node with hi:k is drawn in an orange chip in step k (what that step has just done to the other side). */
+const fN=v=>({t:'n',v:v}),fPI={t:'pi'},fL=L=>({t:'l',L:L}),fPoly=p=>({t:'poly',p:p}),fT=(s,e)=>({s:s,e:e});
+const fSq=e=>({t:'sq',e:e}),fRt=e=>({t:'rt',e:e});
+const fCl=x=>JSON.parse(JSON.stringify(x));
+/* a sum; sums inside it are opened up, and a sum of one positive term is just that term */
+function fAdd(ts){
+  const a=[];
+  ts.forEach(x=>{if(x.e.t==='add')x.e.a.forEach(y=>a.push({s:x.s*y.s,e:y.e,hi:x.hi||y.hi}));else a.push(x);});
+  return a.length===1&&a[0].s>0&&!a[0].hi?a[0].e:{t:'add',a:a};
+}
+/* a product: numbers multiplied together and written first, then π, then the rest in order */
+function fMul(fs,h){
+  let n=1,nhi=0,hh=!!h;const pis=[],rest=[];
+  const put=g=>{if(g.t==='n'){n*=g.v;if(g.hi)nhi=g.hi;}else if(g.t==='pi')pis.push(g);else rest.push(g);};
+  fs.forEach(g=>{if(g.t==='mul'&&!g.hi){if(g.h)hh=true;g.f.forEach(put);}else put(g);});
+  if(hh&&n%2===0){n/=2;hh=false;}
+  const out=[];
+  if(n!==1||(!pis.length&&!rest.length&&!hh)){const N=fN(n);if(nhi)N.hi=nhi;out.push(N);}
+  out.push(...pis,...rest);
+  return out.length===1&&!hh?out[0]:{t:'mul',f:out,h:hh};
+}
+function fFrac(n,d){return n.t==='frac'&&!n.hi?{t:'frac',n:n.n,d:fMul([n.d,d])}:{t:'frac',n:n,d:d};}
+/* multiply by d: a number or π goes in front, a bracket goes after the multiplier (5(y + 4), t(y + 4)) */
+function fTimes(E,d){return E.t==='add'||d.t==='n'||d.t==='pi'?fMul([d,E]):fMul([E,d]);}
+const fNeedsBr=g=>g.t==='add'||(g.t==='poly'&&(g.p.length>1||g.p[0].c<0));
+function fHas(x,S){
+  switch(x.t){
+    case 'l':return x.L===S;case 'poly':return x.p.some(m=>!!m.v[S]);
+    case 'add':return x.a.some(y=>fHas(y.e,S));case 'mul':return x.f.some(g=>fHas(g,S));
+    case 'frac':return fHas(x.n,S)||fHas(x.d,S);case 'sq':case 'rt':return fHas(x.e,S);
+  }
+  return false;
+}
+function fLets(x,set){
+  switch(x.t){
+    case 'l':set.add(x.L);break;case 'poly':lettersOf(x.p).forEach(k=>set.add(k));break;
+    case 'add':x.a.forEach(y=>fLets(y.e,set));break;case 'mul':x.f.forEach(g=>fLets(g,set));break;
+    case 'frac':fLets(x.n,set);fLets(x.d,set);break;case 'sq':case 'rt':fLets(x.e,set);break;
+  }
+  return set;
+}
+function fEv(x,v){
+  switch(x.t){
+    case 'n':return x.v;case 'pi':return Math.PI;case 'l':return v[x.L];case 'poly':return sumEv(x.p,v);
+    case 'add':return x.a.reduce((s,y)=>s+y.s*fEv(y.e,v),0);
+    case 'mul':return x.f.reduce((s,g)=>s*fEv(g,v),x.h?0.5:1);
+    case 'frac':return fEv(x.n,v)/fEv(x.d,v);
+    case 'sq':{const b=fEv(x.e,v);return b*b;}
+    case 'rt':return Math.sqrt(fEv(x.e,v));
+  }
+  return NaN;
+}
+/* the root sign is drawn to the height of what is under it, joining the line over the top */
+const RADICAL='<svg class="rts" viewBox="0 0 10 20" preserveAspectRatio="none" aria-hidden="true"><path d="M0.5 12.5L3 11L5.5 19.4L9.6 0.6H10"/></svg><span class="sr">√</span>';
+const fTall=x=>x.t==='frac'||(x.t==='mul'&&x.f.some(g=>g.t==='frac'));
+/* HTML; o.hi is the step whose new parts are chipped */
+function fH(x,o){
+  o=o||{};
+  const ch=h=>x.hi&&x.hi===o.hi?chipA(h):h;
+  switch(x.t){
+    case 'n':return ch(nspan(x.v));
+    case 'pi':return ch(nspan('π'));
+    case 'l':return ch(varHTML(x.L,1));
+    case 'poly':return ch(exprHTML(x.p));
+    case 'add':return ch(x.a.map((y,i)=>{
+      const inner=y.e.t==='add'||(y.e.t==='poly'&&(y.e.p.length>1||(i>0&&y.e.p[0].c<0)))?'('+fH(y.e,o)+')':fH(y.e,o);
+      const h=(i===0?(y.s<0?MINUS:''):opSpan(y.s))+inner;
+      return y.hi&&y.hi===o.hi?chipA(h):h;
+    }).join(''));
+    case 'mul':return ch((x.h?nspan('½'):'')+x.f.map(g=>fNeedsBr(g)?'('+fH(g,o)+')':fH(g,o)).join(''));
+    case 'frac':return ch(fracHTML(fH(x.n,o),fH(x.d,o)));
+    case 'sq':{const b=x.e;
+      if(b.t==='l'&&!(b.hi&&b.hi===o.hi))return ch(varHTML(b.L,2));
+      return ch((b.t==='l'||b.t==='n'||b.t==='pi'?fH(b,o):'('+fH(b,o)+')')+'<sup>2</sup>');}
+    case 'rt':return ch('<span class="rt'+(fTall(x.e)?' tall':'')+'">'+RADICAL+'<span class="rtb">'+fH(x.e,o)+'</span></span>');
+  }
+  return '';
+}
+/* plain text, for headings and notes */
+function fTx(x){
+  const atom=y=>y.t==='n'||y.t==='l'||y.t==='pi'||(y.t==='poly'&&y.p.length===1&&y.p[0].c>0);
+  switch(x.t){
+    case 'n':return String(x.v);case 'pi':return 'π';case 'l':return x.L;case 'poly':return exprText(x.p);
+    case 'add':return x.a.map((y,i)=>(i===0?(y.s<0?MINUS:''):(y.s<0?' '+MINUS+' ':' + '))+(y.e.t==='add'?'('+fTx(y.e)+')':fTx(y.e))).join('');
+    case 'mul':return (x.h?'½':'')+x.f.map(g=>fNeedsBr(g)?'('+fTx(g)+')':fTx(g)).join('');
+    case 'frac':{const w=y=>atom(y)||(y.t==='mul'&&!y.f.some(g=>g.t==='frac'))||y.t==='sq'?fTx(y):'('+fTx(y)+')';return w(x.n)+'/'+w(x.d);}
+    case 'sq':return (atom(x.e)?fTx(x.e):'('+fTx(x.e)+')')+'²';
+    case 'rt':return '√'+(atom(x.e)?fTx(x.e):'('+fTx(x.e)+')');
+  }
+  return '';
+}
+/* the subject is highlighted wherever it appears */
+const fSj=(h,S)=>h.split('class="v v-'+S+'"').join('class="v v-'+S+' sj"');
+const fEqH=(l,r,S,hi)=>fSj(fH(l,{hi:hi})+EQ+fH(r,{hi:hi}),S);
+const fIsS=(x,S)=>x.t==='l'&&x.L===S;
+
+/* The outermost operation on the subject's side, and what is left inside it. */
+function fPeel(X,S){
+  if(X.t==='add'){
+    const i=X.a.findIndex(y=>fHas(y.e,S)),st=X.a[i],others=X.a.filter((y,j)=>j!==i);
+    return {op:{k:st.s>0?'add':'rsub',others:others,term:st.e},inner:st.e};
+  }
+  if(X.t==='mul'){
+    if(X.h)return {op:{k:'half'},inner:X.f.length===1?X.f[0]:{t:'mul',f:X.f,h:false}};
+    const i=X.f.findIndex(g=>fHas(g,S));
+    return {op:{k:'mul',D:fMul(X.f.filter((g,j)=>j!==i))},inner:X.f[i]};
+  }
+  if(X.t==='frac'&&!fHas(X.d,S))return {op:{k:'div',d:X.d},inner:X.n};
+  if(X.t==='sq')return {op:{k:'sq'},inner:X.e};
+  if(X.t==='rt')return {op:{k:'rt'},inner:X.e};
+  throw new Error('cannot undo '+X.t);
+}
+const fOps=(X,S)=>{const ops=[];while(!fIsS(X,S)){const p=fPeel(X,S);ops.push(p.op);X=p.inner;}return ops;};
+const fCopyTs=ts=>ts.map(y=>fT(y.s,fCl(y.e)));
+/* the inverse of op, done to E (the other side); new parts are marked hi:k */
+function fInv(E,op,k){
+  const H=n=>{const c=fCl(n);if(k)c.hi=k;return c;};
+  switch(op.k){
+    case 'add':return fAdd([fT(1,E)].concat(op.others.map(y=>({s:-y.s,e:fCl(y.e),hi:k}))));
+    case 'rsub':return fAdd(fCopyTs(op.others).concat((E.t==='add'?E.a:[fT(1,E)]).map(y=>({s:-y.s,e:y.e,hi:k}))));
+    case 'half':return fMul([H(fN(2)),E]);
+    case 'mul':return fFrac(E,H(op.D));
+    case 'div':return fTimes(E,H(op.d));
+    case 'sq':return {t:'rt',e:E,hi:k};
+    case 'rt':return {t:'sq',e:E,hi:k};
+  }
+}
+/* Balance: do the same to both sides. L0 = R0, subject on the right. Returns steps, the equations shown and the answer. */
+function fBalance(L0,R0,S){
+  let E=fCl(L0),X=fCl(R0),right=true,k=0;
+  const steps=[],eqs=[];
+  const line=()=>{const l=right?E:X,r=right?X:E;eqs.push([l,r]);return fEqH(l,r,S,k);};
+  while(!fIsS(X,S)){
+    const p=fPeel(X,S),op=p.op,inner=fTx(p.inner);k++;
+    let t,n;
+    if(op.k==='rsub'){
+      const tt=fTx(op.term);
+      X=fAdd([fT(1,E),{s:1,e:fCl(op.term),hi:k}]);E=fAdd(fCopyTs(op.others));right=!right;
+      t='Add '+tt+' to both sides';
+      n='The '+S+' term is being subtracted. Adding '+tt+' to both sides makes it positive.';
+    }else{
+      if(op.k==='add'){
+        const one=op.others.length===1,o=one?op.others[0]:null;
+        t=one?(o.s>0?'Subtract '+fTx(o.e)+' from both sides':'Add '+fTx(o.e)+' to both sides')
+             :'Subtract '+fTx({t:'add',a:op.others})+' from both sides';
+        n='To leave '+inner+' on its own, '+t.charAt(0).toLowerCase()+t.slice(1)+'.';
+      }else if(op.k==='half'){t='Multiply both sides by 2';n='This clears the ½.';}
+      else if(op.k==='mul'){const D=fTx(op.D);t='Divide both sides by '+D;n=inner+' is multiplied by '+D+', so divide both sides by '+D+'.';}
+      else if(op.k==='div'){t='Multiply both sides by '+fTx(op.d);n='This clears the fraction.';}
+      else if(op.k==='sq'){t='Square root both sides';n=inner+' is squared, so take the square root of both sides. Strictly it could be ± the square root; we take the positive one.';}
+      else {t='Square both sides';n='Squaring undoes the square root.';}
+      E=fInv(E,op,k);X=p.inner;
+    }
+    if(k===1)n='Undo what has been done to '+S+', last operation first. '+n;
+    steps.push({t:t,lines:[line()],n:n});
+  }
+  if(right){
+    eqs.push([X,E]);
+    steps.push({t:'Write it the other way round',lines:[fEqH(X,E,S,0)],n:'The two sides are equal, so swap them to put '+S+' on the left.'});
+  }
+  return {steps:steps,eqs:eqs,ans:E};
+}
+/* Function machine: follow the subject forwards, then run the machine backwards from the other side. */
+function fmLab(op,inv){
+  const f=g=>fNeedsBr(g)?'('+fH(g)+')':fH(g);
+  switch(op.k){
+    case 'add':return op.others.map(y=>opSpan(inv?-y.s:y.s)+f(y.e)).join('');
+    case 'rsub':return '<span class="fmw">subtract from</span> '+fH(fAdd(fCopyTs(op.others)));
+    case 'half':return (inv?TIMES:DIVS)+nspan(2);
+    case 'mul':return (inv?DIVS:TIMES)+f(op.D);
+    case 'div':return (inv?TIMES:DIVS)+f(op.d);
+    case 'sq':return '<span class="fmw">'+(inv?'square root':'square')+'</span>';
+    case 'rt':return '<span class="fmw">'+(inv?'square':'square root')+'</span>';
+  }
+}
+function fMachine(L0,R0,S){
+  const ops=fOps(R0,S),box=h=>'<span class="fmb">'+h+'</span>',arr='<span class="fma">→</span>';
+  const chain=(a,labs,b)=>'<span class="fm">'+a+labs.map(l=>arr+box(l)).join('')+arr+b+'</span>';
+  const sH=fSj(varHTML(S,1),S),out=fH(L0);
+  const steps=[
+    {t:'Draw the function machine',lines:[chain(sH,ops.slice().reverse().map(o=>fmLab(o,false)),out)],
+      n:'Start with '+S+' and follow what the formula does to it, in order (BIDMAS).'},
+    {t:'Reverse the machine',lines:[chain(out,ops.map(o=>fmLab(o,true)),sH)],
+      n:'Run it backwards, doing the inverse of each operation: + and − swap, × and ÷ swap, squaring and square rooting swap.'}];
+  let E=fCl(L0);const lines=[];
+  ops.forEach(o=>{E=fInv(E,o,0);lines.push(box(fmLab(o,true))+arr+fSj(fH(E),S));});
+  lines.push(fEqH(fL(S),E,S,0));
+  steps.push({t:'Put '+fTx(L0)+' through the reverse machine',lines:lines,
+    n:'Each box acts on everything so far, so use brackets or a fraction line where they are needed.'});
+  return {steps:steps,eqs:[[fL(S),E]],ans:E};
+}
+/* the subject appears twice: collect its terms on one side (the way round with fewer minus signs), factorise, divide */
+/* canonical order (or the order given, if keep), with a positive term first where there is one */
+const fPosFirst=(ts,keep)=>{const s=keep?ts:simplify(ts),i=s.findIndex(m=>m.c>0);return i>0?[s[i]].concat(s.filter((m,j)=>j!==i)):s;};
+function fCollect(Lt,Rt,S,steps,eqs){
+  const has=m=>!!m.v[S],neg=m=>M.make(-m.c,m.v),Sm=M.make(1,{[S]:1});
+  let sub=simplify(Lt.filter(has).concat(Rt.filter(has).map(neg))),oth=simplify(Rt.filter(m=>!has(m)).concat(Lt.filter(m=>!has(m)).map(neg)));
+  sub=simplify(sub);oth=simplify(oth);
+  const all=sub.concat(oth),nn=all.filter(m=>m.c<0).length,np=all.length-nn;
+  if(nn>np||(nn===np&&sub.length&&sub[0].c<0)){sub=sub.map(neg);oth=oth.map(neg);}
+  const B=fPosFirst(sub.map(m=>M.div(m,Sm))),sT=B.map(m=>M.mul(m,Sm));
+  /* on the top, terms with the bracket's letters come first: (5x + u)/(6x − 4) */
+  const bl=lettersOf(B),O=fPosFirst(oth.map((m,i)=>[m,i]).sort((p,q)=>(M.letters(p[0]).some(k=>bl.indexOf(k)>=0)?0:1)-(M.letters(q[0]).some(k=>bl.indexOf(k)>=0)?0:1)||p[1]-q[1]).map(z=>z[0]),true);
+  const e1=[fPoly(sT),fPoly(O)],e2=[fMul([fL(S),fPoly(B)]),fPoly(O)],ans=fFrac(fPoly(O),fPoly(B));
+  eqs.push(e1,e2,[fL(S),ans]);
+  steps.push({t:'Collect the '+S+' terms on one side',lines:[fEqH(e1[0],e1[1],S)],
+    n:'Move every term with '+S+' to one side and every other term to the other side, changing the sign of any term that crosses the equals sign. Choose the way round that keeps the most terms positive.'});
+  steps.push({t:'Factorise',lines:[fEqH(e2[0],e2[1],S)],n:S+' is a factor of every term on that side, so take it outside a bracket.'});
+  steps.push({t:'Divide both sides by ('+exprText(B)+')',lines:[fEqH(fL(S),ans,S)],
+    n:'Equivalent forms, such as multiplying the top and the bottom by −1, are also correct.'});
+  return {B:B,O:O,ans:ans};
+}
+/* multiply out o × bracket, with arrows, and give the expanded terms */
+function fExpand(o,br,rhs,S,steps,eqs){
+  const ex=expandProd([o],br);
+  eqs.push([fPoly(ex),fPoly(rhs)]);
+  steps.push({t:'Expand the bracket',lines:[fSj(singleDiag(o,br,0,0.7)+lag(EQ+exprHTML(ex),br.length*0.7),S),fEqH(fPoly(ex),fPoly(rhs),S)],
+    n:'Multiply every term in the bracket by '+monoText(o)+'.'});
+  return ex;
+}
+/* Real formulae, with the letters that can be made the subject (each appears once). */
+const fM=(...f)=>({t:'mul',f:f,h:false}),fHalf=(...f)=>({t:'mul',f:f,h:true}),fP=e=>fT(1,e);
+const REAL_FORMULAE=[
+  [()=>[fL('v'),fAdd([fP(fL('u')),fP(fM(fL('a'),fL('t')))])],'uat'],
+  [()=>[fL('A'),fHalf(fL('b'),fL('h'))],'bh'],
+  [()=>[fSq(fL('v')),fAdd([fP(fSq(fL('u'))),fP(fM(fN(2),fL('a'),fL('s')))])],'uas'],
+  [()=>[fL('C'),fM(fN(2),fPI,fL('r'))],'r'],
+  [()=>[fL('A'),fM(fPI,fSq(fL('r')))],'r'],
+  [()=>[fL('E'),fHalf(fL('m'),fSq(fL('v')))],'mv'],
+  [()=>[fL('s'),fAdd([fP(fM(fL('u'),fL('t'))),fP(fHalf(fL('a'),fSq(fL('t'))))])],'ua'],
+  [()=>[fL('P'),fAdd([fP(fM(fN(2),fL('l'))),fP(fM(fN(2),fL('w')))])],'lw'],
+  [()=>[fL('F'),fM(fL('m'),fL('a'))],'ma'],
+  [()=>[fL('V'),fM(fL('I'),fL('R'))],'IR'],
+  [()=>[fL('F'),fAdd([fP(fFrac(fM(fN(9),fL('C')),fN(5))),fP(fN(32))])],'C'],
+  [()=>[fL('A'),fHalf(fAdd([fP(fL('a')),fP(fL('b'))]),fL('h'))],'ha'],
+  [()=>[fL('V'),fM(fPI,fSq(fL('r')),fL('h'))],'hr'],
+  [()=>[fL('s'),fFrac(fL('d'),fL('t'))],'d'],
+  [()=>[fL('E'),fM(fL('m'),fSq(fL('c')))],'mc'],
+  [()=>[fL('y'),fAdd([fP(fM(fL('m'),fL('x'))),fP(fL('c'))])],'mxc']
+];
+/* Every equation shown must hold when the subject takes the answer's value. Values where the question
+   itself fails (a square root of a negative, or y = √x + 8 with y < 8) are outside it and are skipped,
+   so the range of values widens as it goes. */
+function fVerify(S,eqs,ans){
+  if(fHas(ans,S))return false;
+  const ls=new Set();eqs.forEach(e=>{fLets(e[0],ls);fLets(e[1],ls);});ls.delete(S);
+  const holds=(e,v)=>{const p=fEv(e[0],v),q=fEv(e[1],v);return isFinite(p)&&isFinite(q)&&Math.abs(p-q)<=1e-7*Math.max(1,Math.abs(p),Math.abs(q));};
+  let good=0;
+  for(let i=0;i<400&&good<6;i++){
+    const v={};ls.forEach(L=>{v[L]=0.5+Math.random()*(6+i/4);});
+    const s=fEv(ans,v);if(!isFinite(s))continue;v[S]=s;
+    if(!holds(eqs[0],v))continue;
+    for(const e of eqs){
+      if(!holds(e,v))return false;
+    }
+    good++;
+  }
+  return good>=6;
+}
+
+function genRearr(R,d,ctx){
+  const ls=pickLetters(R,ctx,3),S=ls[0]<ls[1]?ls[0]:ls[1],Y=ls[0]<ls[1]?ls[1]:ls[0],U=ls[2];
+  const x=fL(S),k=()=>R.int(2,9),c=()=>R.int(1,9),pm=()=>R.chance(0.5)?1:-1;
+  const lin=(a,s,n)=>fAdd([fP(a===1?fL(S):fMul([fN(a),fL(S)])),fT(s,fN(n))]);
+  const given=s=>'<div class="given">Make '+fSj(varHTML(s,1),s)+' the subject</div>';
+  let L0=fL(Y),R0=null,subj=S;
+  if(d<=4||d===7){
+    if(d===1){
+      const t=R.int(1,4);
+      R0=t===1?(R.chance(0.25)?fAdd([fP(fN(c())),fP(x)]):lin(1,1,c())):t===2?lin(1,-1,c()):t===3?fMul([fN(k()),x]):fFrac(x,fN(k()));
+    }else if(d===2){
+      const t=R.int(1,4);
+      if(t===1)R0=lin(k(),pm(),c());
+      else if(t===2)R0=fFrac(lin(1,pm(),c()),fN(k()));
+      else if(t===3)R0=fAdd([fP(fFrac(x,fN(k()))),fT(pm(),fN(c()))]);
+      else R0=fAdd([fP(fN(R.int(5,20))),fT(-1,R.chance(0.3)?x:fMul([fN(k()),x]))]);
+    }else if(d===3){
+      const t=R.int(1,5),a=R.int(2,6);let b=k();while(gcd(a,b)!==1)b=k();
+      if(t===1)R0=fMul([fN(k()),lin(1,pm(),c())]);
+      else if(t===2)R0=fFrac(lin(a,pm(),c()),fN(b));
+      else if(t===3)R0=fAdd([fP(fFrac(fMul([fN(a),x]),fN(b))),fT(pm(),fN(c()))]);
+      else if(t===4)R0=fFrac(fMul([fN(a),lin(1,pm(),c())]),fN(b));     /* 2(x + 3)/5 */
+      else R0=fAdd([fP(fFrac(lin(1,pm(),c()),fN(k()))),fT(pm(),fN(c()))]);
+    }else if(d===4){
+      const t=R.int(1,7);
+      if(t===1)R0=fAdd([fP(fSq(x)),fT(pm(),fN(c()))]);
+      else if(t===2)R0=fAdd([fP(fMul([fN(k()),fSq(x)])),fT(pm(),fN(c()))]);
+      else if(t===3)R0=fRt(lin(1,pm(),c()));
+      else if(t===4)R0=fMul([fN(k()),fRt(x)]);
+      else if(t===5)R0=fAdd([fP(fRt(x)),fT(pm(),fN(c()))]);
+      else if(t===6)R0=fSq(lin(1,pm(),c()));
+      else R0=fRt(lin(R.int(2,6),pm(),c()));
+    }else{
+      const f=R.pick(REAL_FORMULAE),pair=f[0]();
+      L0=pair[0];R0=pair[1];subj=R.pick(f[1].split(''));
+    }
+    const ctxM=ctx.rf==='fm'?'fm':'bal';
+    const W=ctxM==='fm'?fMachine(L0,R0,subj):fBalance(L0,R0,subj);
+    W.steps[0].tog={key:'rf',cur:ctxM,opts:[['bal','Balance'],['fm','Function machine']]};
+    const eqs=[[L0,R0]].concat(W.eqs);
+    return {instr:'Rearrange',q:fEqH(L0,R0,subj,0)+given(subj),answer:fEqH(fL(subj),W.ans,subj,0),steps:W.steps,d:d,
+      verify(){return fVerify(subj,eqs,W.ans);}};
+  }
+  /* d 5 and 6: the subject appears twice */
+  const mk=(n,v)=>M.make(n,v),sv=(n,ex)=>M.make(n,Object.assign({[S]:1},ex||{}));
+  const K=['a','b','c','k','p','q','t'].filter(l=>ls.indexOf(l)<0);
+  const sgn=n=>R.chance(0.4)?-n:n;
+  for(let attempt=0;attempt<300;attempt++){
+    const steps=[],eqs=[];let Lt,Rt,qL,qR;
+    if(d===5){
+      const t=R.int(1,4);
+      if(t===1){                      /* 5x + 4y = 6xy − u: make y the subject */
+        const sp=R.chance(0.5);
+        Lt=[mk(sgn(c()),{[Y]:1}),sv(c())];Rt=[sv(c(),{[Y]:1}),mk(sgn(c()),{[U]:1})];
+        if(Lt[0].c<0)Lt.reverse();if(Rt[0].c<0)Rt.reverse();
+        if(sp){const tmp=Lt;Lt=Rt;Rt=tmp;}
+        qL=fPoly(Lt);qR=fPoly(Rt);eqs.push([qL,qR]);
+      }else if(t===2){                /* y = (x + 2)/(x − 3): make x the subject */
+        const a=R.int(1,5),b=sgn(c()),cc=R.int(1,4),dd=sgn(c());
+        if(a*dd-b*cc===0)continue;
+        const num=[sv(a),mk(b,{})],den=[sv(cc),mk(dd,{})],Ym=mk(1,{[Y]:1});
+        qL=fL(Y);qR=fFrac(fPoly(num),fPoly(den));eqs.push([qL,qR]);
+        const e=[fMul([fPoly([Ym]),fPoly(den)]),fPoly(num)];eqs.push(e);
+        steps.push({t:'Multiply both sides by ('+exprText(den)+')',lines:[fEqH(e[0],e[1],S)],n:'Clear the fraction first.'});
+        Lt=fExpand(Ym,den,num,S,steps,eqs);Rt=num;
+      }else if(t===3){                /* ax + 3 = 5x + b */
+        const A=K[0],B=K[1];
+        const s1=[sv(1,{[A]:1}),R.chance(0.5)?mk(sgn(c()),{}):mk(sgn(1),{[B]:1})];
+        const s2=[R.chance(0.3)?sv(1,{[B]:1}):sv(k()),mk(sgn(c()),{})];
+        if(s1[1].v[B]&&s2[0].v[B])s2[1]=mk(sgn(c()),{});
+        if(!s1[1].v[B]&&!s2[0].v[B]&&R.chance(0.6))s2[1]=mk(sgn(1),{[B]:1});
+        if(M.sig(s1[1])===M.sig(s2[1])&&s1[1].c===s2[1].c)continue;
+        Lt=s1;Rt=s2;if(R.chance(0.5)){Lt=s2;Rt=s1;}
+        qL=fPoly(Lt);qR=fPoly(Rt);eqs.push([qL,qR]);
+      }else{                          /* t(x + 2) = 3x − 1 */
+        const T=K[R.int(0,K.length-1)],Tm=mk(1,{[T]:1}),br=[sv(1),mk(sgn(c()),{})],rhs=[sv(k()),mk(sgn(c()),{})];
+        qL=fMul([fPoly([Tm]),fPoly(br)]);qR=fPoly(rhs);eqs.push([qL,qR]);
+        Lt=fExpand(Tm,br,rhs,S,steps,eqs);Rt=rhs;
+      }
+    }else{                            /* y = √((3x + 6)/(5x − 6)): make x the subject */
+      const a=R.int(1,6),b=sgn(c()),bare=R.chance(0.2),cc=bare?1:R.int(1,6),dd=bare?0:sgn(c());
+      if(a*dd-b*cc===0||(a===cc&&!bare))continue;
+      const num=[sv(a),mk(b,{})],den=dd?[sv(cc),mk(dd,{})]:[sv(1)],Y2=mk(1,{[Y]:2});
+      qL=fL(Y);qR=fRt(fFrac(fPoly(num),fPoly(den)));eqs.push([qL,qR]);
+      const e1=[fSq(fL(Y)),fFrac(fPoly(num),fPoly(den))];eqs.push(e1);
+      steps.push({t:'Square both sides',lines:[fEqH(e1[0],e1[1],S)],n:'Squaring undoes the square root.'});
+      if(dd){
+        const e2=[fMul([fPoly([Y2]),fPoly(den)]),fPoly(num)];eqs.push(e2);
+        steps.push({t:'Multiply both sides by ('+exprText(den)+')',lines:[fEqH(e2[0],e2[1],S)],n:'Clear the fraction.'});
+        Lt=fExpand(Y2,den,num,S,steps,eqs);
+      }else{
+        Lt=expandProd([Y2],den);const e2=[fPoly(Lt),fPoly(num)];eqs.push(e2);
+        steps.push({t:'Multiply both sides by '+S,lines:[fEqH(e2[0],e2[1],S)],n:'Clear the fraction.'});
+      }
+      Rt=num;
+    }
+    const C=fCollect(Lt,Rt,S,steps,eqs);
+    if(C.B.length<2||!C.O.length)continue;
+    if(gcdAll(C.B.concat(C.O).map(m=>m.c))!==1)continue;
+    /* the answer must still depend on the other letters */
+    const ans=C.ans,ok=(()=>{const ks=Array.from(fLets(ans,new Set()));const v1={},v2={};ks.forEach(l=>{v1[l]=1.3;v2[l]=2.7;});return Math.abs(fEv(ans,v1)-fEv(ans,v2))>1e-6;})();
+    if(!ok)continue;
+    return {instr:'Rearrange',q:fEqH(qL,qR,S,0)+given(S),answer:fEqH(fL(S),ans,S,0),steps:steps,d:d,
+      verify(){return fVerify(S,eqs,ans);}};
+  }
+  throw new Error('could not build a rearranging question');
+}
+
 /* ---------- 10. Level registry, generate(), self-test ----------
    To add a level: push an entry with { id, name, instr, sub:[descriptions], gen(R,d,ctx) }.
    gen returns { instr, q, answer, steps:[{t,lines,n}], d, verify() }.
-   ctx is { letters, div, dbl: 'foil'|'box'|'both', fq: 'ac'|'grid'|'insp' }. dbl and fq change only the working,
+   ctx is { letters, div, dbl: 'foil'|'box'|'both', fq: 'ac'|'grid'|'insp', rf: 'bal'|'fm' }. dbl, fq and rf change only the working,
    never the random numbers, so the same seed gives the same question under any method. */
 const LEVELS=[
   {id:'like',name:'1. Collecting like terms',instr:'Simplify',gen:genLike,sub:[
@@ -1713,14 +2109,22 @@ const LEVELS=[
     'Letters in the denominator (2/x + 5/3x, 1/x + 1/y)',
     'Adding, brackets in the denominator (2/(x + 1) + 3/(x − 2))',
     'Subtracting, brackets in the denominator (3/(x + 2) − 1/(x − 1))',
-    'Factorise a denominator first (3/(x² − 4) + 1/(x + 2))']}
+    'Factorise a denominator first (3/(x² − 4) + 1/(x + 2))']},
+  {id:'rearrange',name:'12. Rearranging formulae',instr:'Rearrange',setInstr:'Rearrange each formula',gen:genRearr,sub:[
+    'One step (y = x + 5, y = 3x, y = x/4)',
+    'Two steps (y = 3x + 2, y = (x − 4)/5, y = 12 − 3x)',
+    'Brackets and fractions (y = 3(x − 2), y = (2x + 1)/3)',
+    'Squares and roots (y = x² + 3, y = √(x − 2))',
+    'Subject twice: collect and factorise (5x + 4y = 6xy − u)',
+    'Subject twice inside a root (y = √((3x + 6)/(5x − 6)))',
+    'Real formulae (v = u + at, A = ½bh, v² = u² + 2as)']}
 ];
 function generate(levelIdx,diff,ctx,seed){
   const R=makeRng(seed),lvl=LEVELS[levelIdx];
   const d=diff===0?R.int(1,lvl.sub.length):diff;
   const q=lvl.gen(R,d,ctx);q.instr=lvl.instr;q.li=levelIdx;q.diff=diff;q.seed=seed;return q;
 }
-const TEST_CTXS=[{letters:'xyz',div:'sign',dbl:'foil',fq:'ac'},{letters:'abc',div:'frac',dbl:'box',fq:'insp'},{letters:'mixed',div:'mix',dbl:'both',fq:'grid'}];
+const TEST_CTXS=[{letters:'xyz',div:'sign',dbl:'foil',fq:'ac',rf:'bal'},{letters:'abc',div:'frac',dbl:'box',fq:'insp',rf:'fm'},{letters:'mixed',div:'mix',dbl:'both',fq:'grid',rf:'bal'}];
 function selfTest(perCell){
   const bad=[];let count=0;
   LEVELS.forEach((lvl,li)=>{
@@ -1790,14 +2194,15 @@ function decodeCode(str){
   return {li:li,diff:diff,letters:CODE_LETTERS[lt],div:CODE_DIVS[dv],count:ci===7?0:CODE_COUNTS[ci],seed:seed};
 }
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={M:M,makeRng:makeRng,simplify:simplify,cmpMono:cmpMono,monoHTML:monoHTML,exprHTML:exprHTML,hcfMono:hcfMono,gcdAll:gcdAll,LEVELS:LEVELS,generate:generate,selfTest:selfTest,TEST_CTXS:TEST_CTXS,setQuestions:setQuestions,encodeCode:encodeCode,decodeCode:decodeCode,newSeed:newSeed,CODE_COUNTS:CODE_COUNTS};
+  module.exports={M:M,makeRng:makeRng,simplify:simplify,cmpMono:cmpMono,monoHTML:monoHTML,exprHTML:exprHTML,hcfMono:hcfMono,gcdAll:gcdAll,LEVELS:LEVELS,generate:generate,selfTest:selfTest,TEST_CTXS:TEST_CTXS,setQuestions:setQuestions,encodeCode:encodeCode,decodeCode:decodeCode,newSeed:newSeed,CODE_COUNTS:CODE_COUNTS,
+    fCollect:fCollect,fTx:fTx,fBalance:fBalance,fMachine:fMachine,fVerify:fVerify,REAL_FORMULAE:REAL_FORMULAE};
 }
 
 /* ---------- 11. UI ---------- */
 function initUI(){
   const $=id=>document.getElementById(id);
   const KEY='algebraApp',OLDKEY='algebraApp.stage1';
-  const DEF={level:0,diff:1,view:'teach',count:6,letters:'xyz',div:'sign',dbl:'foil',fq:'ac',cues:false,colour:true,size:1,incWork:false,pSpace:'small',pAns:'ans',pName:true};
+  const DEF={level:0,diff:1,view:'teach',count:6,letters:'xyz',div:'sign',dbl:'foil',fq:'ac',rf:'bal',cues:false,colour:true,size:1,incWork:false,pSpace:'small',pAns:'ans',pName:true};
   let S;
   try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(OLDKEY)||'{}'));}catch(e){S=Object.assign({},DEF);}
   const QS=location.search;
@@ -1817,7 +2222,7 @@ function initUI(){
   });
   const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
 
-  const ctx=()=>({letters:S.letters,div:S.div,dbl:S.dbl,fq:S.fq});
+  const ctx=()=>({letters:S.letters,div:S.div,dbl:S.dbl,fq:S.fq,rf:S.rf});
   const redraw=()=>drawArrows(document.querySelector('main'));
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
   /* the UI fonts have no ² glyph, so powers in level names are drawn as superscripts */
@@ -2065,7 +2470,7 @@ function initUI(){
 
   /* settings panel */
   function openPanel(){
-    $('sLetters').value=S.letters;$('sDiv').value=S.div;$('sDbl').value=S.dbl;$('sFq').value=S.fq;
+    $('sLetters').value=S.letters;$('sDiv').value=S.div;$('sDbl').value=S.dbl;$('sFq').value=S.fq;$('sRf').value=S.rf;
     $('sCount').value=String(S.count);$('sSize').value=String(S.size);$('sCues').checked=!!S.cues;$('sColour').checked=S.colour!==false;
     $('build').textContent=BUILD;openOverlay('panel',$('closePanel'));
   }
@@ -2077,6 +2482,7 @@ function initUI(){
   $('sDiv').addEventListener('change',e=>{S.div=e.target.value;save();invalidate();});
   $('sDbl').addEventListener('change',e=>{S.dbl=e.target.value;save();invalidate();});
   $('sFq').addEventListener('change',e=>{S.fq=e.target.value;save();invalidate();});
+  $('sRf').addEventListener('change',e=>{S.rf=e.target.value;save();invalidate();});
   $('sCount').addEventListener('change',e=>{S.count=+e.target.value;save();SET.items=null;if(!atHome()&&S.view==='set')buildSet();});
   $('sSize').addEventListener('change',e=>{S.size=+e.target.value;save();applyLook();});
   $('sCues').addEventListener('change',e=>{S.cues=e.target.checked;save();applyLook();});
