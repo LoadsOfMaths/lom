@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Algebra Lab</title>
+<style>
+:root{--bg:#f5f3ec;--card:#fff;--ink:#1c2430;--muted:#66707d;--line:#d8d3c4;--navy:#1e3a5f;--navy2:#2c5282;--ok:#e9f6ee;--okline:#79bb8f;--arrow:#1e3a5f;--scale:1}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{font-size:calc(16px * var(--scale))}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.35;-webkit-text-size-adjust:100%}
+.math{font-family:Cambria,"Cambria Math","STIX Two Text",Georgia,"Times New Roman",serif}
+.math i{font-style:italic}
+.math sup{font-size:.62em;line-height:0;font-style:normal}
+.n{color:var(--ink)}
+.op{margin:0 .28em}
+.eqs{margin:0 .35em}
+
+/* ---------- header ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.2rem;padding:.7rem 1rem;background:var(--navy);color:#fff}
+.top h1{margin:0;font-size:1.5rem;letter-spacing:.02em}
+.ctl{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.6rem 1rem;flex:1}
+.f{display:flex;flex-direction:column;font-size:.75rem;gap:.2rem;color:#cfd9e6;min-width:0}
+.f select{font:inherit;font-size:1rem;min-height:44px;padding:.3rem .5rem;border-radius:10px;border:0;max-width:100%;color:var(--ink);background:#fff}
+#level{min-width:15rem}
+#diff{min-width:16rem;max-width:30rem}
+.tabs{display:flex;border-radius:12px;overflow:hidden;border:2px solid #fff}
+.tab{font:inherit;font-weight:600;min-height:44px;padding:.3rem 1rem;border:0;background:transparent;color:#fff;cursor:pointer}
+.tab[aria-selected="true"]{background:#fff;color:var(--navy)}
+.top .btn.ghost{border-color:#fff;color:#fff;background:transparent;min-height:44px}
+.top .btn.ghost:hover{background:rgba(255,255,255,.15)}
+
+/* ---------- buttons ---------- */
+.btn{font:inherit;font-size:1rem;font-weight:600;min-height:48px;padding:.5rem 1.1rem;border-radius:12px;border:2px solid var(--navy);background:#fff;color:var(--navy);cursor:pointer}
+.btn:hover{background:#eef2f8}
+.btn.primary{background:var(--navy);color:#fff}
+.btn.primary:hover{background:var(--navy2)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible,.tab:focus-visible,select:focus-visible,.link:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+.link{font:inherit;font-size:.95rem;background:none;border:0;color:var(--navy2);text-decoration:underline;cursor:pointer;min-height:44px;padding:0 .2rem}
+
+main{max-width:1280px;margin:0 auto;padding:1rem}
+.instr{font-size:1.1rem;color:var(--muted);font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+.lab{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#2f7a4a;margin-right:.8rem}
+.muted{color:var(--muted);font-size:.8em;font-family:system-ui,sans-serif}
+
+/* ---------- teach view ---------- */
+.qbig{font-size:clamp(2.2rem,7vw,4.6rem);padding:.5rem 0 1rem;text-align:center;background:var(--card);border:2px solid var(--line);border-radius:18px;margin:.5rem 0 1rem;min-height:1.6em}
+.work{margin-bottom:.8rem}
+.ansbox{background:var(--ok);border:2px solid var(--okline);border-radius:16px;padding:.6rem 1.2rem;display:flex;align-items:baseline;flex-wrap:wrap;margin-bottom:1rem;animation:pop .35s ease}
+.big{font-size:clamp(2rem,6vw,3.6rem)}
+.bar{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;padding:.7rem .5rem calc(.7rem + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 70%,rgba(245,243,236,0))}
+.bar .btn{flex:1 1 9rem;max-width:16rem}
+
+/* ---------- steps ---------- */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:.7rem}
+.st{display:flex;gap:.8rem;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:.7rem 1rem}
+.st.new{animation:pop .35s ease;border-color:var(--navy2)}
+.sn{flex:none;width:2rem;height:2rem;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+.sbody{min-width:0;flex:1}
+.sl{max-width:100%}
+.sh{font-weight:700;color:var(--navy);font-size:1rem}
+.sl{font-size:clamp(1.5rem,4vw,2.4rem);padding:.15rem 0}
+.eq{margin:.1rem 0}
+.note{font-size:.92rem;color:var(--muted)}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.st.new,.ansbox{animation:none}}
+
+/* ---------- chips and groups (like-term colouring) ---------- */
+.chip,.grp{display:inline-block;margin:.1em .12em;padding:.02em .3em;border-radius:.4em;background:var(--tint);border:2px solid var(--bd)}
+.r1{border-style:dashed}
+.r2{border-style:dotted}
+.h-k{--tint:rgba(100,110,120,.12);--bd:rgba(100,110,120,.45)}
+
+/* ---------- fractions ---------- */
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .15em}
+.frac .nu{padding:0 .25em .05em;border-bottom:.07em solid currentColor}
+.frac .de{padding:.05em .25em 0}
+
+/* ---------- arrows (SVG overlay drawn from the rendered terms) ---------- */
+.arw{position:relative;display:inline-block}
+.arw.tp{padding-top:1.8em}
+.arw.bt{padding-bottom:1.8em}
+.arsvg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.arsvg .cv{fill:none;stroke:var(--arrow);stroke-linecap:round}
+.arsvg .hd{fill:var(--arrow)}
+.arsvg text{fill:var(--arrow);font-family:system-ui,-apple-system,sans-serif;font-weight:700}
+.anim .cv{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .55s ease-out forwards}
+.anim .hd,.anim text{opacity:0;animation:fade .2s ease forwards}
+.st.new .lag{opacity:0;animation:fade .3s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fade{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.st.new .lag{animation:none;opacity:1}}
+.fl{display:inline-block;width:1.3em;font-family:system-ui,-apple-system,sans-serif;font-weight:700;color:var(--navy);font-size:.65em;vertical-align:middle}
+
+/* ---------- grid method, patterns, substitution ---------- */
+.box{border-collapse:collapse;margin:.2rem 0;font-size:.9em}
+.box th,.box td{border:2px solid var(--line);padding:.15em .55em;text-align:center;font-weight:normal}
+.box th{background:#f0ede3}
+.box .cx{color:var(--muted);font-family:system-ui,sans-serif}
+.box .qm{color:var(--muted);font-family:system-ui,sans-serif;font-weight:700}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem .8rem}
+.mtog{display:inline-flex;margin-left:auto;border:2px solid var(--navy);border-radius:10px;overflow:hidden}
+.mt{font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:0 .75rem;border:0;background:#fff;color:var(--navy);cursor:pointer}
+.mt+.mt{border-left:2px solid var(--navy)}
+.mt[aria-pressed="true"]{background:var(--navy);color:#fff}
+.mt:focus-visible{outline:3px solid #f2b705;outline-offset:-3px}
+.sqa{--tint:rgba(242,183,5,.22);--bd:#c99a00}
+.sqb{--tint:rgba(30,58,95,.10);--bd:var(--navy2);border-style:dashed}
+.given{font-size:.5em;color:var(--muted);margin-top:.35em}
+.given .n{color:var(--ink)}
+.hi{display:inline-block;color:var(--ink);font-weight:700;border:2px solid #2f7a4a;border-radius:1em;padding:0 .25em;line-height:1.1}
+.tick{color:#2f7a4a;font-family:system-ui,sans-serif;font-weight:700}
+.cross{color:#b03a2e;font-family:system-ui,sans-serif}
+.gap{display:inline-block;width:1.1em}
+
+/* ---------- question set ---------- */
+.setbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.6rem 1rem;margin-bottom:.8rem}
+.setbtns{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.chk{display:flex;align-items:center;gap:.4rem;font-size:.95rem;min-height:44px}
+.chk input{width:22px;height:22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,23rem),1fr));gap:.9rem}
+.card{position:relative;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:.8rem 1rem 1rem;display:flex;flex-direction:column;gap:.6rem}
+.cnum{position:absolute;top:.6rem;left:.8rem;font-weight:700;color:var(--muted);font-size:.95rem}
+.cq{font-size:clamp(1.7rem,3.2vw,2.6rem);text-align:center;padding:.9rem 0 .3rem}
+.cans{background:var(--ok);border:2px solid var(--okline);border-radius:12px;padding:.5rem .8rem}
+.arow{display:flex;align-items:baseline;flex-wrap:wrap}
+.cans .steps{margin-top:.4rem}
+.cans .st{padding:.5rem .7rem}
+.cans .sl{font-size:clamp(1.3rem,2.6vw,1.9rem)}
+
+/* ---------- settings ---------- */
+.overlay{position:fixed;inset:0;background:rgba(20,30,45,.5);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:10}
+.sheet{background:#fff;border-radius:18px;max-width:30rem;width:100%;max-height:92vh;overflow:auto;padding:1.2rem 1.4rem}
+.sheet h2{margin:0 0 .8rem;font-size:1.3rem}
+.row{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.9rem}
+.row label{font-weight:600;font-size:.95rem}
+.row select{font:inherit;font-size:1rem;min-height:44px;padding:.3rem .5rem;border-radius:10px;border:2px solid var(--line)}
+.row small{color:var(--muted)}
+.row.inline{flex-direction:row;align-items:center;gap:.6rem}
+.row.inline input{width:22px;height:22px}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:1rem}
+.build{font-size:.8rem;color:var(--muted)}
+
+@media (max-width:700px){
+  #level,#diff{min-width:0;width:100%}
+  .f{flex:1 1 100%}
+  .top h1{font-size:1.3rem}
+}
+@media print{.top,.bar,.setbtns,.mtog{display:none}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Algebra Lab</h1>
+  <div class="ctl">
+    <label class="f">Level<select id="level"></select></label>
+    <label class="f">Difficulty<select id="diff"></select></label>
+    <div class="tabs" role="tablist" aria-label="View">
+      <button id="tabTeach" class="tab" role="tab" aria-selected="true">Teach</button>
+      <button id="tabSet" class="tab" role="tab" aria-selected="false">Question set</button>
+    </div>
+    <button id="btnSettings" class="btn ghost">Settings</button>
+  </div>
+</header>
+
+<main>
+  <section id="vTeach" aria-label="Teach">
+    <div class="instr" id="tInstr"></div>
+    <div class="qbig math" id="tQ" aria-live="polite"></div>
+    <div class="work" id="tWork"></div>
+    <div class="ansbox" id="tAns" hidden></div>
+    <div class="bar">
+      <button id="bBack" class="btn">&lsaquo; Back</button>
+      <button id="bNext" class="btn primary">Next step &rsaquo;</button>
+      <button id="bAns" class="btn">Show answer</button>
+      <button id="bNew" class="btn">New question</button>
+    </div>
+  </section>
+
+  <section id="vSet" aria-label="Question set" hidden>
+    <div class="setbar">
+      <div class="instr" id="sInstr"></div>
+      <div class="setbtns">
+        <label class="chk"><input type="checkbox" id="incWork"> Include working</label>
+        <button id="revAll" class="btn">Reveal all</button>
+        <button id="hideAll" class="btn">Hide all</button>
+        <button id="newSet" class="btn primary">New questions</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+
+<div class="overlay" id="panel" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="row"><label for="sLetters">Letters used</label>
+      <select id="sLetters">
+        <option value="xyz">x, y, z</option>
+        <option value="abc">a, b, c</option>
+        <option value="mixed">Mixed letters</option>
+      </select></div>
+    <div class="row"><label for="sDiv">Division is shown as</label>
+      <select id="sDiv">
+        <option value="sign">÷ sign</option>
+        <option value="frac">Fraction</option>
+        <option value="mix">A mixture of both</option>
+      </select></div>
+    <div class="row"><label for="sDbl">Double brackets: working shown</label>
+      <select id="sDbl">
+        <option value="foil">FOIL arrows</option>
+        <option value="box">Grid (box) method</option>
+        <option value="both">Both</option>
+      </select></div>
+    <div class="row"><label for="sFq">Factorising quadratics: working shown</label>
+      <select id="sFq">
+        <option value="ac">ac method (split the middle term)</option>
+        <option value="grid">Grid (box) method</option>
+        <option value="insp">Inspection (try factor pairs)</option>
+      </select>
+      <small>The ac method and inspection only differ for ax² + bx + c; for x² + bx + c both use the pair method.</small></div>
+    <div class="row"><small>You can also switch method in the working itself, using the buttons on its first step.</small></div>
+    <div class="row"><label for="sCount">Questions in a set</label>
+      <select id="sCount"><option>4</option><option>6</option><option>8</option><option>10</option></select></div>
+    <div class="row"><label for="sSize">Text size</label>
+      <select id="sSize">
+        <option value="0.9">Small</option>
+        <option value="1">Medium</option>
+        <option value="1.15">Large</option>
+        <option value="1.3">Extra large</option>
+      </select></div>
+    <div class="row inline"><input type="checkbox" id="sCues"><label for="sCues">Underline cues for letters</label></div>
+    <div class="row"><small>Underline cues give each letter its own line style, so the colour coding still works in black and white or for colour-blind students.</small></div>
+    <div class="foot"><span class="build" id="build"></span><button id="closePanel" class="btn primary">Done</button></div>
+  </div>
+</div>
+
+<noscript>This app needs JavaScript.</noscript>
+
+<script>
+"use strict";
+/* =====================================================================
+   ALGEBRA  (Stages 1-5)
+   Sections:  1 RNG   2 Term model   3 Renderer + arrows   4 Level 1
+              5 Level 2   6 Levels 3-5 (single brackets)   7 Level 6 (substitution)
+              8 Levels 7-8 (double brackets)   9 Levels 9-10 (factorising quadratics)
+              10 Level registry + self-test   11 UI
+   ===================================================================== */
+const BUILD = 'Stage 5: levels 1-10';
+
+/* ---------- 1. Seeded random numbers ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function makeRng(seed){
+  const f=mulberry32(seed>>>0);
+  return {
+    f,
+    int:(a,b)=>a+Math.floor(f()*(b-a+1)),
+    chance:p=>f()<p,
+    pick:arr=>arr[Math.floor(f()*arr.length)],
+    shuffle:arr=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(f()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+  };
+}
+
+/* ---------- 2. Term model ----------
+   A term (monomial) is { c: integer coefficient, v: { letter: power } }.
+   Constants have an empty v. Letters with power 0 are never stored. */
+const MINUS='−';
+const M={
+  make(c,v){const vv={};for(const k in (v||{})){if(v[k]>0)vv[k]=v[k];}return {c:c,v:vv};},
+  mul(a,b){const v={};for(const k in a.v)v[k]=a.v[k];for(const k in b.v)v[k]=(v[k]||0)+b.v[k];return M.make(a.c*b.c,v);},
+  div(a,b){
+    const v={};for(const k in a.v)v[k]=a.v[k];for(const k in b.v)v[k]=(v[k]||0)-b.v[k];
+    for(const k in v){if(v[k]<0)throw new Error('inexact division (letters)');}
+    if(a.c%b.c!==0)throw new Error('inexact division (numbers)');
+    return M.make(a.c/b.c,v);
+  },
+  pow(a,n){const v={};for(const k in a.v)v[k]=a.v[k]*n;return M.make(Math.pow(a.c,n),v);},
+  sig(m){return Object.keys(m.v).sort().map(k=>k+m.v[k]).join('');},
+  letters(m){return Object.keys(m.v).sort();},
+  deg(m){let d=0;for(const k in m.v)d+=m.v[k];return d;},
+  isConst(m){return Object.keys(m.v).length===0;},
+  ev(m,vals){let r=m.c;for(const k in m.v)r*=Math.pow(vals[k],m.v[k]);return r;}
+};
+/* Canonical order: higher total power first; then alphabetical by letter, higher power first. Constants last. */
+function cmpMono(a,b){
+  const da=M.deg(a),db=M.deg(b);
+  if(da!==db)return db-da;
+  const ls=Array.from(new Set(Object.keys(a.v).concat(Object.keys(b.v)))).sort();
+  for(const L of ls){const ea=a.v[L]||0,eb=b.v[L]||0;if(ea!==eb)return eb-ea;}
+  return 0;
+}
+/* Collect like terms into canonical form (zero terms dropped). */
+function simplify(terms){
+  const map=new Map();
+  for(const m of terms){const s=M.sig(m);if(!map.has(s))map.set(s,{c:0,v:m.v});map.get(s).c+=m.c;}
+  return Array.from(map.values()).filter(m=>m.c!==0).map(m=>M.make(m.c,m.v)).sort(cmpMono);
+}
+function sumEv(terms,vals){return terms.reduce((s,m)=>s+M.ev(m,vals),0);}
+function lettersOf(terms){const s=new Set();terms.forEach(m=>Object.keys(m.v).forEach(k=>s.add(k)));return Array.from(s);}
+function randVals(ls,lo,hi){const o={};ls.forEach(k=>{o[k]=lo+Math.floor(Math.random()*(hi-lo+1));});return o;}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=a%b;a=b;b=t;}return a;}
+function gcdAll(ns){return ns.reduce((g,n)=>gcd(g,n),0);}
+/* Highest common factor of a list of terms: HCF of the numbers, lowest power of each letter found in every term. */
+function hcfMono(terms){
+  const v={};
+  M.letters(terms[0]).forEach(k=>{if(terms.every(m=>m.v[k]))v[k]=Math.min.apply(null,terms.map(m=>m.v[k]));});
+  return M.make(gcdAll(terms.map(m=>m.c)),v);
+}
+/* Every term of A times every term of B, in order (not simplified). */
+function expandProd(A,B){const out=[];A.forEach(a=>B.forEach(b=>out.push(M.mul(a,b))));return out;}
+
+/* ---------- 3. Renderer (terms -> HTML) ---------- */
+const nspan=s=>'<span class="n">'+s+'</span>';
+const numS=n=>(n<0?MINUS:'')+Math.abs(n);
+const numP=n=>n<0?'('+numS(n)+')':numS(n);
+const TIMES='<span class="op">×</span>',DIVS='<span class="op">÷</span>',EQ='<span class="eqs">=</span><wbr>';
+function varHTML(L,e){return '<span class="v v-'+L+'"><i>'+L+'</i>'+(e>1?'<sup>'+e+'</sup>':'')+'</span>';}
+function varRaw(L,supHTML){return '<span class="v v-'+L+'"><i>'+L+'</i><sup>'+supHTML+'</sup></span>';}
+function monoHTML(m,o){
+  o=o||{};
+  const ac=Math.abs(m.c),ks=M.letters(m);
+  let s=(m.c<0&&!o.abs)?MINUS:'';
+  if(ks.length===0)return s+nspan(ac);
+  if(ac!==1)s+=nspan(ac);
+  ks.forEach(k=>{s+=varHTML(k,m.v[k]);});
+  return s;
+}
+const opSpan=c=>'<span class="op">'+(c<0?MINUS:'+')+'</span>';
+/* A term as it appears at position i of an expression (sign shown as an operator after the first). */
+const termAt=(m,i)=>i===0?monoHTML(m):opSpan(m.c)+monoHTML(m,{abs:true});
+/* A factor: negatives are bracketed. */
+const facHTML=m=>m.c<0?'('+monoHTML(m)+')':monoHTML(m);
+function exprHTML(terms){
+  if(!terms.length)return nspan('0');
+  return terms.map(termAt).join('');
+}
+function numExprHTML(cs){return cs.map((c,i)=>i===0?nspan(numS(c)):opSpan(c)+nspan(Math.abs(c))).join('');}
+function lettersHTML(m){return monoHTML(M.make(1,m.v));}
+function fracHTML(n,d){return '<span class="frac"><span class="nu">'+n+'</span><span class="de">'+d+'</span></span>';}
+const hueClass=m=>{const ks=M.letters(m);return ks.length?'h-'+ks[0]:'h-k';};
+function chipHTML(m,first,rank){
+  const inner=first?monoHTML(m):opSpan(m.c)+monoHTML(m,{abs:true});
+  return '<span class="chip '+hueClass(m)+' r'+Math.min(rank,2)+'">'+inner+'</span>';
+}
+function groupSpan(g,innerHTML){return '<span class="grp '+hueClass(g.terms[0])+' r'+Math.min(g.rank,2)+'">'+innerHTML+'</span>';}
+function groupInner(g,isFirstGroup){
+  return g.terms.map((m,i)=>(isFirstGroup&&i===0)?monoHTML(m):opSpan(m.c)+monoHTML(m,{abs:true})).join('');
+}
+/* Group like terms (canonical group order; rank distinguishes groups sharing a colour, e.g. x and x^2) */
+function groupTerms(terms){
+  const map=new Map();
+  terms.forEach(m=>{const s=M.sig(m);if(!map.has(s))map.set(s,{sig:s,terms:[]});map.get(s).terms.push(m);});
+  const groups=Array.from(map.values()).sort((a,b)=>cmpMono(a.terms[0],b.terms[0]));
+  const seen={};
+  groups.forEach(g=>{const h=hueClass(g.terms[0]);seen[h]=(h in seen)?seen[h]+1:0;g.rank=seen[h];g.sum=g.terms.reduce((s,m)=>s+m.c,0);});
+  return groups;
+}
+/* A step may carry tog:{key,cur,opts:[[value,label],...]}: a switch between working methods, drawn in its heading.
+   key is a setting name ('dbl' or 'fq'); the UI regenerates the same question with the chosen method. */
+function togHTML(g){
+  return '<span class="mtog" role="group" aria-label="Method">'+g.opts.map(o=>
+    '<button type="button" class="mt" data-tog="'+g.key+'" data-val="'+o[0]+'" aria-pressed="'+(o[0]===g.cur)+'">'+o[1]+'</button>').join('')+'</span>';
+}
+function stepsHTML(steps,fresh){
+  return '<ol class="steps">'+steps.map((s,i)=>
+    '<li class="st'+(i===fresh?' new':'')+'"><span class="sn">'+(i+1)+'</span><div class="sbody"><div class="sh"><span>'+s.t+'</span>'+(s.tog?togHTML(s.tog):'')+'</div>'+
+    '<div class="sl math">'+s.lines.map(l=>'<div class="eq">'+l+'</div>').join('')+'</div>'+
+    (s.n?'<div class="note">'+s.n+'</div>':'')+'</div></li>').join('')+'</ol>';
+}
+/* Plain-text forms, for notes */
+const SUPD='⁰¹²³⁴⁵⁶⁷⁸⁹';
+const supT=n=>String(n).split('').map(c=>SUPD[+c]).join('');
+function monoText(m){
+  const ac=Math.abs(m.c),ks=M.letters(m);let s=m.c<0?MINUS:'';
+  if(!ks.length)return s+ac;
+  if(ac!==1)s+=ac;
+  ks.forEach(k=>{s+=k+(m.v[k]>1?supT(m.v[k]):'');});
+  return s;
+}
+function exprText(terms){return terms.map((m,i)=>i===0?monoText(m):(m.c<0?' '+MINUS+' ':' + ')+monoText(M.make(Math.abs(m.c),m.v))).join('');}
+
+/* Brackets and arrows.
+   Terms that arrows point at are wrapped in <span data-k="key">. An arrow diagram is a
+   <span class="arw" data-arr="[{f,t,s,l,d}]"> where f/t are source/target keys, s is 't' (arc above)
+   or 'b' (arc below), l an optional label and d the delay in seconds when the step animates.
+   drawArrows() measures the rendered terms and draws an SVG overlay, so arrows follow any text size. */
+const keyed=(k,h)=>'<span data-k="'+k+'">'+h+'</span>';
+/* arrows point at the term itself, not at the + or − operator before it */
+function bracketHTML(terms,pre){
+  return '('+terms.map((m,i)=>pre==null?termAt(m,i):i===0?keyed(pre+i,monoHTML(m)):opSpan(m.c)+keyed(pre+i,monoHTML(m,{abs:true}))).join('')+')';
+}
+function arwHTML(inner,arrows){
+  const bt=arrows.some(a=>a.s==='b'),tp=arrows.some(a=>a.s!=='b');
+  return '<span class="arw'+(tp?' tp':'')+(bt?' bt':'')+'" data-arr=\''+JSON.stringify(arrows)+'\'>'+inner+'</span>';
+}
+/* Content that fades in after a delay, only while its step is the newly revealed one */
+const lag=(h,d)=>'<span class="lag" style="animation-delay:'+d.toFixed(2)+'s">'+h+'</span>';
+const mulLine=(a,b)=>monoHTML(a)+TIMES+facHTML(b)+EQ+monoHTML(M.mul(a,b));
+/* o(inner) with an arrow from o to each inner term */
+function singleDiag(o,inner,t0,gap){
+  return arwHTML(keyed('o',monoHTML(o))+bracketHTML(inner,'i'),inner.map((m,i)=>({f:'o',t:'i'+i,d:+(t0+i*gap).toFixed(2)})));
+}
+const REDUCED=typeof window!=='undefined'&&!!window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function drawArrows(root){
+  if(!root||!root.querySelectorAll)return;
+  const f=n=>n.toFixed(1);
+  root.querySelectorAll('.arw').forEach(box=>{
+    const old=box.querySelector('svg.arsvg');
+    const animate=!old&&!REDUCED&&!!box.closest('.st.new');
+    if(old)old.remove();
+    const br=box.getBoundingClientRect();
+    if(!br.width||!br.height)return;
+    let spec;try{spec=JSON.parse(box.getAttribute('data-arr'));}catch(e){return;}
+    const fs=parseFloat(getComputedStyle(box).fontSize)||24;
+    const at=k=>{const el=box.querySelector('[data-k="'+k+'"]');if(!el)return null;const r=el.getBoundingClientRect();return {x:r.left-br.left+r.width/2,top:r.top-br.top,bot:r.bottom-br.top};};
+    const items=spec.map(a=>({a:a,f:at(a.f),t:at(a.t),bt:a.s==='b'})).filter(o=>o.f&&o.t);
+    /* arrows leaving the same term on the same side nest: nearer target = lower arc */
+    const groups={};
+    items.forEach(o=>{const g=o.a.f+(o.bt?'b':'t');(groups[g]=groups[g]||[]).push(o);});
+    Object.keys(groups).forEach(g=>{
+      const list=groups[g].sort((p,q)=>Math.abs(p.t.x-p.f.x)-Math.abs(q.t.x-q.f.x));
+      list.forEach((o,i)=>{o.rank=i;o.off=(i-(list.length-1)/2)*0.3*fs;});
+    });
+    const sw=Math.max(1.5,fs*0.055),hw=fs*0.16,hl=fs*0.3;
+    let s='';
+    items.forEach(o=>{
+      const dir=o.bt?1:-1,h=(0.9+0.6*o.rank)*fs,d0=o.a.d||0;
+      const x1=o.f.x+o.off,y1=o.bt?o.f.bot-0.06*fs:o.f.top+0.12*fs;
+      const x2=o.t.x,tip=o.bt?o.t.bot-0.06*fs:o.t.top+0.12*fs,y2=tip+dir*hl;
+      const c=(o.bt?Math.max(y1,y2):Math.min(y1,y2))+dir*h;
+      s+='<path class="cv" pathLength="1" d="M'+f(x1)+' '+f(y1)+'C'+f(x1)+' '+f(c)+' '+f(x2)+' '+f(c)+' '+f(x2)+' '+f(y2)+'" style="stroke-width:'+f(sw)+'px;animation-delay:'+d0+'s"/>';
+      s+='<path class="hd" d="M'+f(x2-hw)+' '+f(y2)+'L'+f(x2+hw)+' '+f(y2)+'L'+f(x2)+' '+f(tip)+'Z" style="animation-delay:'+(d0+0.45).toFixed(2)+'s"/>';
+      if(o.a.l)s+='<text x="'+f(x2+hw+0.08*fs)+'" y="'+f(o.bt?y2+0.42*fs:y2-0.05*fs)+'" font-size="'+f(fs*0.45)+'" style="animation-delay:'+(d0+0.3).toFixed(2)+'s">'+o.a.l+'</text>';
+    });
+    box.insertAdjacentHTML('beforeend','<svg class="arsvg'+(animate?' anim':'')+'" width="'+f(br.width)+'" height="'+f(br.height)+'" aria-hidden="true">'+s+'</svg>');
+  });
+}
+
+/* ---------- 4. Level 1: collecting like terms ---------- */
+function pickLetters(R,ctx,k){
+  const pool=ctx.letters==='abc'?['a','b','c']:ctx.letters==='mixed'?['x','y','z','a','b','c','m','n','p','q','t']:ctx.letters==='mixedq'?['x','y','z','m','n','p','q','t']:['x','y','z'];
+  return R.shuffle(pool).slice(0,k);
+}
+/* Working for collecting like terms; reused by every level that ends by simplifying.
+   opts.spot=false skips the "spot the like terms" step. Returns [] if nothing combines. */
+function likeWork(terms,opts){
+  opts=opts||{};
+  const groups=groupTerms(terms);
+  if(!groups.some(g=>g.terms.length>1))return [];
+  const rankBySig={};groups.forEach(g=>{rankBySig[g.sig]=g.rank;});
+  const hasConst=groups.some(g=>M.isConst(g.terms[0]));
+  const hasLone=groups.some(g=>g.terms.length===1);
+  const hasPower=groups.some(g=>g.terms.length>1&&M.deg(g.terms[0])>1);
+  const steps=[];
+  const likeNote='Like terms have exactly the same letters with exactly the same powers.'+(hasLone?' A term with no partner stays as it is.':'');
+  if(opts.spot!==false)steps.push({t:'Spot the like terms',lines:[terms.map((m,i)=>chipHTML(m,i===0,rankBySig[M.sig(m)])).join('')],n:likeNote});
+  steps.push({t:opts.title||(opts.spot===false?'Collect like terms':'Group them together'),lines:[groups.map((g,gi)=>groupSpan(g,groupInner(g,gi===0))).join('')],
+    n:(opts.spot===false?likeNote+' ':'')+'Each term keeps its own sign when it moves.'});
+  const s3lines=groups.filter(g=>opts.spot!==false||g.terms.length>1).map(g=>{
+    const rep=g.terms[0],isC=M.isConst(rep);
+    const left=groupSpan(g,g.terms.map((m,i)=>i===0?monoHTML(m):opSpan(m.c)+monoHTML(m,{abs:true})).join(''));
+    if(g.terms.length===1)return left+' <span class="muted">on its own, so it stays the same</span>';
+    const res=g.sum===0?nspan('0'):monoHTML(M.make(g.sum,rep.v));
+    const nums=numExprHTML(g.terms.map(m=>m.c));
+    return isC?left+EQ+res:left+EQ+'('+nums+')'+lettersHTML(rep)+EQ+res;
+  });
+  steps.push({t:'Combine each group',lines:s3lines,
+    n:'Add or subtract the numbers in front of the letters.'+(hasConst?' Number terms only combine with other numbers.':'')+(hasPower?' The powers stay the same: x² + x² = 2x², not x⁴.':'')});
+  return steps;
+}
+function genLike(R,d,ctx){
+  const pos=mx=>()=>R.int(1,mx);
+  const sgn=mx=>()=>{const v=R.int(1,mx);return R.chance(0.4)?-v:v;};
+  let specs,cf,allowZero=0,leadNeg=false,cap=6;
+  if(d===1){
+    const a=pickLetters(R,ctx,1)[0];
+    specs=[{v:{[a]:1},n:R.int(2,3)}];cf=pos(5);
+  }else if(d===2){
+    const l=pickLetters(R,ctx,2);
+    specs=[{v:{[l[0]]:1},n:R.int(2,3)},{v:{[l[1]]:1},n:R.int(1,3)}];cf=pos(6);cap=5;
+  }else if(d===3){
+    const two=R.chance(0.6),l=pickLetters(R,ctx,two?2:1);
+    specs=[{v:{[l[0]]:1},n:R.int(2,3)}];
+    if(two)specs.push({v:{[l[1]]:1},n:R.int(1,3)});
+    cf=sgn(9);allowZero=two?0.15:0;leadNeg=R.chance(0.25);cap=5;
+  }else if(d===4){
+    const two=R.chance(0.5),l=pickLetters(R,ctx,two?2:1);
+    specs=[{v:{[l[0]]:1},n:R.int(2,3)}];
+    if(two)specs.push({v:{[l[1]]:1},n:R.int(1,2)});
+    specs.push({v:{},n:2});
+    cf=sgn(9);leadNeg=R.chance(0.25);
+  }else if(d===5){
+    const a=pickLetters(R,ctx,1)[0];
+    specs=[{v:{[a]:2},n:R.int(2,3)},{v:{[a]:1},n:R.int(1,3)}];
+    if(R.chance(0.5))specs.push({v:{},n:R.int(1,2)});
+    cf=sgn(8);leadNeg=R.chance(0.25);cap=7;
+  }else{
+    const l=pickLetters(R,ctx,2);
+    specs=[{v:{[l[0]]:1,[l[1]]:1},n:R.int(2,3)},{v:{[l[0]]:1},n:R.int(1,2)},{v:{[l[1]]:1},n:R.int(1,2)}];
+    if(R.chance(0.5))specs.push({v:{},n:1});
+    cf=sgn(9);leadNeg=R.chance(0.25);cap=7;
+  }
+  let total=specs.reduce((s,g)=>s+g.n,0);
+  while(total>cap){const big=specs.reduce((a,b)=>b.n>a.n?b:a);big.n--;total--;}
+
+  let terms=null;
+  for(let attempt=0;attempt<300&&!terms;attempt++){
+    let t=[],ok=true,zeroUsed=false;
+    for(const s of specs){
+      let cs;
+      if(s.n===2&&allowZero&&!zeroUsed&&specs.length>=2&&Object.keys(s.v).length>0&&R.chance(allowZero)){
+        const c=cf();cs=[c,-c];zeroUsed=true;
+      }else{
+        cs=Array.from({length:s.n},cf);
+        if(s.n>=2&&cs.reduce((p,q)=>p+q,0)===0){ok=false;break;}
+      }
+      cs.forEach(c=>t.push(M.make(c,s.v)));
+    }
+    if(!ok)continue;
+    if(d>=3&&!t.some(m=>m.c<0))continue;
+    t=R.shuffle(t);
+    if(!leadNeg&&t[0].c<0){const j=t.findIndex(m=>m.c>0);if(j<0)continue;const tmp=t[0];t[0]=t[j];t[j]=tmp;}
+    terms=t;
+  }
+  if(!terms)throw new Error('could not build like-terms question');
+
+  const ans=simplify(terms);
+  return {
+    instr:'Simplify',q:exprHTML(terms),answer:exprHTML(ans),steps:likeWork(terms),d:d,
+    verify(){for(let i=0;i<6;i++){const vals=randVals(lettersOf(terms),2,9);if(sumEv(terms,vals)!==sumEv(ans,vals))return false;}return true;}
+  };
+}
+
+/* ---------- 5. Level 2: multiplying and dividing terms, index laws ---------- */
+function genMulDiv(R,d,ctx){
+  const L=k=>pickLetters(R,ctx,k);
+  const cc=(mx,neg)=>{const v=R.int(1,mx);return(neg&&R.chance(0.3))?-v:v;};
+  let kind,A,B,P,n=0;
+  if(d===1){
+    const a=L(1)[0],num=M.make(R.int(2,9),{}),t=M.make(R.int(1,6),{[a]:1});
+    kind='mul';A=R.chance(0.5)?num:t;B=(A===num)?t:num;
+  }else if(d===2){
+    const l=L(2);kind='mul';
+    A=M.make(R.int(1,6),{[l[0]]:1});B=M.make(R.int(1,6),{[l[1]]:1});
+  }else if(d===3){
+    const a=L(1)[0],pr=R.pick([[1,1],[2,1],[1,2],[2,2],[3,1],[1,3]]);kind='mul';
+    A=M.make(R.int(1,5),{[a]:pr[0]});B=M.make(R.int(1,5),{[a]:pr[1]});
+  }else if(d===4){
+    kind='mul';
+    if(R.chance(0.5)){
+      const a=L(1)[0];
+      A=M.make(cc(5,true),{[a]:R.int(1,5)});B=M.make(cc(5,true),{[a]:R.int(1,5)});
+    }else{
+      const l=L(2);let eb1=R.int(0,3),eb2=R.int(0,3);if(eb1===0&&eb2===0)eb2=R.int(1,3);
+      A=M.make(cc(5,true),{[l[0]]:R.int(1,3),[l[1]]:eb1});B=M.make(cc(5,true),{[l[0]]:R.int(1,3),[l[1]]:eb2});
+    }
+  }else if(d===5){
+    const a=L(1)[0];let eq=R.int(0,3),ed=R.int(0,3),cd=R.int(1,5);const cq=R.int(1,6);
+    if(eq===0&&ed===0)ed=R.int(1,3);
+    if(ed===0&&cd===1)cd=R.int(2,5);
+    const Q=M.make(cq,{[a]:eq}),D=M.make(cd,{[a]:ed});
+    kind='div';A=M.mul(Q,D);B=D;
+  }else{
+    if(R.chance(0.5)){
+      const l=L(2);
+      const Q=M.make(R.chance(0.25)?-R.int(1,5):R.int(1,5),{[l[0]]:R.int(0,2),[l[1]]:R.int(0,2)});
+      let D=M.make(R.int(1,4),{[l[0]]:R.int(0,2),[l[1]]:R.int(0,2)});
+      if(M.isConst(D)&&D.c===1)D=M.make(R.int(2,4),{});
+      let dividend=M.mul(Q,D);
+      if(M.isConst(dividend)){D=M.make(D.c,Object.assign({},D.v,{[l[0]]:1}));dividend=M.mul(Q,D);}
+      kind='div';A=dividend;B=D;
+    }else{
+      const k=R.int(1,2),l=L(k),v={};l.forEach(x=>{v[x]=R.int(1,3);});
+      n=R.int(2,3);let c=cc(4,true);if(n===3&&Math.abs(c)>3)c=c<0?-3:3;
+      if(c===1&&l.length===1&&v[l[0]]===1)v[l[0]]=R.int(2,3);
+      kind='pow';A=M.make(c,v);
+    }
+  }
+  if(kind==='mul')P=M.mul(A,B);
+  else if(kind==='div')P=M.div(A,B);
+  else P=M.pow(A,n);
+
+  /* question HTML */
+  const fac=facHTML;
+  let q;
+  if(kind==='mul')q=fac(A)+TIMES+fac(B);
+  else if(kind==='div'){
+    const asFrac=ctx.div==='frac'||(ctx.div==='mix'&&R.chance(0.5));
+    q=asFrac?fracHTML(monoHTML(A),monoHTML(B)):monoHTML(A)+DIVS+fac(B);
+  }else q='('+monoHTML(A)+')<sup>'+n+'</sup>';
+
+  /* working */
+  const steps=[];
+  const hasImplied1=(m)=>m.c===1&&!M.isConst(m);
+  if(kind==='mul'){
+    const nums=!(A.c===1&&B.c===1);
+    if(nums){
+      const notes=[];
+      if(hasImplied1(A)||hasImplied1(B))notes.push('A letter on its own has an invisible 1 in front of it.');
+      if(A.c<0||B.c<0)notes.push('Different signs give a negative answer; the same signs give a positive answer.');
+      steps.push({t:'Multiply the numbers',lines:[nspan(numS(A.c))+TIMES+nspan(numP(B.c))+EQ+nspan(numS(P.c))],n:notes.join(' ')});
+    }
+    const la=M.letters(A),lb=M.letters(B),shared=la.filter(k=>lb.indexOf(k)>=0);
+    const all=Array.from(new Set(la.concat(lb))).sort();
+    let lettersStep=false;
+    if(shared.length){
+      lettersStep=true;let ones=false;
+      const lines=all.map(k=>{
+        if(A.v[k]&&B.v[k]){
+          if(A.v[k]===1||B.v[k]===1)ones=true;
+          return varHTML(k,A.v[k])+TIMES+varHTML(k,B.v[k])+EQ+varRaw(k,A.v[k]+' + '+B.v[k])+EQ+varHTML(k,P.v[k]);
+        }
+        return varHTML(k,A.v[k]||B.v[k])+' <span class="muted">is only in one term, so it stays the same</span>';
+      });
+      steps.push({t:'Multiply the letters: add the powers',lines:lines,n:ones?'A letter on its own has a power of 1.':''});
+    }else if(la.length&&lb.length){
+      lettersStep=true;
+      steps.push({t:'Different letters: write them side by side',lines:[lettersHTML(A)+TIMES+lettersHTML(B)+EQ+lettersHTML(P)],n:''});
+    }
+    if(nums&&!M.isConst(P)&&P.c!==1&&(lettersStep||la.length+lb.length>0)){
+      steps.push({t:'Put them together',lines:[nspan(numS(P.c))+' <span class="muted">and</span> '+lettersHTML(P)+'<span class="eqs">make</span>'+monoHTML(P)],n:''});
+    }
+  }else if(kind==='div'){
+    const nums=!(A.c===1&&B.c===1);
+    if(nums){
+      const notes=[];
+      if(hasImplied1(A)||hasImplied1(B))notes.push('A letter on its own has an invisible 1 in front of it.');
+      if(A.c<0||B.c<0)notes.push('Different signs give a negative answer; the same signs give a positive answer.');
+      steps.push({t:'Divide the numbers',lines:[nspan(numS(A.c))+DIVS+nspan(numP(B.c))+EQ+nspan(numS(P.c))],n:notes.join(' ')});
+    }
+    const lb=M.letters(B);
+    if(lb.length){
+      let cancel=false,ones=false;
+      const lines=M.letters(A).map(k=>{
+        if(B.v[k]){
+          const ea=A.v[k],eb=B.v[k];
+          if(ea===eb){cancel=true;return varHTML(k,ea)+DIVS+varHTML(k,eb)+EQ+nspan(1);}
+          if(ea===1||eb===1)ones=true;
+          return varHTML(k,ea)+DIVS+varHTML(k,eb)+EQ+varRaw(k,ea+' '+MINUS+' '+eb)+EQ+varHTML(k,P.v[k]);
+        }
+        return varHTML(k,A.v[k])+' <span class="muted">is only in the first term, so it stays the same</span>';
+      });
+      steps.push({t:'Divide the letters: subtract the powers',lines:lines,
+        n:((cancel?'The same letter with the same power on top and bottom cancels to 1. ':'')+(ones?'A letter on its own has a power of 1.':'')).trim()});
+    }
+    if(nums&&!M.isConst(P)&&P.c!==1){
+      steps.push({t:'Put them together',lines:[nspan(numS(P.c))+' <span class="muted">and</span> '+lettersHTML(P)+'<span class="eqs">make</span>'+monoHTML(P)],n:''});
+    }
+  }else{
+    if(A.c!==1){
+      const expanded=Array.from({length:n},()=>nspan(numP(A.c))).join(TIMES);
+      steps.push({t:n===2?'Square the number':'Cube the number',
+        lines:[nspan(numP(A.c))+'<sup>'+n+'</sup>'+EQ+expanded+EQ+nspan(numS(P.c))],
+        n:'The power outside the bracket applies to everything inside it.'+(A.c<0?' A negative number squared is positive, but cubed it stays negative.':'')});
+    }
+    steps.push({t:'Multiply each power by '+n,
+      lines:M.letters(A).map(k=>'('+varHTML(k,A.v[k])+')<sup>'+n+'</sup>'+EQ+varRaw(k,A.v[k]+' × '+n)+EQ+varHTML(k,P.v[k])),
+      n:A.c===1?'The power outside the bracket applies to everything inside it.':''});
+    if(A.c!==1)steps.push({t:'Put them together',lines:[nspan(numS(P.c))+' <span class="muted">and</span> '+lettersHTML(P)+'<span class="eqs">make</span>'+monoHTML(P)],n:''});
+  }
+  return {
+    instr:'Simplify',q:q,answer:monoHTML(P),steps:steps,d:d,
+    verify(){
+      for(let i=0;i<6;i++){
+        const vals=randVals(lettersOf(kind==='pow'?[A,P]:[A,B,P]),2,5);
+        let lhs;
+        if(kind==='mul')lhs=M.ev(A,vals)*M.ev(B,vals);
+        else if(kind==='div')lhs=M.ev(A,vals)/M.ev(B,vals);
+        else lhs=Math.pow(M.ev(A,vals),n);
+        if(Math.abs(lhs-M.ev(P,vals))>1e-9)return false;
+      }
+      return true;
+    }
+  };
+}
+
+/* ---------- 6. Levels 3-5: single brackets ---------- */
+const sgnInt=(R,lo,hi,pNeg)=>{const v=R.int(lo,hi);return R.chance(pNeg)?-v:v;};
+/* term makers for a pair of letters x, y */
+function makers(x,y){
+  return {
+    X:(c,p)=>M.make(c,{[x]:p||1}),
+    Y:(c,p)=>M.make(c,{[y]:p||1}),
+    XY:(c,px,py)=>M.make(c,{[x]:px||1,[y]:py||1}),
+    K:c=>M.make(c,{})
+  };
+}
+function bracketNotes(o,inner){
+  const notes=['Multiply every term inside the bracket by the term outside.'];
+  if(o.c<0)notes.push('The sign in front of the bracket belongs to the term outside: '+monoText(o)+' multiplies every term.');
+  if(o.c<0&&inner.some(m=>m.c<0))notes.push('A negative times a negative is positive.');
+  const same=inner.find(m=>M.letters(m).some(k=>o.v[k]));
+  if(same)notes.push('Same letter: add the powers, so '+monoText(M.make(1,o.v))+' × '+monoText(M.make(1,same.v))+' = '+monoText(M.make(1,M.mul(o,same).v))+'.');
+  return notes.join(' ');
+}
+
+/* Level 3: expanding a single bracket */
+function genExpand1(R,d,ctx){
+  const l=pickLetters(R,ctx,2).sort(),T=makers(l[0],l[1]),X=T.X,Y=T.Y,K=T.K;
+  let o,inner;
+  if(d===1){o=K(R.int(2,9));inner=[X(1),K(R.int(1,9))];}
+  else if(d===2){o=K(R.int(2,9));inner=[X(R.int(1,6)),K(sgnInt(R,1,9,0.7))];}
+  else if(d===3){o=X(1);inner=[X(R.chance(0.6)?1:R.int(2,5)),K(sgnInt(R,1,9,0.5))];}
+  else if(d===4){o=R.chance(0.75)?K(-R.int(2,9)):X(-R.int(1,4));inner=[X(R.int(1,6)),K(sgnInt(R,1,9,0.6))];}
+  else if(d===5){
+    const c=sgnInt(R,2,5,0.2);
+    o=R.chance(0.3)?Y(c):X(c);
+    inner=[X(R.int(1,6)),R.chance(0.6)?Y(sgnInt(R,1,6,0.5)):K(sgnInt(R,1,9,0.5))];
+  }else{
+    const c=sgnInt(R,1,5,0.25),a=R.int(1,4),b=sgnInt(R,1,6,0.5),e=sgnInt(R,1,9,0.5);
+    const form=R.int(1,4);
+    if(form===1){o=X(c);inner=[X(a,2),X(b),K(e)];}
+    else if(form===2){o=X(c===1||c===-1?c*2:c,2);inner=[X(a),K(e)];}
+    else if(form===3){o=T.XY(c);inner=[X(a),Y(b)];}
+    else{o=X(c);inner=[X(a,2),Y(b)];}
+  }
+  const prods=inner.map(m=>M.mul(o,m)),ans=simplify(prods);
+  const q=monoHTML(o)+bracketHTML(inner);
+  const gap=0.8;
+  const s1={t:'Multiply the term outside by each term inside',
+    lines:[singleDiag(o,inner,0,gap)].concat(inner.map((m,i)=>lag(mulLine(o,m),i*gap+0.55))),n:bracketNotes(o,inner)};
+  const s2={t:'Write the terms together',lines:[q+EQ+exprHTML(ans)],n:'Each product keeps its own sign.'};
+  return {
+    instr:'Expand',q:q,answer:exprHTML(ans),steps:[s1,s2],d:d,
+    verify(){for(let i=0;i<6;i++){const v=randVals(lettersOf(prods.concat([o])),2,9);if(M.ev(o,v)*sumEv(inner,v)!==sumEv(ans,v))return false;}return true;}
+  };
+}
+
+/* Level 4: expand and simplify. parts are brackets {o,inner} or loose terms {t}. */
+function genExpandSimp(R,d,ctx){
+  const l=pickLetters(R,ctx,2).sort(),T=makers(l[0],l[1]),X=T.X,Y=T.Y,K=T.K;
+  const lin=(aMax,pNeg)=>[X(R.int(1,aMax)),K(sgnInt(R,1,9,pNeg))];
+  let parts=null,terms=null,ans=null;
+  for(let attempt=0;attempt<300&&!parts;attempt++){
+    let p;
+    if(d===1){
+      p=[{o:K(R.int(2,9)),inner:lin(5,0.3)},{t:R.chance(0.6)?K(R.int(1,9)):X(R.int(1,9))}];
+      if(R.chance(0.3))p.reverse();
+    }else if(d===2)p=[{o:K(R.int(2,9)),inner:lin(5,0.5)},{o:K(R.int(2,9)),inner:lin(5,0.5)}];
+    else if(d===3)p=[{o:K(R.int(2,9)),inner:lin(5,0.5)},{o:K(-R.int(2,9)),inner:lin(5,0.5)}];
+    else if(d===4){
+      p=[{o:X(R.chance(0.6)?1:R.int(2,3)),inner:[X(R.int(1,4)),K(sgnInt(R,1,9,0.5))]},{o:K(sgnInt(R,2,9,0.4)),inner:lin(5,0.5)}];
+      if(R.chance(0.3)&&p[1].o.c>0)p.reverse();
+    }else if(d===5)p=[{o:X(R.int(1,4)),inner:[X(R.int(1,4)),K(sgnInt(R,1,9,0.5))]},{o:X(-R.int(1,4)),inner:[X(R.int(1,4)),K(sgnInt(R,1,9,0.5))]}];
+    else p=[{o:K(R.int(2,6)),inner:[X(R.int(1,5)),Y(sgnInt(R,1,5,0.5))]},{o:K(sgnInt(R,2,6,0.6)),inner:[X(R.int(1,5)),Y(sgnInt(R,1,5,0.5))]}];
+    const t=[];p.forEach(x=>{if(x.o)x.inner.forEach(m=>t.push(M.mul(x.o,m)));else t.push(x.t);});
+    const a=simplify(t);
+    if(!a.length||a.length>=t.length)continue;
+    if(p.length===2&&p[0].o&&p[1].o&&M.sig(p[0].o)===M.sig(p[1].o)&&p[0].o.c===p[1].o.c)continue;
+    parts=p;terms=t;ans=a;
+  }
+  if(!parts)throw new Error('could not build expand-and-simplify question');
+  const q=parts.map((p,i)=>p.o?termAt(p.o,i)+bracketHTML(p.inner):termAt(p.t,i)).join('');
+  const lines=[],notes=['Multiply every term inside each bracket by the term in front of it.'];
+  let t0=0;
+  parts.forEach(p=>{
+    if(!p.o)return;
+    lines.push(singleDiag(p.o,p.inner,t0,0.7)+lag(EQ+exprHTML(p.inner.map(m=>M.mul(p.o,m))),t0+p.inner.length*0.7));
+    t0+=p.inner.length*0.7+0.6;
+  });
+  const neg=parts.find(p=>p.o&&p.o.c<0);
+  if(neg)notes.push('A minus in front of a bracket belongs to the term outside: '+monoText(neg.o)+' multiplies every term inside, and a negative times a negative is positive.');
+  const loose=parts.find(p=>!p.o);
+  if(loose)notes.push('The '+monoText(M.make(Math.abs(loose.t.c),loose.t.v))+' is not in a bracket, so it stays as it is.');
+  const steps=[{t:'Expand each bracket',lines:lines,n:notes.join(' ')},
+    {t:'Write out all the terms',lines:[exprHTML(terms)],n:'Keep each term’s sign.'}].concat(likeWork(terms,{spot:false}));
+  return {
+    instr:'Expand and simplify',q:q,answer:exprHTML(ans),steps:steps,d:d,
+    verify(){
+      for(let i=0;i<6;i++){
+        const v=randVals(lettersOf(terms),2,9);
+        const lhs=parts.reduce((s,p)=>s+(p.o?M.ev(p.o,v)*sumEv(p.inner,v):M.ev(p.t,v)),0);
+        if(lhs!==sumEv(ans,v))return false;
+      }
+      return true;
+    }
+  };
+}
+
+/* Level 5: factorising into a single bracket. Built backwards: choose the HCF h and a bracket
+   that has nothing left in common, then expand. Questions never start with a negative term. */
+function factorList(n){const out=[];for(let i=1;i<=n;i++)if(n%i===0)out.push(i);return out;}
+function genFactor1(R,d,ctx){
+  const l=pickLetters(R,ctx,2).sort(),T=makers(l[0],l[1]),X=T.X,Y=T.Y,XY=T.XY,K=T.K;
+  let h=null,inner=null;
+  for(let attempt=0;attempt<400&&!h;attempt++){
+    let hh,ii;
+    if(d===1){hh=K(R.int(2,9));ii=[X(R.int(1,7)),K(R.int(1,9))];}
+    else if(d===2){hh=X(1);ii=[X(R.chance(0.7)?1:R.int(2,5)),K(R.int(1,9))];}
+    else if(d===3){hh=X(R.int(2,6));ii=[X(R.int(1,5)),K(R.int(1,9))];}
+    else if(d===4){hh=R.chance(0.5)?K(R.int(2,9)):X(R.int(1,6));ii=[X(R.int(1,6)),K(-R.int(1,9))];}
+    else if(d===5){
+      const k=R.int(1,6),form=R.int(1,3);
+      if(form===1){hh=Y(k);ii=[X(R.int(1,5)),K(sgnInt(R,1,9,0.5))];}
+      else if(form===2){hh=XY(k);ii=[X(R.int(1,5)),Y(sgnInt(R,1,5,0.5))];}
+      else{hh=X(k);ii=[X(R.int(1,4)),Y(sgnInt(R,1,6,0.5))];}
+    }else{
+      const k=R.int(1,6),form=R.int(1,4);
+      if(form===1){hh=X(k);ii=[X(R.int(1,4),2),X(sgnInt(R,1,7,0.5)),K(sgnInt(R,1,9,0.5))];}
+      else if(form===2){hh=X(k,2);ii=[X(R.int(1,5)),K(sgnInt(R,1,9,0.5))];}
+      else if(form===3){hh=XY(k,2,1);ii=[X(R.int(1,4)),Y(sgnInt(R,1,5,0.5))];}
+      else{hh=X(k);ii=[X(R.int(1,4),2),K(sgnInt(R,1,9,0.5))];}
+    }
+    if(M.isConst(hh)&&hh.c===1)continue;
+    if(gcdAll(ii.map(m=>m.c))!==1)continue;
+    const hi=hcfMono(ii);if(!M.isConst(hi)||hi.c!==1)continue;
+    h=hh;inner=ii;
+  }
+  if(!h)throw new Error('could not build factorising question');
+  const terms=inner.map(m=>M.mul(h,m));
+  const ans=monoHTML(h)+bracketHTML(inner);
+  const cs=terms.map(m=>Math.abs(m.c)),H=Math.abs(h.c);
+  const uniq=Array.from(new Set(cs));
+  const s1lines=[];
+  if(Math.max.apply(null,uniq)<=60&&uniq.indexOf(1)<0)uniq.forEach(n=>{s1lines.push(nspan(n)+'<span class="muted">:</span> '+factorList(n).map(f=>f===H?'<span class="hi">'+f+'</span>':nspan(f)).join(', '));});
+  s1lines.push('<span class="muted">HCF of</span> '+uniq.map(nspan).join(', ')+EQ+nspan(H));
+  const s1n=(terms.some(m=>m.c<0)?'Use the numbers without their signs. ':'')+(H===1?'The only common factor is 1, so no number comes out.':'Find the biggest number that goes into all of them.');
+  const allL=lettersOf(terms).sort();
+  const s2lines=allL.map(k=>{
+    if(terms.every(m=>m.v[k]))return terms.map(m=>varHTML(k,m.v[k])).join(', ')+' <span class="muted">lowest power</span> '+varHTML(k,h.v[k]);
+    return varHTML(k,1)+' <span class="muted">is not in every term</span>';
+  });
+  const s3lines=terms.map((m,i)=>monoHTML(m)+DIVS+facHTML(h)+EQ+monoHTML(inner[i]));
+  const steps=[
+    {t:'Find the HCF of the numbers',lines:s1lines,n:s1n},
+    {t:'Find the letters in every term',lines:s2lines,n:M.isConst(h)?'No letter is in every term, so no letter comes out.':'Take the lowest power of each letter that is in every term.'},
+    {t:'Divide each term by the HCF, '+monoHTML(h),lines:s3lines,n:'The HCF goes outside the bracket. What is left of each term goes inside.'},
+    {t:'Check by expanding',lines:[singleDiag(h,inner,0,0.7)+lag(EQ+exprHTML(terms),inner.length*0.7)],
+      n:'Expanding gives the question back, and the terms in the bracket have no common factor left, so it is fully factorised.'}
+  ];
+  return {
+    instr:'Factorise',q:exprHTML(terms),answer:ans,steps:steps,d:d,
+    verify(){
+      const hc=hcfMono(terms);
+      if(hc.c!==h.c||M.sig(hc)!==M.sig(h))return false;
+      if(gcdAll(inner.map(m=>m.c))!==1)return false;
+      for(let i=0;i<6;i++){const v=randVals(lettersOf(terms),2,9);if(M.ev(h,v)*sumEv(inner,v)!==sumEv(terms,v))return false;}
+      return true;
+    }
+  };
+}
+
+/* ---------- 7. Level 6: substitution ---------- */
+const valHTML=(k,v)=>'<span class="v v-'+k+'">('+numS(v)+')</span>';
+/* The factors of a term after substituting. stage 0: values in brackets with powers; stage 1: powers worked out. */
+function subFactors(m,vals,stage){
+  const parts=[],ks=M.letters(m),ac=Math.abs(m.c);
+  if(stage===0){if(ac!==1||!ks.length)parts.push(nspan(ac));}
+  else if(ac!==1||m.c<0||!ks.length)parts.push(nspan(numS(m.c)));
+  ks.forEach(k=>{const e=m.v[k];parts.push(stage===0?valHTML(k,vals[k])+(e>1?'<sup>'+e+'</sup>':''):nspan(numP(Math.pow(vals[k],e))));});
+  return parts.join(TIMES);
+}
+function genSubst(R,d,ctx){
+  const l=pickLetters(R,ctx,3),x=l[0],y=l[1],z=l[2];
+  const T=(c,v)=>M.make(c,v||{});
+  const sg=p=>R.chance(p)?-1:1;
+  for(let attempt=0;attempt<500;attempt++){
+    let terms;const vals={};
+    if(d===1){terms=[T(R.int(2,9),{[x]:1})];vals[x]=R.int(2,10);}
+    else if(d===2){
+      const a=R.int(2,9),b=R.int(1,20);
+      terms=R.pick([[T(a,{[x]:1}),T(b)],[T(a,{[x]:1}),T(-b)],[T(b),T(-a,{[x]:1})],[T(b),T(a,{[x]:1})]]);
+      vals[x]=R.int(1,10);
+    }else if(d===3){
+      const a=R.int(2,5),b=R.int(1,12);
+      terms=R.pick([[T(1,{[x]:2}),T(b)],[T(a,{[x]:2})],[T(1,{[x]:3})],[T(a,{[x]:3})],[T(1,{[x]:2}),T(-b)],[T(1,{[x]:2}),T(a,{[x]:1})],[T(a,{[x]:2}),T(-b)]]);
+      vals[x]=R.int(2,terms.some(m=>m.v[x]===3)?5:9);
+    }else if(d===4){
+      const a=R.int(2,9),b=R.int(2,9);
+      terms=R.pick([[T(a,{[x]:1}),T(b,{[y]:1})],[T(1,{[x]:1,[y]:1})],[T(a,{[x]:1,[y]:1})],[T(a,{[x]:1}),T(-b,{[y]:1})],
+        [T(1,{[x]:2}),T(b,{[y]:1})],[T(1,{[x]:1}),T(1,{[y]:1}),T(1,{[z]:1})],[T(a,{[x]:1,[y]:1}),T(-b,{[z]:1})]]);
+      lettersOf(terms).forEach(k=>{vals[k]=R.int(2,terms.some(m=>m.v[k]>1)?6:9);});
+    }else if(d===5){
+      const a=R.int(2,9),b=R.int(1,12);
+      terms=R.pick([[T(b),T(-1,{[x]:1})],[T(a,{[x]:1}),T(b)],[T(a,{[x]:1}),T(-b)],[T(a,{[x]:1}),T(R.int(2,9),{[y]:1})],
+        [T(a,{[x]:1}),T(-R.int(2,9),{[y]:1})],[T(1,{[x]:1}),T(1,{[y]:1}),T(-1,{[z]:1})],[T(b),T(-a,{[x]:1})]]);
+      lettersOf(terms).forEach(k=>{vals[k]=sg(0.6)*R.int(1,9);});
+    }else{
+      const shapes=R.shuffle([{[x]:2},{[x]:1,[y]:1},{[y]:3},{[x]:1},{[y]:2},{[x]:3},{[x]:2,[y]:1},{}]).slice(0,R.int(2,3));
+      if(!shapes.some(v=>M.deg(M.make(1,v))>=2))continue;
+      shapes.sort((a,b)=>cmpMono(M.make(1,a),M.make(1,b)));
+      terms=shapes.map((v,i)=>T((i===0?sg(0.2):sg(0.45))*R.int(1,5),v));
+      const ls=lettersOf(terms);
+      ls.forEach(k=>{vals[k]=sg(0.6)*R.int(1,terms.some(m=>m.v[k]===3)?3:4);});
+    }
+    if(simplify(terms).length!==terms.length)continue;
+    const neg=Object.keys(vals).some(k=>vals[k]<0);
+    if(d>=5&&!neg)continue;
+    const total=sumEv(terms,vals);
+    if(d<=4&&total<0)continue;
+    if(Math.abs(total)>500)continue;
+    return buildSubst(terms,vals,total,d,l.filter(k=>k in vals).sort());
+  }
+  throw new Error('could not build substitution question');
+}
+function buildSubst(terms,vals,total,d,ks){
+  const given=ks.map(k=>varHTML(k,1)+' = '+nspan(numS(vals[k])));
+  const givenHTML=given.length>1?given.slice(0,-1).join(', ')+' and '+given[given.length-1]:given[0];
+  const q=exprHTML(terms)+'<div class="given">when '+givenHTML+'</div>';
+  const values=terms.map(m=>M.ev(m,vals));
+  /* step 1: replace */
+  const sub=terms.map((m,i)=>(i===0?(m.c<0?MINUS:''):opSpan(m.c))+subFactors(m,vals,0)).join('');
+  const ex=terms.find(m=>Math.abs(m.c)!==1&&!M.isConst(m));
+  const s1n='Put each value in a bracket, so negative numbers keep their sign.'+(ex?' '+monoText(M.make(Math.abs(ex.c),ex.v))+' means '+[Math.abs(ex.c)].concat(M.letters(ex).map(k=>k+(ex.v[k]>1?supT(ex.v[k]):''))).join(' × ')+'.':'');
+  /* step 2: each term */
+  const lines=[];let negEven=null,negOdd=null,hasPow=false;
+  terms.forEach((m,i)=>{
+    if(M.isConst(m))return;
+    const ksm=M.letters(m),pow=ksm.some(k=>m.v[k]>1);
+    if(pow)hasPow=true;
+    ksm.forEach(k=>{if(vals[k]<0&&m.v[k]>1){if(m.v[k]%2===0)negEven=negEven||[vals[k],m.v[k]];else negOdd=negOdd||[vals[k],m.v[k]];}});
+    if(Math.abs(m.c)===1&&ksm.length===1&&!pow&&m.c===1&&vals[ksm[0]]>=0){lines.push(monoHTML(m)+EQ+nspan(numS(values[i])));return;}
+    const sign=m.c<0?MINUS:'';
+    const nf=(Math.abs(m.c)!==1?1:0)+ksm.length;
+    let line=monoHTML(m)+EQ+sign+subFactors(m,vals,0);
+    if(pow&&nf>1)line+=EQ+subFactors(m,vals,1);
+    line+=EQ+nspan(numS(values[i]));
+    lines.push(line);
+  });
+  const n2=[];
+  if(hasPow)n2.push('Work out the powers before multiplying.');
+  if(negEven)n2.push('('+numS(negEven[0])+')'+supT(negEven[1])+' = '+Array(negEven[1]).fill('('+numS(negEven[0])+')').join(' × ')+' = '+Math.pow(negEven[0],negEven[1])+', not '+MINUS+Math.pow(-negEven[0],negEven[1])+'.');
+  if(negOdd)n2.push('('+numS(negOdd[0])+')'+supT(negOdd[1])+' = '+numS(Math.pow(negOdd[0],negOdd[1]))+': an odd power of a negative number stays negative.');
+  if(terms.some(M.isConst)&&terms.length>1)n2.push('Number terms stay as they are.');
+  const steps=[{t:'Replace each letter with its value',lines:[sub],n:s1n}];
+  if(lines.length)steps.push({t:terms.length>1?'Work out each term':'Work it out',lines:lines,n:n2.join(' ')});
+  if(terms.length>1)steps.push({t:'Add the terms',lines:[numExprHTML(values)+EQ+nspan(numS(total))],n:values.some(v=>v<0)?'Each term keeps its own sign.':''});
+  return {
+    instr:'Find the value of',q:q,answer:nspan(numS(total)),steps:steps,d:d,
+    verify(){
+      const src=terms.map(m=>'('+m.c+')'+M.letters(m).map(k=>'*Math.pow(V.'+k+','+m.v[k]+')').join('')).join('+');
+      const v=new Function('V','return '+src)(vals);
+      return v===total&&values.reduce((s,n)=>s+n,0)===total;
+    }
+  };
+}
+
+/* ---------- 8. Levels 7-8: double brackets ---------- */
+/* Grid (area) method table: row headings down the side, column headings along the top, cells[r][c] inside.
+   A null heading shows as '?' (used while factorising, before the headings are found). */
+function gridTable(rowH,colH,cells){
+  const groups=groupTerms([].concat.apply([],cells)),rank={};groups.forEach(g=>{rank[g.sig]=g.rank;});
+  const head=(m,i)=>m?'<th>'+(i===0?monoHTML(m):(m.c<0?'':'+')+monoHTML(m))+'</th>':'<th class="qm">?</th>';
+  let h='<table class="box"><tr><th class="cx">×</th>'+colH.map(head).join('')+'</tr>';
+  rowH.forEach((r,i)=>{
+    h+='<tr>'+head(r,i)+cells[i].map(p=>'<td><span class="chip '+hueClass(p)+' r'+Math.min(rank[M.sig(p)],2)+'">'+monoHTML(p)+'</span></td>').join('')+'</tr>';
+  });
+  return h+'</table>';
+}
+function gridHTML(A,B){return gridTable(A,B,A.map(a=>B.map(b=>M.mul(a,b))));}
+/* Working for (A)(B) with two terms in each bracket, following ctx.dbl: 'foil', 'box' or 'both'. */
+function dblWork(A,B,ctx){
+  const prods=expandProd(A,B),mode=ctx.dbl||'foil',steps=[];
+  const signNote=prods.some(m=>m.c<0)?' Watch the signs: a negative times a positive is negative; two negatives make a positive.':'';
+  if(mode!=='box'){
+    const L=['F','O','I','L'],pr=[[0,0],[0,1],[1,0],[1,1]],gap=1;
+    const arrows=pr.map((p,i)=>({f:'a'+p[0],t:'b'+p[1],s:p[0]?'b':'t',l:L[i],d:i*gap}));
+    const lines=[arwHTML(bracketHTML(A,'a')+bracketHTML(B,'b'),arrows)]
+      .concat(pr.map((p,i)=>lag('<span class="fl">'+L[i]+'</span>'+mulLine(A[p[0]],B[p[1]]),i*gap+0.55)));
+    steps.push({t:'Multiply using FOIL',lines:lines,n:'First, Outer, Inner, Last: each term in the first bracket multiplies each term in the second.'+signNote});
+  }
+  if(mode!=='foil'){
+    steps.push({t:mode==='both'?'Check with the grid method':'Multiply using a grid',lines:[gridHTML(A,B)],
+      n:'One bracket goes along the top and the other down the side. Multiply to fill each box.'+(mode==='both'?' The grid gives the same four terms as FOIL.':signNote)});
+  }
+  steps[0].tog={key:'dbl',cur:mode,opts:[['foil','FOIL'],['box','Grid'],['both','Both']]};
+  likeWork(prods,{spot:false,title:'Write out the four terms, like terms together'}).forEach(s=>steps.push(s));
+  return {steps:steps,prods:prods};
+}
+function genDouble(R,d,ctx){
+  const l=pickLetters(R,ctx,2).sort(),T=makers(l[0],l[1]),X=T.X,Y=T.Y,K=T.K;
+  let A=null,B=null;
+  for(let attempt=0;attempt<300&&!A;attempt++){
+    let a,b;
+    if(d===1){a=[X(1),K(R.int(1,9))];b=[X(1),K(R.int(1,9))];}
+    else if(d===2){a=[X(1),K(R.int(1,9))];b=[X(1),K(-R.int(1,9))];}
+    else if(d===3){a=[X(1),K(-R.int(1,9))];b=[X(1),K(-R.int(1,9))];}
+    else if(d===4){a=[X(R.int(2,5)),K(sgnInt(R,1,9,0.5))];b=[X(1),K(sgnInt(R,1,9,0.5))];}
+    else if(d===5){a=[X(R.int(2,5)),K(sgnInt(R,1,7,0.5))];b=[X(R.int(2,5)),K(sgnInt(R,1,7,0.5))];}
+    else{a=[X(R.int(1,3)),Y(sgnInt(R,1,5,0.5))];b=[X(R.int(1,3)),Y(sgnInt(R,1,5,0.5))];}
+    if(R.chance(0.5)){const t=a;a=b;b=t;}
+    if(a[0].c===b[0].c&&a[1].c===b[1].c)continue;          /* a square: that is Level 8 */
+    if(simplify(expandProd(a,b)).length<3)continue;        /* middle term cancels: Level 8 */
+    A=a;B=b;
+  }
+  if(!A)throw new Error('could not build double-bracket question');
+  const w=dblWork(A,B,ctx),ans=simplify(w.prods);
+  return {
+    instr:'Expand and simplify',q:bracketHTML(A)+bracketHTML(B),answer:exprHTML(ans),steps:w.steps,d:d,
+    verify(){for(let i=0;i<6;i++){const v=randVals(lettersOf(ans),2,9);if(sumEv(A,v)*sumEv(B,v)!==sumEv(ans,v))return false;}return true;}
+  };
+}
+/* x squared shown as x², anything else as (2x)² or 7² */
+function sqHTML(m){
+  if(M.isConst(m))return nspan(Math.abs(m.c))+'<sup>2</sup>';
+  if(m.c===1&&M.deg(m)===1)return monoHTML(M.pow(m,2));
+  return '('+monoHTML(M.make(Math.abs(m.c),m.v))+')<sup>2</sup>';
+}
+const chipA=h=>'<span class="chip sqa">'+h+'</span>',chipB=h=>'<span class="chip sqb">'+h+'</span>';
+function genSquares(R,d,ctx){
+  const l=pickLetters(R,ctx,2).sort(),T=makers(l[0],l[1]),X=T.X,Y=T.Y,K=T.K;
+  const type=d===6?R.pick([1,2,3,4,5,7]):d;    /* 7: square with two letters */
+  let A,B,sq=false;
+  if(type===1){A=[X(1),K(R.int(1,9))];sq=true;}
+  else if(type===2){A=[X(1),K(-R.int(1,9))];sq=true;}
+  else if(type===3){A=[X(R.int(2,5)),K(sgnInt(R,1,7,0.5))];sq=true;}
+  else if(type===4){const a=R.int(1,10);A=[X(1),K(a)];B=[X(1),K(-a)];}
+  else if(type===5){
+    if(R.chance(0.5)){const a=R.int(2,5),b=R.int(1,9);A=[X(a),K(b)];B=[X(a),K(-b)];}
+    else{const a=R.int(1,3),b=R.int(1,4);A=[X(a),Y(b)];B=[X(a),Y(-b)];}
+  }else{A=[X(1),Y(sgnInt(R,1,5,0.5))];sq=true;}
+  if(sq)B=A;else if(R.chance(0.5)){const t=A;A=B;B=t;}
+  const q=sq?bracketHTML(A)+'<sup>2</sup>':bracketHTML(A)+bracketHTML(B);
+  const steps=[];
+  if(sq){
+    const naive=[M.pow(A[0],2),M.make(Math.abs(A[1].c*A[1].c),M.pow(A[1],2).v)];
+    steps.push({t:'Write it as two brackets',lines:[q+EQ+bracketHTML(A)+bracketHTML(A)],
+      n:'Squaring means multiplying the bracket by itself. The answer is not just '+exprText(naive)+': there is a middle term too.'});
+  }
+  const w=dblWork(A,B,ctx),ans=simplify(w.prods);
+  w.steps.forEach(s=>steps.push(s));
+  if(sq){
+    const mid=M.mul(M.make(2,{}),M.mul(A[0],A[1]));
+    steps.push({t:'Check the middle term',lines:['2'+TIMES+monoHTML(A[0])+TIMES+facHTML(A[1])+EQ+monoHTML(mid)],
+      n:'For a squared bracket the middle term is always 2 × first term × last term.'});
+  }else{
+    const b=M.make(Math.abs(A[1].c),A[1].v);
+    steps.push({t:'Spot the pattern',lines:[bracketHTML(A)+bracketHTML(B)+EQ+chipA(sqHTML(A[0]))+'<span class="op">'+MINUS+'</span>'+chipB(sqHTML(b))+EQ+exprHTML(ans)],
+      n:'The middle terms cancel, so (a + b)(a − b) = a² − b². This is the difference of two squares.'});
+  }
+  return {
+    instr:'Expand and simplify',q:q,answer:exprHTML(ans),steps:steps,d:d,
+    verify(){for(let i=0;i<6;i++){const v=randVals(lettersOf(ans),2,9);if(sumEv(A,v)*sumEv(B,v)!==sumEv(ans,v))return false;}return true;}
+  };
+}
+
+/* ---------- 9. Levels 9-10: factorising quadratics ----------
+   Built backwards from k(a1·x + p)(a2·x + q). A bracket is [M(a,{x:1}), M(p,{})]. */
+const linB=(L,a,p)=>[M.make(a,{[L]:1}),M.make(p,{})];
+/* Answer order: bigger x coefficient first, then + before −, then smaller number first */
+function cmpBracket(A,B){
+  if(A[0].c!==B[0].c)return B[0].c-A[0].c;
+  const pa=A[1].c,pb=B[1].c;
+  if((pa>0)!==(pb>0))return pa>0?-1:1;
+  return Math.abs(pa)-Math.abs(pb);
+}
+function factorsHTML(k,brs){
+  const b=brs.slice().sort(cmpBracket);
+  const same=b.length===2&&b[0][0].c===b[1][0].c&&b[0][1].c===b[1][1].c;
+  return (k!==1?nspan(numS(k)):'')+(same?bracketHTML(b[0])+'<sup>2</sup>':b.map(x=>bracketHTML(x)).join(''));
+}
+/* Factor pairs of P (with signs chosen by the rules) in order, up to the pair that adds to S */
+function pairSearch(P,S){
+  const pairs=[],ap=Math.abs(P);
+  for(let d=1;d*d<=ap;d++){
+    if(ap%d)continue;const e=ap/d;
+    if(P>0){const s=S<0?-1:1;pairs.push([s*d,s*e]);}
+    else pairs.push(S>=0?[-d,e]:[d,-e]);
+  }
+  const hit=pairs.findIndex(p=>p[0]+p[1]===S);
+  if(hit<0)throw new Error('no factor pair');
+  return {pairs:pairs.slice(0,hit+1),pair:pairs[hit]};
+}
+const TICK=' <span class="tick">✓</span>',CROSS=' <span class="cross">✗</span>';
+function pairLines(P,S){
+  const r=pairSearch(P,S);
+  const lines=['<span class="muted">multiply to</span> '+nspan(numS(P))+'<span class="gap"></span> <span class="muted">add to</span> '+nspan(numS(S))]
+    .concat(r.pairs.map((p,i)=>nspan(numS(p[0]))+TIMES+nspan(numP(p[1]))+EQ+nspan(numS(P))+'<span class="gap"></span> '+
+      nspan(numS(p[0]))+opSpan(p[1])+nspan(Math.abs(p[1]))+EQ+nspan(numS(p[0]+p[1]))+(i===r.pairs.length-1?TICK:CROSS)));
+  let n;
+  if(P>0)n=S>0?'Both numbers are positive: they multiply to a positive and add to a positive.':'Both numbers are negative: they multiply to a positive but add to a negative.';
+  else n='One number is positive and one is negative, because they multiply to a negative. The bigger one is '+(S>0?'positive':'negative')+' because they add to a '+(S>0?'positive':'negative')+'.';
+  return {lines:lines,n:n+' Stop when you find the pair.',pair:r.pair};
+}
+function checkStep(k,brs,Q){
+  brs=brs.slice().sort(cmpBracket);
+  const four=expandProd(brs[0],brs[1]),inner=simplify(four);
+  const lines=[bracketHTML(brs[0])+bracketHTML(brs[1])+EQ+exprHTML(four)+EQ+exprHTML(inner)];
+  if(k!==1)lines.push(nspan(numS(k))+'('+exprHTML(inner)+')'+EQ+exprHTML(Q));
+  return {t:'Check by expanding',lines:lines,n:'Expanding the brackets gives the question back.'};
+}
+function dotsSteps(L,r,s,Q){
+  const a=M.make(r,{[L]:1}),b=M.make(s,{});
+  const brs=[linB(L,r,s),linB(L,r,-s)];
+  return [
+    {t:'Spot the difference of two squares',lines:[exprHTML(Q)+EQ+chipA(sqHTML(a))+'<span class="op">'+MINUS+'</span>'+chipB(sqHTML(b))],
+      n:'Both terms are squares and one is subtracted from the other: '+monoText(Q[0])+' is '+monoText(a)+' squared and '+(s*s)+' is '+s+' squared.'},
+    {t:'Use a² − b² = (a + b)(a − b)',lines:[chipA('<i>a</i>')+' = '+monoHTML(a)+'<span class="gap"></span> '+chipB('<i>b</i>')+' = '+nspan(s),
+      '('+chipA(monoHTML(a))+'<span class="op">+</span>'+chipB(nspan(s))+')('+chipA(monoHTML(a))+'<span class="op">'+MINUS+'</span>'+chipB(nspan(s))+')'],
+      n:'One bracket has a plus and the other has a minus.'},
+    checkStep(1,brs,Q)
+  ];
+}
+function monicSteps(L,p,q,k,Q,inner){
+  const pl=pairLines(p*q,p+q),brs=[linB(L,1,p),linB(L,1,q)];
+  return [
+    {t:'Find two numbers that multiply to '+numS(p*q)+' and add to '+numS(p+q),lines:pl.lines,n:pl.n},
+    {t:'Write the brackets',lines:[(k!==1?nspan(numS(k))+'('+exprHTML(inner)+')':exprHTML(inner))+EQ+factorsHTML(k,brs)],
+      n:'Each bracket is '+L+' plus one of the numbers: '+numS(pl.pair[0])+' and '+numS(pl.pair[1])+'.'},
+    checkStep(k,brs,Q)
+  ];
+}
+function acSteps(L,a1,p,a2,q,k,inner){
+  const A=a1*a2,B=a1*q+a2*p,C=p*q,X=c=>M.make(c,{[L]:1}),X2=c=>M.make(c,{[L]:2}),K=c=>M.make(c,{});
+  const pl=pairLines(A*C,B),m=pl.pair[0],n=pl.pair[1];
+  const g1=gcd(A,m),g2=gcd(n,C)*(n<0?-1:1);
+  const br1=linB(L,A/g1,m/g1),br2=linB(L,n/g2,C/g2);
+  if(br1[0].c!==br2[0].c||br1[1].c!==br2[1].c)throw new Error('grouping brackets do not match');
+  const pre=k!==1?nspan(numS(k)):'';
+  const split=[X2(A),X(m),X(n),K(C)];
+  const g1m=X(g1),g2m=K(g2);
+  return [
+    {t:'Multiply a by c',lines:['<i>a</i> = '+nspan(numS(A))+'<span class="gap"></span> <i>c</i> = '+nspan(numS(C)),
+      '<i>a</i>'+TIMES+'<i>c</i>'+EQ+nspan(numS(A))+TIMES+nspan(numP(C))+EQ+nspan(numS(A*C))],
+      n:'a is the number in front of '+L+'², b is the number in front of '+L+' and c is the number on its own.'},
+    {t:'Find two numbers that multiply to '+numS(A*C)+' and add to '+numS(B),lines:pl.lines,n:pl.n},
+    {t:'Split the middle term',lines:[exprHTML(inner)+EQ+exprHTML(split)],
+      n:monoText(X(m))+' and '+monoText(X(n))+' make '+monoText(X(B))+', so nothing has changed.'},
+    {t:'Factorise each pair',lines:['('+exprHTML([X2(A),X(m)])+')'+'<span class="op">+</span>('+exprHTML([X(n),K(C)])+')',
+      EQ+monoHTML(g1m)+bracketHTML(br1)+termAt(g2m,1)+bracketHTML(br2)],
+      n:'Take out the HCF of each pair. Both brackets must match.'+(g2<0?' The second pair starts with a minus, so take out a negative number.':'')},
+    {t:'Take out the matching bracket',lines:[pre+bracketHTML(br1)+bracketHTML(linB(L,g1,g2))],
+      n:'The terms outside the brackets, '+monoText(g1m)+' and '+monoText(g2m)+', make the second bracket. The brackets can go in either order.'}
+  ];
+}
+function inspSteps(L,a1,p,a2,q,k,inner){
+  const A=a1*a2,B=a1*q+a2*p,C=p*q,X=c=>M.make(c,{[L]:1}),K=c=>M.make(c,{});
+  const aPairs=[];for(let u=A;u>=1;u--){if(A%u===0&&u>=A/u)aPairs.push([u,A/u]);}
+  const cPairs=[],ac=Math.abs(C);
+  for(let d=1;d<=ac;d++){
+    if(ac%d)continue;const e=ac/d;
+    if(C>0){const s=B<0?-1:1;cPairs.push([s*d,s*e]);}else{cPairs.push([d,-e]);cPairs.push([-d,e]);}
+  }
+  const trials=[],seen=new Set();
+  aPairs.forEach(ap=>cPairs.forEach(cp=>{
+    const key=ap[0]===ap[1]?[cp[0],cp[1]].sort((x,y)=>x-y).join():cp.join();
+    if(seen.has(ap+'|'+key))return;seen.add(ap+'|'+key);
+    trials.push({u:ap[0],v:ap[1],s:cp[0],t:cp[1],mid:ap[0]*cp[1]+ap[1]*cp[0]});
+  }));
+  const hit=trials.findIndex(t=>t.mid===B);
+  if(hit<0)throw new Error('inspection found nothing');
+  const show=hit<=5?trials.slice(0,hit+1):trials.slice(0,3).concat([null,trials[hit]]);
+  const tl=show.map(t=>{
+    if(!t)return '<span class="muted">… keep trying …</span>';
+    const o=X(t.u*t.t),i=X(t.v*t.s),mid=t.mid===0?nspan('0'):monoHTML(X(t.mid));
+    return bracketHTML(linB(L,t.u,t.s))+bracketHTML(linB(L,t.v,t.t))+'<span class="gap"></span> '+monoHTML(o)+termAt(i,1)+EQ+mid+(t===trials[hit]?TICK:CROSS);
+  });
+  const h=trials[hit],brs=[linB(L,h.u,h.s),linB(L,h.v,h.t)];
+  return [
+    {t:'Find the '+L+' terms: factor pairs of '+monoText(M.make(A,{[L]:2})),
+      lines:[aPairs.map(ap=>monoHTML(X(ap[0]))+TIMES+monoHTML(X(ap[1]))).join('<span class="gap"></span> <span class="muted">or</span><span class="gap"></span>')],
+      n:'These go at the front of the two brackets.'},
+    {t:'Try factor pairs of '+numS(C)+' until the middle term is '+monoText(X(B)),lines:tl,
+      n:(C>0?'The numbers have the same sign as the middle term, because they multiply to a positive.':'One number is positive and one is negative, because they multiply to a negative.')+' The middle term is outer × outer plus inner × inner.'},
+    {t:'Write the brackets',lines:[(k!==1?nspan(numS(k))+'('+exprHTML(inner)+')':exprHTML(inner))+EQ+factorsHTML(k,brs)],n:''}
+  ];
+}
+/* Grid method in reverse: find the pair (multiply to ac, add to b), put the four terms in a grid,
+   find the row and column headings, read off the brackets. Works for monic (a = 1) and non-monic. */
+function gridFactorSteps(L,a1,p,a2,q,k,inner){
+  const A=a1*a2,B=a1*q+a2*p,C=p*q,X=c=>M.make(c,{[L]:1}),X2=c=>M.make(c,{[L]:2}),K=c=>M.make(c,{});
+  const pl=pairLines(A*C,B),m=pl.pair[0],n=pl.pair[1];
+  const g1=gcd(A,m),c1=A/g1,c2=m/g1,r2=n/c1;
+  if(!Number.isInteger(r2)||r2*c2!==C)throw new Error('grid headings do not fit');
+  const cells=[[X2(A),X(m)],[X(n),K(C)]],rows=[X(g1),K(r2)],cols=[X(c1),K(c2)];
+  const start=k!==1?nspan(numS(k))+'('+exprHTML(inner)+')':exprHTML(inner);
+  return [
+    {t:A===1?'Find two numbers that multiply to '+numS(C)+' and add to '+numS(B):'Find two numbers that multiply to a × c = '+numS(A*C)+' and add to '+numS(B),
+      lines:(A===1?[]:['<i>a</i>'+TIMES+'<i>c</i>'+EQ+nspan(numS(A))+TIMES+nspan(numP(C))+EQ+nspan(numS(A*C))]).concat(pl.lines),n:pl.n},
+    {t:'Put the terms in a grid',lines:[gridTable([null,null],[null,null],cells)],
+      n:monoText(X2(A))+' goes top left and '+numS(C)+' goes bottom right. The two numbers give the '+L+' terms for the other two boxes: '+monoText(X(m))+' and '+monoText(X(n))+'.'},
+    {t:'Find the headings',lines:[gridTable(rows,cols,cells)],
+      n:'The top row has '+monoText(X(g1))+' in common, so that is its heading. Divide to get each column heading, then the bottom row heading. Every box must equal its row heading × its column heading.'+(r2<0?' The bottom heading is negative so the signs in its boxes come out right.':'')},
+    {t:'Read off the brackets',lines:[start+EQ+(k!==1?nspan(numS(k)):'')+bracketHTML(rows)+bracketHTML(cols)],
+      n:'The row headings make one bracket and the column headings make the other. The brackets can go in either order.'}
+  ];
+}
+/* type: 1 positives, 2 negative middle, 3/4 negative constant, 5 difference of two squares,
+   6 common factor first (Level 10 only), 7 perfect square */
+function genQuad(R,d,ctx,nonMonic){
+  /* a, b and c name the coefficients in the working, so they are not used as the letter here */
+  const L=ctx.letters==='abc'?'x':pickLetters(R,{letters:ctx.letters==='mixed'?'mixedq':ctx.letters},1)[0];
+  const type=d===6?R.pick([1,2,3,4,5,7]):d;
+  let a1=1,a2=1,p=0,q=0,k=1,ok=false;
+  for(let attempt=0;attempt<500&&!ok;attempt++){
+    a1=1;a2=1;k=1;
+    if(nonMonic){
+      a1=R.int(1,5);a2=R.int(1,4);
+      if(type===4&&R.chance(0.5)){a1=1;a2=1;}
+      if(type===4)k=R.int(2,4);
+      if(type===5||type===7){a1=a2=R.int(2,type===5?7:5);}
+      if(a1*a2<2&&type!==4)continue;
+      if(a1*a2*k>30)continue;
+    }
+    const mx=nonMonic?7:9;
+    if(type===1){p=R.int(1,mx);q=R.int(1,mx);}
+    else if(type===2){p=-R.int(1,mx);q=-R.int(1,mx);}
+    else if(type===3){
+      if(nonMonic){p=sgnInt(R,1,mx,0.5);q=-Math.sign(p)*R.int(1,mx);}
+      else{p=R.int(2,10);q=-R.int(1,p-1);}
+    }
+    else if(type===4&&!nonMonic){p=-R.int(2,10);q=R.int(1,-p-1);}
+    else if(type===4){p=sgnInt(R,1,6,0.5);q=sgnInt(R,1,6,0.5);}
+    else if(type===5){p=R.int(1,nonMonic?11:12);q=-p;}
+    else{p=sgnInt(R,1,nonMonic?7:9,0.5);q=p;}
+    if(gcd(a1,p)!==1||gcd(a2,q)!==1)continue;
+    const mid=a1*q+a2*p;
+    if(type!==5&&mid===0)continue;
+    if(type!==7&&type!==5&&a1===a2&&p===q)continue;
+    if(nonMonic&&Math.abs(a1*a2*p*q)>144)continue;
+    if(nonMonic&&type===3&&mid===0)continue;
+    ok=true;
+  }
+  if(!ok)throw new Error('could not build quadratic');
+  const brs=[linB(L,a1,p),linB(L,a2,q)];
+  const inner=simplify(expandProd(brs[0],brs[1]));
+  const Q=inner.map(m=>M.make(m.c*k,m.v));
+  let steps=[];
+  if(k!==1)steps.push({t:'Take out the common factor first',lines:[exprHTML(Q)+EQ+nspan(numS(k))+'('+exprHTML(inner)+')'],
+    n:'Always look for a common factor first. '+k+' goes into every term.'});
+  if(type===5)steps=steps.concat(dotsSteps(L,a1,Math.abs(p),Q));
+  else if(ctx.fq==='grid')steps=steps.concat(gridFactorSteps(L,a1,p,a2,q,k,inner));
+  else if(a1*a2===1)steps=steps.concat(monicSteps(L,p,q,k,Q,inner));
+  else if(ctx.fq==='insp')steps=steps.concat(inspSteps(L,a1,p,a2,q,k,inner));
+  else steps=steps.concat(acSteps(L,a1,p,a2,q,k,inner));
+  if(type!==5){
+    const fq=ctx.fq||'ac';
+    steps[k!==1?1:0].tog={key:'fq',cur:fq,opts:a1*a2===1?[[fq==='grid'?'ac':fq,'Pairs'],['grid','Grid']]:[['ac','ac method'],['grid','Grid'],['insp','Inspection']]};
+  }
+  return {
+    instr:'Factorise',q:exprHTML(Q),answer:factorsHTML(k,brs),steps:steps,d:d,
+    verify(){
+      if(gcdAll(Q.map(m=>m.c))!==k)return false;
+      if(brs.some(b=>gcdAll(b.map(m=>m.c))!==1||b[0].c<=0))return false;
+      for(let i=0;i<6;i++){const v=randVals([L],-9,9);if(k*sumEv(brs[0],v)*sumEv(brs[1],v)!==sumEv(Q,v))return false;}
+      return true;
+    }
+  };
+}
+const genQuad1=(R,d,ctx)=>genQuad(R,d,ctx,false);
+const genQuad2=(R,d,ctx)=>genQuad(R,d,ctx,true);
+
+/* ---------- 10. Level registry, generate(), self-test ----------
+   To add a level: push an entry with { id, name, instr, sub:[descriptions], gen(R,d,ctx) }.
+   gen returns { instr, q, answer, steps:[{t,lines,n}], d, verify() }.
+   ctx is { letters, div, dbl: 'foil'|'box'|'both', fq: 'ac'|'grid'|'insp' }. dbl and fq change only the working,
+   never the random numbers, so the same seed gives the same question under any method. */
+const LEVELS=[
+  {id:'like',name:'1. Collecting like terms',instr:'Simplify',gen:genLike,sub:[
+    'One letter, positive terms (a + a, 3x + 2x)',
+    'Two letters, positive terms',
+    'Negative terms and subtraction',
+    'Including number terms',
+    'Squared terms and letter terms (x² and x)',
+    'Products of letters (xy) and mixed terms']},
+  {id:'muldiv',name:'2. Multiplying and dividing terms',instr:'Simplify',gen:genMulDiv,sub:[
+    'Number × term (2 × 3x)',
+    'Different letters (2a × 3b)',
+    'Same letter, small powers (x × x, 3x × 2x)',
+    'Adding powers: higher powers, two letters, negatives',
+    'Dividing terms: one letter',
+    'Dividing with two letters; powers of terms ((2x³)²)']},
+  {id:'expand1',name:'3. Expanding a single bracket',instr:'Expand',gen:genExpand1,sub:[
+    'Number outside, positive terms (3(x + 2))',
+    'Subtraction inside (3(x − 2), 4(2x − 5))',
+    'Letter outside (x(x + 4))',
+    'Negative outside (−2(3x − 5))',
+    'Term outside, two letters (3x(2x + y))',
+    'Powers and three-term brackets (2x(x² − 3x + 4))']},
+  {id:'expandsimp',name:'4. Expand and simplify',instr:'Expand and simplify',gen:genExpandSimp,sub:[
+    'One bracket and a term (3(x + 2) + 4)',
+    'Two brackets added (3(x + 2) + 2(x − 1))',
+    'Subtracting a bracket (5(x + 2) − 3(x − 1))',
+    'Letter outside (x(x + 3) + 2(x − 1))',
+    'Letters outside, subtracting (2x(x + 3) − x(x − 4))',
+    'Two letters (2(3x + y) − 3(x − 2y))']},
+  {id:'factor1',name:'5. Factorising a single bracket',instr:'Factorise',gen:genFactor1,sub:[
+    'Number factor (6x + 9)',
+    'Letter factor (x² + 5x)',
+    'Number and letter (6x² + 9x)',
+    'Subtraction inside (12x − 8, 10x² − 15x)',
+    'Two letters (12xy + 18y)',
+    'Higher powers, three terms (8x³ − 12x² + 4x)']},
+  {id:'subst',name:'6. Substitution',instr:'Find the value of',gen:genSubst,sub:[
+    'One term, positive value (3x, x = 4)',
+    'Several terms, one letter (2x + 5)',
+    'Squares and cubes, positive values (x² + 3, 2x³)',
+    'Two or more letters, positive values (3a + 2b, ab)',
+    'Negative values (5 − x, x = −3)',
+    'Negatives with powers, several letters (2x² − 3xy + y³)']},
+  {id:'double',name:'7. Expanding double brackets',instr:'Expand and simplify',gen:genDouble,sub:[
+    'Positive terms ((x + 2)(x + 3))',
+    'One subtraction ((x + 4)(x − 2))',
+    'Two subtractions ((x − 3)(x − 5))',
+    'One x coefficient ((2x + 1)(x − 4))',
+    'Two x coefficients ((3x − 2)(2x + 5))',
+    'Two letters ((x + 2y)(x − 3y))']},
+  {id:'squares',name:'8. Squared brackets and difference of two squares',instr:'Expand and simplify',gen:genSquares,sub:[
+    '(x + 3)²',
+    '(x − 5)²',
+    '(2x + 1)²',
+    'Difference of two squares ((x + 4)(x − 4))',
+    'Difference of two squares with coefficients ((3x + 2)(3x − 2))',
+    'Mixed: spot the pattern']},
+  {id:'quad1',name:'9. Factorising x² + bx + c',instr:'Factorise',gen:genQuad1,sub:[
+    'Positive terms (x² + 5x + 6)',
+    'Negative middle term (x² − 5x + 6)',
+    'Negative number, positive middle (x² + x − 6)',
+    'Negative number, negative middle (x² − x − 6)',
+    'Difference of two squares (x² − 49)',
+    'Mixed, including perfect squares']},
+  {id:'quad2',name:'10. Factorising ax² + bx + c',instr:'Factorise',gen:genQuad2,sub:[
+    'Positive terms (2x² + 7x + 3)',
+    'Negative middle term (2x² − 7x + 3)',
+    'Negative number (2x² + 5x − 3)',
+    'Common factor first (4x² + 10x + 6)',
+    'Difference of two squares (4x² − 9)',
+    'Mixed, including perfect squares']}
+];
+function generate(levelIdx,diff,ctx,seed){
+  const R=makeRng(seed),lvl=LEVELS[levelIdx];
+  const d=diff===0?R.int(1,lvl.sub.length):diff;
+  const q=lvl.gen(R,d,ctx);q.instr=lvl.instr;q.li=levelIdx;q.diff=diff;q.seed=seed;return q;
+}
+const TEST_CTXS=[{letters:'xyz',div:'sign',dbl:'foil',fq:'ac'},{letters:'abc',div:'frac',dbl:'box',fq:'insp'},{letters:'mixed',div:'mix',dbl:'both',fq:'grid'}];
+function selfTest(perCell){
+  const bad=[];let count=0;
+  LEVELS.forEach((lvl,li)=>{
+    for(let d=1;d<=lvl.sub.length;d++){
+      for(let i=0;i<perCell;i++){
+        const ctx=TEST_CTXS[i%3];
+        try{
+          const q=generate(li,d,ctx,(li*100003+d*7919+i*104729+1)>>>0);count++;
+          if(!q.verify())bad.push({level:li+1,d:d,seed:i,why:'verify failed',q:q.q});
+          if(/NaN|undefined|Infinity|\[object/.test(q.q+q.answer+JSON.stringify(q.steps)))bad.push({level:li+1,d:d,seed:i,why:'bad text'});
+          if(!q.steps.length)bad.push({level:li+1,d:d,seed:i,why:'no working'});
+        }catch(e){bad.push({level:li+1,d:d,seed:i,why:String(e)});}
+      }
+    }
+  });
+  return {tested:count,failures:bad};
+}
+if(typeof module!=='undefined'&&module.exports){
+  module.exports={M:M,makeRng:makeRng,simplify:simplify,cmpMono:cmpMono,monoHTML:monoHTML,exprHTML:exprHTML,hcfMono:hcfMono,gcdAll:gcdAll,LEVELS:LEVELS,generate:generate,selfTest:selfTest,TEST_CTXS:TEST_CTXS};
+}
+
+/* ---------- 11. UI ---------- */
+function initUI(){
+  const $=id=>document.getElementById(id);
+  const KEY='algebraApp',OLDKEY='algebraApp.stage1';
+  const DEF={level:0,diff:1,view:'teach',count:6,letters:'xyz',div:'sign',dbl:'foil',fq:'ac',cues:false,size:1,incWork:false};
+  let S;
+  try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(OLDKEY)||'{}'));}catch(e){S=Object.assign({},DEF);}
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+  if(!LEVELS[S.level])S.level=0;
+
+  /* palette -> css */
+  const PALETTE={x:'#cc5a00',y:'#1d6fd8',z:'#138a3e',a:'#8b3fd1',b:'#0b8791',c:'#d1306f',m:'#8a5a2b',n:'#4f55d6',p:'#6f8000',q:'#b3125a',t:'#00798c'};
+  const UL={x:'underline solid',y:'underline dotted',z:'underline dashed',a:'underline double',b:'underline wavy',c:'underline overline',m:'underline solid',n:'underline dotted',p:'underline dashed',q:'underline double',t:'underline wavy'};
+  let css='';
+  Object.keys(PALETTE).forEach(k=>{
+    const h=PALETTE[k],r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);
+    css+='.v-'+k+'{color:'+h+'}.h-'+k+'{--tint:rgba('+r+','+g+','+b+',.14);--bd:rgba('+r+','+g+','+b+',.55)}';
+    css+='.cues .v-'+k+'>i{text-decoration:'+UL[k]+';text-decoration-thickness:.06em;text-underline-offset:.14em}';
+  });
+  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+
+  const ctx=()=>({letters:S.letters,div:S.div,dbl:S.dbl,fq:S.fq});
+  const newSeed=()=>(Math.random()*4294967296)>>>0;
+  const redraw=()=>drawArrows(document.querySelector('main'));
+
+  /* controls */
+  function fillControls(){
+    $('level').innerHTML=LEVELS.map((l,i)=>'<option value="'+i+'">'+l.name+'</option>').join('');
+    $('level').value=S.level;fillDiff();
+  }
+  function fillDiff(){
+    const sub=LEVELS[S.level].sub;
+    $('diff').innerHTML='<option value="0">Mixed (all difficulties)</option>'+sub.map((s,i)=>'<option value="'+(i+1)+'">'+(i+1)+': '+s+'</option>').join('');
+    if(S.diff>sub.length)S.diff=1;
+    $('diff').value=S.diff;
+  }
+  function applyLook(){
+    document.documentElement.style.setProperty('--scale',S.size);
+    document.body.classList.toggle('cues',!!S.cues);
+    redraw();
+  }
+
+  /* teach view */
+  const T={q:null,shown:0,ans:false,fresh:-1};
+  function newTeach(){T.q=generate(S.level,S.diff,ctx(),newSeed());T.shown=0;T.ans=false;T.fresh=-1;renderTeach();}
+  function renderTeach(){
+    if(!T.q){newTeach();return;}
+    const q=T.q;
+    $('tInstr').textContent=q.instr;
+    $('tQ').innerHTML=q.q;
+    $('tWork').innerHTML=T.shown?stepsHTML(q.steps.slice(0,T.shown),T.fresh):'';
+    drawArrows($('tWork'));
+    const a=$('tAns');a.hidden=!T.ans;
+    a.innerHTML=T.ans?'<span class="lab">Answer</span><span class="math big">'+q.answer+'</span>':'';
+    const len=q.steps.length;
+    $('bBack').disabled=!T.ans&&T.shown===0;
+    $('bNext').disabled=T.ans&&T.shown>=len;
+    $('bNext').innerHTML=T.shown<len?'Next step &rsaquo;':'Show answer &rsaquo;';
+    $('bAns').disabled=T.ans;
+    if(T.fresh>=0){const el=$('tWork').querySelectorAll('.st')[T.fresh];if(el&&el.scrollIntoView)el.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  }
+  function tNext(){const q=T.q;if(T.shown<q.steps.length){T.fresh=T.shown;T.shown++;}else if(!T.ans){T.ans=true;T.fresh=-1;}renderTeach();}
+  function tBack(){const q=T.q;T.fresh=-1;if(T.ans&&T.shown>=q.steps.length)T.ans=false;else if(T.shown>0)T.shown--;else if(T.ans)T.ans=false;renderTeach();}
+  function tAns(){T.ans=true;T.fresh=-1;renderTeach();}
+
+  /* question set view */
+  const SET={items:null};
+  function buildSet(){
+    const seen=new Set(),items=[];let guard=0;
+    while(items.length<S.count&&guard++<300){
+      const q=generate(S.level,S.diff,ctx(),newSeed());
+      if(seen.has(q.q))continue;seen.add(q.q);items.push({q:q,shown:false,work:false});
+    }
+    items.sort((a,b)=>a.q.d-b.q.d);
+    SET.items=items;
+    $('sInstr').textContent=LEVELS[S.level].instr+' each expression';
+    $('grid').innerHTML=items.map((it,i)=>
+      '<article class="card" data-i="'+i+'"><div class="cnum">'+(i+1)+'</div><div class="cq math">'+it.q.q+'</div>'+
+      '<button class="btn" data-act="rev" aria-expanded="false">Reveal</button><div class="cans" hidden></div></article>').join('');
+  }
+  function updateCard(i){
+    const el=$('grid').children[i],it=SET.items[i],ans=el.querySelector('.cans'),btn=el.querySelector('[data-act="rev"]');
+    ans.hidden=!it.shown;btn.textContent=it.shown?'Hide answer':'Reveal';btn.setAttribute('aria-expanded',it.shown?'true':'false');
+    if(it.shown){
+      ans.innerHTML='<div class="arow"><span class="lab">Answer</span><span class="math big" style="font-size:clamp(1.6rem,3vw,2.4rem)">'+it.q.answer+'</span></div>'+
+        (it.q.steps.length?'<button class="link" data-act="work">'+(it.work?'Hide working':'Show working')+'</button>':'')+
+        (it.work?stepsHTML(it.q.steps):'');
+      drawArrows(ans);
+    }
+  }
+  function setAll(shown){SET.items.forEach((it,i)=>{it.shown=shown;it.work=shown&&S.incWork;updateCard(i);});}
+
+  /* view switching */
+  function showView(v){
+    S.view=v;save();
+    $('vTeach').hidden=v!=='teach';$('vSet').hidden=v!=='set';
+    $('tabTeach').setAttribute('aria-selected',v==='teach'?'true':'false');
+    $('tabSet').setAttribute('aria-selected',v==='set'?'true':'false');
+    if(v==='teach'){if(!T.q)newTeach();else renderTeach();}
+    else if(!SET.items)buildSet();
+    else redraw();
+  }
+  function invalidate(){T.q=null;SET.items=null;showView(S.view);}
+
+  /* events */
+  $('level').addEventListener('change',e=>{S.level=+e.target.value;S.diff=1;fillDiff();save();invalidate();});
+  $('diff').addEventListener('change',e=>{S.diff=+e.target.value;save();invalidate();});
+  $('tabTeach').addEventListener('click',()=>showView('teach'));
+  $('tabSet').addEventListener('click',()=>showView('set'));
+  $('bNext').addEventListener('click',tNext);
+  $('bBack').addEventListener('click',tBack);
+  $('bAns').addEventListener('click',tAns);
+  $('bNew').addEventListener('click',newTeach);
+  $('newSet').addEventListener('click',buildSet);
+  $('revAll').addEventListener('click',()=>setAll(true));
+  $('hideAll').addEventListener('click',()=>setAll(false));
+  $('incWork').addEventListener('change',e=>{S.incWork=e.target.checked;save();});
+  /* method switch inside a step: same questions (same seeds), working redone with the chosen method */
+  const regen=q=>{const r=generate(q.li,q.diff,ctx(),q.seed);return r.q===q.q?r:q;};
+  function applyMethod(key,val){
+    S[key]=val;save();
+    if(T.q){const len0=T.q.steps.length;T.q=regen(T.q);const len=T.q.steps.length;T.shown=T.shown>=len0?len:Math.min(T.shown,len);}
+    if(SET.items)SET.items.forEach((it,i)=>{it.q=regen(it.q);if(it.shown)updateCard(i);});
+  }
+  const refocus=(root,key,val)=>{const b=root&&root.querySelector('.mt[data-tog="'+key+'"][data-val="'+val+'"]');if(b)b.focus();};
+  $('tWork').addEventListener('click',e=>{
+    const b=e.target.closest('.mt');if(!b)return;
+    const key=b.dataset.tog,val=b.dataset.val;
+    applyMethod(key,val);
+    const ti=T.q.steps.findIndex(s=>s.tog);T.fresh=ti>=0&&ti<T.shown?ti:-1;
+    renderTeach();refocus($('tWork'),key,val);
+  });
+  $('grid').addEventListener('click',e=>{
+    const mt=e.target.closest('.mt');
+    if(mt){const i=+mt.closest('.card').dataset.i,key=mt.dataset.tog,val=mt.dataset.val;applyMethod(key,val);refocus($('grid').children[i],key,val);return;}
+    const b=e.target.closest('[data-act]');if(!b)return;
+    const card=b.closest('.card');const i=+card.dataset.i,it=SET.items[i];
+    if(b.dataset.act==='rev'){it.shown=!it.shown;it.work=it.shown&&S.incWork;}
+    else if(b.dataset.act==='work'){it.work=!it.work;}
+    updateCard(i);
+  });
+  document.addEventListener('keydown',e=>{
+    if(S.view!=='teach'||!$('panel').hidden)return;
+    const tag=(e.target.tagName||'').toLowerCase();
+    if(tag==='button'||tag==='select'||tag==='input')return;
+    if(e.key===' '||e.key==='Enter'||e.key==='ArrowRight'){e.preventDefault();if(!$('bNext').disabled)tNext();}
+    else if(e.key==='ArrowLeft'){e.preventDefault();if(!$('bBack').disabled)tBack();}
+    else if(e.key==='n'||e.key==='N'){newTeach();}
+  });
+  /* arrows follow the text when the window or text size changes */
+  let rz=0;
+  window.addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(redraw);});
+
+  /* settings panel */
+  function openPanel(){
+    $('sLetters').value=S.letters;$('sDiv').value=S.div;$('sDbl').value=S.dbl;$('sFq').value=S.fq;
+    $('sCount').value=String(S.count);$('sSize').value=String(S.size);$('sCues').checked=!!S.cues;
+    $('build').textContent=BUILD;$('panel').hidden=false;$('closePanel').focus();
+  }
+  function closePanel(){$('panel').hidden=true;$('btnSettings').focus();}
+  $('btnSettings').addEventListener('click',openPanel);
+  $('closePanel').addEventListener('click',closePanel);
+  $('panel').addEventListener('click',e=>{if(e.target===$('panel'))closePanel();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('panel').hidden)closePanel();});
+  $('sLetters').addEventListener('change',e=>{S.letters=e.target.value;save();invalidate();});
+  $('sDiv').addEventListener('change',e=>{S.div=e.target.value;save();invalidate();});
+  $('sDbl').addEventListener('change',e=>{S.dbl=e.target.value;save();invalidate();});
+  $('sFq').addEventListener('change',e=>{S.fq=e.target.value;save();invalidate();});
+  $('sCount').addEventListener('change',e=>{S.count=+e.target.value;save();SET.items=null;if(S.view==='set')buildSet();});
+  $('sSize').addEventListener('change',e=>{S.size=+e.target.value;save();applyLook();});
+  $('sCues').addEventListener('change',e=>{S.cues=e.target.checked;save();applyLook();});
+
+  /* start */
+  fillControls();applyLook();$('incWork').checked=!!S.incWork;
+  showView(S.view);
+  if(/[?&]selftest/.test(location.search)){
+    const r=selfTest(150);console.log('Algebra self-test',r);
+    const d=document.createElement('div');d.style.cssText='position:fixed;left:8px;bottom:8px;background:#fff;border:2px solid #1e3a5f;padding:.4rem .7rem;border-radius:8px;z-index:20;font:14px system-ui';
+    d.textContent='Self-test: '+r.tested+' questions, '+r.failures.length+' failures';document.body.appendChild(d);
+  }
+}
+if(typeof document!=='undefined'){initUI();}
+</script>
+</body>
+</html>
