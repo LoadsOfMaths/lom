@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prime Products</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:"Trebuchet MS",Verdana,sans-serif;background:#12263a;color:#f2f6fa;display:flex;flex-direction:column;min-height:100vh}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 20px;background:#0c1b2a;border-bottom:3px solid #2f6f8f}
+  header h1{margin:0;font-size:1.5rem;letter-spacing:.5px}
+  header button{font-size:1rem}
+  .tabs{display:flex;gap:8px}
+  .tabs button{background:#2a4a66;color:#cfe3f0;box-shadow:0 4px 0 #16293a;font-size:1.15rem;padding:10px 26px}
+  .tabs button.on{background:#f5b638;color:#1b1b1b;box-shadow:0 4px 0 #a8791a}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px;gap:16px}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:12px;padding:12px 22px;font-size:1.25rem;font-weight:bold;background:#f5b638;color:#1b1b1b;box-shadow:0 4px 0 #a8791a;transition:transform .08s}
+  button:active{transform:translateY(3px);box-shadow:0 1px 0 #a8791a}
+  button.alt{background:#4aa3c7;box-shadow:0 4px 0 #2b6a85;color:#06202c}
+  button.grey{background:#8a9aa8;box-shadow:0 4px 0 #56636f;color:#10181f}
+  .msg{font-size:1.45rem;text-align:center;min-height:2.2em;max-width:900px;line-height:1.35}
+  .big{font-size:3.2rem;font-weight:bold;text-align:center;cursor:pointer;padding:6px 26px;border-radius:16px}
+  .big:hover{background:rgba(255,255,255,.07)}
+  .big .eq{color:#f5b638}
+  .pw{display:inline-block;padding:0 10px;margin:0 2px;border-radius:10px;border:3px solid transparent}
+  .pw.ok{background:rgba(80,200,120,.25);border-color:#50c878}
+  .pw.bad{background:rgba(235,80,80,.25);border-color:#eb5050}
+  .grid{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;max-width:760px;width:100%}
+  .grid button{padding:10px 0;font-size:1.2rem;background:#2a4a66;color:#fff;box-shadow:0 3px 0 #16293a}
+  .grid button:hover{background:#3b6a92}
+  .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center}
+  .row.try button{background:#2a4a66;color:#fff;box-shadow:0 3px 0 #16293a;padding:8px 16px;font-size:1.1rem}
+  .row.try span{color:#9fd6ea}
+  input[type=number]{font-size:1.3rem;width:130px;padding:10px;border-radius:10px;border:3px solid #4aa3c7;background:#0c1b2a;color:#fff;font-family:inherit}
+  .stage{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:100%;max-width:1200px}
+  .vessel{min-width:200px;min-height:170px;padding:14px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:center;position:relative}
+  .pot{background:radial-gradient(circle at 50% 20%,#34495e,#1a2530);border:6px solid #0a0f14;border-radius:20px 20px 120px 120px;width:min(560px,92vw);min-height:210px;padding:22px 26px 40px}
+  .pile{background:#1b3a52;border:4px dashed #4aa3c7;border-radius:18px;min-height:190px}
+  .pile h3,.pot h3{position:absolute;top:-14px;left:50%;transform:translateX(-50%);margin:0;background:#12263a;padding:0 12px;font-size:1.05rem;white-space:nowrap;color:#9fd6ea}
+  .tok{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.35rem;color:#0b1620;border:3px solid rgba(0,0,0,.35);box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 4px rgba(0,0,0,.4);animation:pop .3s ease-out}
+  @keyframes pop{0%{transform:scale(.2)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+  .prod{font-size:1.9rem;text-align:center;margin-top:10px}
+  .pilewrap{display:flex;flex-direction:column;align-items:center}
+  .final{font-size:2.6rem;font-weight:bold;text-align:center;color:#8be28b;animation:pop .5s ease-out}
+  .final .root{color:#f5b638}
+  .rad{position:relative;display:inline-block;margin-left:.1em;padding-left:.75em}
+  .rad.cube{margin-left:.45em}
+  .rad .sign{position:absolute;left:0;top:0;width:.75em;height:100%;overflow:visible;transform:translateY(1.4px)}
+  .rad .sign path{fill:none;stroke:currentColor;stroke-width:2.8px;vector-effect:non-scaling-stroke;stroke-linejoin:miter;stroke-linecap:butt}
+  .rad .idx{position:absolute;left:-.32em;top:.12em;font-size:.45em;line-height:1}
+  .rad .rv{display:inline-block;border-top:2.8px solid currentColor;padding:.04em .08em 0 .1em;line-height:1.15}
+  .small{font-size:.95rem;color:#9fb3c4;text-align:center}
+  .hide{display:none}
+  @media (max-width:700px){.grid{grid-template-columns:repeat(6,1fr)}.big{font-size:2.2rem}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Prime Products</h1>
+  <div class="tabs">
+    <button id="tab2" onclick="setK(2)">Square numbers</button>
+    <button id="tab3" onclick="setK(3)">Cube numbers</button>
+  </div>
+  <button class="grey" onclick="reset()">Pick another number</button>
+</header>
+<main id="main"></main>
+
+<script>
+const COLS={2:"#ff8a80",3:"#82b1ff",5:"#a5e57a",7:"#ffcc66",11:"#ce93d8",13:"#4dd0e1",17:"#f48fb1",19:"#c5e1a5",23:"#ffab91"};
+function colFor(p){return COLS[p]||("hsl("+((p*47)%360)+",70%,72%)");}
+
+let k=2;                       // 2 = squares (two piles), 3 = cubes (three piles)
+let n=0, pf=[], stage=0, pot=[], groups=[], piles=[], autoTimer=null;
+
+const NAMES=["A","B","C"];
+const W=()=>k===2?"squares":"cubes";
+const WORD=()=>k===2?"square":"cube";
+const MULT=()=>k===2?"even":"a multiple of 3";
+// Root sign drawn as SVG so the bar (vinculum) extends right over the whole number
+const RAD=(x)=>`<span class="rad${k===3?" cube":""}">${k===3?'<span class="idx">3</span>':""}<svg class="sign" viewBox="0 0 20 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0.5 58 L3.5 54 L8 96 L17 0 L20 0"/></svg><span class="rv">${x}</span></span>`;
+
+function factorise(x){
+  const out=[];
+  for(let p=2;p*p<=x;p++){
+    if(x%p===0){let e=0;while(x%p===0){x/=p;e++;}out.push([p,e]);}
+  }
+  if(x>1)out.push([x,1]);
+  return out;
+}
+const isPerfect=()=>pf.every(([p,e])=>e%k===0);
+const perfectNum=(x)=>factorise(x).every(([p,e])=>e%k===0);
+const sorted=(a)=>a.slice().sort((x,y)=>x-y);
+const prodStr=(arr)=>arr.length?sorted(arr).join(" × "):"1";
+const prodVal=(arr)=>arr.reduce((a,b)=>a*b,1);
+function powHTML(p,e,cls){return `<span class="pw ${cls||""}">${p}${e>1?`<sup>${e}</sup>`:""}</span>`;}
+function factHTML(check){
+  return pf.map(([p,e],i)=>(i?" × ":"")+powHTML(p,e,check?(e%k===0?"ok":"bad"):"")).join("");
+}
+function tok(p){return `<div class="tok" style="background:${colFor(p)}">${p}</div>`;}
+
+function setK(x){k=x;reset();}
+function reset(){
+  clearInterval(autoTimer);autoTimer=null;stage=0;n=0;
+  document.getElementById("tab2").className=k===2?"on":"";
+  document.getElementById("tab3").className=k===3?"on":"";
+  render();
+}
+
+function choose(x){
+  x=Math.floor(Number(x));
+  if(!(x>=2&&x<=10000)){alert("Please choose a whole number from 2 to 10 000.");return;}
+  clearInterval(autoTimer);autoTimer=null;
+  n=x;pf=factorise(n);stage=1;
+  pot=[];pf.forEach(([p,e])=>{for(let i=0;i<e;i++)pot.push(p);});
+  groups=[];pf.forEach(([p,e])=>{for(let i=0;i<Math.floor(e/k);i++)groups.push(p);});
+  piles=[];for(let i=0;i<k;i++)piles.push([]);
+  render();
+}
+function randomPerfect(){
+  const max=k===2?100:21;
+  const r=2+Math.floor(Math.random()*(max-1));
+  choose(Math.pow(r,k));
+}
+function randomNon(){let x;do{x=2+Math.floor(Math.random()*400);}while(perfectNum(x));choose(x);}
+
+function next(){
+  if(stage===1||stage===2||stage===3||stage===5)stage++;
+  else if(stage===4){sharePair();return;}
+  else if(stage===6){reset();return;}
+  render();
+}
+function sharePair(){
+  if(!groups.length)return;
+  const p=groups.shift();
+  for(let i=0;i<k;i++){pot.splice(pot.indexOf(p),1);piles[i].push(p);}
+  if(!groups.length){clearInterval(autoTimer);autoTimer=null;stage=5;}
+  render();
+}
+function autoShare(){
+  if(autoTimer)return;
+  autoTimer=setInterval(()=>{if(!groups.length){clearInterval(autoTimer);autoTimer=null;return;}sharePair();},700);
+}
+
+function render(){
+  const m=document.getElementById("main");
+  document.getElementById("tab2").className=k===2?"on":"";
+  document.getElementById("tab3").className=k===3?"on":"";
+  if(stage===0){
+    let g="";for(let i=2;i<=100;i++)g+=`<button onclick="choose(${i})">${i}</button>`;
+    const tries=(k===2?[16,36,144,400,900,1296,3600]:[8,27,64,216,1000,1728,5832]);
+    m.innerHTML=`
+      <div class="msg">Tap a number to break it into primes</div>
+      <div class="grid">${g}</div>
+      <div class="row try"><span>Try:</span>${tries.map(t=>`<button onclick="choose(${t})">${t}</button>`).join("")}</div>
+      <div class="row">
+        <input id="custom" type="number" min="2" max="10000" placeholder="2–10 000" onkeydown="if(event.key==='Enter')choose(this.value)">
+        <button class="alt" onclick="choose(document.getElementById('custom').value)">Go</button>
+        <button class="alt" onclick="randomPerfect()">Random ${WORD()}</button>
+        <button class="alt" onclick="randomNon()">Random non-${WORD()}</button>
+      </div>`;
+    return;
+  }
+  let h="";
+  const ok=isPerfect();
+  if(stage===1){
+    h=`<div class="big" onclick="next()" title="Tap to continue">${n} <span class="eq">=</span> ${factHTML(false)}</div>
+       <div class="msg">${n} written as a product of powers of its prime factors.<br><b>${k===2?"Are all the powers even?":"Are all the powers multiples of 3?"}</b></div>
+       <button onclick="next()">Check the powers</button>`;
+  }
+  else if(stage===2){
+    h=`<div class="big" onclick="next()">${n} <span class="eq">=</span> ${factHTML(true)}</div>`;
+    if(ok){
+      h+=`<div class="msg" style="color:#8be28b">Yes! Every power is ${MULT()}, so ${n} could be a ${WORD()} number.</div>
+          <button onclick="next()">Put the primes in the pot</button>`;
+    } else {
+      const bad=pf.filter(([p,e])=>e%k).map(([p,e])=>p+(e>1?"<sup>"+e+"</sup>":""));
+      h+=`<div class="msg" style="color:#ff9b9b">No – ${bad.join(", ")} ${bad.length>1?"are":"is"} not ${MULT()}, so ${n} is <b>not</b> a ${WORD()} number.</div>
+          <div class="row"><button class="alt" onclick="next()">Try sharing it out anyway</button>
+          <button class="grey" onclick="reset()">Pick another number</button></div>`;
+    }
+  }
+  else if(stage===3){
+    h=`<div class="big" onclick="next()">${n} <span class="eq">=</span> ${prodStr(pot)}</div>
+       <div class="vessel pot"><h3>The prime pot</h3>${sorted(pot).map(tok).join("")}</div>
+       <div class="msg">Every prime factor goes into one pot.</div>
+       <button onclick="next()">Get ready to share</button>`;
+  }
+  else {
+    const done=stage>=5;
+    const left=sorted(pot);
+    const pw=k===2?"min(330px,44vw)":"min(260px,30vw)";
+    let msg;
+    if(stage===4)msg=groups.length?(k===2?"Share the pot between two piles – one of each prime to each pile.":"Share the pot between three piles – one of each prime to each pile."):"";
+    else if(!ok)msg=`We can't share fairly: ${left.length>1?"these primes are":"this prime is"} left over, because ${left.length>1?"their powers are":"its power is"} not ${MULT()}. So ${n} has no whole-number ${k===2?"square":"cube"} root.`;
+    else msg=`The pot is empty and the ${k===2?"two":"three"} piles are identical – sharing worked because every prime had a power that is ${MULT()}.`;
+    h=`<div class="msg">${msg}</div><div class="stage">`;
+    const pileHTML=(i)=>`<div class="pilewrap"><div class="vessel pile" style="width:${pw}"><h3>Pile ${NAMES[i]}</h3>${sorted(piles[i]).map(tok).join("")}</div>
+        ${(done&&ok)?`<div class="prod">${prodStr(piles[i])}${piles[i].length>1?" = "+prodVal(piles[i]):""}</div>`:""}</div>`;
+    h+=pileHTML(0);
+    // leftover pot sits in the middle
+    h+=`<div class="pilewrap"><div class="vessel pot ${left.length?"":"hide"}" style="min-height:150px;width:min(240px,90vw)"><h3>${done?"Left in the pot":"The pot"}</h3>${left.map(tok).join("")}</div></div>`;
+    for(let i=1;i<k;i++)h+=pileHTML(i);
+    h+=`</div>`;
+    if(stage===4){
+      h+=`<div class="row"><button onclick="sharePair()">${k===2?"Share a pair":"Share a trio"}</button><button class="alt" onclick="autoShare()">Share them all</button></div>
+          <div class="small">${n} = ${prodStr(pot.concat(...piles))}</div>`;
+    }
+    else if(stage===5){
+      if(ok)h+=`<button onclick="next()">What is the product of one pile?</button>`;
+      else h+=`<div class="row"><button class="grey" onclick="reset()">Pick another number</button></div>`;
+    }
+    else if(stage===6){
+      const r=prodVal(piles[0]);
+      const eqn=Array(k).fill(r).join(" × ");
+      h+=`<div class="final">${eqn} = ${n}<br>so ${RAD(n)} =<span class="root">${r}</span></div>
+          <div class="msg">One pile's product is the ${k===2?"square":"cube"} root – ${k===2?"the other pile is":"the other piles are"} the same, so ${eqn} gives back all the primes in the pot.</div>
+          <button class="grey" onclick="reset()">Pick another number</button>`;
+    }
+  }
+  m.innerHTML=h;
+}
+reset();
+</script>
+</body>
+</html>

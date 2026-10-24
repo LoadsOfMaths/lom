@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HCF and LCM with Venn Diagrams</title>
+<style>
+:root{--blue:#2563eb;--orange:#ea580c;--purple:#7c3aed;--ink:#1f2937;--green:#16a34a;--bg:#f8fafc}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 18px;background:#fff;border-bottom:1px solid #e2e8f0}
+h1{font-size:22px;margin:0}
+.opt{font-size:14px;color:#475569;margin-right:14px;cursor:pointer}
+.new{font:inherit;font-weight:600;font-size:17px;padding:10px 20px;border:0;border-radius:10px;background:var(--blue);color:#fff;cursor:pointer}
+.new.pulse{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(37,99,235,.25)}}
+.tabs{display:flex;gap:6px;padding:10px 18px 0;background:#fff;border-bottom:1px solid #e2e8f0}
+.tabs button{font:inherit;font-weight:600;font-size:16px;padding:9px 22px;border:1px solid #e2e8f0;border-bottom:0;border-radius:10px 10px 0 0;background:#f1f5f9;color:#475569;cursor:pointer;margin-bottom:-1px}
+.tabs button.on{background:var(--bg);color:var(--ink);border-color:#cbd5e1}
+main{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px;padding:14px 18px;max-width:1180px;margin:0 auto}
+@media(max-width:880px){main{grid-template-columns:1fr}}
+
+.stage{container-type:inline-size;width:100%;max-width:740px;margin:0 auto;--t:clamp(32px,6.4cqw,48px)}
+.stage.k3{--t:clamp(26px,5.4cqw,42px);max-width:max(480px,min(740px,calc((100vh - 270px)*1.19)))}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.k3 .cards{grid-template-columns:repeat(3,1fr);gap:8px}
+.card{background:#fff;border:3px solid;border-radius:14px;min-height:calc(var(--t)*2.2);padding:8px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;align-content:center;gap:4px 0;cursor:pointer;text-align:center}
+.card.a{border-color:var(--blue)}
+.card.b{border-color:var(--orange)}
+.card.c{border-color:var(--purple)}
+.card.done{cursor:default}
+.card .num{font-size:clamp(28px,7cqw,52px);font-weight:700;line-height:1}
+.k3 .card .num{font-size:clamp(24px,5.6cqw,42px)}
+.card .hint{width:100%;font-size:13px;color:#94a3b8;margin-top:2px}
+.card .pow{font-size:clamp(24px,5.6cqw,42px);font-weight:700}
+.k3 .card .pow{font-size:clamp(17px,3.8cqw,30px)}
+.card .pow sup{font-size:.6em}
+.card .empty{color:#94a3b8;font-size:15px}
+.times{margin:0 4px;font-weight:700;color:#64748b;font-size:calc(var(--t)*.5)}
+.k3 .times{margin:0 2px}
+
+.venn{position:relative;width:100%;margin-top:8px}
+.circle{position:absolute;width:56cqw;height:56cqw;border-radius:50%;border:3px solid}
+.circle.a{border-color:var(--blue);background:rgba(37,99,235,.10)}
+.circle.b{border-color:var(--orange);background:rgba(234,88,12,.10)}
+.circle.c{border-color:var(--purple);background:rgba(124,58,237,.10)}
+.lbl{position:absolute;width:14cqw;text-align:center;font-weight:700;font-size:clamp(18px,4cqw,30px);line-height:1.2;pointer-events:none}
+.lbl.a{color:var(--blue)}
+.lbl.b{color:var(--orange)}
+.lbl.c{color:var(--purple)}
+.zone{position:absolute;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:1cqw}
+.k3 .zone{gap:.8cqw}
+.tick{position:absolute;width:7.5cqw;height:7.5cqw;min-width:30px;min-height:30px;border-radius:50%;background:var(--green);color:#fff;display:none;align-items:center;justify-content:center;font-size:clamp(20px,5cqw,36px);font-weight:700}
+.tick.on{display:flex}
+.status{text-align:center;font-size:18px;min-height:28px;margin:10px 0 0;color:#334155}
+.status.good{color:var(--green);font-weight:600}
+
+.tile{width:var(--t);height:var(--t);border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(var(--t)*.5);cursor:grab;touch-action:none;background:#fff}
+.tile.a{background:#dbeafe;border-color:var(--blue)}
+.tile.b{background:#ffedd5;border-color:var(--orange)}
+.tile.c{background:#ede9fe;border-color:var(--purple)}
+.tile.multi{border-color:#475569}
+.tile.locked{cursor:default}
+.tile.lifted{opacity:.25}
+.tile.bad{box-shadow:0 0 0 4px #dc2626}
+.venn[data-focus="hcf"] .tile.out{opacity:.2}
+.ghost{position:fixed;z-index:1000;pointer-events:none;transform:scale(1.12);box-shadow:0 6px 14px rgba(0,0,0,.3)}
+
+.panel{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;align-self:start;opacity:.35;pointer-events:none;transition:opacity .3s}
+.panel.on{opacity:1;pointer-events:auto}
+.panel h2{font-size:17px;margin:0 0 10px;color:#334155}
+.field{display:flex;align-items:center;gap:8px;border:3px solid #cbd5e1;border-radius:10px;padding:8px 12px;margin-bottom:4px;font-size:26px;cursor:pointer;background:#fff}
+.field.active{border-color:var(--blue)}
+.field.ok{border-color:var(--green);background:#f0fdf4}
+.field .lab{font-weight:700}
+.field .val{flex:1;min-width:30px;font-weight:600}
+.field.active:not(.ok) .val::after{content:"|";color:var(--blue);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.field .mk{font-weight:700;font-size:28px}
+.field.ok .mk{color:var(--green)}
+.field.no .mk{color:#dc2626}
+.sub{font-size:13px;color:#64748b;margin:0 0 12px 4px}
+.hintline{font-size:14px;color:#b45309;min-height:20px;margin:0 0 8px 4px}
+.kb{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kb button{font:inherit;font-size:26px;font-weight:600;height:58px;border:1px solid #cbd5e1;border-radius:10px;background:#f1f5f9;cursor:pointer;touch-action:manipulation}
+.kb button:active{background:#dbeafe}
+</style>
+</head>
+<body>
+<header>
+  <h1>HCF and LCM with Venn Diagrams</h1>
+  <div>
+    <label class="opt"><input type="checkbox" id="hl"> Highlight mistakes</label>
+    <button class="new" id="newBtn">New numbers</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-m="2" class="on">Two numbers</button>
+  <button data-m="3">Three numbers</button>
+</nav>
+
+<main>
+  <section class="stage" id="stage"></section>
+
+  <aside class="panel" id="panel">
+    <h2>Read off your answers</h2>
+    <div class="field" id="fHcf" data-f="hcf"><span class="lab">HCF =</span><span class="val" id="vHcf"></span><span class="mk" id="mHcf"></span></div>
+    <p class="sub" id="subH"></p>
+    <div class="field" id="fLcm" data-f="lcm"><span class="lab">LCM =</span><span class="val" id="vLcm"></span><span class="mk" id="mLcm"></span></div>
+    <p class="sub">Multiply every prime in the diagram once.</p>
+    <p class="hintline" id="hintline"></p>
+    <div class="kb" id="kb">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button data-k="back">&#9003;</button><button data-k="0">0</button><button data-k="clear">C</button>
+    </div>
+  </aside>
+</main>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const rint=n=>Math.floor(Math.random()*n);
+const pick=a=>a[rint(a.length)];
+const shuffle=a=>a.slice().sort(()=>Math.random()-0.5);
+const prod=l=>l.reduce((x,y)=>x*y,1);
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const lcm2=(a,b)=>a/gcd(a,b)*b;
+const count=(l,p)=>l.filter(x=>x===p).length;
+const asc=(x,y)=>x-y;
+const POOL=[2,2,2,3,3,3,5,5,7,11];
+
+/* ---------- layout tables (all in cqw of the stage width) ---------- */
+const LIGHT={A:'#dbeafe',B:'#ffedd5',C:'#ede9fe'};
+const CIRC={2:{A:[7,2],B:[37,2]},3:{A:[8,1.5],B:[36,1.5],C:[22,25.75]}};
+const REG={
+  2:{A:[22,30,26,34],AB:[50,30,20,34],B:[78,30,26,34]},
+  3:{A:[21.4,21.1,20,20],B:[78.6,21.1,20,20],C:[50,70.6,20,20],
+     AB:[50,15.5,16,16],AC:[30.9,48.6,16,16],BC:[69.1,48.6,16,16],ABC:[50,37.6,14,14]}
+};
+const LBL={2:{A:[0,0],B:[86,0]},3:{A:[0,0],B:[86,0],C:[0,76]}};
+const TICK={2:[46,54.5],3:[88,75]};
+const ASPECT={2:'100/62',3:'100/84'};
+
+/* ---------- number generation ---------- */
+function build(set){
+  const l=set.slice();
+  while(l.length<2||(l.length<4&&Math.random()<0.45))l.push(pick(set));
+  return l;
+}
+function extras(){
+  const e=[];
+  for(let i=0,k=1+rint(2);i<k;i++)e.push(pick(POOL));
+  return e;
+}
+function genTwo(){
+  for(let n=0;n<1000;n++){
+    let A,B;
+    if(Math.random()<0.12){
+      const ps=shuffle([2,3,5,7,11]);
+      const ca=1+rint(2),cb=1+rint(2);
+      A=build(ps.slice(0,ca));B=build(ps.slice(ca,ca+cb));
+    }else{
+      const C=[];
+      for(let i=0,k=1+rint(3);i<k;i++)C.push(pick(POOL));
+      A=C.concat(extras());B=C.concat(extras());
+    }
+    A.sort(asc);B.sort(asc);
+    const a=prod(A),b=prod(B);
+    if(a===b||a>300||b>300||A.length>5||B.length>5)continue;
+    if(lcm2(a,b)>2500)continue;
+    return{A,B};
+  }
+  return{A:[2,2,3,3],B:[2,3,5]};
+}
+function genThree(){
+  for(let n=0;n<3000;n++){
+    const r=Math.random();
+    let L3;
+    if(r<0.7){
+      const C=[];
+      for(let i=0,k=1+rint(2);i<k;i++)C.push(pick(POOL));
+      L3=[0,1,2].map(()=>C.concat(Array.from({length:rint(3)},()=>pick(POOL))));
+    }else if(r<0.92){
+      const [x,y,z]=shuffle([2,3,5,7]).slice(0,3);
+      L3=[[x,y],[y,z],[x,z]].map(l=>l.concat(Array.from({length:rint(2)},()=>pick(POOL))));
+    }else{
+      L3=[0,1,2].map(()=>Array.from({length:2+rint(2)},()=>pick(POOL)));
+    }
+    L3.forEach(l=>l.sort(asc));
+    const v=L3.map(prod);
+    if(L3.some(l=>l.length<2||l.length>4))continue;
+    if(v.some(x=>x>150))continue;
+    if(v[0]===v[1]||v[0]===v[2]||v[1]===v[2])continue;
+    if(lcm2(lcm2(v[0],v[1]),v[2])>5000)continue;
+    return{A:L3[0],B:L3[1],C:L3[2]};
+  }
+  return{A:[2,2,3],B:[2,3,5],C:[2,3,7]};
+}
+
+/* ---------- state ---------- */
+let mode=2,S=null;
+const states={};
+const T=id=>S.tiles.find(t=>t.id===id);
+const members=t=>t.g?S.tiles.filter(s=>s.g===t.g):[t];
+const repOf=mem=>mem.slice().sort((a,b)=>a.id<b.id?-1:1)[0];
+
+function subsets(L){
+  const out=[];
+  for(let m=1;m<(1<<L.length);m++){
+    let s='';L.forEach((o,i)=>{if((m>>i)&1)s+=o;});
+    out.push(s);
+  }
+  return out.sort((a,b)=>b.length-a.length||(a<b?-1:1));
+}
+function layout(p){
+  if(S.lay[p])return S.lay[p];
+  const rem={};S.L.forEach(o=>rem[o]=count(S.sets[o],p));
+  const out={};
+  subsets(S.L).forEach(s=>{
+    const m=Math.min(...s.split('').map(o=>rem[o]));
+    if(m>0){out[s]=m;s.split('').forEach(o=>rem[o]-=m);}
+  });
+  return S.lay[p]=out;
+}
+const expected=(p,loc)=>layout(p)[loc]||0;
+
+function newRound(){
+  const k=mode,L=k===3?['A','B','C']:['A','B'];
+  const sets=k===3?genThree():genTwo();
+  const tiles=[];
+  L.forEach(o=>sets[o].forEach((p,i)=>tiles.push({id:o+i,o,p,loc:'T',g:null})));
+  const nums={};L.forEach(o=>nums[o]=prod(sets[o]));
+  const vals=L.map(o=>nums[o]);
+  const h=vals.reduce(gcd),l=vals.reduce(lcm2);
+  S={k,L,full:L.join(''),sets,nums,tiles,gc:0,lay:{},
+     stage:{},tick:false,ans:{hcf:String(h),lcm:String(l)},
+     val:{hcf:'',lcm:''},done:{hcf:false,lcm:false},active:'hcf'};
+  L.forEach(o=>S.stage[o]=0);
+  states[k]=S;
+  buildStage();render();
+}
+
+function buildStage(){
+  const k=S.k;
+  let h='<div class="cards">'+S.L.map(o=>'<div class="card '+o.toLowerCase()+'" data-o="'+o+'" id="card'+o+'"></div>').join('')+'</div>';
+  h+='<div class="venn" id="venn" data-focus="" style="aspect-ratio:'+ASPECT[k]+'">';
+  S.L.forEach(o=>{const c=CIRC[k][o];h+='<div class="circle '+o.toLowerCase()+'" id="c'+o+'" style="left:'+c[0]+'cqw;top:'+c[1]+'cqw"></div>';});
+  S.L.forEach(o=>{const c=LBL[k][o];h+='<div class="lbl '+o.toLowerCase()+'" id="l'+o+'" style="left:'+c[0]+'cqw;top:'+c[1]+'cqw"></div>';});
+  Object.keys(REG[k]).forEach(r=>{
+    const z=REG[k][r];
+    h+='<div class="zone" id="z'+r+'" style="left:'+(z[0]-z[2]/2)+'cqw;top:'+(z[1]-z[3]/2)+'cqw;width:'+z[2]+'cqw;height:'+z[3]+'cqw"></div>';
+  });
+  h+='<div class="tick" id="tick" style="left:'+TICK[k][0]+'cqw;top:'+TICK[k][1]+'cqw">&#10003;</div></div>';
+  h+='<p class="status" id="status"></p>';
+  const st=$('stage');
+  st.className='stage k'+k;
+  st.innerHTML=h;
+}
+
+function canDrag(){return S.L.every(o=>S.stage[o]===2)&&!S.tick;}
+
+/* ---------- checking ---------- */
+function computeWrong(){
+  const w=new Set(),seen={};
+  S.tiles.slice().sort((x,y)=>x.id<y.id?-1:1).forEach(t=>{
+    if(t.loc==='T')return;
+    if(!t.loc.includes(t.o)){w.add(t.id);return;}
+    if(t.loc.length===1){
+      const key=t.loc+t.p;
+      seen[key]=(seen[key]||0)+1;
+      if(seen[key]>expected(t.p,t.loc))w.add(t.id);
+      return;
+    }
+    const mem=members(t);
+    if(mem.length<t.loc.length){mem.forEach(m=>w.add(m.id));return;}
+    if(repOf(mem).id!==t.id)return;
+    const key=t.loc+t.p;
+    seen[key]=(seen[key]||0)+1;
+    if(seen[key]>expected(t.p,t.loc))mem.forEach(m=>w.add(m.id));
+  });
+  return w;
+}
+
+/* ---------- rendering ---------- */
+function tileHTML(t,wrong){
+  const mem=members(t);
+  const cls=['tile'];
+  let style='';
+  if(mem.length>1){
+    cls.push('multi');
+    const os=mem.map(m=>m.o).sort(),n=os.length;
+    style=' style="background:linear-gradient(90deg,'+os.map((o,i)=>LIGHT[o]+' '+(i*100/n)+'% '+((i+1)*100/n)+'%').join(',')+')"';
+  }else cls.push(t.o.toLowerCase());
+  if(t.loc!=='T'&&t.loc!==S.full)cls.push('out');
+  if($('hl').checked&&wrong.has(t.id))cls.push('bad');
+  if(!canDrag())cls.push('locked');
+  return '<div class="'+cls.join(' ')+'"'+style+' data-id="'+t.id+'">'+t.p+'</div>';
+}
+function powersHTML(list){
+  const u=[...new Set(list)];
+  return u.map(p=>{const c=count(list,p);return c>1?p+'<sup>'+c+'</sup>':String(p);}).join(' &times; ');
+}
+function renderCard(o,wrong){
+  const el=$('card'+o),st=S.stage[o];
+  el.classList.toggle('done',st===2);
+  if(st===0){
+    el.innerHTML='<div class="num">'+S.nums[o]+'</div><div class="hint">tap me</div>';
+  }else if(st===1){
+    el.innerHTML='<div class="pow">'+powersHTML(S.sets[o])+'</div><div class="hint">tap again</div>';
+  }else{
+    const mine=S.tiles.filter(t=>t.o===o&&t.loc==='T');
+    el.innerHTML=mine.length
+      ?mine.map(t=>tileHTML(t,wrong)).join('<span class="times">&times;</span>')
+      :'<span class="empty">all primes placed</span>';
+  }
+}
+function zoneHTML(r,wrong){
+  const list=S.tiles.filter(t=>t.loc===r&&(!t.g||repOf(members(t)).id===t.id));
+  list.sort((x,y)=>x.p-y.p);
+  return list.map(t=>tileHTML(t,wrong)).join('');
+}
+
+function render(){
+  const wrong=computeWrong();
+  if(!S.tick&&canDrag()&&S.tiles.every(t=>t.loc!=='T')&&wrong.size===0){S.tick=true;S.active='hcf';}
+  S.L.forEach(o=>{renderCard(o,wrong);$('l'+o).textContent=S.nums[o];});
+  Object.keys(REG[S.k]).forEach(r=>{$('z'+r).innerHTML=zoneHTML(r,wrong);});
+  $('tick').classList.toggle('on',S.tick);
+
+  const bothDone=S.done.hcf&&S.done.lcm;
+  const st=$('status');
+  st.classList.toggle('good',S.tick);
+  if(bothDone)st.textContent='✓ Excellent! Tap New numbers to go again.';
+  else if(S.tick)st.textContent='✓ Well done! Now read off the HCF and the LCM.';
+  else if(canDrag())st.textContent='Drag each prime into the Venn diagram.';
+  else st.textContent='Tap each number to break it down into primes.';
+
+  $('venn').dataset.focus=(S.tick&&!bothDone&&S.active==='hcf')?'hcf':'';
+  $('panel').classList.toggle('on',S.tick);
+  $('newBtn').classList.toggle('pulse',bothDone);
+  $('subH').textContent=S.k===3?'Multiply the primes where all three circles overlap.':'Multiply the primes in the middle.';
+  ['hcf','lcm'].forEach(f=>{
+    const F=f[0].toUpperCase()+f.slice(1);
+    const el=$('f'+F),v=S.val[f],ans=S.ans[f];
+    el.classList.toggle('active',S.tick&&S.active===f);
+    el.classList.toggle('ok',S.done[f]);
+    el.classList.toggle('no',!S.done[f]&&v.length>=ans.length);
+    $('v'+F).textContent=v;
+    $('m'+F).textContent=S.done[f]?'✓':(v.length>=ans.length?'✗':'');
+  });
+  const mid=S.tiles.some(t=>t.loc===S.full);
+  $('hintline').textContent=(S.tick&&!S.done.hcf&&S.active==='hcf'&&!mid)
+    ?(S.k===3?'Nothing in the centre – what must the HCF be?':'Nothing in the middle – what must the HCF be?'):'';
+}
+
+/* ---------- tapping numbers ---------- */
+document.addEventListener('click',e=>{
+  const c=e.target.closest('.card');
+  if(!c||!S)return;
+  const o=c.dataset.o,st=S.stage[o];
+  if(st>=2)return;
+  const list=S.sets[o];
+  const hasExp=new Set(list).size<list.length;
+  S.stage[o]=(st===0&&hasExp)?1:2;
+  render();
+});
+
+/* ---------- moving tiles ---------- */
+let drag=null;
+function dissolve(t){
+  if(!t.g)return;
+  S.tiles.forEach(s=>{if(s.g===t.g&&s!==t){s.g=null;s.loc='T';}});
+  t.g=null;
+}
+function assemble(t){
+  const reg=t.loc;
+  const rank=s=>s.loc==='T'?0:s.loc.length===1?1:2;
+  const cand=S.tiles.find(s=>s!==t&&s.loc===reg&&s.g&&s.p===t.p&&!members(s).some(m=>m.o===t.o));
+  const gid=cand?cand.g:'g'+(++S.gc);
+  t.g=gid;
+  const have=new Set(S.tiles.filter(s=>s.g===gid).map(s=>s.o));
+  reg.split('').forEach(Y=>{
+    if(have.has(Y))return;
+    const c=S.tiles.filter(s=>s.o===Y&&s.p===t.p&&!s.g).sort((x,y)=>rank(x)-rank(y))[0];
+    if(c){c.g=gid;c.loc=reg;have.add(Y);}
+  });
+}
+function moveTile(id,target){
+  const t=T(id);
+  if(t.g&&target===t.loc)return;
+  dissolve(t);
+  t.loc=target;
+  if(target.length>1&&target.includes(t.o))assemble(t);
+}
+function regionAt(x,y){
+  let key='';
+  S.L.forEach(o=>{
+    const r=$('c'+o).getBoundingClientRect();
+    if(Math.hypot(x-(r.left+r.width/2),y-(r.top+r.height/2))<=r.width/2)key+=o;
+  });
+  return key||'T';
+}
+function place(e){
+  drag.ghost.style.left=(e.clientX-drag.dx)+'px';
+  drag.ghost.style.top=(e.clientY-drag.dy)+'px';
+}
+document.addEventListener('pointerdown',e=>{
+  const el=e.target.closest('.tile');
+  if(!el||!S||!canDrag()||drag)return;
+  e.preventDefault();
+  const r=el.getBoundingClientRect();
+  const g=el.cloneNode(true);
+  g.classList.add('ghost');
+  g.style.width=r.width+'px';g.style.height=r.height+'px';
+  g.style.fontSize=getComputedStyle(el).fontSize;
+  document.body.appendChild(g);
+  el.classList.add('lifted');
+  drag={id:el.dataset.id,ghost:g,dx:e.clientX-r.left,dy:e.clientY-r.top};
+  place(e);
+});
+document.addEventListener('pointermove',e=>{if(drag){e.preventDefault();place(e);}});
+function endDrag(cancel){
+  if(!drag)return;
+  const gr=drag.ghost.getBoundingClientRect();
+  const id=drag.id;
+  drag.ghost.remove();drag=null;
+  if(!cancel)moveTile(id,regionAt(gr.left+gr.width/2,gr.top+gr.height/2));
+  render();
+}
+document.addEventListener('pointerup',()=>endDrag(false));
+document.addEventListener('pointercancel',()=>endDrag(true));
+
+/* ---------- answers keypad ---------- */
+function press(k){
+  if(!S.tick||S.done[S.active])return;
+  const f=S.active;
+  if(k==='back')S.val[f]=S.val[f].slice(0,-1);
+  else if(k==='clear')S.val[f]='';
+  else if(S.val[f].length<7)S.val[f]+=k;
+  if(S.val[f]===S.ans[f]){
+    S.done[f]=true;
+    const other=f==='hcf'?'lcm':'hcf';
+    if(!S.done[other])S.active=other;
+  }
+  render();
+}
+$('kb').addEventListener('click',e=>{const b=e.target.closest('button');if(b)press(b.dataset.k);});
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(/^[0-9]$/.test(e.key))press(e.key);
+  else if(e.key==='Backspace')press('back');
+});
+['fHcf','fLcm'].forEach(id=>$(id).addEventListener('click',()=>{
+  if(!S.tick)return;
+  S.active=$(id).dataset.f;render();
+}));
+
+/* ---------- tabs and buttons ---------- */
+$('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button');
+  if(!b||drag)return;
+  mode=+b.dataset.m;
+  [...$('tabs').children].forEach(x=>x.classList.toggle('on',x===b));
+  S=states[mode];
+  if(!S)newRound();
+  else{buildStage();render();}
+});
+$('newBtn').addEventListener('click',newRound);
+$('hl').addEventListener('change',()=>{if(S)render();});
+newRound();
+})();
+</script>
+</body>
+</html>

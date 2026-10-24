@@ -28,6 +28,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Fraction Fight Night | `fraction-fight-night/` |
 | Goods Inwards | `goods-inwards/` |
 | Hanoi | `hanoi/` |
+| HCF and LCM with Venn Diagrams | `hcf-lcm-venn/` |
 | Heads or Tails | `heads-or-tails/` |
 | Hex Connect | `hex-connect/` |
 | Higher or Lower | `higher-or-lower/` |
@@ -47,6 +48,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Penguins & Icebergs | `penguins-and-icebergs/` |
 | Pentomino Explorer | `pentomino-explorer/` |
 | Potato | `potato/` |
+| Prime Products | `prime-products/` |
 | Prime Quest | `prime-quest/` |
 | Puzzle of the Day | `puzzle-of-the-day/` |
 | Quick On The Draw | `quick-on-the-draw/` |
