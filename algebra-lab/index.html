@@ -1865,7 +1865,7 @@ function fCollect(Lt,Rt,S,steps,eqs){
   const e1=[fPoly(sT),fPoly(O)],e2=[fMul([fL(S),fPoly(B)]),fPoly(O)],ans=fFrac(fPoly(O),fPoly(B));
   eqs.push(e1,e2,[fL(S),ans]);
   steps.push({t:'Collect the '+S+' terms on one side',lines:[fEqH(e1[0],e1[1],S)],
-    n:'Move every term with '+S+' to one side and every other term to the other side, changing the sign of any term that crosses the equals sign. Choose the way round that keeps the most terms positive.'});
+    n:'Add and subtract terms on both sides of the equation until you have gathered all the '+S+' terms on one side.'});
   steps.push({t:'Factorise',lines:[fEqH(e2[0],e2[1],S)],n:S+' is a factor of every term on that side, so take it outside a bracket.'});
   steps.push({t:'Divide both sides by ('+exprText(B)+')',lines:[fEqH(fL(S),ans,S)],
     n:'Equivalent forms, such as multiplying the top and the bottom by −1, are also correct.'});
