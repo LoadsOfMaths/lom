@@ -221,6 +221,8 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
 .pt .ho{color:var(--orange)}
 .pt .tag{font-size:.8em;color:var(--ink);margin-left:3mm}
 .ps{font-family:var(--ui);font-size:13pt;color:var(--navy);margin-top:1.5mm}
+.pe{font-family:var(--ui);font-size:11pt;color:var(--muted);margin-top:1mm}
+.pe sup{font-size:.68em;line-height:0}
 .plogo{width:58mm;height:auto}
 .pname{display:flex;gap:8mm;font-family:var(--ui);font-size:12pt;margin:0 0 4mm}
 .pname span{flex:1;border-bottom:.3mm solid #666;padding-bottom:1mm}
@@ -1739,7 +1741,9 @@ function initUI(){
   /* printing: build A4 sheets in #printArea, then print (or Save as PDF) */
   function buildPrint(){
     const items=SET.items.map(it=>it.q),code=setCode(),lvl=LEVELS[S.level],logo=$('logoImg').src;
-    const head=tag=>'<header class="ph"><div><div class="pt"><span class="ho">Algebra</span> Lab'+(tag?'<span class="tag">'+tag+'</span>':'')+'</div><div class="ps">'+supd(lvl.name)+' &middot; '+supd(diffName(S.level,S.diff))+'</div></div><img class="plogo" src="'+logo+'" alt=""></header>';
+    /* a difficulty such as "Common factor first (4x² + 10x + 6)" puts its example on its own line under the title */
+    const dn=diffName(S.level,S.diff),m=/^(.+?)\s*\((.+)\)$/.exec(dn),dMain=m?m[1]:dn,dEg=m?m[2]:'';
+    const head=tag=>'<header class="ph"><div><div class="pt"><span class="ho">Algebra</span> Lab'+(tag?'<span class="tag">'+tag+'</span>':'')+'</div><div class="ps">'+supd(lvl.name)+' &middot; '+supd(dMain)+'</div>'+(dEg?'<div class="pe">e.g. '+supd(dEg)+'</div>':'')+'</div><img class="plogo" src="'+logo+'" alt=""></header>';
     const foot='<div class="pf"><span>Code <b>'+code+'</b></span><span>Algebra Lab &middot; www.loadsofmaths.co.uk</span></div>';
     let h='<section class="page">'+head('')+
       (S.pName?'<div class="pname"><span>Name</span><span>Date</span></div>':'')+
@@ -1764,16 +1768,20 @@ function initUI(){
   $('pAns').addEventListener('change',e=>{S.pAns=e.target.value;save();});
   $('pName').addEventListener('change',e=>{S.pName=e.target.checked;save();});
   $('closePrint').addEventListener('click',()=>closeOverlay());
+  /* the page title becomes the suggested file name for Save as PDF: YY-MM-DD_Algebra.pdf */
+  const pageTitle=document.title;
+  const pdfName=()=>{const d=new Date(),two=n=>String(n).padStart(2,'0');return two(d.getFullYear()%100)+'-'+two(d.getMonth()+1)+'-'+two(d.getDate())+'_Algebra';};
+  function startPrint(){buildPrint();document.body.classList.add('printing');document.title=pdfName();}
   $('doPrint').addEventListener('click',()=>{
-    closeOverlay();buildPrint();document.body.classList.add('printing');
+    closeOverlay();startPrint();
     setTimeout(()=>{try{window.print();}catch(e){}},60);
   });
   /* Ctrl+P on a question set prints the sheets too; elsewhere it prints the page as it is */
   window.addEventListener('beforeprint',()=>{
     if(document.body.classList.contains('printing'))return;
-    if(!atHome()&&S.view==='set'&&SET.items){buildPrint();document.body.classList.add('printing');}
+    if(!atHome()&&S.view==='set'&&SET.items)startPrint();
   });
-  window.addEventListener('afterprint',()=>{document.body.classList.remove('printing');});
+  window.addEventListener('afterprint',()=>{document.body.classList.remove('printing');document.title=pageTitle;});
 
   /* events */
   $('level').addEventListener('change',e=>{S.level=+e.target.value;S.diff=1;fillDiff();save();invalidate();});
