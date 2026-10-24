@@ -125,6 +125,7 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
 .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .15em}
 .frac .nu{padding:0 .25em .05em;border-bottom:.07em solid currentColor}
 .frac .de{padding:.05em .25em 0}
+.fu{display:inline-flex;align-items:center;vertical-align:middle;white-space:nowrap}
 
 /* ---------- arrows (SVG overlay drawn from the rendered terms) ---------- */
 .arw{position:relative;display:inline-block}
@@ -427,10 +428,10 @@ main{max-width:1280px;margin:0 auto;padding:1rem}
    ALGEBRA LAB  (Stages 1-6)  LoadsOfMaths
    Sections:  1 RNG   2 Term model   3 Renderer + arrows   4 Level 1
               5 Level 2   6 Levels 3-5 (single brackets)   7 Level 6 (substitution)
-              8 Levels 7-8 (double brackets)   9 Levels 9-10 (factorising quadratics)
+              8 Levels 7-8 (double brackets)   9 Levels 9-10 (factorising quadratics)   9b Level 11 (algebraic fractions)
               10 Level registry, self-test, set seeds and codes   11 UI (title screen, teach, set, print)
    ===================================================================== */
-const BUILD = 'Stage 6: levels 1-10, codes, print';
+const BUILD = 'Stage 7: levels 1-11, codes, print';
 
 /* ---------- 1. Seeded random numbers ---------- */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -1429,6 +1430,207 @@ function genQuad(R,d,ctx,nonMonic){
 const genQuad1=(R,d,ctx)=>genQuad(R,d,ctx,false);
 const genQuad2=(R,d,ctx)=>genQuad(R,d,ctx,true);
 
+/* ---------- 9b. Level 11: adding and subtracting algebraic fractions ----------
+   A fraction is {n: terms, d: den, dq: terms or null}. A denominator is a number-and-letters part times
+   brackets, den = {c, v, br:[bracket terms]}; each bracket is monic and linear and appears once.
+   dq is the quadratic as the question shows it, before it is factorised. The common denominator,
+   what each fraction is missing, and every value come from this structure, never from strings. */
+const brKey=b=>exprText(b);
+function denMake(c,v,br){return {c:c,v:M.make(1,v||{}).v,br:(br||[]).slice().sort(cmpBracket)};}
+const denMono=d=>M.make(d.c,d.v);
+const denHasMono=d=>d.c!==1||Object.keys(d.v).length>0;
+const denIsOne=d=>!denHasMono(d)&&!d.br.length;
+/* bare: inside a fraction a lone bracket needs no brackets round it */
+function denHTML(d,bare){
+  if(denIsOne(d))return nspan('1');
+  if(!denHasMono(d)&&d.br.length===1&&bare)return exprHTML(d.br[0]);
+  return (denHasMono(d)?monoHTML(denMono(d)):'')+d.br.map(b=>bracketHTML(b)).join('');
+}
+function denText(d){
+  if(denIsOne(d))return '1';
+  return (denHasMono(d)?monoText(denMono(d)):'')+d.br.map(b=>'('+exprText(b)+')').join('');
+}
+const denEv=(d,vals)=>d.br.reduce((s,b)=>s*sumEv(b,vals),M.ev(denMono(d),vals));
+function denLCD(a,b){
+  const v=Object.assign({},a.v);for(const k in b.v)v[k]=Math.max(v[k]||0,b.v[k]);
+  const br=a.br.slice();b.br.forEach(x=>{if(!br.some(y=>brKey(y)===brKey(x)))br.push(x);});
+  return denMake(a.c*b.c/gcd(a.c,b.c),v,br);
+}
+/* what d must be multiplied by to make L */
+function denMissing(L,d){
+  const v={};for(const k in L.v){const e=L.v[k]-(d.v[k]||0);if(e>0)v[k]=e;}
+  return denMake(L.c/d.c,v,L.br.filter(x=>!d.br.some(y=>brKey(y)===brKey(x))));
+}
+const fracQHTML=f=>fracHTML(exprHTML(f.n),f.dq?exprHTML(f.dq):denHTML(f.d,true));
+const fracWHTML=f=>fracHTML(exprHTML(f.n),denHTML(f.d,true));   /* in the working: denominator factorised */
+/* A fraction over the common denominator: its new numerator is mono × bracket, or a single term.
+   Returns {mono} or {o, inner}; sign is +1 or −1 (subtracted fractions). */
+function fracPart(f,L,sign){
+  const mis=denMissing(L,f.d),mm=denMono(mis),n=f.n;
+  if(!mis.br.length){
+    if(n.length===1)return {mis:mis,mono:M.make(sign*M.mul(mm,n[0]).c,M.mul(mm,n[0]).v)};
+    return {mis:mis,o:M.make(sign*mm.c,mm.v),inner:n};
+  }
+  const o=M.mul(mm,n[0]);
+  return {mis:mis,o:M.make(sign*o.c,o.v),inner:mis.br[0]};
+}
+const partTerms=p=>p.mono?[p.mono]:p.inner.map(t=>M.mul(p.o,t));
+const isOne=m=>m.c===1&&M.isConst(m);
+/* numerator as written over the common denominator, before expanding (unsigned) */
+function partHTML(p,needBr){
+  if(p.mono)return monoHTML(M.make(Math.abs(p.mono.c),p.mono.v));
+  const o=M.make(Math.abs(p.o.c),p.o.v);
+  return isOne(o)?(needBr?bracketHTML(p.inner):exprHTML(p.inner)):monoHTML(o)+bracketHTML(p.inner);
+}
+function multiplesHTML(n,L){
+  const out=[];for(let k=n;k<=L;k+=n)out.push(k===L?'<span class="hi">'+L+'</span>':nspan(k));
+  return nspan(n)+'<span class="op">:</span>'+out.join(', ');
+}
+
+function genAlgFrac(R,d,ctx){
+  const L=pickLetters(R,ctx,1)[0],l2=pickLetters(R,ctx,2).sort();
+  const X=(c,p)=>M.make(c,{[L]:p||1}),K=c=>M.make(c,{}),br=p=>linB(L,1,p);
+  const lin=(aMax)=>[X(R.int(1,aMax)),K(sgnInt(R,1,9,0.4))];
+  let F=null,sign=1,kind='',quad=null;
+  for(let attempt=0;attempt<400&&!F;attempt++){
+    let f1,f2,s=R.chance(0.6)?1:-1,kd='',qd=null;
+    if(d===1){
+      const n=R.int(3,9),D=denMake(n);
+      if(R.chance(0.4)){f1={n:[X(R.int(1,9))],d:D};f2={n:[X(R.int(1,9))],d:D};}
+      else{f1={n:lin(5),d:D};f2={n:lin(5),d:D};}
+      kd='same';
+    }else if(d===2){
+      const n1=R.int(2,9),n2=R.int(2,9);if(n1===n2||n1%n2===0||n2%n1===0)continue;
+      if(n1*n2/gcd(n1,n2)>30)continue;
+      if(R.chance(0.35)){f1={n:[X(R.int(1,5))],d:denMake(n1)};f2={n:[X(R.int(1,5))],d:denMake(n2)};}
+      else{f1={n:lin(4),d:denMake(n1)};f2={n:R.chance(0.3)?[X(R.int(1,5))]:lin(4),d:denMake(n2)};}
+      kd='num';
+    }else if(d===3){
+      const t=R.int(1,3),a=R.int(1,9),b=R.int(1,9);
+      if(t===1){const p=R.int(1,4),q=R.int(1,4);if(p===q)continue;f1={n:[K(a)],d:denMake(p,{[L]:1})};f2={n:[K(b)],d:denMake(q,{[L]:1})};}
+      else if(t===2){f1={n:[K(a)],d:denMake(1,{[l2[0]]:1})};f2={n:[K(b)],d:denMake(1,{[l2[1]]:1})};}
+      else{f1={n:[K(a)],d:denMake(1,{[L]:1})};f2={n:[K(b)],d:denMake(1,{[L]:2})};}
+      kd='letter';
+    }else if(d===4||d===5){
+      const p=sgnInt(R,1,9,0.4),q=sgnInt(R,1,9,0.4);if(p===q)continue;
+      f1={n:R.chance(0.3)?[X(1)]:[K(R.int(1,9))],d:denMake(1,{},[br(p)])};
+      f2={n:R.chance(0.2)?[X(1)]:[K(R.int(1,9))],d:denMake(1,{},[br(q)])};
+      s=d===4?1:-1;kd='br';
+    }else{
+      const t=R.int(1,3),p=sgnInt(R,1,7,0.4);let q=sgnInt(R,1,7,0.4);
+      if(t===2)q=-p;
+      if(p===q||(t!==2&&p===-q))continue;
+      const big={n:[K(R.int(1,9))],d:denMake(1,{},[br(p),br(q)])},small={n:[K(R.int(1,9))],d:denMake(1,{},[br(p)])};
+      if(t!==1){big.dq=simplify(expandProd(br(p),br(q)));qd=big.dq;}
+      if(R.chance(0.5)){f1=big;f2=small;}else{f1=small;f2=big;}
+      kd=t===1?'shared':t===2?'dots':'trinom';
+    }
+    /* build the numerator and reject anything that cancels to a whole expression or shares a bracket */
+    const LCD=kd==='same'?f1.d:denLCD(f1.d,f2.d);
+    const parts=[fracPart(f1,LCD,1),fracPart(f2,LCD,s)];
+    const all=partTerms(parts[0]).concat(partTerms(parts[1]));
+    const num=simplify(all);
+    if(!num.length)continue;
+    const g=gcd(gcdAll(num.map(m=>m.c)),LCD.c);
+    if(denIsOne(denMake(LCD.c/g,LCD.v,LCD.br)))continue;
+    if(LCD.br.some(b=>sumEv(num,{[L]:-b[1].c})===0))continue;
+    if(Object.keys(LCD.v).some(k=>num.every(m=>m.v[k])))continue;
+    if(num[0].c<0&&R.chance(0.6))continue;      /* mostly positive leading terms */
+    F=[f1,f2];sign=s;kind=kd;quad=qd;
+  }
+  if(!F)throw new Error('could not build algebraic fraction question');
+  const [f1,f2]=F;
+  const OP=s=>'<span class="op">'+(s<0?MINUS:'+')+'</span>';
+  /* a fraction (and anything it is multiplied by) never splits across lines */
+  const FU=h=>'<span class="fu">'+h+'</span>';
+  const q=FU(fracQHTML(f1))+OP(sign)+FU(fracQHTML(f2));
+  const LCD=kind==='same'?f1.d:denLCD(f1.d,f2.d);
+  const parts=[fracPart(f1,LCD,1),fracPart(f2,LCD,sign)];
+  const all=partTerms(parts[0]).concat(partTerms(parts[1])),num=simplify(all);
+  const g=gcd(gcdAll(num.map(m=>m.c)),LCD.c);
+  const ansNum=num.map(m=>M.make(m.c/g,m.v)),ansDen=denMake(LCD.c/g,LCD.v,LCD.br);
+  /* lead with a positive term where there is one: 38 − z rather than −z + 38 */
+  const lead=ansNum.findIndex(m=>m.c>0),shown=lead>0?[ansNum[lead]].concat(ansNum.filter((m,i)=>i!==lead)):ansNum;
+  const answer=fracHTML(exprHTML(shown),denHTML(ansDen,true));
+  const steps=[];
+  const wordOp=sign<0?'subtract':'add';
+
+  /* 1. factorise a quadratic denominator */
+  if(quad){
+    const fq=f1.dq?f1:f2,b=fq.d.br;
+    steps.push({t:'Factorise the denominator',lines:[exprHTML(quad)+EQ+denHTML(fq.d)],
+      n:kind==='dots'?'It is a difference of two squares: a² − b² = (a + b)(a − b).'
+        :'Find two numbers that multiply to '+numS(b[0][1].c*b[1][1].c)+' and add to '+numS(b[0][1].c+b[1][1].c)+': '+numS(b[0][1].c)+' and '+numS(b[1][1].c)+'.'});
+  }
+  /* 2. common denominator */
+  if(kind==='same'){
+    steps.push({t:'The denominators are the same',lines:[fracHTML(partHTML(parts[0])+OP(sign)+partHTML(parts[1],sign<0),denHTML(LCD,true))],
+      n:'So '+wordOp+' the numerators and keep the denominator.'+(sign<0&&!parts[1].mono?' Keep the second numerator in brackets: the minus applies to all of it.':'')});
+  }else{
+    let lines,n;
+    if(kind==='num'){
+      lines=[multiplesHTML(f1.d.c,LCD.c),multiplesHTML(f2.d.c,LCD.c)];
+      n='The lowest common multiple of '+f1.d.c+' and '+f2.d.c+' is '+LCD.c+(LCD.c<f1.d.c*f2.d.c?', which is smaller than '+f1.d.c+' × '+f2.d.c+'.':'.');
+    }else{
+      lines=[denHTML(f1.d)+'<span class="op">,</span>'+denHTML(f2.d)+'<span class="op">→</span>'+denHTML(LCD)];
+      n=kind==='letter'?'Use the lowest common multiple of the numbers and the highest power of each letter.'
+        :kind==='br'?'The denominators have no common factor, so the common denominator is the two brackets multiplied together.'
+        :'('+exprText(f1.d.br.length<f2.d.br.length?f1.d.br[0]:f2.d.br[0])+') is in both denominators, so it is only needed once.';
+    }
+    steps.push({t:'Find the lowest common denominator',lines:lines,n:n});
+    /* 3. multiply top and bottom by what is missing */
+    const chip=(i,h)=>i===0?chipA(h):chipB(h);
+    const times=[f1,f2].map((f,i)=>{
+      const mis=parts[i].mis;
+      return FU(denIsOne(mis)?fracWHTML(f):fracWHTML(f)+TIMES+fracHTML(chip(i,denHTML(mis,true)),chip(i,denHTML(mis,true))));
+    });
+    const over=[0,1].map(i=>FU(fracHTML(partHTML(parts[i]),denHTML(LCD,true))));
+    steps.push({t:'Make the denominators the same',lines:[times[0]+OP(sign)+times[1],EQ+over[0]+OP(sign)+over[1]],
+      n:'Multiply the top and bottom of each fraction by what its denominator is missing. Multiplying by '+(parts.some(p=>!denIsOne(p.mis))?denText(parts.find(p=>!denIsOne(p.mis)).mis)+'/'+denText(parts.find(p=>!denIsOne(p.mis)).mis):'1')+' is multiplying by 1, so the value does not change.'});
+    steps.push({t:'Write as one fraction',lines:[fracHTML(partHTML(parts[0])+OP(sign)+partHTML(parts[1],sign<0),denHTML(LCD,true))],
+      n:'Now the denominators match, '+wordOp+' the numerators.'+(sign<0&&!parts[1].mono?' The minus applies to the whole of the second numerator, so keep it in brackets.':'')});
+  }
+  /* 4. expand the numerator */
+  const ex=parts.map((p,i)=>{
+    if(p.mono)return null;
+    if(isOne(p.o))return null;
+    if(p.o.c===-1&&M.isConst(p.o))return MINUS+bracketHTML(p.inner)+EQ+exprHTML(partTerms(p));
+    return singleDiag(p.o,p.inner,i*1.6,0.7)+lag(EQ+exprHTML(partTerms(p)),i*1.6+p.inner.length*0.7);
+  }).filter(Boolean);
+  if(ex.length){
+    steps.push({t:'Expand the numerator',lines:ex.concat([EQ+exprHTML(all)]),
+      n:'Multiply out each bracket on the top.'+(sign<0?' The minus in front of the second part changes the sign of every term it multiplies.':'')+' Leave the denominator as it is.'});
+  }
+  /* 5. collect like terms on the top */
+  likeWork(all,{spot:false,title:'Collect like terms on the top'}).forEach(s=>steps.push(s));
+  /* 6. cancel, or say why nothing cancels */
+  if(g>1)steps.push({t:'Simplify',lines:[fracHTML(exprHTML(num),denHTML(LCD,true))+EQ+answer],
+    n:'Every number on the top and the bottom divides by '+g+', so divide them all by '+g+'.'});
+  else steps.push({t:'Write the answer',lines:[lead>0?fracHTML(exprHTML(num),denHTML(LCD,true))+EQ+answer:answer],
+    n:(lead>0?'Put the positive term first: it is easier to read. ':'')+(LCD.br.length?'Leave the denominator in brackets. The top has no factor in common with the bottom, so nothing cancels.':'Nothing cancels: the top and the bottom have no common factor.')});
+
+  const fEv=(f,v)=>sumEv(f.n,v)/(f.dq?sumEv(f.dq,v):denEv(f.d,v));
+  return {
+    instr:'Write as a single fraction',q:q,answer:answer,steps:steps,d:d,
+    verify(){
+      const ks=Array.from(new Set(lettersOf(f1.n.concat(f2.n,ansNum)).concat(Object.keys(LCD.v),[L])));
+      let tried=0;
+      for(let i=0;i<40&&tried<6;i++){
+        const v=randVals(ks,-9,9);
+        const d1=f1.dq?sumEv(f1.dq,v):denEv(f1.d,v),d2=f2.dq?sumEv(f2.dq,v):denEv(f2.d,v),da=denEv(ansDen,v);
+        if(!d1||!d2||!da)continue;tried++;
+        const lhs=fEv(f1,v)+sign*fEv(f2,v),rhs=sumEv(ansNum,v)/da;
+        if(Math.abs(lhs-rhs)>1e-9*Math.max(1,Math.abs(lhs)))return false;
+      }
+      /* simplest form: no number, letter or bracket left in common */
+      if(gcd(gcdAll(ansNum.map(m=>m.c)),ansDen.c)!==1)return false;
+      if(ansDen.br.some(b=>sumEv(ansNum,{[L]:-b[1].c})===0))return false;
+      if(Object.keys(ansDen.v).some(k=>ansNum.every(m=>m.v[k])))return false;
+      return tried>=6;
+    }
+  };
+}
+
 /* ---------- 10. Level registry, generate(), self-test ----------
    To add a level: push an entry with { id, name, instr, sub:[descriptions], gen(R,d,ctx) }.
    gen returns { instr, q, answer, steps:[{t,lines,n}], d, verify() }.
@@ -1504,7 +1706,14 @@ const LEVELS=[
     'Negative number (2x² + 5x − 3)',
     'Common factor first (4x² + 10x + 6, 2x² − 18)',
     'Difference of two squares (4x² − 9)',
-    'Mixed, including perfect squares']}
+    'Mixed, including perfect squares']},
+  {id:'algfrac',name:'11. Adding and subtracting algebraic fractions',instr:'Write as a single fraction',setInstr:'Write each as a single fraction',gen:genAlgFrac,sub:[
+    'Same denominator ((x + 1)/4 + (x + 3)/4)',
+    'Different number denominators (x/3 + x/4)',
+    'Letters in the denominator (2/x + 5/3x, 1/x + 1/y)',
+    'Adding, brackets in the denominator (2/(x + 1) + 3/(x − 2))',
+    'Subtracting, brackets in the denominator (3/(x + 2) − 1/(x − 1))',
+    'Factorise a denominator first (3/(x² − 4) + 1/(x + 2))']}
 ];
 function generate(levelIdx,diff,ctx,seed){
   const R=makeRng(seed),lvl=LEVELS[levelIdx];
@@ -1613,6 +1822,7 @@ function initUI(){
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
   /* the UI fonts have no ² glyph, so powers in level names are drawn as superscripts */
   const supd=s=>esc(s).replace(/²/g,'<sup>2</sup>').replace(/³/g,'<sup>3</sup>');
+  const setInstr=li=>LEVELS[li].setInstr||LEVELS[li].instr+' each expression';
   const levelName=li=>LEVELS[li].name.replace(/^\d+\.\s*/,'');
   const diffName=(li,d)=>d?LEVELS[li].sub[d-1]:'Mixed difficulties';
 
@@ -1684,7 +1894,7 @@ function initUI(){
   function buildSet(seed){
     SET.seed=seed===undefined?newSeed():seed;
     SET.items=setQuestions(S.level,S.diff,ctx(),S.count,SET.seed).map(q=>({q:q,shown:false,work:false}));
-    $('sInstr').textContent=LEVELS[S.level].instr+' each expression';
+    $('sInstr').textContent=setInstr(S.level);
     $('sCode').innerHTML='Set code <b>'+setCode()+'</b>';
     $('grid').innerHTML=SET.items.map((it,i)=>
       '<article class="card" data-i="'+i+'"><div class="cnum">'+(i+1)+'</div><div class="cq math">'+it.q.q+'</div>'+
@@ -1753,7 +1963,7 @@ function initUI(){
     const foot='<div class="pf"><span>Code <b>'+code+'</b></span><span>Algebra Lab &middot; www.loadsofmaths.co.uk</span></div>';
     let h='<section class="page">'+head('')+
       (S.pName?'<div class="pname"><span>Name</span><span>Date</span></div>':'')+
-      '<p class="pi">'+esc(lvl.instr)+' each expression.</p>'+
+      '<p class="pi">'+esc(setInstr(S.level))+'.</p>'+
       '<ol class="pq sp-'+S.pSpace+'">'+items.map((q,i)=>'<li><span class="pn">'+(i+1)+'</span><span class="math">'+q.q+'</span></li>').join('')+'</ol>'+foot+'</section>';
     if(S.pAns!=='none'){
       const work=S.pAns==='work';
