@@ -48,6 +48,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Pancake Flipper | `pancake-flipper/` |
 | Penguins & Icebergs | `penguins-and-icebergs/` |
 | Pentomino Explorer | `pentomino-explorer/` |
+| Pi-Rate Pete’s Circle Tour | `pi-rate-pete/` |
 | Potato | `potato/` |
 | Prime Products | `prime-products/` |
 | Prime Quest | `prime-quest/` |
