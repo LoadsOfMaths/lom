@@ -35,6 +35,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Hot Seat! | `hot-seat/` |
 | In the Middle | `in-the-middle/` |
 | Jelly Bean Disco | `jelly-bean-disco/` |
+| Karate Tables | `karate-tables/` |
 | Keep Left | `keep-left/` |
 | Loads of Frames | `loads-of-frames/` |
 | Lucky Duck | `lucky-duck/` |
