@@ -172,6 +172,48 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   .verdict{margin-top:10px;padding:10px 14px}.verdict .txt{flex:1 1 0;min-width:200px}.verdict .btn{flex:0 0 auto}
   .verdict h3{font-size:18px}.verdict p{font-size:15px}
 }
+
+/* ===== Class Starter ===== */
+.modes{display:flex;gap:10px;justify-content:center;margin:0 auto 16px;flex-wrap:wrap}
+.modes .btn{font-size:clamp(16px,1.8vw,22px);padding:12px 26px}
+.modes .btn.on{background:linear-gradient(180deg,#1f9fc0,#127a99);border-color:#59d8f5;color:#fff}
+.stset{display:flex;gap:12px 28px;justify-content:center;align-items:center;flex-wrap:wrap;margin:0 auto 20px;padding:12px 22px;background:rgba(17,43,67,.75);border:1px solid var(--line);border-radius:14px;width:fit-content;max-width:100%;font-size:clamp(15px,1.6vw,19px)}
+.stset label{display:flex;align-items:center;gap:10px}
+.stset input[type=number]{background:#08192a;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:700 20px var(--mono);width:80px}
+.stset input[type=checkbox]{width:22px;height:22px;accent-color:#22d3ee}
+.stset b.tot{color:var(--cyan);font-family:var(--mono)}
+#starter,#review{width:min(1400px,100%)}
+.cpanel{width:min(780px,100%);margin:10px auto 0;text-align:center;background:rgba(17,43,67,.92);border:2px solid var(--line);border-radius:18px;padding:30px}
+.cpanel h2{font-size:clamp(26px,4vw,46px);margin:.1em 0;letter-spacing:.08em;text-transform:uppercase}
+.cpanel p{font-size:clamp(17px,2vw,24px);margin:.4em 0}
+.cpanel p b{color:var(--cyan);font-family:var(--mono)}
+.cpanel p.note{font-size:clamp(14px,1.5vw,18px)}
+.cpanel .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.shead{display:flex;align-items:center;gap:6px 16px;margin-top:14px;flex-wrap:wrap;border-bottom:2px dashed rgba(60,50,30,.35);padding-bottom:8px}
+.shead h2{margin:0;font-size:clamp(20px,2.6vw,34px);letter-spacing:.14em;text-transform:uppercase}
+.shead .case{font-family:var(--mono);font-size:clamp(14px,1.5vw,20px);color:#5b5340}
+.stime{margin-left:auto;font:800 clamp(30px,4.6vw,68px)/1 var(--mono);color:#1b4fd8;min-width:2.2ch;text-align:right}
+.stime.warn{color:#c2253f}
+.sbar{height:14px;border-radius:8px;background:rgba(60,50,30,.22);overflow:hidden;margin:8px 0 2px}
+.sbar i{display:block;height:100%;width:100%;background:#1b4fd8;border-radius:8px;transition:width .12s linear}
+.sbar.warn i{background:#c2253f}
+.card.big .rule{margin:8px 0 0}
+.sprompt{text-align:center;color:#4b4636;font-size:clamp(18px,2.3vw,32px);font-weight:700;margin:8px 0 0}
+.tiles.big{margin:10px 0 6px}
+.big .tile,.tiles.big .tile{pointer-events:none}
+.tiles.big .tab{display:none}
+.tiles.flash{animation:flash .45s}
+@keyframes flash{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.sctl{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.sctl .btn{font-size:clamp(15px,1.6vw,19px);padding:10px 22px}
+.sctl .btn:disabled{opacity:.35;cursor:not-allowed}
+.alist{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:10px 28px;margin:16px 0 8px;text-align:left}
+.arow{display:flex;gap:12px;align-items:baseline;font-size:clamp(16px,1.8vw,22px);padding:6px 0;border-bottom:1px dashed rgba(60,50,30,.3)}
+.arow b{font-family:var(--mono);color:#5b5340;min-width:2.2ch}
+.arow .aimp{font:800 1.25em var(--mono);color:#a3223d;min-width:3.5ch}
+.arow .arule{color:#4b4636;font-size:.85em}
+#rvText{margin-top:22px}
+@media (max-width:760px){.cpanel{padding:22px 16px}.sctl .btn{flex:1 1 40%}}
 </style>
 </head>
 <body>
@@ -195,7 +237,14 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
 
   <section id="home">
     <h1>Number <em>Forensics</em></h1>
-    <p class="sub">Every number on the Evidence Card obeys the same rule&hellip; except one. Examine the samples, find the imposter and close the case.</p>
+    <p class="sub" id="homeSub">Every number on the Evidence Card obeys the same rule&hellip; except one. Examine the samples, find the imposter and close the case.</p>
+    <div class="modes"><button class="btn" id="mPlay">Pupil practice</button><button class="btn" id="mStart">Class Starter</button></div>
+    <div class="stset hidden" id="stSet">
+      <label>Cards <input type="number" id="stCards" min="1" max="30"></label>
+      <label>Seconds per card <input type="number" id="stSecs" min="5" max="300"></label>
+      <label><input type="checkbox" id="stChime"> Chime on each new card</label>
+      <span>Total: <b class="tot" id="stTot"></b></span>
+    </div>
     <div class="levels" id="levels"></div>
   </section>
 
@@ -218,6 +267,56 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   </section>
 
   <section id="end" class="hidden"></section>
+
+  <section id="starter" class="hidden">
+    <div class="cpanel" id="sReady">
+      <div class="stampbig">CLASS STARTER</div>
+      <h2 id="rTitle"></h2>
+      <p id="rInfo"></p>
+      <p class="note">Each Evidence Card appears on the board by itself. Pupils write down the imposter before the next card arrives.<span id="rClean"> If every number fits the rule, they write CLEAN.</span></p>
+      <div class="row"><button class="btn primary" id="rStart">Start &#9654;</button><button class="btn" id="rBack" style="font-size:20px">Choose level</button></div>
+    </div>
+    <div id="sRun" class="hidden">
+      <div class="card big">
+        <div class="shead"><h2>Evidence Card</h2><span class="case" id="sCase"></span><span class="stime" id="sTime"></span></div>
+        <div class="sbar" id="sBarWrap"><i id="sBar"></i></div>
+        <div class="rule hidden" id="sRuleRow"><span class="lab">THE RULE</span><span class="val" id="sRule"></span></div>
+        <div class="sprompt" id="sPrompt"></div>
+        <div class="tiles big" id="sTiles"></div>
+      </div>
+      <div class="sctl">
+        <button class="btn" id="sPrev">&#9664; Back</button>
+        <button class="btn" id="sPause">&#10074;&#10074; Pause</button>
+        <button class="btn" id="sSkip">Skip &#9654;</button>
+        <button class="btn ghost" id="sQuit">Quit</button>
+      </div>
+    </div>
+    <div class="cpanel hidden" id="sDone">
+      <div class="stampbig">PENS DOWN</div>
+      <h2 id="dTitle"></h2>
+      <p>Ready to go through the answers?</p>
+      <div class="row"><button class="btn primary" id="dReveal">Reveal answers &#9654;</button><button class="btn" id="dAgain" style="font-size:20px">Run again</button><button class="btn" id="dHome" style="font-size:20px">Choose level</button></div>
+    </div>
+  </section>
+
+  <section id="review" class="hidden">
+    <div class="card big">
+      <div class="shead"><h2>Answers</h2><span class="case" id="rvCase"></span></div>
+      <div class="rule" id="rvRuleRow"><span class="lab">THE RULE</span><span class="val revealed" id="rvRule"></span></div>
+      <div id="rvBody">
+        <div class="tiles big" id="rvTiles"></div>
+        <div class="sprompt" id="rvText"></div>
+      </div>
+      <div class="alist hidden" id="rvList"></div>
+    </div>
+    <div class="sctl">
+      <button class="btn" id="rvPrev">&#9664; Previous</button>
+      <button class="btn" id="rvNext">Next &#9654;</button>
+      <button class="btn" id="rvToggle">Answer list</button>
+      <button class="btn" id="rvAgain">New starter</button>
+      <button class="btn ghost" id="rvHome">Choose level</button>
+    </div>
+  </section>
 </div>
 
 <div id="modal" class="hidden"><div id="panel">
@@ -228,6 +327,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   <div class="set"><label for="sSort">Show numbers in ascending order</label><input type="checkbox" id="sSort"></div>
   <div class="set"><label for="sRounds">Cases per round</label><select id="sRounds"><option>5</option><option>10</option><option>15</option><option>20</option></select></div>
   <div class="set"><label for="sShow">Always show the rule (teacher aid)</label><input type="checkbox" id="sShow"></div>
+  <p class="note">Class Starter uses these card settings too. Set the number of cards and the time per card on the home screen (Class Starter tab).</p>
   <h4>CLEAN cards (levels 5 &amp; 6)</h4>
   <div class="set"><label for="sClean">Include CLEAN cards (no imposter)</label><input type="checkbox" id="sClean"></div>
   <div class="set"><label for="sPct">Chance of a CLEAN card: <b id="pctOut"></b>%</label><input type="range" id="sPct" min="0" max="50" step="5"></div>
@@ -512,7 +612,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
 'use strict';
 (function(){
   const $ = id => document.getElementById(id);
-  const DEF = { minN:4, maxN:8, sorted:true, rounds:10, showAll:false, cleanOn:true, cleanPct:20, fams:{ eqfrac:false }, decMode:'either', decChance:40 };
+  const DEF = { minN:4, maxN:8, sorted:true, rounds:10, showAll:false, cleanOn:true, cleanPct:20, fams:{ eqfrac:false }, decMode:'either', decChance:40, mode:'play', stCards:10, stSecs:20, stChime:true };
   let S = JSON.parse(JSON.stringify(DEF));
   try { const raw = localStorage.getItem('numberForensics.v1'); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e){}
   if (!S.fams || typeof S.fams !== 'object') S.fams = {};
@@ -560,7 +660,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
 
   /* ---------- game state ---------- */
   let G = null;
-  const show = id => ['home','game','end'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  const show = id => ['home','game','end','starter','review'].forEach(s => $(s).classList.toggle('hidden', s !== id));
 
   function buildHome(){
     const box = $('levels'); box.innerHTML = '';
@@ -568,7 +668,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
       const b = document.createElement('button'); b.className = 'lvl';
       b.innerHTML = `<div class="n">${L.id}</div><h3>${L.name}</h3><p>${L.desc.replace(/ · /g,' &middot; ')}</p>` +
         `<span class="tag">${L.showRule ? 'RULE SHOWN' : 'RULE HIDDEN'}</span>` + (L.clean ? '<span class="tag clean">CLEAN CARDS</span>' : '');
-      b.onclick = () => start(L.id);
+      b.onclick = () => S.mode === 'starter' ? prepStarter(L.id) : start(L.id);
       box.appendChild(b);
     });
   }
@@ -729,6 +829,7 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   }
   function goHome(){
     ['hLevel','hCase','hScore','homeBtn'].forEach(x => $(x).classList.add('hidden'));
+    stopStarter(); ST = null; syncHome();
     show('home');
   }
   $('homeBtn').onclick = goHome;
@@ -762,17 +863,219 @@ header.bar{width:min(1180px,100%);display:flex;align-items:center;gap:14px;margi
   ['sMin','sMax','sSort','sRounds','sShow','sClean','sPct','sDec','sDecPct'].forEach(id => $(id).addEventListener('input', readUI));
   $('allRules').onclick = () => { NF.FAMILIES.forEach(f => S.fams[f.id] = true); save(); buildFams(); };
   $('onlyFrac').onclick = () => { NF.FAMILIES.forEach(f => S.fams[f.id] = (f.id === 'eqfrac')); save(); buildFams(); };
-  $('setBtn').onclick = () => { loadUI(); $('modal').classList.remove('hidden'); };
+  $('setBtn').onclick = () => { if (ST && ST.phase === 'run' && !ST.paused) setPause(true); loadUI(); $('modal').classList.remove('hidden'); };
   $('close').onclick = () => { readUI(); loadUI(); $('modal').classList.add('hidden'); };
   $('modal').addEventListener('click', e => { if (e.target === $('modal')) $('close').onclick(); });
-  $('reset').onclick = () => { S = JSON.parse(JSON.stringify(DEF)); save(); loadUI(); };
+  $('reset').onclick = () => { S = JSON.parse(JSON.stringify(DEF)); save(); loadUI(); syncHome(); };
   addEventListener('keydown', e => {
     if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) $('close').onclick();
     if (e.key === 'Enter' && G && G.done && !$('game').classList.contains('hidden') && document.activeElement !== $('next') && $('modal').classList.contains('hidden')) $('next').click();
   });
 
-  buildHome();
-  window.__NF_TEST = { start, get G(){return G;} };
+  /* ---------- Class Starter ---------- */
+  let ST = null, stTimer = null, ac = null, rz2;
+  const fmtTime = s => { const m = Math.floor(s / 60), r = s % 60; return m ? m + ' min' + (r ? ' ' + r + ' s' : '') : r + ' s'; };
+  function chime(){
+    if (!S.stChime) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+      const t = ac.currentTime;
+      [[660, 0], [880, .16]].forEach(([f, d]) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(.0001, t + d); g.gain.exponentialRampToValueAtTime(.22, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .45);
+        o.connect(g); g.connect(ac.destination); o.start(t + d); o.stop(t + d + .5);
+      });
+    } catch (e) {}
+  }
+  function syncHome(){
+    const st = S.mode === 'starter';
+    $('mPlay').classList.toggle('on', !st); $('mStart').classList.toggle('on', st);
+    $('stSet').classList.toggle('hidden', !st);
+    $('stCards').value = S.stCards; $('stSecs').value = S.stSecs; $('stChime').checked = S.stChime;
+    $('stTot').textContent = fmtTime(S.stCards * S.stSecs);
+    $('homeSub').innerHTML = st
+      ? 'Class Starter: Evidence Cards appear on the board automatically. Pupils write down the imposter before the next card arrives. Choose a level to begin.'
+      : 'Every number on the Evidence Card obeys the same rule&hellip; except one. Examine the samples, find the imposter and close the case.';
+  }
+  $('mPlay').onclick = () => { S.mode = 'play'; save(); syncHome(); };
+  $('mStart').onclick = () => { S.mode = 'starter'; save(); syncHome(); };
+  ['stCards','stSecs','stChime'].forEach(id => $(id).addEventListener('input', () => {
+    S.stCards = clamp(Math.round(+$('stCards').value), 1, 30);
+    S.stSecs = clamp(Math.round(+$('stSecs').value), 5, 300);
+    S.stChime = $('stChime').checked;
+    $('stTot').textContent = fmtTime(S.stCards * S.stSecs);
+    save();
+  }));
+
+  /* Large tiles: choose the biggest size that fits the space left on the screen. */
+  function layoutBig(box, btns){
+    if (!box || !btns || !box.offsetParent) return;
+    const n = btns.length, W = box.clientWidth || 600;
+    const availH = Math.max(140, innerHeight - (box.getBoundingClientRect().top + scrollY) - 185);
+    let best = null;
+    for (let r = 1; r <= n; r++){
+      const per = Math.ceil(n / r), rows = Math.ceil(n / per);
+      let g = 16, ts = Math.min(300, Math.floor((W - (per - 1) * g) / per));
+      g = Math.round(Math.max(10, Math.min(36, ts * .12)));
+      ts = Math.min(300, Math.floor((W - (per - 1) * g) / per), Math.floor((availH - (rows - 1) * (g + 8)) / rows));
+      if (!best || ts > best.ts) best = { ts, g, per, rows };
+    }
+    const ts = Math.max(56, best.ts), rows = best.rows, base = Math.floor(n / rows), extra = n % rows;
+    box.style.setProperty('--ts', ts + 'px'); box.style.setProperty('--g', best.g + 'px');
+    box.innerHTML = '';
+    let k = 0;
+    for (let r = 0; r < rows; r++){
+      const row = document.createElement('div'); row.className = 'trow';
+      const cnt = base + (r < extra ? 1 : 0);
+      for (let q = 0; q < cnt; q++) row.appendChild(btns[k++]);
+      box.appendChild(row);
+    }
+  }
+  function bigTiles(box, c){
+    const btns = c.numbers.map(String).map(key => {
+      const d = document.createElement('div');
+      d.className = 'tile' + (!c.items && key.length >= 4 ? ' d4' : ''); d.dataset.n = key; d.innerHTML = tileInner(c, key);
+      return d;
+    });
+    box._btns = btns; layoutBig(box, btns); return btns;
+  }
+
+  function stopStarter(){ if (stTimer) clearInterval(stTimer); stTimer = null; if (ST) ST.phase = 'off'; }
+  function prepStarter(level){
+    stopStarter();
+    const L = NF.LEVELS[level - 1];
+    ST = { level, total: S.stCards, secs: S.stSecs, i: 0, cards: [], left: 0, last: 0, paused: false, phase: 'ready', ri: 0, list: false };
+    $('hLevel').innerHTML = `Level <b>${L.id}</b>`;
+    ['hLevel','homeBtn'].forEach(x => $(x).classList.remove('hidden'));
+    ['hCase','hScore'].forEach(x => $(x).classList.add('hidden'));
+    $('rTitle').textContent = `Level ${L.id} · ${L.name}`;
+    $('rInfo').innerHTML = `<b>${ST.total}</b> card${ST.total === 1 ? '' : 's'} · <b>${ST.secs}</b> seconds each · ${fmtTime(ST.total * ST.secs)} in all`;
+    $('rClean').classList.toggle('hidden', !(L.clean && S.cleanOn));
+    $('sReady').classList.remove('hidden'); $('sRun').classList.add('hidden'); $('sDone').classList.add('hidden');
+    show('starter'); scrollTo(0, 0);
+    setTimeout(() => $('rStart').focus({ preventScroll: true }), 50);
+  }
+  function runStarter(){
+    const cards = []; let prev = '';
+    for (let k = 0; k < ST.total; k++){
+      let c; for (let t = 0; t < 6; t++){ c = NF.generate(ST.level, opts()); if (c.ruleName !== prev) break; }
+      prev = c.ruleName; cards.push(c);
+    }
+    ST.cards = cards; ST.phase = 'run'; ST.paused = false;
+    $('sReady').classList.add('hidden'); $('sDone').classList.add('hidden'); $('sRun').classList.remove('hidden');
+    $('hCase').classList.remove('hidden'); $('sPause').innerHTML = '&#10074;&#10074; Pause';
+    scrollTo(0, 0);
+    showStarterCard(0); chime();
+    clearInterval(stTimer); stTimer = setInterval(tick, 100);
+    document.activeElement && document.activeElement.blur && document.activeElement.blur();
+  }
+  function showStarterCard(i){
+    ST.i = i; const c = ST.cards[i], L = NF.LEVELS[ST.level - 1];
+    ST.left = ST.secs * 1000; ST.last = performance.now();
+    $('hCase').innerHTML = `Card <b>${i + 1}</b>/${ST.total}`;
+    $('sCase').textContent = `CASE ${i + 1} / ${ST.total}`;
+    const shown = L.showRule || S.showAll, noun = c.family === 'eqfrac' ? 'value' : 'number';
+    $('sRuleRow').classList.toggle('hidden', !shown); if (shown) $('sRule').textContent = c.ruleName;
+    $('sPrompt').textContent = c.cleanOption
+      ? `Write down the imposter ${noun} — or CLEAN if every ${noun} fits`
+      : (shown ? `Write down the imposter ${noun}` : `Find the rule, then write down the imposter ${noun}`);
+    const box = $('sTiles'); box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+    bigTiles(box, c);
+    updateTimeUI();
+  }
+  function updateTimeUI(){
+    const secs = Math.max(0, Math.ceil(ST.left / 1000)), warn = ST.left <= Math.min(5000, ST.secs * 250);
+    $('sTime').textContent = ST.paused ? '⏸' : secs;
+    $('sTime').classList.toggle('warn', warn); $('sBarWrap').classList.toggle('warn', warn);
+    $('sBar').style.width = Math.max(0, Math.min(100, ST.left / (ST.secs * 1000) * 100)) + '%';
+  }
+  function tick(){
+    if (!ST || ST.phase !== 'run') return;
+    const now = performance.now();
+    if (ST.paused){ ST.last = now; return; }
+    ST.left -= now - ST.last; ST.last = now;
+    if (ST.left <= 0) return advance(1);
+    updateTimeUI();
+  }
+  function advance(d){
+    const j = ST.i + d;
+    if (j >= ST.total) return endStarter();
+    if (j < 0) return showStarterCard(0);
+    showStarterCard(j); chime();
+  }
+  function setPause(p){
+    if (!ST || ST.phase !== 'run') return;
+    ST.paused = p; ST.last = performance.now();
+    $('sPause').innerHTML = p ? '&#9654; Resume' : '&#10074;&#10074; Pause';
+    updateTimeUI();
+  }
+  function endStarter(){
+    clearInterval(stTimer); stTimer = null; ST.phase = 'done';
+    $('sRun').classList.add('hidden'); $('sDone').classList.remove('hidden'); $('hCase').classList.add('hidden');
+    $('dTitle').textContent = `${ST.total} card${ST.total === 1 ? '' : 's'} complete`;
+    chime(); scrollTo(0, 0);
+    setTimeout(() => $('dReveal').focus({ preventScroll: true }), 50);
+  }
+  function openReview(i){
+    ST.phase = 'review'; ST.ri = i; ST.list = false;
+    ['hCase','hScore'].forEach(x => $(x).classList.add('hidden'));
+    show('review'); scrollTo(0, 0); renderReview();
+  }
+  function renderReview(){
+    const i = ST.ri, c = ST.cards[i], list = ST.list, noun = c.family === 'eqfrac' ? 'value' : 'number';
+    $('rvBody').classList.toggle('hidden', list); $('rvList').classList.toggle('hidden', !list); $('rvRuleRow').classList.toggle('hidden', list);
+    $('rvPrev').disabled = list || i === 0; $('rvNext').disabled = list || i === ST.total - 1;
+    $('rvToggle').textContent = list ? 'Card view' : 'Answer list';
+    $('rvCase').textContent = list ? `ALL ${ST.total} ANSWERS` : `CASE ${i + 1} / ${ST.total}`;
+    if (list){
+      $('rvList').innerHTML = ST.cards.map((k, n) =>
+        `<div class="arow"><b>${n + 1}</b><span class="aimp">${k.clean ? 'CLEAN' : k.imposter}</span><span class="arule">${k.ruleReveal || k.ruleName}</span></div>`).join('');
+      return;
+    }
+    $('rvRule').textContent = c.ruleReveal || c.ruleName;
+    const btns = bigTiles($('rvTiles'), c), impK = c.imposter == null ? null : String(c.imposter);
+    btns.forEach(b => {
+      if (!c.clean && b.dataset.n === impK){ b.classList.add('imp'); b.insertAdjacentHTML('beforeend', '<span class="stamp">IMPOSTER</span>'); }
+      else b.classList.add('ok');
+    });
+    $('rvText').textContent = c.clean ? `Every ${noun} fits the rule. This card was CLEAN.` : `The imposter is ${impK}. ${c.why}`;
+  }
+  $('rStart').onclick = runStarter;
+  $('rBack').onclick = goHome;
+  $('sPause').onclick = () => setPause(!ST.paused);
+  $('sSkip').onclick = () => advance(1);
+  $('sPrev').onclick = () => advance(-1);
+  $('sQuit').onclick = goHome;
+  $('dReveal').onclick = () => openReview(0);
+  $('dAgain').onclick = () => prepStarter(ST.level);
+  $('dHome').onclick = goHome;
+  $('rvPrev').onclick = () => { if (ST.ri > 0){ ST.ri--; renderReview(); } };
+  $('rvNext').onclick = () => { if (ST.ri < ST.total - 1){ ST.ri++; renderReview(); } };
+  $('rvToggle').onclick = () => { ST.list = !ST.list; renderReview(); };
+  $('rvAgain').onclick = () => prepStarter(ST.level);
+  $('rvHome').onclick = goHome;
+  addEventListener('resize', () => { clearTimeout(rz2); rz2 = setTimeout(() => {
+    if (!ST) return;
+    if (ST.phase === 'run') layoutBig($('sTiles'), $('sTiles')._btns);
+    else if (ST.phase === 'review' && !ST.list) layoutBig($('rvTiles'), $('rvTiles')._btns);
+  }, 80); });
+  addEventListener('keydown', e => {
+    if (!ST || !$('modal').classList.contains('hidden')) return;
+    if (ST.phase === 'run'){
+      if (e.key === ' ' && document.activeElement && document.activeElement.tagName === 'BUTTON') return;
+      if (e.key === ' '){ e.preventDefault(); setPause(!ST.paused); }
+      else if (e.key === 'ArrowRight') advance(1);
+      else if (e.key === 'ArrowLeft') advance(-1);
+    } else if (ST.phase === 'review'){
+      if (e.key === 'ArrowRight') $('rvNext').click();
+      else if (e.key === 'ArrowLeft') $('rvPrev').click();
+    }
+  });
+
+  buildHome(); syncHome();
+  window.__NF_TEST = { start, prepStarter, runStarter, get G(){return G;}, get ST(){return ST;} };
 })();
 </script>
 </body>
