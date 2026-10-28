@@ -137,6 +137,39 @@ h1,h2{font-family:Georgia,"Times New Roman",serif;margin:0}
   .titlerow svg{height:28vh}
   .titlebox{max-width:90vw}
 }
+
+/* class starter */
+.modes{display:flex;gap:10px;justify-content:center;margin:0 auto 2vh}
+.modes .btn.on{background:var(--gold);color:var(--ink);box-shadow:0 5px 0 #c9a21c}
+.stset{display:flex;gap:1vh 1.6vw;justify-content:center;flex-wrap:wrap;align-items:center;margin:0 auto 2.2vh;padding:1.2vh 1.6vw;background:rgba(255,255,255,.12);border-radius:16px;width:fit-content;max-width:100%;font-size:clamp(14px,2.2vh,20px)}
+.stset label{display:flex;gap:.6em;align-items:center}
+.stset input[type=number]{width:4.4em;font:inherit;font-weight:800;padding:.3em .4em;text-align:center;border-radius:8px;border:2px solid rgba(255,255,255,.35);background:#120a26;color:var(--gold)}
+.stset input[type=checkbox]{width:1.3em;height:1.3em;accent-color:var(--pink)}
+.stbar{display:flex;align-items:center;gap:2vw;margin-bottom:1.6vh}
+.stbar .ttl{font-family:Georgia,serif;font-weight:700;font-size:clamp(16px,3vh,30px);color:var(--gold);flex:1}
+.stclock{font:900 clamp(30px,6vh,66px)/1 Georgia,serif;color:var(--gold);min-width:2.4ch;text-align:right}
+.stclock.warn{color:var(--pink)}
+.stbarwrap{height:12px;border-radius:7px;background:rgba(255,255,255,.18);overflow:hidden;margin:0 0 1.6vh}
+.stbarwrap i{display:block;height:100%;width:100%;background:var(--gold);border-radius:7px;transition:width .12s linear}
+.stbarwrap.warn i{background:var(--pink)}
+.stpanel{max-width:780px;margin:5vh auto 0;text-align:center;background:rgba(10,6,24,.72);border:2px solid rgba(255,255,255,.25);border-radius:18px;padding:3.2vh 3vw}
+.stpanel h2{font-size:clamp(26px,5vh,48px);color:var(--gold);margin-bottom:1vh}
+.stpanel p{font-size:clamp(16px,2.8vh,26px);margin:.6vh 0}
+.stpanel p b{color:var(--gold)}
+.stpanel .row{display:flex;gap:1vw;justify-content:center;flex-wrap:wrap;margin-top:2.6vh}
+.stev{width:fit-content;max-width:100%;margin:1.4vh auto 0}
+.stev svg{display:block;height:min(66vh,calc(100vh - 250px));width:auto;max-width:100%;margin:0 auto}
+.stprompt{text-shadow:0 2px 6px #0a0618,0 0 14px #0a0618;text-align:center;font-family:Georgia,serif;font-weight:700;font-size:clamp(20px,4vh,42px);color:var(--gold);margin:2.2vh 0 1vh}
+.stctl{display:flex;gap:1vw;justify-content:center;flex-wrap:wrap;margin-top:1.4vh}
+.rvmain{display:flex;gap:2.4vw;align-items:flex-start;justify-content:center;flex-wrap:wrap;margin-top:1vh}
+.rvmain .stev{margin:1.4vh 0 0}
+.rvnotes{flex:1 1 320px;max-width:760px;background:rgba(10,6,24,.78);border-radius:16px;padding:1.4vh 1.6vw;font-size:clamp(18px,3.2vh,32px);line-height:1.35;margin-top:1.4vh}
+.rvnotes .big{font-family:Georgia,serif;color:var(--gold);font-size:1.15em;font-weight:700;display:block;margin-bottom:.4em}
+.alist{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:1.2vh 1.6vw;margin:1.4vh auto;width:min(96vw,1100px)}
+.acell{display:flex;align-items:baseline;gap:.8em;background:var(--paper);color:var(--ink);border-radius:10px;padding:.5em .9em;font-size:clamp(15px,2.6vh,24px)}
+.acell .pn{font-weight:800;opacity:.55;min-width:1.6em}
+.acell .an{font-family:Georgia,serif;font-weight:900;font-size:1.5em;color:var(--pinkd);min-width:2.4em}
+@media (max-width:900px){.stev svg{height:auto;width:100%}}
 </style>
 </head>
 <body>
@@ -224,7 +257,14 @@ h1,h2{font-family:Georgia,"Times New Roman",serif;margin:0}
 <!-- LEVEL SELECT -->
 <section id="levels" class="screen">
   <h2>Choose your case file</h2>
-  <div class="lead">Ten clues in every case. Find the missing angle, then choose the correct reason. In levels 7–9 you must find other angles first.</div>
+  <div class="lead" id="lead">Ten clues in every case. Find the missing angle, then choose the correct reason. In levels 7–9 you must find other angles first.</div>
+  <div class="modes"><button class="btn small" id="mPlay">Agent training</button><button class="btn small" id="mStart">Class Starter</button></div>
+  <div class="stset" id="stSet" hidden>
+    <label>Questions <input type="number" id="stN" min="1" max="20"></label>
+    <label>Seconds each, levels 1&ndash;6 <input type="number" id="stS1" min="5" max="300"></label>
+    <label>levels 7&ndash;9 <input type="number" id="stS2" min="5" max="600"></label>
+    <label><input type="checkbox" id="stChime"> Chime on each new question</label>
+  </div>
   <div class="cards" id="cards"></div>
   <div class="opts"><label><input type="checkbox" id="optReasons" checked> Ask for the reason as well (levels 1–6)</label> <label><input type="checkbox" id="opt5" checked> Angles are multiples of 5°</label></div>
 </section>
@@ -255,6 +295,56 @@ h1,h2{font-family:Georgia,"Times New Roman",serif;margin:0}
       </div>
       <div class="notes" id="notes" hidden></div>
       <button class="btn gold big" id="btnNext" hidden>Next case ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- CLASS STARTER -->
+<section id="starter" class="screen">
+  <div class="stbar">
+    <button class="btn ghost small" id="stHome">&#9664; Case files</button>
+    <div class="ttl" id="stTitle"></div>
+    <div class="stclock" id="stClock" hidden></div>
+  </div>
+  <div class="stbarwrap" id="stBarWrap" hidden><i id="stBar"></i></div>
+
+  <div id="stReady" class="stpanel">
+    <h2 id="rdTitle"></h2>
+    <p id="rdInfo"></p>
+    <p id="rdNote"></p>
+    <div class="row"><button class="btn gold big" id="rdStart">Start &#9654;</button><button class="btn ghost big" id="rdBack">Choose another case file</button></div>
+  </div>
+
+  <div id="stRun" hidden>
+    <div class="evidence stev"><div class="tag" id="stTag"></div><div id="stScene"></div></div>
+    <div class="stprompt" id="stPrompt"></div>
+    <div class="stctl">
+      <button class="btn ghost small" id="stPrev">&#9664; Back</button>
+      <button class="btn ghost small" id="stPause">Pause</button>
+      <button class="btn ghost small" id="stSkip">Skip &#9654;</button>
+      <button class="btn ghost small" id="stQuit">Quit</button>
+    </div>
+  </div>
+
+  <div id="stDone" class="stpanel" hidden>
+    <div class="stamp">PENCILS DOWN</div>
+    <h2 id="dnTitle"></h2>
+    <p>Ready to go through the evidence?</p>
+    <div class="row"><button class="btn gold big" id="dnReveal">Reveal answers &#9654;</button><button class="btn big" id="dnAgain">Run again</button><button class="btn ghost big" id="dnBack">Case files</button></div>
+  </div>
+
+  <div id="stReview" hidden>
+    <div class="rvmain" id="rvMain">
+      <div class="evidence stev"><div class="tag" id="rvTag"></div><div id="rvScene"></div></div>
+      <div class="rvnotes" id="rvNotes"></div>
+    </div>
+    <div class="alist" id="rvList" hidden></div>
+    <div class="stctl">
+      <button class="btn ghost small" id="rvPrev">&#9664; Previous</button>
+      <button class="btn small" id="rvNext">Next &#9654;</button>
+      <button class="btn ghost small" id="rvToggle">Answer list</button>
+      <button class="btn ghost small" id="rvAgain">New starter</button>
+      <button class="btn ghost small" id="rvBack">Case files</button>
     </div>
   </div>
 </section>
@@ -780,7 +870,7 @@ function renderMulti(C,st){
 //--UI--
 /* ===================== UI ===================== */
 const $=id=>document.getElementById(id);
-const screens=["title","levels","game","results"];
+const screens=["title","levels","game","results","starter"];
 function show(id){screens.forEach(s=>$(s).classList.toggle("active",s===id));window.scrollTo(0,0);}
 
 /* skyline */
@@ -802,9 +892,10 @@ function getBest(){try{return JSON.parse(localStorage.getItem(KEY)||"{}");}catch
 function setBest(id,v){try{const b=getBest();if(!b[id]||v>b[id]){b[id]=v;localStorage.setItem(KEY,JSON.stringify(b));}}catch(e){}}
 
 function buildCards(){
+  syncMode();
   const best=getBest();
   $("cards").innerHTML=LEVELS.map(L=>`<button class="card" data-id="${L.id}"><span class="num">${L.id}</span><h3>${L.name}</h3><p>${L.sub}</p>${best[L.id]!==undefined?`<div class="best">Best: ${best[L.id]}%</div>`:""}</button>`).join("");
-  $("cards").querySelectorAll(".card").forEach(b=>b.onclick=()=>startLevel(+b.dataset.id));
+  $("cards").querySelectorAll(".card").forEach(b=>b.onclick=()=>SKD.mode==="starter"?prepStarter(+b.dataset.id):startLevel(+b.dataset.id));
 }
 
 let VB={x:0,y:0,w:520,h:420},dragMoved=false,pd=null;
@@ -1040,6 +1131,178 @@ $("btnLevels").onclick=()=>{buildCards();show("levels");};
 $("rLevels").onclick=()=>{buildCards();show("levels");};
 $("rAgain").onclick=()=>startLevel(G.L.id);
 $("rNext").onclick=()=>startLevel(G.L.id+1);
+
+/* ===================== CLASS STARTER ===================== */
+const SKD={mode:"play",n:10,s1:30,s2:60,chime:true};
+try{Object.assign(SKD,JSON.parse(localStorage.getItem("angleDetectiveStarter")||"{}"));}catch(e){}
+const skSave=()=>{try{localStorage.setItem("angleDetectiveStarter",JSON.stringify(SKD));}catch(e){}};
+const clampN=(v,a,b)=>Math.max(a,Math.min(b,isNaN(v)?a:Math.round(v)));
+const fmtT=t=>{const m=Math.floor(t/60),r=t%60;return m?m+" min"+(r?" "+r+" s":""):r+" s";};
+let SS=null,ssTimer=null,ac=null;
+
+function syncMode(){
+  const st=SKD.mode==="starter";
+  $("mPlay").classList.toggle("gold",!st);$("mStart").classList.toggle("gold",st);
+  $("mPlay").classList.toggle("ghost",st);$("mStart").classList.toggle("ghost",!st);
+  $("stSet").hidden=!st;
+  $("stN").value=SKD.n;$("stS1").value=SKD.s1;$("stS2").value=SKD.s2;$("stChime").checked=SKD.chime;
+  $("lead").textContent=st?"Class Starter: a new diagram appears every few seconds by itself. Pupils write down the missing angle and the reason. Choose a case file to begin."
+    :"Ten clues in every case. Find the missing angle, then choose the correct reason. In levels 7–9 you must find other angles first.";
+}
+$("mPlay").onclick=()=>{SKD.mode="play";skSave();syncMode();};
+$("mStart").onclick=()=>{SKD.mode="starter";skSave();syncMode();};
+[["stN","n",1,20],["stS1","s1",5,300],["stS2","s2",5,600]].forEach(([id,k,a,z])=>$(id).addEventListener("input",()=>{SKD[k]=clampN(+$(id).value,a,z);skSave();}));
+$("stChime").onchange=()=>{SKD.chime=$("stChime").checked;skSave();};
+
+function chime(){
+  if(!SKD.chime) return;
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==="suspended") ac.resume();
+    const t=ac.currentTime;
+    [[660,0],[880,.16]].forEach(([f,d])=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type="sine";o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t+d);g.gain.exponentialRampToValueAtTime(.2,t+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d+.45);
+      o.connect(g);g.connect(ac.destination);o.start(t+d);o.stop(t+d+.5);
+    });
+  }catch(e){}
+}
+
+const secsFor=L=>L.multi?SKD.s2:SKD.s1;
+function buildQ(c){
+  if(!c.multi) return {c,multi:false,ans:c.ans};
+  const known=new Map(c.given),steps=[];
+  c.order.forEach(id=>{
+    const f=c.facts.find(f=>f.ids.includes(id)&&f.ids.every(x=>x===id||known.has(x)));
+    let val=c.sec[id].size,work="";
+    if(f){
+      val=valFrom(f,id,known);
+      if(f.type==="eq") work="Equal to the "+known.get(f.ids.find(x=>x!==id))+"° angle, so "+val+"°";
+      else work=f.total+"° − "+f.ids.filter(x=>x!==id).map(x=>known.get(x)).join("° − ")+"° = "+val+"°";
+    }
+    known.set(id,val);
+    steps.push({id,name:id===c.target?null:c.names[id],work,reason:f?f.reason:"ST",val});
+  });
+  return {c,multi:true,ans:steps[steps.length-1].val,steps,known};
+}
+function genQuestions(L,n){
+  STEP=$("opt5").checked?5:1;
+  const out=[];
+  for(let k=0;k<n;k++){
+    const i=Math.min(9,Math.floor(k*10/n));
+    let c=null,t=0;while(!c&&t++<6) c=L.gen(i);
+    if(!c) c=genVO(i);
+    out.push(buildQ(c));
+  }
+  return out;
+}
+function prepStarter(id){
+  stopTimer();
+  const L=LEVELS.find(l=>l.id===id),secs=secsFor(L);
+  SS={L,n:SKD.n,secs,reasons:L.multi?true:$("optReasons").checked,qs:[],i:0,left:0,total:0,last:0,paused:false,phase:"ready",ri:0,list:false};
+  $("stTitle").textContent="Case file "+L.id+": "+L.name;
+  $("rdTitle").textContent=L.name;
+  $("rdInfo").innerHTML="<b>"+SS.n+"</b> question"+(SS.n===1?"":"s")+" · <b>"+secs+"</b> seconds each · "+fmtT(SS.n*secs)+" in all";
+  $("rdNote").textContent=L.multi?"Pupils work out the lettered angles first, then the missing angle, giving a reason for each."
+    :SS.reasons?"Pupils write down the missing angle and the reason for each diagram.":"Pupils write down the missing angle for each diagram.";
+  ["stRun","stDone","stReview","stClock","stBarWrap"].forEach(x=>$(x).hidden=true);
+  $("stReady").hidden=false;
+  show("starter");
+}
+function runStarter(){
+  SS.qs=genQuestions(SS.L,SS.n);SS.phase="run";SS.paused=false;
+  ["stReady","stDone","stReview"].forEach(x=>$(x).hidden=true);
+  ["stRun","stClock","stBarWrap"].forEach(x=>$(x).hidden=false);
+  $("stPause").textContent="Pause";
+  showQ(0);chime();
+  stopTimer();ssTimer=setInterval(tick,100);
+}
+function stopTimer(){if(ssTimer)clearInterval(ssTimer);ssTimer=null;}
+function sceneOf(q,revealed){
+  if(!q.multi) return renderScene(q.c.scene,revealed,q.ans);
+  return renderMulti(q.c,{known:revealed?q.known:new Map(q.c.given),solved:revealed?new Set(q.c.order):new Set(),sel:null,pending:null});
+}
+function showQ(i){
+  SS.i=i;const q=SS.qs[i];
+  SS.total=SS.left=SS.secs*1000;SS.last=performance.now();
+  $("stTag").textContent="CASE "+(i+1)+" OF "+SS.n;
+  $("stScene").innerHTML=sceneOf(q,false);
+  $("stPrompt").textContent=q.multi?"Work out the lettered angles, then the missing angle. Give a reason for each."
+    :SS.reasons?"Find the missing angle and give the reason":"Find the missing angle";
+  updClock();
+}
+function updClock(){
+  const secs=Math.max(0,Math.ceil(SS.left/1000)),warn=SS.left<=Math.min(5000,SS.total*.25);
+  $("stClock").textContent=SS.paused?"⏸":secs;
+  $("stClock").classList.toggle("warn",warn);$("stBarWrap").classList.toggle("warn",warn);
+  $("stBar").style.width=Math.max(0,Math.min(100,SS.left/SS.total*100))+"%";
+}
+function tick(){
+  if(!SS||SS.phase!=="run") return;
+  const now=performance.now();
+  if(SS.paused){SS.last=now;return;}
+  SS.left-=now-SS.last;SS.last=now;
+  if(SS.left<=0) advanceQ(1);else updClock();
+}
+function advanceQ(d){
+  const j=SS.i+d;
+  if(j>=SS.n) return finishS();
+  if(j<0) return showQ(0);
+  showQ(j);chime();
+}
+function togglePause(){
+  if(!SS||SS.phase!=="run") return;
+  SS.paused=!SS.paused;SS.last=performance.now();
+  $("stPause").textContent=SS.paused?"Resume":"Pause";updClock();
+}
+function finishS(){
+  stopTimer();SS.phase="done";
+  ["stRun","stClock","stBarWrap"].forEach(x=>$(x).hidden=true);
+  $("dnTitle").textContent=SS.n+" question"+(SS.n===1?"":"s")+" complete";
+  $("stDone").hidden=false;chime();
+}
+function openReview(i){
+  SS.phase="review";SS.ri=i;SS.list=false;
+  $("stDone").hidden=true;$("stReview").hidden=false;renderReview();
+}
+function noteOf(q){
+  if(!q.multi){
+    return '<span class="big">Missing angle: '+q.ans+'°</span>'+q.c.working+(SS.reasons?'<br><b>Reason:</b> '+REASONS[q.c.reason]:"");
+  }
+  return '<ol style="margin:0;padding-left:1.2em">'+q.steps.map(s=>'<li><b>'+(s.name?"Angle "+s.name:"Missing angle")+':</b> '+s.work+' <i>('+REASONS[s.reason]+')</i></li>').join("")+'</ol>';
+}
+function renderReview(){
+  const q=SS.qs[SS.ri];
+  $("rvMain").hidden=SS.list;$("rvList").hidden=!SS.list;
+  $("rvPrev").disabled=SS.list||SS.ri===0;$("rvNext").disabled=SS.list||SS.ri===SS.n-1;
+  $("rvToggle").textContent=SS.list?"Case view":"Answer list";
+  if(SS.list){
+    $("rvList").innerHTML=SS.qs.map((x,k)=>'<div class="acell"><span class="pn">'+(k+1)+'</span><span class="an">'+x.ans+'°</span><span>'+(SS.reasons||x.multi?REASONS[x.multi?x.steps[x.steps.length-1].reason:x.c.reason]:"")+'</span></div>').join("");
+    return;
+  }
+  $("rvTag").textContent="CASE "+(SS.ri+1)+" OF "+SS.n;
+  $("rvScene").innerHTML=sceneOf(q,true);
+  $("rvNotes").innerHTML=noteOf(q);
+}
+function leaveStarter(){stopTimer();SS=null;buildCards();show("levels");}
+[["rdStart",runStarter],["rdBack",leaveStarter],["stHome",leaveStarter],["stQuit",leaveStarter],
+ ["stPause",togglePause],["stSkip",()=>{if(SS&&SS.phase==="run")advanceQ(1);}],["stPrev",()=>{if(SS&&SS.phase==="run")advanceQ(-1);}],
+ ["dnReveal",()=>openReview(0)],["dnAgain",()=>prepStarter(SS.L.id)],["dnBack",leaveStarter],
+ ["rvPrev",()=>{if(SS.ri>0){SS.ri--;renderReview();}}],["rvNext",()=>{if(SS.ri<SS.n-1){SS.ri++;renderReview();}}],
+ ["rvToggle",()=>{SS.list=!SS.list;renderReview();}],["rvAgain",()=>prepStarter(SS.L.id)],["rvBack",leaveStarter]
+].forEach(([id,fn])=>$(id).addEventListener("click",e=>{const b=e.currentTarget;fn();b.blur();}));
+document.addEventListener("keydown",e=>{
+  if(!SS||!$("starter").classList.contains("active")) return;
+  if(SS.phase==="run"){
+    if(e.code==="Space"){e.preventDefault();togglePause();}
+    else if(e.key==="ArrowRight") advanceQ(1);
+    else if(e.key==="ArrowLeft") advanceQ(-1);
+  } else if(SS.phase==="review"){
+    if(e.key==="ArrowRight") $("rvNext").click();
+    else if(e.key==="ArrowLeft") $("rvPrev").click();
+  }
+});
 </script>
 </body>
 </html>
