@@ -168,6 +168,13 @@ button.on{background:linear-gradient(#e2c35a,#b8922c);color:#1a1505;border-color
 .nodisp{display:none!important}
 body.starter .controls:not(.sc){display:none}
 body.starter .pm{display:none}
+body.starter #board{width:min(98vw,calc((100vh - 218px) * 1.65));gap:clamp(5px,.9vw,12px)}
+body.starter #autobar{width:min(98vw,calc((100vh - 218px) * 1.65))}
+body.starter .tile{padding:2cqh 3cqw}
+body.starter .tile.shown .txt{font-family:"Trebuchet MS","Segoe UI",Arial,Helvetica,sans-serif;line-height:1.1;font-size:clamp(1.2rem,min(11cqw,22cqh),6rem)}
+body.starter .tile.shown .lbl{font-size:max(11px,8cqh)}
+body.starter .centre .sub{font-size:max(12px,min(6.5cqw,10cqh))}
+@media (max-aspect-ratio:1/1){ body.starter #board,body.starter #autobar{width:98vw} }
 body.starter #msg{font-size:clamp(1.1rem,2.6vw,1.8rem);font-weight:bold;margin:10px 0 4px}
 .stset{display:flex;gap:10px 22px;justify-content:center;flex-wrap:wrap;align-items:center;margin:6px 0;color:var(--gold2);font-size:clamp(.9rem,1.8vw,1.1rem)}
 .stset label{display:flex;gap:8px;align-items:center}
@@ -527,6 +534,7 @@ function render(){
   $('btnNext').disabled=!canNext;
   $('btnNext').style.display=S.mode==='all'?'none':'';
   if(typeof autoUI==='function') autoUI();
+  if(ST&&ST.active) fitClues();
 }
 function say(t,cls){ const m=$('msg'); m.textContent=t; m.className=cls||''; }
 
@@ -603,6 +611,21 @@ $('autoSecs').onchange=()=>{ autoReset(); $('autoSecs').blur(); };
 
 
 /* ---------- class starter ---------- */
+/* Grow each clue's text to the largest size that fits its card, so it reads from the back of the room. */
+function fitClues(){
+  document.querySelectorAll('#board .tile.shown .txt').forEach(el=>{
+    const tile=el.parentElement, aw=tile.clientWidth*0.94, ah=tile.clientHeight*0.8;
+    if(!aw||!ah) return;
+    el.style.maxWidth=aw+'px';
+    let lo=14, hi=170;
+    for(let k=0;k<11;k++){
+      const mid=(lo+hi)/2; el.style.fontSize=mid+'px';
+      if(el.offsetHeight<=ah && el.scrollWidth<=aw+1) lo=mid; else hi=mid;
+    }
+    el.style.fontSize=Math.floor(lo)+'px';
+  });
+}
+addEventListener('resize',()=>{ if(ST&&ST.active) fitClues(); });
 const SK={kind:'play',n:5,secs:10,extra:5,place:'cw'};
 try{ Object.assign(SK,JSON.parse(localStorage.getItem('whoAmI.starter.v1')||'{}')); }catch(e){}
 if(SK.kind!=='starter') SK.kind='play';
