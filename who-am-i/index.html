@@ -131,11 +131,11 @@ input[type=number]::-webkit-inner-spin-button{display:none}
 
 
 /* briefing overlay */
-#overlay{
+#overlay,#doneOv{
   position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
   background:radial-gradient(ellipse at 50% 30%,#1a2230 0%,#05070a 80%); padding:12px; overflow:auto;
 }
-#overlay.off{display:none}
+#overlay.off,#doneOv.off{display:none}
 .card{
   width:min(94vw,760px); text-align:center; padding:clamp(16px,3vw,34px);
   border:1px solid #3a4352; border-radius:14px; background:rgba(10,13,19,.88);
@@ -164,6 +164,20 @@ input[type=number]::-webkit-inner-spin-button{display:none}
 .auto select{font:inherit;font-size:clamp(.9rem,1.9vw,1.2rem);padding:9px 8px;background:#0c1018;color:var(--gold2);border:1px solid #4a5468;border-radius:8px}
 button.on{background:linear-gradient(#e2c35a,#b8922c);color:#1a1505;border-color:#f3dc8a;font-weight:bold}
 .auto.off{display:none}
+/* class starter */
+.nodisp{display:none!important}
+body.starter .controls:not(.sc){display:none}
+body.starter .pm{display:none}
+body.starter #msg{font-size:clamp(1.1rem,2.6vw,1.8rem);font-weight:bold;margin:10px 0 4px}
+.stset{display:flex;gap:10px 22px;justify-content:center;flex-wrap:wrap;align-items:center;margin:6px 0;color:var(--gold2);font-size:clamp(.9rem,1.8vw,1.1rem)}
+.stset label{display:flex;gap:8px;align-items:center}
+.stset input{width:4.6em;font:inherit;padding:6px 8px;text-align:center;background:#0c1018;color:var(--gold2);border:2px solid #4a5468;border-radius:8px}
+.sttot{color:var(--steel);font-size:.9rem;margin-top:8px}
+#alist{width:min(96vw,900px);display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:10px 0}
+.acell{background:linear-gradient(165deg,var(--paper),var(--paper2));color:var(--ink);border:1px solid #b9a978;border-radius:10px;padding:10px 14px;display:flex;align-items:baseline;gap:12px;font-family:"Courier New",Courier,monospace}
+.acell .pn{color:#8a7b52;font-size:1rem}
+.acell .an{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:bold;color:#9b1c25;margin-left:auto}
+.card .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
 footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
 </style>
 </head>
@@ -176,8 +190,9 @@ footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
   </div>
   <div class="hud">
     <span class="chip" id="chipMode"></span>
-    <span>Points: <b id="pts">0</b></span>
-    <span>Missions: <b id="done">0</b></span>
+    <span class="chip" id="stClock" style="display:none"></span>
+    <span class="pm">Points: <b id="pts">0</b></span>
+    <span class="pm">Missions: <b id="done">0</b></span>
     <button id="btnMute" title="Sound on/off">Sound: on</button>
     <button id="btnBrief" style="padding:6px 14px;font-size:.9rem">Briefing</button>
   </div>
@@ -203,6 +218,20 @@ footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
   <button id="btnGiveUp" class="danger">Declassify</button>
   <button id="btnNew">New mission</button>
 </div>
+<div id="alist" class="nodisp"></div>
+<div class="controls sc nodisp" id="stCtl">
+  <button id="stPause">Pause</button>
+  <button id="stSkip">Next clue &#9654;</button>
+  <button id="stNextP">Next puzzle &#9654;&#9654;</button>
+  <button id="stQuit" class="danger">Quit</button>
+</div>
+<div class="controls sc nodisp" id="rvCtl">
+  <button id="rvPrev">&#9664; Previous</button>
+  <button id="rvNext">Next &#9654;</button>
+  <button id="rvList">Answer list</button>
+  <button id="rvAgain">New starter</button>
+  <button id="rvBack" class="danger">Back to briefing</button>
+</div>
 <footer>FOR YOUR EYES ONLY</footer>
 
 <div id="overlay">
@@ -213,6 +242,12 @@ footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
     <p class="how">A mystery number hides in the centre. Each of the eight files around it holds one clue &ndash;
       none gives the game away alone, but together they pin the number down. Agent, your mission is to name it.</p>
 
+    <h3>MODE</h3>
+    <div class="opts" id="optKind">
+      <button data-v="play">Agent training<small>one player</small></button>
+      <button data-v="starter">Class Starter<small>runs by itself</small></button>
+    </div>
+
     <h3>CLEARANCE LEVEL</h3>
     <div class="opts" id="optLevel">
       <button data-v="1">Easy<small>numbers up to 99</small></button>
@@ -220,15 +255,45 @@ footer{color:#3d4658;font-size:.72rem;letter-spacing:.2em;padding:0 0 8px}
       <button data-v="3">Hard<small>numbers up to 999</small></button>
     </div>
 
+    <div id="playOpts">
     <h3>HOW THE CLUES ARE REVEALED</h3>
     <div class="opts" id="optMode">
       <button data-v="all">All at once</button>
       <button data-v="seq">One by one<small>clockwise</small></button>
       <button data-v="rand">One at a time<small>random file</small></button>
     </div>
+    </div>
+
+    <div id="stOpts" class="nodisp">
+      <h3>CLASS STARTER</h3>
+      <div class="stset">
+        <label>Puzzles <input type="number" id="stN" min="1" max="20"></label>
+        <label>Seconds per clue <input type="number" id="stSecs" min="3" max="120"></label>
+        <label>Extra on last clue <input type="number" id="stExtra" min="0" max="60"></label>
+      </div>
+      <h3>WHERE THE CLUES APPEAR</h3>
+      <div class="opts" id="optPlace">
+        <button data-v="cw">Clockwise</button>
+        <button data-v="scat">Scattered</button>
+      </div>
+      <div class="sttot" id="stTot"></div>
+    </div>
 
     <button class="primary go" id="btnGo">Accept mission</button>
     <div class="lom"><span>Secret Agent Training by</span>www.LoadsOfMaths.co.uk</div>
+  </div>
+</div>
+
+<div id="doneOv" class="off">
+  <div class="card">
+    <div class="top">PENS DOWN</div>
+    <h2 id="dnTitle"></h2>
+    <p class="how">Mission complete. Time to compare notes, Agent.</p>
+    <div class="row">
+      <button class="primary go" id="dnReveal">Reveal answers</button>
+      <button id="dnAgain">Run again</button>
+      <button id="dnBack">Back to briefing</button>
+    </div>
   </div>
 </div>
 
@@ -415,6 +480,7 @@ const SFX=(()=>{
 
 /* ---------- game ---------- */
 const CW=[0,1,2,5,8,7,6,3];           // cells clockwise from top-left, skipping the centre (4)
+let ST=null;
 const S={level:1,mode:'seq',pts:0,done:0,n:0,clues:[],cellOf:[],shown:0,order:[],phase:'play',attempts:0,last:null};
 const $=id=>document.getElementById(id);
 const MODES={all:'All at once',seq:'One by one',rand:'One at a time'};
@@ -437,6 +503,7 @@ function render(){
       let inner, cls='tile centre';
       if(S.phase==='win'){ cls+=' win'; inner='<div class="q">'+S.n+'</div><div class="badge">IDENTIFIED</div>'; }
       else if(S.phase==='lost'){ cls+=' lost'; inner='<div class="q">'+S.n+'</div><div class="badge">DECLASSIFIED</div>'; }
+      else if(S.phase==='review'){ cls+=' win'; inner='<div class="q">'+S.n+'</div><div class="badge">THE ANSWER</div>'; }
       else inner='<div class="q">?</div><div class="sub">a whole number from '+L.lo+' to '+L.hi+'</div>';
       html+='<div class="'+cls+'" id="centre"><svg class="rings" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">'
         +'<g fill="none" stroke="#d8b449" stroke-width=".5"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="34"/><circle cx="50" cy="50" r="22"/>'
@@ -453,7 +520,7 @@ function render(){
   }
   $('board').innerHTML=html;
   $('pts').textContent=S.pts; $('done').textContent=S.done;
-  $('chipMode').textContent=L.name+' · '+MODES[S.mode];
+  $('chipMode').textContent=(ST&&ST.active)?'Class Starter · '+L.name:L.name+' · '+MODES[S.mode];
   const playing=S.phase==='play';
   $('btnGuess').disabled=!playing; $('guess').disabled=!playing; $('btnGiveUp').disabled=!playing;
   let canNext=playing&&S.mode!=='all'&&(S.mode==='rand'||S.shown<8);
@@ -477,6 +544,7 @@ function newMission(){
   $('guess').focus();
 }
 function nextClue(){
+  if(ST&&ST.active) return;
   if(S.phase!=='play'||S.mode==='all') return;
   if(S.mode!=='rand'&&S.shown>=8) return;
   if(S.mode==='rand'&&S.shown%8===0){            // every file seen: shuffle and go round again
@@ -522,6 +590,7 @@ function autoUI(){
   $('btnAuto').textContent='Auto-reveal: '+(autoOn?'on':'off');
 }
 setInterval(()=>{
+  if(ST&&ST.active) return;
   const bar=$('autobar'), fill=bar.firstElementChild;
   if(!autoActive()){ bar.style.visibility='hidden'; return; }
   const total=(+$('autoSecs').value)*1000, el=performance.now()-autoStart;
@@ -533,15 +602,137 @@ $('btnAuto').onclick=()=>{ autoOn=!autoOn; SFX.click(); autoReset(); autoUI(); }
 $('autoSecs').onchange=()=>{ autoReset(); $('autoSecs').blur(); };
 
 
+/* ---------- class starter ---------- */
+const SK={kind:'play',n:5,secs:10,extra:5,place:'cw'};
+try{ Object.assign(SK,JSON.parse(localStorage.getItem('whoAmI.starter.v1')||'{}')); }catch(e){}
+if(SK.kind!=='starter') SK.kind='play';
+const skSave=()=>{ try{ localStorage.setItem('whoAmI.starter.v1',JSON.stringify(SK)); }catch(e){} };
+const clampN=(v,a,b)=>Math.max(a,Math.min(b,isNaN(v)?a:Math.round(v)));
+const fmtT=t=>{ const m=Math.floor(t/60), r=t%60; return m?m+' min'+(r?' '+r+' s':''):r+' s'; };
+const totTxt=()=>'About '+fmtT(SK.n*(8*SK.secs+SK.extra)+3)+' in all ('+SK.n+' puzzle'+(SK.n===1?'':'s')+', 8 clues each)';
+function syncStarterOpts(){
+  const st=SK.kind==='starter';
+  document.querySelectorAll('#optKind button').forEach(b=>b.classList.toggle('sel',b.dataset.v===SK.kind));
+  document.querySelectorAll('#optPlace button').forEach(b=>b.classList.toggle('sel',b.dataset.v===SK.place));
+  $('playOpts').classList.toggle('nodisp',st); $('stOpts').classList.toggle('nodisp',!st);
+  $('btnGo').textContent=st?'Start Class Starter':'Accept mission';
+  $('stN').value=SK.n; $('stSecs').value=SK.secs; $('stExtra').value=SK.extra;
+  $('stTot').textContent=totTxt();
+}
+document.querySelectorAll('#optKind button').forEach(b=>b.onclick=()=>{SK.kind=b.dataset.v;skSave();SFX.click();syncOpts();});
+document.querySelectorAll('#optPlace button').forEach(b=>b.onclick=()=>{SK.place=b.dataset.v;skSave();SFX.click();syncOpts();});
+[['stN','n',1,20],['stSecs','secs',3,120],['stExtra','extra',0,60]].forEach(([id,k,a,z])=>$(id).addEventListener('input',()=>{
+  SK[k]=clampN(+$(id).value,a,z); skSave(); $('stTot').textContent=totTxt();
+}));
+
+const stDur=()=>(S.shown>=8?SK.secs+SK.extra:SK.secs)*1000;
+function stLoad(i){
+  const p=ST.puzzles[i]; ST.i=i;
+  S.n=p.n; S.clues=p.clues; S.cellOf=p.cellOf; S.order=[0,1,2,3,4,5,6,7]; S.phase='play';
+}
+function startStarter(){
+  const seen=new Set(), puzzles=[];
+  for(let k=0;k<SK.n;k++){
+    let g,t=0; do{ g=generate(S.level,null); t++; }while(seen.has(g.n)&&t<40);
+    seen.add(g.n);
+    puzzles.push({n:g.n,clues:g.clues,cellOf:SK.place==='cw'?CW.slice():shuffle(CW.slice())});
+  }
+  const pm=(ST&&ST.prevMode)||S.mode;
+  ST={active:true,puzzles,i:0,phase:'count',left:3000,total:3000,last:performance.now(),paused:false,prevMode:pm,ri:0,list:false};
+  S.mode='seq'; autoOn=false; autoUI();
+  document.body.classList.add('starter');
+  $('board').style.display=''; $('alist').classList.add('nodisp'); $('rvCtl').classList.add('nodisp'); $('stCtl').classList.remove('nodisp');
+  $('doneOv').classList.add('off'); $('stPause').textContent='Pause'; $('stClock').style.display='';
+  stLoad(0); S.shown=0; $('guess').blur();
+  render(); stUI();
+}
+function stUI(){
+  if(!ST||!ST.active||ST.phase==='review'||ST.phase==='done') return;
+  const secs=Math.max(0,Math.ceil(ST.left/1000));
+  $('stClock').textContent=ST.paused?'Paused':'⏱ '+secs;
+  const n=ST.puzzles.length;
+  const t=ST.phase==='count'?'Pens ready… starting in '+secs:'Puzzle '+(ST.i+1)+' of '+n+' · Clue '+S.shown+' of 8 — write down who I am';
+  const m=$('msg'); m.className=''; m.textContent=t+(ST.paused?'  (paused)':'');
+  const bar=$('autobar'); bar.style.visibility='visible'; bar.firstElementChild.style.width=Math.max(0,Math.min(100,ST.left/ST.total*100))+'%';
+}
+function stAdvance(){
+  if(ST.phase==='count'){ ST.phase='run'; S.shown=1; ST.total=ST.left=stDur(); ST.last=performance.now(); SFX.start(); render(); stUI(); return; }
+  if(S.shown<8){ S.shown++; ST.total=ST.left=stDur(); ST.last=performance.now(); SFX.reveal(); render(); stUI(); return; }
+  stNextPuzzle();
+}
+function stNextPuzzle(){
+  if(ST.i+1>=ST.puzzles.length) return stFinish();
+  stLoad(ST.i+1); S.shown=1; ST.total=ST.left=stDur(); ST.last=performance.now(); SFX.start(); render(); stUI();
+}
+function stFinish(){
+  ST.phase='done'; $('stClock').style.display='none'; $('autobar').style.visibility='hidden';
+  const n=ST.puzzles.length; $('dnTitle').textContent=n+' puzzle'+(n===1?'':'s')+' complete';
+  $('doneOv').classList.remove('off'); SFX.win();
+}
+function stTogglePause(){
+  if(!ST||!ST.active||(ST.phase!=='run'&&ST.phase!=='count')) return;
+  ST.paused=!ST.paused; ST.last=performance.now(); $('stPause').textContent=ST.paused?'Resume':'Pause'; stUI();
+}
+setInterval(()=>{
+  if(!ST||!ST.active) return;
+  if(ST.paused){ ST.last=performance.now(); return; }
+  if(ST.phase!=='run'&&ST.phase!=='count') return;
+  const now=performance.now(); ST.left-=now-ST.last; ST.last=now;
+  if(ST.left<=0) stAdvance(); else stUI();
+},100);
+function stopStarter(toBrief){
+  if(!ST) return;
+  const pm=ST.prevMode; ST=null;
+  document.body.classList.remove('starter');
+  ['stCtl','rvCtl','alist'].forEach(id=>$(id).classList.add('nodisp'));
+  $('doneOv').classList.add('off'); $('board').style.display=''; $('stClock').style.display='none'; $('autobar').style.visibility='hidden';
+  S.mode=pm; $('msg').className='';
+  if(toBrief){ SK.kind=SK.kind; syncOpts(); $('overlay').classList.remove('off'); }
+  newMission();
+}
+function stReview(i){
+  ST.phase='review'; ST.ri=i; ST.list=false;
+  $('doneOv').classList.add('off'); $('stCtl').classList.add('nodisp'); $('rvCtl').classList.remove('nodisp');
+  $('stClock').style.display='none'; $('autobar').style.visibility='hidden';
+  renderReview();
+}
+function renderReview(){
+  const n=ST.puzzles.length, p=ST.puzzles[ST.ri];
+  $('alist').classList.toggle('nodisp',!ST.list); $('board').style.display=ST.list?'none':'';
+  $('rvPrev').disabled=ST.list||ST.ri===0; $('rvNext').disabled=ST.list||ST.ri===n-1;
+  $('rvList').textContent=ST.list?'Puzzle view':'Answer list';
+  if(ST.list){
+    $('alist').innerHTML=ST.puzzles.map((q,k)=>'<div class="acell"><span class="pn">'+(k+1)+'</span><span class="an">'+q.n+'</span></div>').join('');
+    say('All '+n+' answers','good'); return;
+  }
+  stLoad(ST.ri); S.shown=8; S.phase='review'; render();
+  say('Puzzle '+(ST.ri+1)+' of '+n+' · I was '+p.n,'good');
+}
+[['stPause',stTogglePause],
+ ['stSkip',()=>{ if(ST&&ST.active&&(ST.phase==='count'||(ST.phase==='run'&&S.shown<8))) stAdvance(); }],
+ ['stNextP',()=>{ if(ST&&ST.active&&ST.phase==='run') stNextPuzzle(); }],
+ ['stQuit',()=>stopStarter(true)],
+ ['rvPrev',()=>{ if(ST.ri>0){ ST.ri--; renderReview(); } }],
+ ['rvNext',()=>{ if(ST.ri<ST.puzzles.length-1){ ST.ri++; renderReview(); } }],
+ ['rvList',()=>{ ST.list=!ST.list; renderReview(); }],
+ ['rvAgain',()=>{ SFX.start(); startStarter(); }],
+ ['rvBack',()=>stopStarter(true)],
+ ['dnReveal',()=>stReview(0)],
+ ['dnAgain',()=>{ SFX.start(); startStarter(); }],
+ ['dnBack',()=>stopStarter(true)]
+].forEach(([id,fn])=>$(id).addEventListener('click',e=>{ const b=e.currentTarget; fn(); b.blur(); }));
+
+
 /* briefing overlay */
 function syncOpts(){
   document.querySelectorAll('#optLevel button').forEach(b=>b.classList.toggle('sel',+b.dataset.v===S.level));
   document.querySelectorAll('#optMode button').forEach(b=>b.classList.toggle('sel',b.dataset.v===S.mode));
+  syncStarterOpts();
 }
 document.querySelectorAll('#optLevel button').forEach(b=>b.onclick=()=>{S.level=+b.dataset.v;SFX.click();syncOpts();});
 document.querySelectorAll('#optMode button').forEach(b=>b.onclick=()=>{S.mode=b.dataset.v;SFX.click();syncOpts();});
-$('btnGo').onclick=()=>{ SFX.start(); $('overlay').classList.add('off'); newMission(); };
-$('btnBrief').onclick=()=>{ syncOpts(); $('overlay').classList.remove('off'); };
+$('btnGo').onclick=()=>{ SFX.start(); $('overlay').classList.add('off'); if(SK.kind==='starter') startStarter(); else newMission(); };
+$('btnBrief').onclick=()=>{ if(ST&&ST.active){ stopStarter(true); return; } syncOpts(); $('overlay').classList.remove('off'); };
 $('btnNext').onclick=nextClue;
 $('btnGuess').onclick=guess;
 $('btnGiveUp').onclick=giveUp;
@@ -549,6 +740,13 @@ $('btnNew').onclick=()=>{ SFX.fresh(); newMission(); };
 $('btnMute').onclick=()=>{ $('btnMute').textContent='Sound: '+(SFX.toggle()?'on':'off'); };
 $('guess').addEventListener('keydown',e=>{ if(e.key==='Enter') guess(); });
 document.addEventListener('keydown',e=>{
+  if(ST&&ST.active&&$('overlay').classList.contains('off')&&$('doneOv').classList.contains('off')){
+    if(e.target.tagName==='INPUT') return;
+    if(ST.phase==='review'){ if(e.key==='ArrowRight') $('rvNext').click(); else if(e.key==='ArrowLeft') $('rvPrev').click(); }
+    else if(e.code==='Space'){ e.preventDefault(); stTogglePause(); }
+    else if(e.key==='ArrowRight') $('stSkip').click();
+    return;
+  }
   if($('overlay').classList.contains('off') && e.code==='Space' && document.activeElement!==$('guess')){
     e.preventDefault(); nextClue();
   }
