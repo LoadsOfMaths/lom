@@ -534,7 +534,7 @@ function render(){
   $('btnNext').disabled=!canNext;
   $('btnNext').style.display=S.mode==='all'?'none':'';
   if(typeof autoUI==='function') autoUI();
-  if(ST&&ST.active) fitClues();
+  fitClues();
 }
 function say(t,cls){ const m=$('msg'); m.textContent=t; m.className=cls||''; }
 
@@ -617,15 +617,18 @@ function fitClues(){
     const tile=el.parentElement, aw=tile.clientWidth*0.94, ah=tile.clientHeight*0.8;
     if(!aw||!ah) return;
     el.style.maxWidth=aw+'px';
+    const st=!!(ST&&ST.active);
+    el.style.fontSize=''; const old=parseFloat(getComputedStyle(el).fontSize)||16;
     let lo=14, hi=170;
     for(let k=0;k<11;k++){
       const mid=(lo+hi)/2; el.style.fontSize=mid+'px';
       if(el.offsetHeight<=ah && el.scrollWidth<=aw+1) lo=mid; else hi=mid;
     }
-    el.style.fontSize=Math.floor(lo)+'px';
+    // Class Starter uses the full fitted size; normal play sits halfway between the old size and the fitted size
+    el.style.fontSize=Math.floor(st?lo:Math.max(old,(old+lo)/2))+'px';
   });
 }
-addEventListener('resize',()=>{ if(ST&&ST.active) fitClues(); });
+addEventListener('resize',()=>fitClues());
 const SK={kind:'play',n:5,secs:10,extra:5,place:'cw'};
 try{ Object.assign(SK,JSON.parse(localStorage.getItem('whoAmI.starter.v1')||'{}')); }catch(e){}
 if(SK.kind!=='starter') SK.kind='play';
