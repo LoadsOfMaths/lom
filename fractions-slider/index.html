@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Fractions Slider</title>
+<style>
+@font-face{font-family:'LOM Bouncer';src:local('Super Bouncer'),local('SuperBouncer');}
+@font-face{font-family:'LOM Hand';src:local('Anak Orang'),local('AnakOrang');}
+:root{
+  --orange:#F47B3F; --blue:#3F73B8; --grey:#5b6573; --ink:#1d2733;
+  --head:'LOM Bouncer','Trebuchet MS','Segoe UI',system-ui,sans-serif;
+  --hand:'LOM Hand','Segoe Print','Comic Sans MS',cursive;
+  --bs:420px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--hand);color:#fff;min-height:100vh;
+  background:
+    radial-gradient(ellipse 18% 6% at 14% 16%,rgba(255,255,255,.55) 0 60%,transparent 62%),
+    radial-gradient(ellipse 12% 5% at 20% 19%,rgba(255,255,255,.45) 0 60%,transparent 62%),
+    radial-gradient(ellipse 20% 6% at 86% 30%,rgba(255,255,255,.5) 0 60%,transparent 62%),
+    radial-gradient(ellipse 13% 5% at 80% 33%,rgba(255,255,255,.4) 0 60%,transparent 62%),
+    linear-gradient(180deg,#2f5f9f 0%,#4f87c9 55%,#8fb8e4 100%);
+  background-attachment:fixed;
+  overflow-x:hidden;
+}
+/* faint rainbow arc at the bottom of the page */
+body::before{
+  content:"";position:fixed;left:0;right:0;bottom:0;height:70vh;pointer-events:none;opacity:.32;z-index:0;
+  background:radial-gradient(circle at 50% 100%,transparent 0 46%,#e53935 46% 49%,#fb8c00 49% 52%,#fdd835 52% 55%,#43a047 55% 58%,#29b6f6 58% 61%,#3f3fa8 61% 64%,#8e24aa 64% 67%,transparent 67%);
+}
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px 12px 14px}
+h1{font-family:var(--head);font-size:clamp(26px,5vw,46px);margin:2px 0 0;letter-spacing:.5px;text-shadow:0 3px 0 rgba(0,0,0,.25);text-align:center}
+h1 span{color:var(--orange);text-shadow:0 3px 0 rgba(0,0,0,.3)}
+.sub{margin:2px 0 8px;font-size:clamp(14px,2vw,20px);text-align:center;opacity:.95}
+main{display:flex;gap:22px;align-items:flex-start;justify-content:center;flex-wrap:nowrap}
+#board{
+  position:relative;width:var(--bs);height:var(--bs);flex:none;
+  background:#4a5361;border-radius:calc(var(--bs)*.04);padding:0;
+  box-shadow:0 8px 0 rgba(0,0,0,.28),0 14px 30px rgba(0,0,0,.35),inset 0 0 0 calc(var(--bs)*.012) #6b7686;
+}
+.slot,.tile{position:absolute;width:33.3333%;height:33.3333%;left:0;top:0}
+.slot::after{content:"";position:absolute;inset:3%;border-radius:calc(var(--bs)*.03);background:rgba(0,0,0,.22);box-shadow:inset 0 3px 6px rgba(0,0,0,.35)}
+.tile{transition:transform .17s ease-out;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.face{
+  position:absolute;inset:3%;border-radius:calc(var(--bs)*.03);
+  background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 45%),var(--tc,var(--orange));
+  color:var(--tt,#fff);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 calc(var(--bs)*.012) 0 rgba(0,0,0,.3),inset 0 0 0 2px rgba(255,255,255,.28);
+  transition:background-color .25s,transform .1s;
+}
+.tile:active .face{transform:scale(.96)}
+.frac{display:flex;flex-direction:column;align-items:stretch;text-align:center;line-height:1;font-family:var(--head);font-weight:bold;font-size:calc(var(--bs)*.115);padding:0 .12em}
+.frac i{display:block;font-style:normal}
+.frac b{display:block;height:max(3px,calc(var(--bs)*.014));background:currentColor;margin:.1em 0;border-radius:3px}
+.solved .face{animation:hop .6s ease-in-out both;animation-delay:calc(var(--r)*70ms)}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-14%)}}
+
+#panel{width:330px;display:flex;flex-direction:column;gap:12px;background:rgba(255,255,255,.14);border-radius:16px;padding:14px;backdrop-filter:blur(2px)}
+.stats{display:flex;gap:8px}
+.stat{flex:1;background:rgba(0,0,0,.25);border-radius:12px;padding:6px 8px;text-align:center}
+.stat small{display:block;font-size:14px;opacity:.85}
+.stat strong{font-family:var(--head);font-size:26px;line-height:1.1}
+.row-label{font-size:16px;margin-bottom:4px;opacity:.95}
+.levels{display:flex;gap:6px;flex-wrap:wrap}
+.levels button,.chips button,.act button,.win-btns button{
+  font-family:var(--head);cursor:pointer;border:0;border-radius:10px;color:#fff;touch-action:manipulation;
+}
+.levels button{flex:1 1 0;min-width:44px;padding:9px 4px;font-size:20px;background:rgba(0,0,0,.28);box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.levels button.on{background:var(--orange);box-shadow:0 3px 0 #b95320}
+.levels button.cust{flex:2 1 0}
+.denoms{font-size:16px;margin-top:6px;min-height:22px}
+.chips{display:none;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chips.show{display:flex}
+.chips button{width:40px;height:36px;font-size:17px;background:rgba(0,0,0,.28)}
+.chips button[aria-pressed="true"]{background:var(--orange)}
+.warn{color:#ffd9c7;font-size:15px;margin-top:4px;display:none}
+.warn.show{display:block}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:19px;user-select:none}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.track{width:56px;height:30px;border-radius:15px;background:rgba(0,0,0,.35);position:relative;flex:none;transition:background .2s}
+.track::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s}
+.switch input:checked+.track{background:linear-gradient(90deg,#e53935,#fb8c00,#fdd835,#43a047,#29b6f6,#8e24aa)}
+.switch input:checked+.track::after{left:29px}
+.switch input:focus-visible+.track{outline:3px solid #fff}
+.act{display:flex;gap:8px}
+.act button{flex:1;padding:11px 6px;font-size:19px;background:var(--orange);box-shadow:0 4px 0 #b95320}
+.act button.sec{background:var(--blue);box-shadow:0 4px 0 #2a4f82}
+.act button:active,.win-btns button:active{transform:translateY(2px)}
+.goal{font-size:15px;opacity:.9;line-height:1.3}
+
+#logo{margin-top:14px;background:#fff;border-radius:999px;padding:4px 16px;font-family:var(--head);font-size:17px;color:var(--grey);box-shadow:0 3px 0 rgba(0,0,0,.25)}
+#logo .o{color:var(--orange)} #logo .b{color:var(--blue)}
+
+#win{position:fixed;inset:0;background:rgba(10,25,50,.55);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+#win.show{display:flex}
+.card{background:#fff;color:var(--ink);border-radius:20px;padding:22px 24px;max-width:480px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.4);border-top:10px solid var(--orange)}
+.card h2{font-family:var(--head);color:var(--blue);margin:0 0 4px;font-size:34px}
+.card p{margin:6px 0;font-size:20px}
+.newbest{color:var(--orange);font-family:var(--head);font-size:22px;min-height:26px}
+.sorted{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.sorted .mini{width:46px;height:56px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--tt);background:var(--tc);font-family:var(--head)}
+.mini .frac{font-size:19px}
+.mini .frac b{height:2px}
+.win-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.win-btns button{padding:11px 16px;font-size:19px;background:var(--orange);box-shadow:0 4px 0 #b95320}
+.win-btns button.sec{background:var(--blue);box-shadow:0 4px 0 #2a4f82}
+
+@media (max-aspect-ratio:115/100){
+  main{flex-direction:column;align-items:center;gap:14px}
+  #panel{width:min(100%,var(--bs))}
+}
+@media (max-width:420px){.stat strong{font-size:22px}.act button{font-size:17px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Fractions <span>Slider</span></h1>
+  <p class="sub">Slide the tiles into order, smallest to largest.</p>
+  <main>
+    <div id="board" aria-label="Sliding fractions puzzle"></div>
+    <aside id="panel">
+      <div class="stats">
+        <div class="stat"><small>Moves</small><strong id="moves">0</strong></div>
+        <div class="stat"><small>Time</small><strong id="time">0:00</strong></div>
+        <div class="stat"><small>Best</small><strong id="best">–</strong></div>
+      </div>
+      <div>
+        <div class="row-label">Level</div>
+        <div class="levels" id="levels"></div>
+        <div class="denoms" id="denoms"></div>
+        <div class="chips" id="chips"></div>
+        <div class="warn" id="warn">Choose more denominators &ndash; at least 8 different fractions are needed.</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="rainbow"><span class="track"></span><span>Rainbow colours</span></label>
+      <div class="act">
+        <button id="newBtn">New puzzle</button>
+        <button id="restartBtn" class="sec">Restart</button>
+      </div>
+      <div class="goal">Smallest fraction top left, largest next to the gap in the bottom right. Tap a tile next to the gap to slide it.</div>
+    </aside>
+  </main>
+  <!-- LoadsOfMaths wordmark: delete this element for school-use copies -->
+  <div id="logo"><span>www.</span><span class="o">loads</span><span>of</span><span class="b">maths</span><span>.co.uk</span></div>
+</div>
+
+<div id="win">
+  <div class="card">
+    <h2>Sorted!</h2>
+    <div class="newbest" id="newbest"></div>
+    <p id="winStats"></p>
+    <div class="sorted" id="sorted"></div>
+    <div class="win-btns">
+      <button id="againBtn">Play again</button>
+      <button id="nextBtn" class="sec">Next level</button>
+      <button id="closeBtn" class="sec">Look at board</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var LEVELS={1:[2,4,5,10],2:[2,3,4,6,8],3:[2,3,4,5,6,8,10],4:[3,4,5,6,7,8,9],5:[5,6,7,8,9,10,11,12]};
+/* rank 0 (smallest) .. 7 (largest): red, orange, yellow, green, blue, indigo, violet, pink */
+var RAINBOW=[['#e53935','#fff'],['#fb8c00','#1d2733'],['#fdd835','#1d2733'],['#43a047','#fff'],['#29b6f6','#1d2733'],['#3f3fa8','#fff'],['#8e24aa','#fff'],['#ff80ab','#1d2733']];
+var LOM=['#F47B3F','#fff'];
+
+var $=function(id){return document.getElementById(id)};
+var board=$('board'),elMoves=$('moves'),elTime=$('time'),elBest=$('best');
+
+var settings={level:'1',custom:[2,3,4,5,6,8],rainbow:false};
+try{var s=JSON.parse(localStorage.getItem('lom_fs_settings')||'null');if(s&&s.level){settings.level=String(s.level);if(Array.isArray(s.custom))settings.custom=s.custom;settings.rainbow=!!s.rainbow;}}catch(e){}
+function saveSettings(){try{localStorage.setItem('lom_fs_settings',JSON.stringify(settings))}catch(e){}}
+
+var fractions=[],state=[],startState=[],tiles=[],moves=0,t0=null,elapsed=0,timer=null,locked=false;
+
+function gcd(a,b){return b?gcd(b,a%b):a}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function poolFor(d){var r=[];for(var n=1;n<d;n++)if(gcd(n,d)===1)r.push({n:n,d:d,v:n/d});return r}
+function currentDenoms(){return settings.level==='c'?settings.custom.slice().sort(function(a,b){return a-b}):LEVELS[settings.level]}
+function poolSize(denoms){var c=0;denoms.forEach(function(d){c+=poolFor(d).length});return c}
+function levelKey(){return settings.level==='c'?'c'+currentDenoms().join('-'):'L'+settings.level}
+
+/* choose 8 distinct fractions, using as many different denominators as possible */
+function chooseFractions(denoms){
+  var chosen=[],used={};
+  shuffle(denoms).forEach(function(d){
+    if(chosen.length>=8)return;
+    var p=shuffle(poolFor(d))[0];chosen.push(p);used[p.n+'/'+p.d]=1;
+  });
+  if(chosen.length<8){
+    var rest=[];denoms.forEach(function(d){poolFor(d).forEach(function(f){if(!used[f.n+'/'+f.d])rest.push(f)})});
+    rest=shuffle(rest);while(chosen.length<8&&rest.length)chosen.push(rest.shift());
+  }
+  return chosen.sort(function(a,b){return a.v-b.v});
+}
+
+/* start position: random, but with an even number of inversions, which guarantees it can be solved */
+function inversions(seq){var c=0;for(var i=0;i<seq.length;i++)for(var j=i+1;j<seq.length;j++)if(seq[i]>seq[j])c++;return c}
+function isSolved(st){for(var i=0;i<8;i++)if(st[i]!==i)return false;return st[8]===-1}
+function distance(st){var d=0;for(var i=0;i<9;i++){var r=st[i];if(r<0)continue;d+=Math.abs(Math.floor(i/3)-Math.floor(r/3))+Math.abs(i%3-r%3)}return d}
+function makeStart(){
+  var st;
+  do{
+    var ranks=shuffle([0,1,2,3,4,5,6,7]);
+    if(inversions(ranks)%2===1){var t=ranks[0];ranks[0]=ranks[1];ranks[1]=t}
+    var b=Math.floor(Math.random()*9);st=[];var k=0;
+    for(var i=0;i<9;i++)st.push(i===b?-1:ranks[k++]);
+  }while(isSolved(st)||distance(st)<10);
+  return st;
+}
+
+function fracHTML(f){return '<span class="frac"><i>'+f.n+'</i><b></b><i>'+f.d+'</i></span>'}
+
+function buildBoard(){
+  board.innerHTML='';tiles=[];
+  for(var i=0;i<9;i++){var sl=document.createElement('div');sl.className='slot';sl.style.transform='translate('+(i%3*100)+'%,'+(Math.floor(i/3)*100)+'%)';board.appendChild(sl)}
+  fractions.forEach(function(f,r){
+    var t=document.createElement('div');t.className='tile';t.dataset.r=r;t.style.setProperty('--r',r);
+    t.setAttribute('role','button');t.setAttribute('aria-label',f.n+' over '+f.d);
+    t.innerHTML='<div class="face">'+fracHTML(f)+'</div>';
+    board.appendChild(t);tiles.push(t);
+  });
+  colour();render();
+}
+function colour(){
+  tiles.forEach(function(t,r){var c=settings.rainbow?RAINBOW[r]:LOM;var f=t.firstChild;f.style.setProperty('--tc',c[0]);f.style.setProperty('--tt',c[1])});
+}
+function render(){
+  state.forEach(function(r,i){if(r>=0)tiles[r].style.transform='translate('+(i%3*100)+'%,'+(Math.floor(i/3)*100)+'%)'});
+  elMoves.textContent=moves;
+}
+
+function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2)}
+function nowElapsed(){return t0?elapsed+(Date.now()-t0)/1000:elapsed}
+function startTimer(){if(timer)return;t0=Date.now();timer=setInterval(function(){elTime.textContent=fmt(nowElapsed())},250)}
+function stopTimer(){if(timer){elapsed=nowElapsed();clearInterval(timer);timer=null;t0=null}}
+function resetTimer(){stopTimer();elapsed=0;elTime.textContent='0:00'}
+
+function getBest(){try{return JSON.parse(localStorage.getItem('lom_fs_best_'+levelKey())||'null')}catch(e){return null}}
+function setBest(b){try{localStorage.setItem('lom_fs_best_'+levelKey(),JSON.stringify(b))}catch(e){}}
+function showBest(){var b=getBest();elBest.textContent=b?b.m:'–'}
+
+function moveTile(cell){
+  if(locked)return;
+  var b=state.indexOf(-1);if(cell===b)return;
+  var step=null;
+  if(Math.floor(cell/3)===Math.floor(b/3))step=cell>b?1:-1;
+  else if(cell%3===b%3)step=cell>b?3:-3;
+  if(step===null)return;
+  var i=b;
+  while(i!==cell){state[i]=state[i+step];i+=step;moves++}
+  state[cell]=-1;
+  startTimer();render();
+  if(isSolved(state))win();
+}
+
+function win(){
+  locked=true;stopTimer();
+  board.classList.add('solved');
+  var time=elapsed,best=getBest(),nb=[];
+  var nbest=best?{m:best.m,t:best.t}:{m:moves,t:time};
+  if(!best||moves<best.m){nbest.m=moves;nb.push('fewest moves')}
+  if(!best||time<best.t){nbest.t=time;nb.push('fastest time')}
+  if(best&&!nb.length){}
+  setBest(nbest);showBest();
+  $('newbest').textContent=(best&&nb.length)?'New best: '+nb.join(' and ')+'!':'';
+  $('winStats').textContent='You took '+moves+' moves in '+fmt(time)+'.';
+  $('sorted').innerHTML=fractions.map(function(f,r){var c=RAINBOW[r];return '<div class="mini" style="--tc:'+c[0]+';--tt:'+c[1]+'">'+fracHTML(f)+'</div>'}).join('');
+  $('nextBtn').style.display=(settings.level!=='c'&&+settings.level<5)?'':'none';
+  setTimeout(function(){$('win').classList.add('show')},900);
+}
+
+function loadState(st){
+  state=st.slice();moves=0;locked=false;board.classList.remove('solved');
+  resetTimer();$('win').classList.remove('show');render();
+}
+function newPuzzle(){
+  var d=currentDenoms();
+  if(poolSize(d)<8){$('warn').classList.add('show');return}
+  $('warn').classList.remove('show');
+  fractions=chooseFractions(d);
+  startState=makeStart();
+  buildBoard();loadState(startState);showBest();
+}
+
+/* controls */
+function buildLevels(){
+  var L=$('levels');L.innerHTML='';
+  ['1','2','3','4','5','c'].forEach(function(k){
+    var b=document.createElement('button');b.textContent=k==='c'?'Custom':k;if(k==='c')b.className='cust';
+    if(settings.level===k)b.classList.add('on');
+    b.onclick=function(){settings.level=k;saveSettings();buildLevels();newPuzzle()};
+    L.appendChild(b);
+  });
+  $('denoms').textContent='Denominators: '+currentDenoms().join(', ');
+  $('chips').classList.toggle('show',settings.level==='c');
+  if(settings.level!=='c')$('warn').classList.remove('show');
+}
+function buildChips(){
+  var C=$('chips');C.innerHTML='';
+  for(var d=2;d<=12;d++)(function(d){
+    var b=document.createElement('button');b.textContent=d;
+    b.setAttribute('aria-pressed',settings.custom.indexOf(d)>=0);
+    b.onclick=function(){
+      var i=settings.custom.indexOf(d);if(i>=0)settings.custom.splice(i,1);else settings.custom.push(d);
+      saveSettings();buildChips();$('denoms').textContent='Denominators: '+currentDenoms().join(', ');
+      newPuzzle();
+    };
+    C.appendChild(b);
+  })(d);
+}
+
+board.addEventListener('click',function(e){
+  var t=e.target.closest('.tile');if(!t)return;
+  moveTile(state.indexOf(+t.dataset.r));
+});
+document.addEventListener('keydown',function(e){
+  var b=state.indexOf(-1),c=-1;
+  if(e.key==='ArrowUp'&&b<6)c=b+3;
+  else if(e.key==='ArrowDown'&&b>2)c=b-3;
+  else if(e.key==='ArrowLeft'&&b%3<2)c=b+1;
+  else if(e.key==='ArrowRight'&&b%3>0)c=b-1;
+  if(c>=0){e.preventDefault();moveTile(c)}
+});
+$('rainbow').checked=settings.rainbow;
+$('rainbow').onchange=function(){settings.rainbow=this.checked;saveSettings();colour()};
+$('newBtn').onclick=newPuzzle;
+$('restartBtn').onclick=function(){loadState(startState)};
+$('againBtn').onclick=newPuzzle;
+$('nextBtn').onclick=function(){settings.level=String(+settings.level+1);saveSettings();buildLevels();newPuzzle()};
+$('closeBtn').onclick=function(){$('win').classList.remove('show')};
+
+function fit(){
+  var w=window.innerWidth,h=window.innerHeight;
+  var landscape=w/h>1.15,aw,ah;
+  if(landscape){aw=w-330-22-40;ah=h-165}else{aw=w-24;ah=h-110}
+  var s=Math.max(240,Math.min(aw,ah,720));
+  document.documentElement.style.setProperty('--bs',Math.floor(s)+'px');
+}
+window.addEventListener('resize',fit);window.addEventListener('orientationchange',fit);
+
+fit();buildLevels();buildChips();newPuzzle();
+})();
+</script>
+</body>
+</html>
