@@ -26,7 +26,6 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Fractal Explorer | `fractal-explorer/` |
 | Fraction Blaster | `fraction-blaster/` |
 | Fraction Fight Night | `fraction-fight-night/` |
-| Fractions Slider | `fractions-slider/` |
 | Goods Inwards | `goods-inwards/` |
 | Hanoi | `hanoi/` |
 | HCF and LCM with Venn Diagrams | `hcf-lcm-venn/` |
@@ -56,6 +55,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Puzzle of the Day | `puzzle-of-the-day/` |
 | Quick On The Draw | `quick-on-the-draw/` |
 | Recite Pi | `recite-pi/` |
+| Slider | `slider/` |
 | Sports Day | `sports-day/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
 | Tangram Explorer | `tangram-explorer/` |
