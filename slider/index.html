@@ -94,6 +94,11 @@ main{display:flex;gap:22px;align-items:flex-start;justify-content:center;flex-wr
 .act button.sec{background:var(--blue);box-shadow:0 4px 0 #2a4f82}
 .act button:active,.win-btns button:active{transform:translateY(2px)}
 .goal{font-size:15px;opacity:.9;line-height:1.3}
+.showbtn{display:block;width:100%;padding:10px 6px;font-size:18px;font-family:var(--head);cursor:pointer;border:0;border-radius:10px;color:#fff;background:var(--blue);box-shadow:0 4px 0 #2a4f82;touch-action:manipulation}
+.showbtn:active{transform:translateY(2px)}
+.showbtn.stop{background:#c0392b;box-shadow:0 4px 0 #8e2a20}
+#demoMsg{font-size:16px;min-height:20px;text-align:center;line-height:1.3}
+.demo .tile{transition-duration:.4s;cursor:default}
 
 #logo{margin-top:14px;background:#fff;border-radius:999px;padding:4px 16px;font-family:var(--head);font-size:17px;color:var(--grey);box-shadow:0 3px 0 rgba(0,0,0,.25)}
 #logo .o{color:var(--orange)} #logo .b{color:var(--blue)}
@@ -148,6 +153,8 @@ main{display:flex;gap:22px;align-items:flex-start;justify-content:center;flex-wr
         <button id="newBtn">New puzzle</button>
         <button id="restartBtn" class="sec">Restart</button>
       </div>
+      <button id="showBtn" class="showbtn">Show me the solution</button>
+      <div id="demoMsg" aria-live="polite"></div>
       <div class="goal">Smallest top left, largest next to the gap in the bottom right. Tap a tile next to the gap to slide it.</div>
     </aside>
   </main>
@@ -203,6 +210,7 @@ try{
 function saveSettings(){try{localStorage.setItem('lom_slider_settings',JSON.stringify(settings))}catch(e){}}
 
 var items=[],state=[],startState=[],tiles=[],moves=0,t0=null,elapsed=0,timer=null,locked=false;
+var demoTimer=null,assisted=false;
 
 function gcd(a,b){return b?gcd(b,a%b):a}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
@@ -348,20 +356,79 @@ function win(){
   locked=true;stopTimer();
   board.classList.add('solved');
   var time=elapsed,best=getBest(),nb=[];
-  var nbest=best?{m:best.m,t:best.t}:{m:moves,t:time};
-  if(!best||moves<best.m){nbest.m=moves;nb.push('fewest moves')}
-  if(!best||time<best.t){nbest.t=time;nb.push('fastest time')}
-  setBest(nbest);showBest();
+  if(!assisted){
+    var nbest=best?{m:best.m,t:best.t}:{m:moves,t:time};
+    if(!best||moves<best.m){nbest.m=moves;nb.push('fewest moves')}
+    if(!best||time<best.t){nbest.t=time;nb.push('fastest time')}
+    setBest(nbest);showBest();
+  }
   $('newbest').textContent=(best&&nb.length)?'New best: '+nb.join(' and ')+'!':'';
-  $('winStats').textContent='You took '+moves+' moves in '+fmt(time)+'.';
+  $('winStats').textContent=assisted?'Sorted, with a little help from the solution.':'You took '+moves+' moves in '+fmt(time)+'.';
   $('sorted').innerHTML=items.map(function(it,r){var c=RAINBOW[r];return '<div class="mini" style="--tc:'+c[0]+';--tt:'+c[1]+'">'+contentHTML(it)+'</div>'}).join('');
   $('nextBtn').style.display=(lv()!=='c'&&+lv()<5)?'':'none';
   setTimeout(function(){$('win').classList.add('show')},900);
 }
 
 function loadState(st){
+  endDemo();assisted=false;$('demoMsg').textContent='';
   state=st.slice();moves=0;locked=false;board.classList.remove('solved');
   resetTimer();$('win').classList.remove('show');render();
+}
+
+/* ---------- solution animation ---------- */
+/* IDA* search with the Manhattan-distance heuristic: finds a shortest sequence of single-tile slides.
+   Returns the list of cells whose tile slides into the gap, in order. */
+var NB=[[1,3],[0,2,4],[1,5],[0,4,6],[1,3,5,7],[2,4,8],[3,7],[4,6,8],[5,7]];
+function cellDist(pos,r){return Math.abs(Math.floor(pos/3)-Math.floor(r/3))+Math.abs(pos%3-r%3)}
+function solve(st){
+  var s=st.slice(),b=s.indexOf(-1),h=distance(s),path=[];
+  function search(g,limit,prev){
+    var f=g+h;if(f>limit)return f;if(h===0)return -1;
+    var min=1e9,nbs=NB[b];
+    for(var k=0;k<nbs.length;k++){
+      var n=nbs[k];if(n===prev)continue;
+      var r=s[n],dh=cellDist(b,r)-cellDist(n,r),ob=b;
+      s[b]=r;s[n]=-1;b=n;h+=dh;path.push(n);
+      var t=search(g+1,limit,ob);
+      if(t===-1)return -1;
+      if(t<min)min=t;
+      path.pop();h-=dh;b=ob;s[n]=r;s[b]=-1;
+    }
+    return min;
+  }
+  var limit=h;
+  while(limit<100){var t=search(0,limit,-1);if(t===-1)return path.slice();limit=t}
+  return null;
+}
+function endDemo(){
+  if(demoTimer){clearInterval(demoTimer);demoTimer=null}
+  board.classList.remove('demo');
+  var bt=$('showBtn');bt.textContent='Show me the solution';bt.classList.remove('stop');
+}
+function startDemo(){
+  if(demoTimer){                       /* Stop pressed: hand the board back to the player */
+    var left=$('demoMsg');endDemo();locked=false;assisted=true;
+    left.textContent='Stopped. Carry on from here, or press Show me again.';
+    return;
+  }
+  if(locked||isSolved(state))return;
+  var path=solve(state);if(!path)return;
+  stopTimer();assisted=true;locked=true;
+  board.classList.add('demo');
+  var bt=$('showBtn');bt.textContent='Stop';bt.classList.add('stop');
+  var i=0,total=path.length,msg=$('demoMsg');
+  msg.textContent='Fewest possible moves from here: '+total;
+  demoTimer=setInterval(function(){
+    var c=path[i],b=state.indexOf(-1);
+    state[b]=state[c];state[c]=-1;i++;
+    render();
+    msg.textContent='Move '+i+' of '+total;
+    if(i>=total){
+      endDemo();
+      board.classList.add('solved');
+      msg.textContent='Sorted in '+total+' moves – the fewest possible from there. Press New puzzle to play again.';
+    }
+  },500);
 }
 function newPuzzle(){
   if(poolSize()<8){$('warn').classList.add('show');return}
@@ -447,6 +514,7 @@ $('rainbow').checked=settings.rainbow;
 $('rainbow').onchange=function(){settings.rainbow=this.checked;saveSettings();colour()};
 $('newBtn').onclick=newPuzzle;
 $('restartBtn').onclick=function(){loadState(startState)};
+$('showBtn').onclick=startDemo;
 $('againBtn').onclick=newPuzzle;
 $('nextBtn').onclick=function(){settings.level=String(+lv()+1);saveSettings();buildLevels();newPuzzle()};
 $('closeBtn').onclick=function(){$('win').classList.remove('show')};
