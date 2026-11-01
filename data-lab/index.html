@@ -241,6 +241,23 @@
   .sform .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 4px;font-size:1.05rem}
   .sform .frac span:first-child{border-bottom:2px solid var(--navy);padding:0 6px}
   .subseg{padding:8px 16px}
+  /* pie charts and two-way tables */
+  .sfrac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;font-size:.85em}
+  .sfrac span{padding:0 4px;min-width:1.2ch;text-align:center}
+  .sfrac span:first-child{border-bottom:2px solid currentColor}
+  .piesvg{width:100%;height:auto;display:block;background:#fff;border:2px solid var(--line);border-radius:12px}
+  .piesvg.pie-draw{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+  .ptab td{font-size:1.1rem}
+  .twtab{border-collapse:collapse;margin:6px 0;font-size:1.3rem}
+  .twtab th,.twtab td{border:2px solid var(--navy);padding:8px 14px;text-align:center;min-width:84px}
+  .twtab th{background:#eef3fa;color:var(--navy);font-size:1rem}
+  .twtab th.tot,.twtab td.tot{background:#f4f7fb}
+  .twtab td.kn{font-weight:800;color:var(--navy)}
+  .twtab td.hid{cursor:pointer}
+  .twtab td.hid.active{background:#fff8e1}
+  .twtab td.ok{background:#e8f5ec}
+  .twtab .corner{font-size:.8rem;text-align:left;line-height:1.35}
+  .twtab .abox.sm{min-width:64px}
   /* celebration */
   #confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
   #overlay{position:fixed;inset:0;background:rgba(18,53,91,.45);display:none;align-items:center;justify-content:center;z-index:40}
@@ -265,6 +282,7 @@
   </div>
   <div class="tabs" id="tabs">
     <button class="tab active" data-tab="cat">Categorical Data</button>
+    <button class="tab" data-tab="tw">Two Way Tables</button>
     <button class="tab" data-tab="disc">Discrete Data</button>
     <button class="tab" data-tab="sft">Simple Frequency Table</button>
     <button class="tab" data-tab="gdisc">Grouped Frequency Table</button>
@@ -312,19 +330,45 @@
       <div class="row" style="margin-bottom:10px">
         <label class="f">Choose a graph
           <span class="seg" id="graphSeg">
-            <button data-g="pic" class="on">Pictogram</button><button data-g="bar">Bar chart</button><button data-g="stick">Stick graph</button>
+            <button data-g="pic" class="on">Pictogram</button><button data-g="bar">Bar chart</button><button data-g="stick">Stick graph</button><button data-g="pie">Pie chart</button>
           </span>
         </label>
         <label class="f" id="keyWrap">Pictogram key
           <span class="seg" id="keySeg"><button data-k="1" class="on">1 symbol = 1</button><button data-k="2">1 symbol = 2</button></span>
         </label>
-        <label class="chk" style="align-self:flex-end"><input type="checkbox" id="hints"> Show ticks when a category is right</label>
+        <label class="chk nopie" style="align-self:flex-end"><input type="checkbox" id="hints"> Show ticks when a category is right</label>
         <span style="flex:1"></span>
-        <button class="btn sec" id="reset" style="align-self:flex-end">Clear graph</button>
-        <button class="btn sec" id="reveal" style="align-self:flex-end">Show answers</button>
+        <button class="btn sec nopie" id="reset" style="align-self:flex-end">Clear graph</button>
+        <button class="btn sec nopie" id="reveal" style="align-self:flex-end">Show answers</button>
       </div>
-      <p style="margin:0 0 8px;color:var(--muted);font-size:.95rem">Use the <b>+</b> and <b>−</b> buttons to make the graph show the correct frequency for each category.</p>
+      <p class="nopie" style="margin:0 0 8px;color:var(--muted);font-size:.95rem">Use the <b>+</b> and <b>−</b> buttons to make the graph show the correct frequency for each category.</p>
       <div class="graphwrap" id="graph"></div>
+      <div id="pieC" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- TWO WAY TABLES -->
+  <section class="panel" id="p-tw">
+    <div class="card">
+      <div class="row">
+        <label class="f">Context
+          <select id="tContext"></select>
+        </label>
+        <label class="f">Total
+          <select id="tN"><option value="rand" selected>Random (40–120)</option><option>40</option><option>50</option><option>60</option><option>80</option><option>100</option><option>120</option></select>
+        </label>
+        <label class="f">Level
+          <span class="seg" id="tLevelSeg"><button data-m="1" class="on">Easy</button><button data-m="2">Medium</button><button data-m="3">Hard</button></span>
+        </label>
+        <button class="btn go" id="tGen" style="align-self:flex-end">New table</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 id="tTitle"></h2>
+      <div class="ggrid">
+        <div id="tTable"></div>
+        <div id="tBody"></div>
+      </div>
     </div>
   </section>
 
@@ -386,6 +430,10 @@
           <div id="sBody"></div>
         </div>
       </div>
+    </div>
+    <div class="card">
+      <h2>Pie charts</h2>
+      <div id="pieS"></div>
     </div>
   </section>
   <section class="panel" id="p-gdisc">
@@ -577,7 +625,7 @@
 <div class="modalbg" id="settingsOv"><div class="mbox">
   <h2>Settings</h2>
   <label class="chk" style="margin:4px 0 10px"><input type="checkbox" id="optFF"> Show the ⏩ fast-forward buttons (all tabs)</label>
-  <div style="margin-bottom:12px"><span class="seg" id="setSeg"><button data-v="cat" class="on">Categorical</button><button data-v="disc">Discrete</button><button data-v="grp">Grouped</button><button data-v="cnt">Continuous</button><button data-v="biv">Bivariate</button></span></div>
+  <div style="margin-bottom:12px"><span class="seg" id="setSeg"><button data-v="cat" class="on">Categorical</button><button data-v="disc">Discrete</button><button data-v="grp">Grouped</button><button data-v="cnt">Continuous</button><button data-v="biv">Bivariate</button><button data-v="tw">Two-way</button></span></div>
   <div id="setCat">
   <p class="hint">Choose a topic, then rename its categories, change the colour, add an optional symbol or emoji, or add and remove categories (2 to 8). Changes are saved on this device.</p>
   <label class="f" style="margin-bottom:12px">Topic
@@ -620,6 +668,14 @@
     <div class="row" style="margin-top:10px">
       <button class="btn sec" id="addBctx">+ Add context</button>
       <button class="btn sec" id="resetBctx">Reset all contexts</button>
+    </div>
+  </div>
+  <div id="setTw" style="display:none">
+    <p class="hint">These are the contexts offered on the Two Way Tables tab. Use {n} in the description where the total should appear. Write each row and column as <b>Label=phrase</b>: the label goes in the table, and the phrase is used in the questions. A row phrase names the group (e.g. <i>Year 10 students</i>, <i>girls</i>); a column phrase says what they do (e.g. <i>walk to school</i>, <i>have a school dinner</i>).</p>
+    <div id="tctxRows"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sec" id="addTctx">+ Add context</button>
+      <button class="btn sec" id="resetTctx">Reset all contexts</button>
     </div>
   </div>
   <div class="row" style="margin-top:14px">
@@ -810,7 +866,11 @@
       '<button class="plus" data-i="'+i+'" data-d="1" aria-label="increase">+</button></div>';
   }
   function renderGraph(){
-    var cs=cats(),k=cs.length,h="";
+    var cs=cats(),k=cs.length,h="",isPie=S.graph==="pie";
+    document.querySelectorAll("#p-cat .nopie").forEach(function(el){el.style.display=isPie?"none":""});
+    $("pieC").style.display=isPie?"":"none";
+    $("graph").style.display=isPie?"none":"";
+    if(isPie){$("keyWrap").style.display="none";pieCSync();return}
     $("keyWrap").style.display=S.graph==="pic"?"":"none";
     if(S.graph==="pic"){
       cs.forEach(function(c,i){
@@ -906,7 +966,7 @@
   });
 
   /* ---------- celebration ---------- */
-  function closeOverlay(){$("overlay").classList.remove("show")}
+  function closeOverlay(){$("overlay").classList.remove("show");pieAgain=null}
   function celebrate(){
     var cs=cats(),m=modesOf(S.truth),names=m.map(function(i){return cs[i].n}),f=S.truth[m[0]];
     $("modeText").textContent=m.length===1
@@ -918,7 +978,7 @@
     confetti();
   }
   $("keep").addEventListener("click",closeOverlay);
-  $("again").addEventListener("click",function(){if(curTab==="disc")dGenerate();else if(curTab==="sft")sGenerate();else if(curTab==="gdisc")gGenerate();else if(curTab==="cont")cGenerate();else if(curTab==="biv"){if(bvSub==="sp")spGenerate();else if(bvSub==="pm")pmGenerate();else bGenerate()}else generate()});
+  $("again").addEventListener("click",function(){if(pieAgain){var pa=pieAgain;pieAgain=null;pa();return}if(curTab==="tw"){tGenerate();return}if(curTab==="disc")dGenerate();else if(curTab==="sft")sGenerate();else if(curTab==="gdisc")gGenerate();else if(curTab==="cont")cGenerate();else if(curTab==="biv"){if(bvSub==="sp")spGenerate();else if(bvSub==="pm")pmGenerate();else bGenerate()}else generate()});
 
   var cv=$("confetti"),cx=cv.getContext("2d"),parts=[],raf=null,endAt=0;
   function confetti(){
@@ -995,7 +1055,7 @@
     });
     saveCats();
     $("settingsOv").classList.remove("show");
-    closeDisc();closeGrp();closeCnt();closeBiv();
+    closeDisc();closeGrp();closeCnt();closeBiv();closeTW();
     if(dirty[S.topic]==="struct")generate();
     else if(dirty[S.topic]){renderData();renderGraph()}
   }
@@ -1435,11 +1495,13 @@
     $("setGrp").style.display=v==="grp"?"":"none";
     $("setCnt").style.display=v==="cnt"?"":"none";
     $("setBiv").style.display=v==="biv"?"":"none";
+    $("setTw").style.display=v==="tw"?"":"none";
     $("setSeg").querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-v")===v)});
     if(v==="disc"){renderDSet();$("optMistakes").checked=OPT.mistakes}
     if(v==="grp")renderGSet();
     if(v==="cnt")renderCSet();
     if(v==="biv")renderBSet();
+    if(v==="tw")renderTWSet();
   }
   function renderDSet(){
     var h="";
@@ -1469,7 +1531,7 @@
   }
   function applyFF(){
     $("ffTally").style.display=OPT.ff?"":"none";
-    renderStep();ftS.render();ftG.render();ftC.render();hRender();CBC.kRender();CBC.bxRender();CBG.kRender();CBG.bxRender();slRender();bRender();spRender();pmRender();
+    renderStep();ftS.render();ftG.render();ftC.render();hRender();CBC.kRender();CBC.bxRender();CBG.kRender();CBG.bxRender();slRender();bRender();spRender();pmRender();pieC.render();pieS.render();tRender();
   }
   $("optFF").addEventListener("change",function(){OPT.ff=this.checked;saveOpts();applyFF()});
   $("optMistakes").addEventListener("change",function(){OPT.mistakes=this.checked;saveOpts();renderStep()});
@@ -1824,6 +1886,7 @@
     }while(!ok&&tries<500);
     $("sTitle").textContent=c.desc.replace(/\{n\}/g,N);
     ftS.load(fr.map(function(f,j){return {lab:String(lo+j),x:lo+j,f:f}}),c.title+" (x)",true);
+    pieSGen();
   }
   $("sContext").addEventListener("change",function(){SF.ctx=+this.value;sGenerate()});
   $("sN").addEventListener("change",function(){SF.nsel=this.value;sGenerate()});
@@ -4730,8 +4793,875 @@
     if(el&&window.MutationObserver)new MutationObserver(function(){if(XH.on)xhScan()}).observe(el,{childList:true,subtree:true});
   });
 
+
+  /* =====================================================================
+     Shared helpers for the pie chart and two-way table features
+     ===================================================================== */
+  var PIE_PAL=["#2563eb","#dc2626","#16a34a","#f59e0b","#7c3aed","#0ea5e9","#ec4899","#92400e"];
+  var PIE_NS=[20,24,30,36,40,45,60,72,90];
+  var pieAgain=null;
+  function gcd2(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=a%b;a=b;b=t}return a}
+  function fracStr(a,b){var g=gcd2(a,b)||1;a/=g;b/=g;if(a===0)return "0";return b===1?String(a):a+"/"+b}
+  function fracHTML(s){
+    s=String(s);
+    var i=s.indexOf("/");
+    if(i<0)return esc(s);
+    var n=s.slice(0,i),d=s.slice(i+1);
+    return '<span class="sfrac"><span>'+(esc(n)||"&nbsp;")+'</span><span>'+(esc(d)||"&nbsp;")+'</span></span>';
+  }
+  function parseFrac(v){
+    v=String(v);
+    var p=v.split("/"),a,b;
+    if(p.length>2||p[0]==="")return null;
+    a=parseInt(p[0],10);
+    b=p.length===2?parseInt(p[1],10):1;
+    if(isNaN(a)||isNaN(b)||b===0)return null;
+    return {a:a,b:b};
+  }
+  function typeInto(f,k,max){
+    var v=f.v;
+    if(k==="back")v=v.slice(0,-1);
+    else if(k==="/"){if(f.kind==="frac"&&v!==""&&v.indexOf("/")<0)v+="/"}
+    else if(/^\d$/.test(k)&&v.length<(max||9))v+=k;
+    f.v=v;
+  }
+  function kpHTML(kind){
+    var keys=["7","8","9","4","5","6","1","2","3",kind==="frac"?"/":"","0","back"],h="<div class='kp' style='margin-top:10px'>";
+    keys.forEach(function(k){
+      if(k==="")h+="<button disabled style='visibility:hidden' aria-hidden='true'></button>";
+      else h+="<button data-k='"+k+"'>"+(k==="back"?"⌫":k)+"</button>";
+    });
+    return h+"<button class='wide' data-k='enter'>Check ✓</button></div>";
+  }
+  function lumOf(hex){
+    var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return (0.299*r+0.587*g+0.114*b)/255;
+  }
+  /* random frequencies that add up to n, every one at least 1 */
+  function splitTotal(n,k,biased){
+    var w=[],f=[],i;
+    for(i=0;i<k;i++){w.push(biased?(Math.random()<.4?4:1):1+Math.random()*1.5);f.push(1)}
+    for(i=0;i<n-k;i++)f[pick(w)]++;
+    return f;
+  }
+
+  /* =====================================================================
+     Pie charts: used on the Categorical tab and the Simple Frequency tab
+       Read the pie chart: angle ÷ 360 = fraction, then fraction × total
+       Draw the pie chart: multiplier = 360 ÷ total, angles, then draw
+     ===================================================================== */
+  function makePie(cfg){
+    var root=$(cfg.root),rid=cfg.root;
+    var CX=320,CY=215,R=150;
+    var P={items:[],N:0,mult:0,mode:"read",showAng:true,step:0,nsteps:2,sig:"",title:"",hdr:"Category",
+           fl:[],done:[],msg:null,drawI:0,start:0,B:0,secs:[],celebrated:false,drag:false,ready:false};
+
+    function pt(a,r){var t=a*Math.PI/180;return [CX+r*Math.sin(t),CY-r*Math.cos(t)]}
+    function nSteps(){return P.mode==="read"?2:4}
+    function firstDraw(from){
+      for(var i=from;i<P.items.length;i++)if(P.items[i].a>0)return i;
+      return -1;
+    }
+    function reset(){
+      P.nsteps=nSteps();
+      P.step=0;P.done=[];P.fl=[];
+      for(var i=0;i<P.nsteps;i++)P.done.push(false);
+      P.msg=null;P.start=0;P.B=0;P.secs=[];P.celebrated=false;P.drag=false;
+      P.drawI=firstDraw(0);
+    }
+    function load(items,title,sig,hdr){
+      P.items=items.map(function(x){return {n:x.n,c:x.c,e:x.e,f:x.f}});
+      P.N=0;P.items.forEach(function(x){P.N+=x.f});
+      P.ready=P.N>0&&360%P.N===0;
+      P.mult=P.ready?360/P.N:0;
+      P.items.forEach(function(x){x.a=x.f*P.mult});
+      P.title=title||"";P.hdr=hdr||"Category";P.sig=sig||"";
+      reset();render();
+    }
+    function sync(items,sig,title,hdr){
+      if(sig===P.sig&&P.items.length)return;
+      load(items,title,sig,hdr);
+    }
+    function setMode(m){
+      if(m===P.mode)return;
+      P.mode=m;reset();render();
+    }
+
+    /* ----- fields ----- */
+    function mk(kind,exp,key){return {kind:kind,exp:exp,key:key,v:"",ok:false}}
+    function ensure(st){
+      if(P.fl[st])return P.fl[st];
+      var f=[],it=P.items;
+      if(P.mode==="read"){
+        if(st===0)it.forEach(function(x){f.push(mk("frac",{n:x.a,d:360},"fr"))});
+        else it.forEach(function(x){f.push(mk("num",x.f,"fq"))});
+      }else{
+        if(st===0)f.push(mk("num",P.N,"tot"));
+        else if(st===1)f.push(mk("num",P.mult,"mult"));
+        else if(st===2){it.forEach(function(x){f.push(mk("num",x.a,"ang"))});f.push(mk("num",360,"angtot"))}
+      }
+      P.fl[st]={f:f,i:0};
+      return P.fl[st];
+    }
+    function nextOpen(fl,from){
+      var n=fl.f.length,k;
+      for(k=0;k<n;k++){var j=(from+k)%n;if(!fl.f[j].ok)return j}
+      return -1;
+    }
+    function activeField(){
+      if(!P.ready||P.step>=P.nsteps||P.done[P.step])return null;
+      var fl=ensure(P.step);
+      if(!fl.f.length)return null;
+      if(fl.f[fl.i].ok){var nx=nextOpen(fl,fl.i);if(nx<0)return null;fl.i=nx}
+      return fl.f[fl.i];
+    }
+    function okVal(f){
+      if(f.kind==="frac"){var p=parseFrac(f.v);return !!p&&p.a*f.exp.d===f.exp.n*p.b}
+      return /^\d+$/.test(f.v)&&parseInt(f.v,10)===f.exp;
+    }
+    function hint(f){
+      switch(f.key){
+        case "fr": return f.v.indexOf("/")<0?"Type it as a fraction: the angle, then the / key, then 360.":"Not quite – write the sector's angle over 360. Any equivalent fraction is fine.";
+        case "fq": return "Not quite – multiply the fraction by the total frequency ("+P.N+"). For example, ¼ of "+P.N+" means "+P.N+" ÷ 4.";
+        case "tot": return "Not quite – add up all the frequencies in the table.";
+        case "mult": return "Not quite – divide 360 by the total frequency ("+P.N+").";
+        case "ang": return "Not quite – multiply the frequency by the multiplier ("+P.mult+").";
+        default: return "Not quite – add up all the angles. A full circle is the answer you should expect.";
+      }
+    }
+    function lifebelt(i){
+      var fl=P.fl[P.step],f=fl&&fl.f[i];
+      if(!f||f.ok||P.done[P.step])return;
+      f.v=f.kind==="frac"?fracStr(f.exp.n,f.exp.d):String(f.exp);
+      fl.i=i;P.msg=null;render();
+    }
+    function check(){
+      var f=activeField();if(!f)return;
+      if(f.v===""||f.v==="/"){P.msg={type:"bad",text:"Type your answer first."};render();return}
+      if(!okVal(f)){P.msg={type:"bad",text:hint(f)};render();return}
+      f.ok=true;
+      var note="";
+      if(f.kind==="frac"){
+        var p=parseFrac(f.v);f.disp=fracStr(f.exp.n,f.exp.d);
+        if(gcd2(p.a,p.b)>1&&f.disp!==fracStr(p.a,p.b))note="";
+        if(gcd2(p.a,p.b)>1)note=" It simplifies to "+f.disp+".";
+      }
+      var fl=P.fl[P.step],nx=nextOpen(fl,fl.i);
+      if(nx>=0){fl.i=nx;P.msg={type:"good",text:"✓ Correct!"+note};render();return}
+      finishStep(P.step);
+    }
+    function finishStep(st){
+      P.done[st]=true;P.msg=null;
+      render();
+      if(P.done.every(function(x){return x})&&!P.celebrated)celebrate();
+    }
+    function fillStep(st){
+      if(P.mode==="draw"&&st===3){
+        var i=P.drawI;
+        while(i>=0){
+          var it=P.items[i];
+          P.secs.push({i:i,s:P.start,e:P.start+it.a});
+          P.start+=it.a;
+          i=firstDraw(i+1);
+        }
+        P.drawI=-1;P.B=P.start;
+      }else{
+        var fl=ensure(st);
+        fl.f.forEach(function(f){f.ok=true;f.v=f.kind==="frac"?fracStr(f.exp.n,f.exp.d):String(f.exp);if(f.kind==="frac")f.disp=f.v});
+      }
+      finishStep(st);
+    }
+    function celebrate(){
+      P.celebrated=true;
+      if(P.mode==="read"){
+        $("celSub").textContent="You've read the pie chart.";
+        $("modeText").textContent="The total frequency is "+P.N+" and the angles add up to 360°, so each item is worth 360 ÷ "+P.N+" = "+P.mult+"°.";
+        $("thinkText").textContent="Think: which category is the mode, and how can you tell from the angles alone?";
+      }else{
+        $("celSub").textContent="Your pie chart is spot on.";
+        $("modeText").textContent="Multiplier = 360 ÷ "+P.N+" = "+P.mult+" — every person gets "+P.mult+"° of the pie.";
+        $("thinkText").textContent="Think: how would the angles change if the total frequency were doubled?";
+      }
+      pieAgain=cfg.again;
+      showOv();confetti();
+    }
+
+    /* ----- drawing ----- */
+    function made(){return (((P.B-P.start)%360)+360)%360}
+    function secPath(s,e){
+      if(e-s>=359.99)return "";
+      var a=pt(s,R),b=pt(e,R);
+      return "M"+CX+" "+CY+" L"+a[0].toFixed(2)+" "+a[1].toFixed(2)+" A"+R+" "+R+" 0 "+((e-s)>180?1:0)+" 1 "+b[0].toFixed(2)+" "+b[1].toFixed(2)+" Z";
+    }
+    function updateDraw(){
+      var prev=$(rid+"_prev"),kl=$(rid+"_kl"),kc=$(rid+"_kc"),rd=$(rid+"_read");
+      if(!prev)return;
+      var m=made(),k=pt(P.B,R+14);
+      prev.setAttribute("d",m>0?secPath(P.start,P.start+m):"");
+      kl.setAttribute("x2",k[0].toFixed(2));kl.setAttribute("y2",k[1].toFixed(2));
+      kc.setAttribute("cx",k[0].toFixed(2));kc.setAttribute("cy",k[1].toFixed(2));
+      if(rd)rd.textContent=m+"°";
+    }
+    function dragTo(e,svg){
+      var r=svg.getBoundingClientRect();if(!r.width||!r.height)return;
+      var sx=(e.clientX-r.left)/r.width*640,sy=(e.clientY-r.top)/r.height*430,
+          ang=Math.atan2(sx-CX,-(sy-CY))*180/Math.PI;
+      if(ang<0)ang+=360;
+      P.B=Math.round(ang)%360;P.msg=null;
+      updateDraw();
+    }
+    function fixSector(){
+      var it=P.items[P.drawI],m=made();
+      if(!it)return;
+      if(m===it.a){
+        P.secs.push({i:P.drawI,s:P.start,e:P.start+it.a});
+        P.start+=it.a;P.B=P.start;
+        P.drawI=firstDraw(P.drawI+1);
+        P.msg=null;
+        if(P.drawI<0){finishStep(3);return}
+        P.msg={type:"good",text:"✓ That sector is right. Now the next one."};
+        render();
+      }else{
+        P.msg={type:"bad",text:m>it.a?"Your sector is too big – it needs to be smaller.":"Your sector is too small – it needs to be bigger."};
+        render();
+      }
+    }
+
+    /* ----- rendering ----- */
+    function esym(x,size){return sym({c:x.c,e:x.e},size)}
+    function boxHTML(st,i,big){
+      var fl=P.fl[st];if(!fl||!fl.f[i])return "";
+      var f=fl.f[i],live=(P.step===st&&!P.done[st]),act=live&&fl.i===i&&!f.ok;
+      var cls="abox"+(big?"":" sm")+(f.ok?" ok":(act?" active":"")),inner;
+      if(f.ok)inner=(f.kind==="frac"?fracHTML(f.disp):esc(f.v))+" ✓";
+      else inner=f.kind==="frac"?fracHTML(f.v):esc(f.v);
+      return "<span class='fcell'><span class='"+cls+"' data-f='"+i+"'>"+inner+"</span>"+
+        (f.ok||!live?"":"<button class='lifebelt sm' data-h='"+i+"' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>")+"</span>";
+    }
+    function stepDone(st){return !!P.done[st]}
+    function tableHTML(){
+      var h="<table class='gtab ptab'><tr><th>"+esc(P.hdr)+"</th>",it=P.items,i,x;
+      if(P.mode==="read"){
+        h+="<th class='gf'>Angle</th><th class='gf'>Fraction</th><th class='gf'>Frequency</th></tr>";
+        for(i=0;i<it.length;i++){
+          x=it[i];
+          h+="<tr><td>"+esym(x,18)+" "+esc(x.n)+"</td><td class='gf'>"+(P.showAng?x.a+"°":"?")+"</td><td class='gf'>"+
+            (P.step===0&&!P.done[0]?boxHTML(0,i):(P.done[0]?fracHTML(P.fl[0].f[i].disp):""))+"</td><td class='gf'>"+
+            (P.step===1&&!P.done[1]?boxHTML(1,i):(P.done[1]?x.f:""))+"</td></tr>";
+        }
+        h+="<tr class='tot'><td>Total</td><td class='gf'>360°</td><td class='gf'>1</td><td class='gf'>"+P.N+"</td></tr>";
+      }else{
+        h+="<th class='gf'>Frequency</th><th class='gf'>Angle</th></tr>";
+        for(i=0;i<it.length;i++){
+          x=it[i];
+          h+="<tr><td>"+esym(x,18)+" "+esc(x.n)+"</td><td class='gf'>"+x.f+"</td><td class='gf'>"+
+            (P.step===2&&!P.done[2]?boxHTML(2,i):(P.done[2]?x.a+"°":""))+"</td></tr>";
+        }
+        h+="<tr class='tot'><td>Total</td><td class='gf'>"+(P.done[0]?P.N:"")+"</td><td class='gf'>"+
+          (P.step===2&&!P.done[2]?boxHTML(2,it.length):(P.done[2]?"360°":""))+"</td></tr>";
+      }
+      return h+"</table>";
+    }
+    function pillsHTML(){
+      var names=P.mode==="read"?["Fractions","Frequencies"]:["Total","Multiplier","Angles","Draw"],h="<div class='pills'>";
+      names.forEach(function(nm,i){
+        var locked=i>0&&!P.done[i-1];
+        h+="<button class='pill"+(P.step===i?" active":"")+(P.done[i]?" done":"")+(locked&&!P.done[i]?" locked":"")+"' data-s='"+i+"'>"+(P.done[i]?"✓ ":(i+1)+" ")+nm+"</button>";
+      });
+      return h+"</div>";
+    }
+    function bodyHTML(){
+      if(!P.ready)return "<div class='lockmsg'>For a pie chart the total frequency needs to divide exactly into 360. Press <b>New data</b> to get a suitable set.</div>";
+      var st=P.step,h="<div class='stepin'>",f=activeField(),m=P.mode;
+      if(m==="read"){
+        if(st===0){
+          h+="<h3>Step 1 – Angle ÷ 360</h3><p>The whole circle is <b>360°</b>. A sector's <b>fraction of the whole</b> is its <b>angle ÷ 360</b>. Type each fraction: the top number, then the <b>/</b> key, then the bottom number. Any equivalent fraction is fine, but simpler is better!</p>";
+          h+="<label class='chk' style='margin:6px 0'><input type='checkbox' data-pang"+(P.showAng?" checked":"")+"> Show the angles on the pie chart</label>";
+        }else{
+          h+="<h3>Step 2 – How many in each sector?</h3><p>The <b>total frequency</b> is <b>"+P.N+"</b>. To find a sector's frequency, work out its <b>fraction × "+P.N+"</b>.</p>";
+        }
+        if(P.done[st])h+="<p class='okmsg'>✓ "+(st===0?"All the fractions are right.":"All the frequencies are right.")+"</p>";
+      }else if(st===0){
+        h+="<h3>Step 1 – Total frequency</h3><p>First add up the frequencies to find the <b>total frequency</b>.</p>";
+        h+="<div class='frow'><span class='flab'>Total frequency =</span>"+boxHTML(0,0,true)+"</div>";
+      }else if(st===1){
+        h+="<h3>Step 2 – Find the multiplier</h3><p>A full circle is <b>360°</b>. Share it equally between the <b>"+P.N+"</b> items: divide 360 by the total frequency to find the angle for <b>one</b> item.</p>";
+        h+="<div class='eq'>Multiplier = 360 ÷ "+P.N+" = "+boxHTML(1,0,true)+"</div>";
+      }else if(st===2){
+        h+="<h3>Step 3 – Work out each angle</h3><p>Each item gets <b>"+(P.done[1]?P.mult:"the multiplier")+"°</b>. Angle = <b>frequency × multiplier</b>. Fill in the angle column – the angles should add up to 360°.</p>";
+      }else{
+        h+="<h3>Step 4 – Draw the pie chart</h3>";
+        if(P.done[3])h+="<p class='okmsg'>✓ The pie chart is finished.</p>";
+        else{
+          var it=P.items[P.drawI];
+          h+="<p>Start at the top (12 o'clock) and go <b>clockwise</b>. Drag the handle round the circle, or use the buttons to fine-tune, until the sector for <b>"+esym(it,16)+" "+esc(it.n)+"</b> has the right angle. Then press <b>Fix this sector</b>.</p>";
+          h+="<div class='eq'>Angle of this sector: <b id='"+rid+"_read'>"+made()+"°</b></div>";
+          h+="<div class='row' style='margin-bottom:8px'>";
+          [-10,-5,-1,1,5,10].forEach(function(d){h+="<button class='btn sec' data-d='"+d+"' style='padding:8px 12px'>"+(d>0?"+":"−")+Math.abs(d)+"°</button>"});
+          h+="</div><button class='btn go' data-a='fix'>Fix this sector ✓</button>";
+        }
+      }
+      if(f)h+=kpHTML(f.kind);
+      if(!P.done[st]&&!(P.mode==="draw"&&st===3&&false))h+=ffBar(false,true);
+      if(P.msg)h+="<div class='fmsg "+P.msg.type+"'>"+P.msg.text+"</div>";
+      if(P.done[st]){
+        if(st<P.nsteps-1)h+="<div style='margin-top:10px'><button class='btn go' data-a='next'>Next →</button></div>";
+        else h+="<div style='margin-top:10px'><button class='btn go' data-a='new'>New data</button></div>";
+      }
+      return h+"</div>";
+    }
+    function labelsHTML(secs,withAng){
+      var h="";
+      secs.forEach(function(s){
+        var x=P.items[s.i],mid=(s.s+s.e)/2,p=pt(mid,R+16),sn=Math.sin(mid*Math.PI/180),cs=Math.cos(mid*Math.PI/180),
+            anch=sn>0.2?"start":(sn<-0.2?"end":"middle"),y=p[1];
+        if(cs>0.8)y-=(withAng?18:4);else if(cs<-0.8)y+=14;else y+=5;
+        h+="<text x='"+p[0].toFixed(1)+"' y='"+y.toFixed(1)+"' text-anchor='"+anch+"' font-size='16' font-weight='700' fill='#12355b'>"+(x.e?x.e+" ":"")+esc(x.n)+"</text>";
+        if(withAng)h+="<text x='"+p[0].toFixed(1)+"' y='"+(y+17).toFixed(1)+"' text-anchor='"+anch+"' font-size='15' fill='#445'>"+(x.a)+"°</text>";
+      });
+      return h;
+    }
+    function svgHTML(){
+      var drawing=P.mode==="draw"&&P.step===3&&!P.done[3]&&P.ready,h,a,secs=[],s=0,i,x;
+      h="<svg id='"+rid+"_svg' class='piesvg"+(drawing?" pie-draw":"")+"' viewBox='0 0 640 430' role='img' aria-label='Pie chart'>";
+      if(!P.ready)return h+"</svg>";
+      if(P.mode==="read"||P.done[3]){
+        for(i=0;i<P.items.length;i++){x=P.items[i];if(x.a>0){secs.push({i:i,s:s,e:s+x.a});s+=x.a}}
+      }else secs=P.secs;
+      if(drawing){
+        h+="<circle cx='"+CX+"' cy='"+CY+"' r='"+R+"' fill='#fff' stroke='#9aa6b6' stroke-width='1.5'/>";
+        for(a=0;a<360;a+=10){
+          var p1=pt(a,R),p2=pt(a,R+(a%30===0?11:6));
+          h+="<line x1='"+p1[0].toFixed(1)+"' y1='"+p1[1].toFixed(1)+"' x2='"+p2[0].toFixed(1)+"' y2='"+p2[1].toFixed(1)+"' stroke='#9aa6b6' stroke-width='1.2'/>";
+          if(a%30===0){var q=pt(a,R+26);h+="<text x='"+q[0].toFixed(1)+"' y='"+(q[1]+4).toFixed(1)+"' text-anchor='middle' font-size='11' fill='#778'>"+a+"</text>"}
+        }
+        var z=pt(0,R+4);
+        h+="<line x1='"+CX+"' y1='"+CY+"' x2='"+z[0]+"' y2='"+z[1]+"' stroke='#9aa6b6' stroke-width='1.5' stroke-dasharray='5 4'/>";
+      }
+      if(P.mode==="draw"&&!drawing&&!P.done[3]){
+        h+="<circle cx='"+CX+"' cy='"+CY+"' r='"+R+"' fill='#fafcff' stroke='#c9d3e0' stroke-width='2' stroke-dasharray='8 6'/>"+
+           "<text x='"+CX+"' y='"+(CY-4)+"' text-anchor='middle' font-size='18' fill='#8a97a8'>Your pie chart</text>"+
+           "<text x='"+CX+"' y='"+(CY+20)+"' text-anchor='middle' font-size='18' fill='#8a97a8'>will be drawn here</text>";
+      }
+      secs.forEach(function(sc){
+        var it=P.items[sc.i];
+        if(sc.e-sc.s>=359.99)h+="<circle cx='"+CX+"' cy='"+CY+"' r='"+R+"' fill='"+it.c+"' stroke='#333' stroke-width='2'/>";
+        else h+="<path d='"+secPath(sc.s,sc.e)+"' fill='"+it.c+"' stroke='#333' stroke-width='2' stroke-linejoin='round'/>";
+        if(drawing&&!(P.done[3])&&sc.e-sc.s>=28){
+          var m=pt((sc.s+sc.e)/2,R*0.62);
+          h+="<text x='"+m[0].toFixed(1)+"' y='"+(m[1]+5).toFixed(1)+"' text-anchor='middle' font-size='14' font-weight='700' fill='"+(lumOf(it.c)>0.6?"#12355b":"#fff")+"'>"+esc(it.n)+"</text>";
+        }
+      });
+      if(!drawing)h+=labelsHTML(secs,P.showAng||P.mode==="draw");
+      if(drawing){
+        var cur=P.items[P.drawI],k=pt(P.B,R+14);
+        h+="<path id='"+rid+"_prev' d='"+(made()>0?secPath(P.start,P.start+made()):"")+"' fill='"+cur.c+"' fill-opacity='.45' stroke='#12355b' stroke-width='2' stroke-dasharray='6 4'/>";
+        h+="<line id='"+rid+"_kl' x1='"+CX+"' y1='"+CY+"' x2='"+k[0].toFixed(2)+"' y2='"+k[1].toFixed(2)+"' stroke='#12355b' stroke-width='3'/>";
+        h+="<circle id='"+rid+"_kc' cx='"+k[0].toFixed(2)+"' cy='"+k[1].toFixed(2)+"' r='12' fill='#f59e0b' stroke='#12355b' stroke-width='3' style='cursor:grab'/>";
+      }
+      return h+"</svg>";
+    }
+    function controlsHTML(){
+      var h="<div class='row' style='margin-bottom:10px'><span class='seg'>"+
+        "<button data-pm='read'"+(P.mode==="read"?" class='on'":"")+">Read the pie chart</button>"+
+        "<button data-pm='draw'"+(P.mode==="draw"?" class='on'":"")+">Draw the pie chart</button></span>";
+      if(cfg.controls)h+=cfg.controls();
+      return h+"</div>";
+    }
+    function render(){
+      if(!P.items.length)return;
+      if(P.ready&&P.step<P.nsteps)ensure(P.step);
+      var h=controlsHTML();
+      if(P.title)h+="<div class='lbl' style='margin-top:0'>"+esc(P.title)+"</div>";
+      h+="<div class='ggrid'><div>"+tableHTML()+"<div style='margin-top:12px'>"+pillsHTML()+bodyHTML()+"</div></div><div>"+svgHTML()+"</div></div>";
+      root.innerHTML=h;
+    }
+
+    /* ----- events ----- */
+    root.addEventListener("click",function(e){
+      var t=e.target,b;
+      if(!t.closest)return;
+      if((b=t.closest("[data-pm]"))){setMode(b.getAttribute("data-pm"));return}
+      if((b=t.closest("[data-ff]"))){if(!P.done[P.step])fillStep(P.step);return}
+      if((b=t.closest("[data-k]"))){
+        var k=b.getAttribute("data-k"),f=activeField();
+        if(k==="enter")check();else if(f){typeInto(f,k);P.msg=null;render()}
+        return;
+      }
+      if((b=t.closest("[data-h]"))){lifebelt(+b.getAttribute("data-h"));return}
+      if((b=t.closest("[data-f]"))){
+        var fl=P.fl[P.step],i=+b.getAttribute("data-f");
+        if(fl&&fl.f[i]&&!fl.f[i].ok&&!P.done[P.step]){fl.i=i;P.msg=null;render()}
+        return;
+      }
+      if((b=t.closest("[data-d]"))){
+        P.B=(((P.B+(+b.getAttribute("data-d")))%360)+360)%360;P.msg=null;
+        var fm=root.querySelector(".fmsg");if(fm)fm.remove();
+        updateDraw();return;
+      }
+      if((b=t.closest("[data-s]"))){
+        var s=+b.getAttribute("data-s");
+        if(s>0&&!P.done[s-1]){P.msg={type:"bad",text:"Finish the earlier steps first."};render();return}
+        P.step=s;P.msg=null;render();return;
+      }
+      if((b=t.closest("[data-a]"))){
+        var a=b.getAttribute("data-a");
+        if(a==="next"){P.step=Math.min(P.nsteps-1,P.step+1);P.msg=null;render()}
+        else if(a==="fix")fixSector();
+        else if(a==="new"||a==="newdata")cfg.again();
+      }
+    });
+    root.addEventListener("change",function(e){
+      var t=e.target;
+      if(t.hasAttribute&&t.hasAttribute("data-pang")){P.showAng=t.checked;render();return}
+      if(t.hasAttribute&&t.hasAttribute("data-pc")&&cfg.onControl)cfg.onControl(t.getAttribute("data-pc"),t.value);
+    });
+    root.addEventListener("pointerdown",function(e){
+      var s=e.target.closest&&e.target.closest("svg.pie-draw");
+      if(!s)return;
+      P.drag=true;
+      try{s.setPointerCapture(e.pointerId)}catch(x){}
+      dragTo(e,s);
+      e.preventDefault();
+    });
+    root.addEventListener("pointermove",function(e){
+      if(!P.drag)return;
+      var s=$(rid+"_svg");if(s)dragTo(e,s);
+    });
+    function endDrag(){P.drag=false}
+    root.addEventListener("pointerup",endDrag);
+    root.addEventListener("pointercancel",endDrag);
+
+    return {load:load,sync:sync,render:render,mode:function(){return P.mode}};
+  }
+
+  /* ---------- Pie on the Categorical tab ---------- */
+  var pieC=makePie({root:"pieC",again:function(){generate()}});
+  function pieCItems(){
+    return cats().map(function(c,i){return {n:c.n,c:c.c,e:c.e,f:S.truth[i]}});
+  }
+  function pieCSync(){
+    var sig=S.topic+"|"+S.truth.join(",")+"|"+cats().map(function(c){return c.n+c.c+(c.e||"")}).join(",");
+    pieC.sync(pieCItems(),sig,TOPICS[S.topic].title+" – "+S.n+" results",TOPICS[S.topic].title);
+  }
+
+  /* ---------- Pie on the Simple Frequency tab ---------- */
+  var PS={n:"rand"};
+  var pieS=makePie({
+    root:"pieS",
+    again:function(){pieSGen()},
+    controls:function(){
+      var h="<label class='f'>Total frequency<select data-pc='n'><option value='rand'"+(PS.n==="rand"?" selected":"")+">Random</option>";
+      PIE_NS.forEach(function(n){h+="<option"+(String(PS.n)===String(n)?" selected":"")+">"+n+"</option>"});
+      return h+"</select></label><button class='btn go' data-a='newdata' style='align-self:flex-end'>New data</button>";
+    },
+    onControl:function(k,v){if(k==="n"){PS.n=v;pieSGen()}}
+  });
+  function pieSGen(){
+    closeOverlay();
+    var c=DCTX[SF.ctx],lo=c.min,k=Math.min(6,c.max-c.min+1),N,fr,items=[],j;
+    N=PS.n==="rand"?PIE_NS[3+Math.floor(Math.random()*(PIE_NS.length-3))]:+PS.n;
+    fr=splitTotal(N,k,false);
+    for(j=0;j<k;j++)items.push({n:String(lo+j),c:PIE_PAL[j%PIE_PAL.length],f:fr[j]});
+    pieS.load(items,c.desc.replace(/\{n\}/g,N),"sft"+Math.random(),c.title);
+  }
+
+  /* =====================================================================
+     Two Way Tables tab
+     ===================================================================== */
+  var TCTX=[
+    {title:"Getting to school",desc:"How {n} students travel to school",noun:"students",rh:"Year group",ch:"Travel",
+     rows:"Year 10=Year 10 students, Year 11=Year 11 students",cols:"Walk=walk to school, Bus=travel by bus, Car=travel by car"},
+    {title:"School lunches",desc:"The lunch choice of {n} students",noun:"students",rh:"Students",ch:"Lunch",
+     rows:"Boys=boys, Girls=girls",cols:"School dinner=have a school dinner, Packed lunch=bring a packed lunch"},
+    {title:"After-school clubs",desc:"The after-school club chosen by {n} students",noun:"students",rh:"Year group",ch:"Club",
+     rows:"Year 8=Year 8 students, Year 9=Year 9 students, Year 10=Year 10 students",cols:"Sport=go to a sports club, Music=go to a music club, Drama=go to a drama club"},
+    {title:"Pets",desc:"The pets owned by {n} students",noun:"students",rh:"Students",ch:"Pet",
+     rows:"Boys=boys, Girls=girls",cols:"Dog=have a dog, Cat=have a cat, Other=have another type of pet"},
+    {title:"School trip",desc:"How {n} people travel on the school trip",noun:"people",rh:"Group",ch:"Transport",
+     rows:"Students=students, Staff=staff members",cols:"Coach=travel by coach, Minibus=travel by minibus"},
+    {title:"Mobile phones",desc:"The mobile phones of {n} students",noun:"students",rh:"Year group",ch:"Phone",
+     rows:"Year 7=Year 7 students, Year 8=Year 8 students",cols:"Smartphone=have a smartphone, Basic phone=have a basic phone, No phone=have no phone"}
+  ];
+  var TDEFAULTS=JSON.parse(JSON.stringify(TCTX));
+  var TSTORE="statsgen.tw.v1",tDirty=null;
+  var T={ctx:0,nsel:"rand",level:1,N:0,R:[],C:[],tv:{},hid:{},act:null,step:0,done0:false,msg:null,
+         q:null,qn:0,lastQ:"",celebrated:false};
+
+  function loadTW(){
+    try{
+      var s=JSON.parse(localStorage.getItem(TSTORE)||"null");
+      if(Array.isArray(s)&&s.length>=1&&s.length<=8&&s.every(function(c){
+        return c&&["title","desc","noun","rh","ch","rows","cols"].every(function(k){return typeof c[k]==="string"});
+      }))TCTX=s.map(function(c){return {title:clean(c.title),desc:clean(c.desc),noun:clean(c.noun),rh:clean(c.rh),ch:clean(c.ch),rows:clean(c.rows),cols:clean(c.cols)}});
+    }catch(e){}
+  }
+  function saveTW(){try{localStorage.setItem(TSTORE,JSON.stringify(TCTX))}catch(e){}}
+
+  function parseCats(txt,min,max,isRow,noun){
+    var out=[];
+    String(txt).split(",").forEach(function(s){
+      s=s.trim();if(!s)return;
+      var i=s.indexOf("="),l=(i<0?s:s.slice(0,i)).trim(),p=i<0?"":s.slice(i+1).trim();
+      if(!l)return;
+      if(!p)p=isRow?l+" "+noun:l.toLowerCase();
+      out.push({l:l,p:p});
+    });
+    while(out.length<min)out.push({l:(isRow?"Group ":"Option ")+(out.length+1),p:(isRow?"group ":"option ")+(out.length+1)});
+    return out.slice(0,max);
+  }
+  function thirdPerson(ph){
+    var w=ph.split(" "),v=w[0],irr={have:"has",go:"goes",do:"does"};
+    if(irr[v])w[0]=irr[v];
+    else if(/(s|sh|ch|x|z)$/.test(v))w[0]=v+"es";
+    else if(/[^aeiou]y$/.test(v))w[0]=v.slice(0,-1)+"ies";
+    else w[0]=v+"s";
+    return w.join(" ");
+  }
+  function singularGroup(g){
+    var w=g.split(" "),l=w[w.length-1],irr={children:"child",men:"man",women:"woman",people:"person"};
+    if(irr[l.toLowerCase()])w[w.length-1]=irr[l.toLowerCase()];
+    else if(/s$/.test(l)&&!/ss$/.test(l))w[w.length-1]=l.slice(0,-1);
+    return w.join(" ");
+  }
+  function withArticle(g){return (/^[aeiou]/i.test(g)?"an ":"a ")+g}
+
+  /* ----- the table ----- */
+  function tKeys(){
+    var ks=[],i,j,R=T.R.length,C=T.C.length;
+    for(i=0;i<R;i++)for(j=0;j<C;j++)ks.push("c"+i+"_"+j);
+    for(i=0;i<R;i++)ks.push("r"+i);
+    for(j=0;j<C;j++)ks.push("k"+j);
+    ks.push("g");
+    return ks;
+  }
+  function tLines(R,C){
+    var L=[],i,j,m;
+    for(i=0;i<R;i++){m=[];for(j=0;j<C;j++)m.push("c"+i+"_"+j);L.push({m:m,t:"r"+i})}
+    for(j=0;j<C;j++){m=[];for(i=0;i<R;i++)m.push("c"+i+"_"+j);L.push({m:m,t:"k"+j})}
+    m=[];for(j=0;j<C;j++)m.push("k"+j);L.push({m:m,t:"g"});
+    m=[];for(i=0;i<R;i++)m.push("r"+i);L.push({m:m,t:"g"});
+    return L;
+  }
+  function tSolvable(unknown,lines){
+    var u={},k,ch=true,x,y,ln,all,cnt,last;
+    for(k in unknown)u[k]=true;
+    while(ch){
+      ch=false;
+      for(x=0;x<lines.length;x++){
+        ln=lines[x];all=ln.m.concat([ln.t]);cnt=0;last=null;
+        for(y=0;y<all.length;y++)if(u[all[y]]){cnt++;last=all[y]}
+        if(cnt===1){delete u[last];ch=true}
+      }
+    }
+    return Object.keys(u).length===0;
+  }
+  function shuffled(a){
+    var b=a.slice(),i,j,t;
+    for(i=b.length-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=b[i];b[i]=b[j];b[j]=t}
+    return b;
+  }
+  function tGenerate(){
+    closeOverlay();
+    var c=TCTX[T.ctx],R,C,N,cells=[],i,j,w,rest,lines,cand,target,unk={},cnt=0,tv={};
+    T.R=parseCats(c.rows,2,3,true,c.noun);T.C=parseCats(c.cols,2,4,false,c.noun);
+    R=T.R.length;C=T.C.length;
+    N=T.nsel==="rand"?[40,50,60,80,100,120][Math.floor(Math.random()*6)]:+T.nsel;
+    T.N=N;
+    w=[];
+    for(i=0;i<R*C;i++){cells.push(2);w.push(1+Math.random()*2)}
+    rest=N-2*R*C;
+    for(i=0;i<rest;i++)cells[pick(w)]++;
+    for(i=0;i<R;i++)for(j=0;j<C;j++)tv["c"+i+"_"+j]=cells[i*C+j];
+    for(i=0;i<R;i++){tv["r"+i]=0;for(j=0;j<C;j++)tv["r"+i]+=tv["c"+i+"_"+j]}
+    for(j=0;j<C;j++){tv["k"+j]=0;for(i=0;i<R;i++)tv["k"+j]+=tv["c"+i+"_"+j]}
+    tv.g=N;
+    T.tv=tv;T.rh=c.rh;T.ch=c.ch;T.noun=c.noun;
+    lines=tLines(R,C);
+    var keys=tKeys();
+    cand=T.level===1?keys.filter(function(k){return k.charAt(0)==="c"}):keys;
+    cand=shuffled(cand);
+    target=T.level===1?Math.max(2,Math.round(R*C*0.45)):(T.level===2?Math.max(3,Math.round(keys.length*0.35)):999);
+    cand.forEach(function(k){
+      if(cnt>=target)return;
+      unk[k]=true;
+      if(tSolvable(unk,lines))cnt++;else delete unk[k];
+    });
+    T.hid={};
+    keys.forEach(function(k){if(unk[k])T.hid[k]={v:"",ok:false}});
+    var firstHid=keys.filter(function(k){return T.hid[k]})[0];
+    T.act=firstHid||null;
+    T.step=0;T.done0=!firstHid;T.msg=null;T.q=null;T.qn=0;T.lastQ="";T.celebrated=false;
+    $("tTitle").textContent=c.desc.replace(/\{n\}/g,N);
+    tRender();
+  }
+  function tActive(){
+    if(T.step===0){
+      if(T.done0||!T.act||!T.hid[T.act]||T.hid[T.act].ok)return null;
+      return T.hid[T.act];
+    }
+    if(T.q&&!T.q.ok)return T.q;
+    return null;
+  }
+  function tNextOpen(from){
+    var ks=tKeys().filter(function(k){return T.hid[k]&&!T.hid[k].ok}),i;
+    if(!ks.length)return null;
+    var all=tKeys(),start=Math.max(0,all.indexOf(from)),k;
+    for(i=0;i<all.length;i++){k=all[(start+i)%all.length];if(T.hid[k]&&!T.hid[k].ok)return k}
+    return null;
+  }
+  function tTableHTML(){
+    var R=T.R.length,C=T.C.length,i,j,h="<table class='twtab'><tr><th class='corner'>"+esc(T.rh)+" ↓<br>"+esc(T.ch)+" →</th>";
+    T.C.forEach(function(c){h+="<th>"+esc(c.l)+"</th>"});
+    h+="<th class='tot'>Total</th></tr>";
+    function cell(key,tot){
+      var hd=T.hid[key],cls=tot?" tot":"";
+      if(!hd)return "<td class='kn"+cls+"'>"+T.tv[key]+"</td>";
+      var act=T.step===0&&!hd.ok&&T.act===key&&!T.done0;
+      if(hd.ok)return "<td class='ok"+cls+"' data-c='"+key+"'><span class='abox sm ok'>"+hd.v+"</span></td>";
+      return "<td class='hid"+cls+(act?" active":"")+"' data-c='"+key+"'><span class='abox sm"+(act?" active":"")+"'>"+esc(hd.v)+"</span></td>";
+    }
+    for(i=0;i<R;i++){
+      h+="<tr><th>"+esc(T.R[i].l)+"</th>";
+      for(j=0;j<C;j++)h+=cell("c"+i+"_"+j,false);
+      h+=cell("r"+i,true)+"</tr>";
+    }
+    h+="<tr><th class='tot'>Total</th>";
+    for(j=0;j<C;j++)h+=cell("k"+j,true);
+    h+=cell("g",true)+"</tr></table>";
+    return h;
+  }
+  /* ----- questions ----- */
+  function tMakeQ(){
+    var R=T.R.length,C=T.C.length,N=T.N,noun=T.noun,tries=0,q,i,j,r,c,cv,rt,ct,rg,cp,types;
+    types=["cell","rowtot","coltot","not","fracrow","prob","condrow","condcol","pct"];
+    do{
+      tries++;
+      i=Math.floor(Math.random()*R);j=Math.floor(Math.random()*C);
+      r=T.R[i];c=T.C[j];
+      cv=T.tv["c"+i+"_"+j];rt=T.tv["r"+i];ct=T.tv["k"+j];
+      rg=r.p;cp=c.p;
+      var ty=types[Math.floor(Math.random()*types.length)];
+      q=null;
+      if(ty==="cell")q={kind:"num",exp:cv,text:"How many "+rg+" "+cp+"?",ex:"Read the number where the <b>"+esc(r.l)+"</b> row meets the <b>"+esc(c.l)+"</b> column."};
+      else if(ty==="rowtot")q={kind:"num",exp:rt,text:"How many "+rg+" are there altogether?",ex:"This is the total at the end of the <b>"+esc(r.l)+"</b> row."};
+      else if(ty==="coltot")q={kind:"num",exp:ct,text:"How many of the "+N+" "+noun+" "+cp+"?",ex:"This is the total at the bottom of the <b>"+esc(c.l)+"</b> column."};
+      else if(ty==="not"){
+        if(/^(do not|don't|have no|has no|never)/i.test(cp))continue;
+        q={kind:"num",exp:rt-cv,text:"How many "+rg+" do not "+cp+"?",ex:"Take the number who do from the row total: "+rt+" − "+cv+" = "+(rt-cv)+"."};
+      }
+      else if(ty==="fracrow")q={kind:"frac",exp:{n:cv,d:rt},text:"What fraction of the "+rg+" "+cp+"? Give your answer in its simplest form.",ex:"Fraction = "+cv+" out of "+rt+" = "+cv+"/"+rt+", which simplifies to "+fracStr(cv,rt)+"."};
+      else if(ty==="prob")q={kind:"frac",exp:{n:cv,d:N},text:"One of the "+N+" "+noun+" is chosen at random. What is the probability that this person is "+withArticle(singularGroup(rg))+" who "+thirdPerson(cp)+"? Give your answer in its simplest form.",ex:"Probability = number who fit ÷ total number = "+cv+"/"+N+", which simplifies to "+fracStr(cv,N)+"."};
+      else if(ty==="condrow")q={kind:"frac",exp:{n:cv,d:rt},text:"One of the "+rg+" is chosen at random. What is the probability that this person "+thirdPerson(cp)+"? Give your answer in its simplest form.",ex:"Only the "+esc(r.l)+" row matters, so the total is "+rt+". Probability = "+cv+"/"+rt+" = "+fracStr(cv,rt)+"."};
+      else if(ty==="condcol")q={kind:"frac",exp:{n:cv,d:ct},text:"One of the "+noun+" who "+cp+" is chosen at random. What is the probability that this person is "+withArticle(singularGroup(rg))+"? Give your answer in its simplest form.",ex:"Only the "+esc(c.l)+" column matters, so the total is "+ct+". Probability = "+cv+"/"+ct+" = "+fracStr(cv,ct)+"."};
+      else if(ty==="pct"){
+        if((100*cv)%rt!==0)continue;
+        q={kind:"num",exp:100*cv/rt,text:"What percentage of the "+rg+" "+cp+"?",ex:"Fraction = "+cv+"/"+rt+", so percentage = "+cv+" ÷ "+rt+" × 100 = "+(100*cv/rt)+"%."};
+      }
+      if(q&&q.text===T.lastQ)q=null;
+    }while(!q&&tries<100);
+    if(!q)q={kind:"num",exp:T.tv.g,text:"How many "+noun+" are there altogether?",ex:"This is the grand total in the bottom right-hand corner."};
+    q.v="";q.ok=false;q.key="q";
+    T.lastQ=q.text;T.qn++;
+    return q;
+  }
+  function tQOK(q){
+    if(q.kind==="num")return /^\d+$/.test(q.v)&&parseInt(q.v,10)===q.exp;
+    var p=parseFrac(q.v);
+    return !!p&&p.a*q.exp.d===q.exp.n*p.b&&gcd2(p.a,p.b)===1;
+  }
+  function tQHint(q){
+    if(q.kind==="num")return "Not quite – look carefully at which row, column or total the question is asking about.";
+    var p=parseFrac(q.v);
+    if(p&&p.a*q.exp.d===q.exp.n*p.b)return "That's the right fraction, but it can be simplified – cancel it down as far as you can.";
+    if(q.v.indexOf("/")<0)return "Type your answer as a fraction: the top number, then the / key, then the bottom number.";
+    return "Not quite – a fraction is (the number you want) over (the total for the group you are choosing from).";
+  }
+  function tHint(key){
+    var c=key.charAt(0);
+    if(c==="c")return "Not quite – find a row or column with only one missing number: total − the numbers you already know.";
+    if(c==="r")return "Not quite – a row total is all the numbers across that row added together (or work it out from the grand total).";
+    if(c==="k")return "Not quite – a column total is all the numbers down that column added together.";
+    return "Not quite – the grand total is the row totals added up (or the column totals added up).";
+  }
+  function tCheck(){
+    var f=tActive();if(!f)return;
+    if(f.v===""||f.v==="/"){T.msg={type:"bad",text:"Type your answer first."};tRender();return}
+    if(T.step===0){
+      var key=T.act;
+      if(!/^\d+$/.test(f.v)||parseInt(f.v,10)!==T.tv[key]){T.msg={type:"bad",text:tHint(key)};tRender();return}
+      f.ok=true;
+      var nx=tNextOpen(key);
+      if(nx){T.act=nx;T.msg={type:"good",text:"✓ Correct!"};tRender();return}
+      tFinishTable();
+    }else{
+      if(!tQOK(f)){T.msg={type:"bad",text:tQHint(f)};tRender();return}
+      f.ok=true;T.msg={type:"good",text:"✓ Correct! "+f.ex};tRender();
+    }
+  }
+  function tFinishTable(){
+    T.done0=true;T.msg=null;
+    tRender();
+    if(!T.celebrated){
+      T.celebrated=true;
+      $("celSub").textContent="The table is complete.";
+      $("modeText").textContent="Every row and column adds up to its total, and the grand total is "+T.N+".";
+      $("thinkText").textContent="Think: how could you check that the whole table is correct? Then try the questions.";
+      pieAgain=null;
+      showOv();confetti();
+    }
+  }
+  function tFill(key){
+    var hd=T.hid[key];if(!hd||hd.ok)return;
+    hd.v=String(T.tv[key]);T.act=key;T.msg=null;tRender();
+  }
+  function tBodyHTML(){
+    var h="<div class='pills'>"+
+      "<button class='pill"+(T.step===0?" active":"")+(T.done0?" done":"")+"' data-s='0'>"+(T.done0?"✓ ":"1 ")+"Complete the table</button>"+
+      "<button class='pill"+(T.step===1?" active":"")+(!T.done0?" locked":"")+"' data-s='1'>2 Questions</button></div><div class='stepin'>";
+    var f=tActive();
+    if(T.step===0){
+      var lvl=["Some numbers are missing. Use the <b>totals</b> to work them out.","Quite a few numbers are missing, including some totals. Look for a row or column with <b>only one</b> missing number.","Lots of numbers are missing. Start with the row, column or total that has <b>only one</b> missing number, then work from there."][T.level-1];
+      h+="<h3>Complete the two-way table</h3><p>"+lvl+" Tap a missing box, type the number, then press <b>Check</b>.</p>";
+      h+="<div class='warn'>Each row adds up to its total, each column adds up to its total, and the totals add up to the grand total.</div>";
+      if(T.done0)h+="<p class='okmsg'>✓ The table is complete.</p><button class='btn go' data-a='toq'>Next: Questions →</button>";
+      else{
+        if(f)h+="<div style='margin-top:6px'><button class='btn sec' data-a='fillcell' style='padding:6px 12px'>🛟 Type this answer for me</button></div>";
+        if(f)h+=kpHTML("num");
+        h+=ffBar(false,true);
+      }
+    }else{
+      if(!T.done0)return h+"<div class='lockmsg'>Complete the table first, then try the questions.</div></div>";
+      if(!T.q)T.q=tMakeQ();
+      var q=T.q;
+      h+="<h3>Question "+T.qn+"</h3><div class='qcard'><div class='qtext'>"+esc(q.text)+"</div>";
+      h+="<div class='kqrow'><span class='abox"+(q.ok?" ok":" active")+"' style='min-width:140px'>"+(q.kind==="frac"?fracHTML(q.v):esc(q.v))+(q.ok?" ✓":"")+"</span>"+
+        (q.ok?"":"<button class='lifebelt' data-a='fillq' title='Type the answer for me' aria-label='Type the answer for me'>🛟</button>")+"</div></div>";
+      if(q.ok)h+="<button class='btn go' data-a='nextq'>Next question →</button>";
+      else{
+        h+=kpHTML(q.kind);
+        h+=ffBar(false,true);
+      }
+    }
+    if(T.msg)h+="<div class='fmsg "+T.msg.type+"'>"+T.msg.text+"</div>";
+    return h+"</div>";
+  }
+  function tRender(){
+    if(!T.R.length)return;
+    $("tTable").innerHTML=tTableHTML();
+    $("tBody").innerHTML=tBodyHTML();
+  }
+  function refreshTSelect(){
+    var sel=$("tContext");sel.innerHTML="";
+    TCTX.forEach(function(c,i){var o=document.createElement("option");o.value=i;o.textContent=c.title;sel.appendChild(o)});
+    if(T.ctx>=TCTX.length)T.ctx=0;
+    sel.value=T.ctx;
+  }
+  function tFF(){
+    if(T.step===0&&!T.done0){
+      Object.keys(T.hid).forEach(function(k){T.hid[k].ok=true;T.hid[k].v=String(T.tv[k])});
+      T.celebrated=true; /* fast-forward: no celebration */
+      T.done0=true;T.msg=null;tRender();
+    }else if(T.step===1&&T.q&&!T.q.ok){
+      T.q.ok=true;T.q.v=T.q.kind==="frac"?fracStr(T.q.exp.n,T.q.exp.d):String(T.q.exp);
+      T.msg={type:"good",text:"✓ "+T.q.ex};tRender();
+    }
+  }
+  function tTypeKey(k){
+    var f=tActive();if(!f)return;
+    f.kind=f.kind||"num";
+    typeInto(f,k,T.step===0?4:9);
+    T.msg=null;tRender();
+  }
+  var tRoot=$("p-tw");
+  tRoot.addEventListener("click",function(e){
+    var t=e.target,b;
+    if(!t.closest)return;
+    if((b=t.closest("[data-ff]"))){tFF();return}
+    if((b=t.closest("[data-k]"))){
+      var k=b.getAttribute("data-k");
+      if(k==="enter")tCheck();else tTypeKey(k);
+      return;
+    }
+    if((b=t.closest("[data-c]"))){
+      var key=b.getAttribute("data-c");
+      if(T.step===0&&T.hid[key]&&!T.hid[key].ok&&!T.done0){T.act=key;T.msg=null;tRender()}
+      return;
+    }
+    if((b=t.closest("[data-s]"))){
+      var s=+b.getAttribute("data-s");
+      if(s===1&&!T.done0){T.msg={type:"bad",text:"Complete the table first."};tRender();return}
+      T.step=s;T.msg=null;tRender();return;
+    }
+    if((b=t.closest("[data-a]"))){
+      var a=b.getAttribute("data-a");
+      if(a==="toq"){T.step=1;T.msg=null;tRender()}
+      else if(a==="nextq"){T.q=null;T.msg=null;tRender()}
+      else if(a==="fillcell"){if(T.act)tFill(T.act)}
+      else if(a==="fillq"){
+        if(T.q&&!T.q.ok){T.q.v=T.q.kind==="frac"?fracStr(T.q.exp.n,T.q.exp.d):String(T.q.exp);T.msg=null;tRender()}
+      }
+    }
+  });
+  $("tContext").addEventListener("change",function(){T.ctx=+this.value;tGenerate()});
+  $("tN").addEventListener("change",function(){T.nsel=this.value;tGenerate()});
+  $("tGen").addEventListener("click",tGenerate);
+  seg("tLevelSeg","data-m",function(v){T.level=+v;tGenerate()});
+
+  /* ----- Two Way Tables settings ----- */
+  function renderTWSet(){
+    var h="";
+    TCTX.forEach(function(c,i){
+      h+="<div class='dcrow'><div class='r1'>"+
+        "<input type='text' data-f='title' data-i='"+i+"' maxlength='30' value=\""+esc(c.title)+"\" aria-label='Menu name' placeholder='Menu name'>"+
+        "<button class='rm' data-i='"+i+"' title='Remove context'"+(TCTX.length<=1?" disabled":"")+">✕</button></div>"+
+        "<input type='text' data-f='desc' data-i='"+i+"' maxlength='90' value=\""+esc(c.desc)+"\" aria-label='Description' placeholder='Description, e.g. How {n} students travel to school'>"+
+        "<div class='r3'><label>Who is counted <input type='text' data-f='noun' data-i='"+i+"' maxlength='20' value=\""+esc(c.noun)+"\" style='width:110px'></label>"+
+        "<label>Rows heading <input type='text' data-f='rh' data-i='"+i+"' maxlength='20' value=\""+esc(c.rh)+"\" style='width:110px'></label>"+
+        "<label>Columns heading <input type='text' data-f='ch' data-i='"+i+"' maxlength='20' value=\""+esc(c.ch)+"\" style='width:110px'></label></div>"+
+        "<label style='font-size:.85rem;color:var(--muted)'>Row labels (2 to 3), as <b>Label=group</b>, separated by commas</label>"+
+        "<input type='text' data-f='rows' data-i='"+i+"' maxlength='160' value=\""+esc(c.rows)+"\">"+
+        "<label style='font-size:.85rem;color:var(--muted)'>Column labels (2 to 4), as <b>Label=what they do</b>, separated by commas</label>"+
+        "<input type='text' data-f='cols' data-i='"+i+"' maxlength='200' value=\""+esc(c.cols)+"\"></div>";
+    });
+    $("tctxRows").innerHTML=h;
+    $("addTctx").disabled=TCTX.length>=8;
+  }
+  function closeTW(){
+    TCTX.forEach(function(c){
+      if(!c.title.trim())c.title="Context";
+      if(!c.desc.trim())c.desc="A survey of {n} students";
+      if(!c.noun.trim())c.noun="students";
+    });
+    saveTW();refreshTSelect();
+    if(tDirty)tGenerate();
+    tDirty=null;
+  }
+  $("tctxRows").addEventListener("input",function(e){
+    var t=e.target,f=t.getAttribute("data-f");if(!f)return;
+    TCTX[+t.getAttribute("data-i")][f]=clean(t.value);
+    tDirty="struct";saveTW();
+  });
+  $("tctxRows").addEventListener("click",function(e){
+    var b=e.target.closest(".rm");if(!b||b.disabled||TCTX.length<=1)return;
+    TCTX.splice(+b.getAttribute("data-i"),1);
+    tDirty="struct";saveTW();renderTWSet();
+  });
+  $("addTctx").addEventListener("click",function(){
+    if(TCTX.length>=8)return;
+    TCTX.push({title:"New context",desc:"A survey of {n} students",noun:"students",rh:"Year group",ch:"Choice",
+      rows:"Year 7=Year 7 students, Year 8=Year 8 students",cols:"Option 1=choose option 1, Option 2=choose option 2"});
+    tDirty="struct";saveTW();renderTWSet();
+  });
+  $("resetTctx").addEventListener("click",function(){
+    TCTX=JSON.parse(JSON.stringify(TDEFAULTS));
+    tDirty="struct";saveTW();renderTWSet();
+  });
+
+
   /* ---------- start ---------- */
   loadSaved();
+  loadTW();
   loadDisc();
   loadGrp();
   loadCnt();
@@ -4751,6 +5681,8 @@
   cGenerate();
   refreshBSelect();
   bGenerate();
+  refreshTSelect();
+  tGenerate();
   spGenerate();
   pmGenerate();
   generate();
