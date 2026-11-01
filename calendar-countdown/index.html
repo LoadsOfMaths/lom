@@ -550,7 +550,7 @@ function renderCards(){
   }else{
     const ht=ranges.find(r=>r.b>=tdn),et=ranges.find(r=>r.endsTerm&&r.b>=tdn);
     if(ht){const k=schoolDaysUntil(tdn,ht.b,ranges,ns);
-      top.push(card({label:'End of Half Term',num:k,unit:plural(k,'school day','school days'),sub:fmtMid(ht.end),fine:ht.name+(ht.a>tdn?' (starts '+fmtShort(ht.start)+')':'')}));}
+      top.push(card({label:(et&&ht.b===et.b)?'End of Term':'End of Half Term',num:k,unit:plural(k,'school day','school days'),sub:fmtMid(ht.end),fine:ht.name+(ht.a>tdn?' (starts '+fmtShort(ht.start)+')':'')}));}
     if(et&&!(ht&&ht.b===et.b)){const k=schoolDaysUntil(tdn,et.b,ranges,ns);
       top.push(card({label:'End of Term',num:k,unit:plural(k,'school day','school days'),sub:fmtMid(et.end),fine:et.name}));}
     if(!ht)top.push('<div class="empty" style="grid-column:1/-1">All the term dates entered have finished. Update them in Settings.<button class="btn primary" data-open="terms">Term dates</button></div>');
