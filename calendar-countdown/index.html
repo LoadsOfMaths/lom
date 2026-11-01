@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calendar Countdown</title>
+<style>
+:root{
+  --desk:#2b3a42; --desk2:#202d35; --paper:#fffdf7; --ink:#1f2933; --muted:#6b7280;
+  --red:#b7312c; --teal:#1d7a6c; --navy:#26477d; --amber:#c98a00; --line:#e4ddc9;
+  --numfont:Cambria,"Times New Roman","Liberation Serif",Times,serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);min-height:100vh;
+  background:radial-gradient(1200px 600px at 15% -10%,#3b505b 0%,transparent 60%),linear-gradient(180deg,var(--desk),var(--desk2));
+}
+.wrap{max-width:1900px;margin:0 auto;padding:12px 20px 30px}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;color:#e8efe9;margin-bottom:14px;gap:12px}
+.vtabs{display:flex;gap:6px}
+.vt{background:rgba(255,255,255,.1);color:#dfe9e3;border:1px solid rgba(255,255,255,.22);border-bottom:0;border-radius:12px 12px 0 0;padding:10px 22px;
+  font-family:Georgia,"Times New Roman",serif;font-size:clamp(16px,1.5vw,23px);cursor:pointer;position:relative}
+.vt:hover{background:rgba(255,255,255,.18)}
+.vt.on{background:var(--paper);color:var(--ink);font-weight:700;border-color:var(--paper)}
+.vt.live::after{content:"";position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:#e5483f;box-shadow:0 0 0 2px rgba(229,72,63,.3)}
+.who{font-family:Georgia,serif;font-size:clamp(16px,1.5vw,22px);opacity:.85;flex:1;text-align:right;padding-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:12px;padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font:inherit;font-size:16px}
+.iconbtn:hover{background:rgba(255,255,255,.2)}
+.iconbtn svg{width:22px;height:22px}
+
+/* ---- Calendar view: today panel + countdown cards ---- */
+.top{display:grid;grid-template-columns:clamp(330px,27vw,540px) 1fr;gap:20px;align-items:stretch}
+#topcards{display:flex;flex-direction:column;gap:14px;min-width:0}
+#topcards .grid{flex:1;grid-template-columns:repeat(auto-fill,minmax(clamp(130px,8.6vw,170px),1fr));gap:14px}
+#topcards .card .num{font-size:clamp(38px,min(3.8vw,7vh),72px);padding-top:6px}
+.today{background:var(--paper);border-radius:16px;padding:14px;box-shadow:0 3px 0 #d7cfba,0 14px 26px rgba(0,0,0,.35);
+  display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:center;align-content:start}
+.dcal{width:clamp(100px,8.6vw,150px);border-radius:10px;overflow:hidden;text-align:center;background:#fff;position:relative;
+  box-shadow:0 2px 0 #cfc6ad,0 6px 14px rgba(0,0,0,.22);border:1px solid #e1dac6}
+.dcal .dow{background:var(--red);color:#fff;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 0 6px;font-size:clamp(11px,1vw,16px);position:relative}
+.dcal .dow::before,.dcal .dow::after{content:"";position:absolute;top:-6px;width:11px;height:11px;border-radius:50%;background:#fffdf7;box-shadow:inset 0 2px 3px #0007}
+.dcal .dow::before{left:22%}.dcal .dow::after{right:22%}
+.dcal .dnum{font-family:var(--numfont);font-weight:700;font-size:clamp(46px,5vw,88px);line-height:1;padding:6px 0 0}
+.dcal .my{padding:0 4px 9px;font-size:clamp(11px,1vw,16px);color:#444}
+.timeblock{min-width:0;text-align:center}
+.trow{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.digital{font-weight:700;font-variant-numeric:tabular-nums;font-size:clamp(38px,3.8vw,68px);line-height:1;letter-spacing:.02em;color:#1b2a33}
+.digital .sec{font-size:.4em;color:var(--muted);margin-left:.15em;font-weight:600}
+.status{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:999px;background:#eef3ee;color:#2d5a47;font-weight:600;font-size:clamp(11px,.95vw,15px);border:1px solid #cfe0d4}
+.status.break{background:#fdf0e0;color:#8a5a12;border-color:#efd5ac}
+.analogue{width:clamp(60px,5.2vw,96px);height:clamp(60px,5.2vw,96px)}
+.astro{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;border-top:2px dashed #d9d1ba;padding-top:10px}
+.tile{display:flex;align-items:center;gap:8px;background:#f4efe0;border:1px solid var(--line);border-radius:12px;padding:6px 10px;flex:1;min-width:120px}
+.tile svg{width:32px;height:32px;flex:none}
+.tile .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.tile .v{font-size:clamp(17px,1.5vw,25px);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .s{font-size:11.5px;color:var(--muted);line-height:1.25}
+.tile.moon{flex-basis:100%}
+
+/* ---- Cards ---- */
+.sectionhead{color:#e2ece6;font-family:Georgia,"Times New Roman",serif;font-size:clamp(17px,1.6vw,24px);margin:0 4px 10px;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.card{--accent:var(--red);background:var(--paper);border-radius:10px;position:relative;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 2px 0 #d7cfba,0 10px 18px rgba(0,0,0,.3)}
+.card.teal{--accent:var(--teal)}.card.navy{--accent:var(--navy)}.card.amber{--accent:var(--amber)}
+.card .band{background:var(--accent);color:#fff;padding:10px 12px 8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:clamp(12px,1vw,16px);text-align:center;position:relative}
+.card .band::before,.card .band::after{content:"";position:absolute;top:-7px;width:12px;height:12px;border-radius:50%;background:var(--desk);box-shadow:inset 0 2px 3px #0009}
+.card .band::before{left:22%}.card .band::after{right:22%}
+.card .body{flex:1;display:flex;flex-direction:column;justify-content:center}
+.card .num{font-family:var(--numfont);font-weight:700;font-size:clamp(44px,min(4.6vw,8.5vh),90px);line-height:1;text-align:center;padding:10px 6px 0}
+.card .num.now{font-size:clamp(30px,min(3vw,5.5vh),56px);color:var(--accent);padding:16px 6px 8px}
+.card .unit{text-align:center;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:600;font-size:clamp(10px,.85vw,14px);min-height:1.3em}
+.card .sub{padding:9px 8px 11px;text-align:center;color:#3a4650;border-top:2px dashed #d9d1ba;margin-top:8px;position:relative;font-size:clamp(11px,.95vw,15px)}
+.card .sub::before,.card .sub::after{content:"";position:absolute;top:-9px;width:16px;height:16px;border-radius:50%;background:var(--desk)}
+.card .sub::before{left:-8px}.card .sub::after{right:-8px}
+.card .sub .fine{display:block;margin-top:3px;font-size:.82em;color:var(--muted);line-height:1.25}
+.card .sub .tag{display:inline-block;margin-right:4px;padding:0 7px;border-radius:999px;background:#fdf0e0;color:#8a5a12;font-size:.95em;font-weight:700}
+.card.note{background:#fff4ae}
+.card.note .sub{border-top-color:#d9c66a}
+.hero{padding:8px 12px 0;text-align:center}
+.hero .pname{font-weight:700;font-size:clamp(15px,1.3vw,21px)}
+.hero .when{color:var(--muted);font-size:clamp(12px,1vw,15px)}
+.rows{padding:2px 12px 2px;text-align:left}
+.rows .r{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.08);font-size:clamp(12px,1vw,15px)}
+.rows .r:last-child{border-bottom:0}
+.rows .r b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rows .more{color:var(--muted);font-size:.9em;padding-top:5px}
+.empty{color:#e8efe9;background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.3);border-radius:14px;padding:18px;font-size:17px;flex:1}
+.empty button{margin-left:10px}
+.examgrid{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:22px;align-items:start}
+.examgrid.one{grid-template-columns:1fr}
+.exsec{min-width:0}
+.exsec .grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+
+/* ---- Countdown Timer view ---- */
+.seg{display:inline-flex;border:1px solid #b9b095;border-radius:10px;overflow:hidden;background:#fff}
+.seg button{font:inherit;font-size:16px;padding:9px 16px;border:0;background:#fff;cursor:pointer;color:var(--ink)}
+.seg button+button{border-left:1px solid #d8d1ba}
+.seg button.on{background:var(--navy);color:#fff;font-weight:700}
+.chk{display:flex;align-items:center;gap:10px;font-size:17px;cursor:pointer}
+.tsetup{max-width:820px;margin:2vh auto 0}
+.tsetup .band{font-size:clamp(16px,1.6vw,24px);padding:14px}
+.tbody{padding:22px 28px 26px}
+.tbody .hint{margin:0 0 16px}
+.trow2{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end;margin:14px 0}
+.f2{display:flex;flex-direction:column;gap:4px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.f2 select,.f2 input[type=text]{font-size:24px;padding:10px 14px;text-transform:none;letter-spacing:0;font-weight:500}
+.f2 input[type=text]{min-width:340px}
+.kgroup{width:100%}
+.keys{display:grid;gap:10px;text-transform:none;letter-spacing:0}
+.keys.hrs{grid-template-columns:repeat(4,minmax(0,1fr));max-width:480px}
+.keys.mins{grid-template-columns:repeat(6,minmax(0,1fr))}
+.keys button{font:inherit;font-size:clamp(22px,2.2vw,32px);font-weight:600;padding:12px 0;border-radius:12px;border:2px solid #cfc7ad;background:#fff;color:var(--ink);cursor:pointer;box-shadow:0 3px 0 #d7cfba}
+.keys button:hover{background:#f4efe0}
+.keys button.on{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 3px 0 #17305a}
+.keys button:active{transform:translateY(2px);box-shadow:0 1px 0 #d7cfba}
+.preview{margin:18px 0 4px;padding:12px 16px;border-radius:12px;background:#eef3ee;border:1px solid #cfe0d4;color:#27533f;font-size:17px}
+.fine2{color:var(--muted);font-size:13.5px;margin:6px 2px 0}
+.startbtn{margin-top:16px;width:100%;font:inherit;font-size:30px;font-weight:700;padding:16px;border-radius:14px;border:0;background:var(--teal);color:#fff;cursor:pointer;box-shadow:0 4px 0 #134f46}
+.startbtn:hover{background:#17655a}.startbtn:disabled{background:#9aa9a6;box-shadow:none;cursor:not-allowed}
+.rtitle{font-family:Georgia,serif;color:#eaf1ec;text-align:center;font-size:clamp(22px,2.6vw,42px);margin:6px 0 16px}
+.clocks{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;max-width:1700px;margin:0 auto}
+.clocks.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.clk .band{font-size:clamp(16px,1.8vw,28px);padding:14px 12px 11px}
+.clk .bigwrap{flex:1;display:flex;align-items:center;justify-content:center;padding:4vh 12px;min-height:34vh;text-align:center}
+.clk .big{font-family:var(--numfont);font-weight:700;line-height:1.08}
+.clk .big.words{font-size:clamp(34px,min(7.2vw,15vh),170px)}
+.clk .big.digits{font-size:clamp(70px,min(17vw,32vh),360px);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.clocks.two .big.words{font-size:clamp(28px,min(4.5vw,12vh),120px)}
+.clocks.two .big.digits{font-size:clamp(56px,min(9.5vw,24vh),230px)}
+.clk .big.low{color:#b7312c}
+.clk .big.up{color:#b7312c;font-size:clamp(40px,min(8vw,15vh),180px)!important;letter-spacing:0}
+.clocks.two .clk .big.up{font-size:clamp(32px,min(4.4vw,11vh),110px)!important}
+.clk .bar{height:10px;background:#e8e2cf;margin:0 16px 12px;border-radius:6px;overflow:hidden}
+.clk .bar i{display:block;height:100%;background:var(--accent)}
+.clk .sub{font-size:clamp(20px,2.4vw,40px);margin-top:0;padding:14px 8px 16px}
+.clk .sub b{font-variant-numeric:tabular-nums}
+.tctl{display:flex;gap:22px;flex-wrap:wrap;align-items:center;justify-content:center;margin:22px auto 0;padding:12px 18px;background:rgba(255,255,255,.9);border-radius:14px;width:fit-content;max-width:100%}
+
+/* ---- Settings ---- */
+.overlay{position:fixed;inset:0;background:rgba(8,16,22,.72);display:none;z-index:50}
+.overlay.open{display:block}
+.panel{background:#f6f2e7;max-width:1100px;margin:2.5vh auto;height:95vh;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.phead{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--red);color:#fff}
+.phead h2{margin:0;font-family:Georgia,serif;font-size:24px}
+.tabs{display:flex;gap:4px;padding:10px 14px 0;background:#ebe5d2;flex-wrap:wrap}
+.tab{border:0;background:transparent;padding:10px 16px;border-radius:10px 10px 0 0;font:inherit;font-size:16px;cursor:pointer;color:#4a5560}
+.tab.on{background:#f6f2e7;font-weight:700;color:var(--ink)}
+.pbody{padding:18px 22px 30px;overflow:auto;flex:1}
+.pbody h3{font-family:Georgia,serif;margin:20px 0 6px;font-size:20px}
+.pbody h3:first-child{margin-top:0}
+.hint{color:#5b6670;font-size:14.5px;margin:4px 0 10px;line-height:1.45}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:7px 0}
+.row label.f{display:flex;flex-direction:column;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;gap:2px}
+input[type=text],input[type=date],input[type=time],input[type=number],select{font:inherit;font-size:16px;padding:8px 10px;border:1px solid #c9c1a8;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+input[type=text]{min-width:200px}
+input.w-s{width:90px;min-width:0}
+input[type=checkbox]{width:20px;height:20px}
+.btn{font:inherit;font-size:15px;padding:8px 14px;border-radius:9px;border:1px solid #b9b095;background:#fff;cursor:pointer;color:var(--ink)}
+.btn:hover{background:#f0ecdc}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.primary:hover{background:#17655a}
+.btn.danger{color:#9b1c1c;border-color:#d9a3a3}
+.btn.x{padding:6px 10px;color:#9b1c1c}
+.group{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0}
+.group .gh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.group .gh input[type=text]{font-weight:700;font-size:18px;flex:1}
+.warn{color:#9b1c1c;font-size:13.5px}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:#fdf0e0;color:#8a5a12;font-weight:700}
+.pill.off{background:#eee;color:#666}
+
+@media (max-width:1500px){.analogue{display:none}}
+@media (max-width:1000px){
+  .top{grid-template-columns:1fr}
+  .examgrid{grid-template-columns:1fr}
+  .clocks.two{grid-template-columns:1fr}
+  .panel{margin:0;height:100vh;border-radius:0}
+  .f2 input[type=text]{min-width:0;width:100%}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="vtabs">
+      <button class="vt on" data-view="calendar">Calendar Countdown</button>
+      <button class="vt" data-view="timer" id="vtTimer">Countdown Timer</button>
+    </div>
+    <div class="who" id="who"></div>
+    <button class="iconbtn" id="openSet" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
+      Settings
+    </button>
+  </div>
+
+  <!-- Calendar Countdown -->
+  <div id="viewCal">
+    <div class="top">
+      <section class="today" id="today">
+        <div class="dcal"><div class="dow" id="dow"></div><div class="dnum" id="dnum"></div><div class="my" id="dmy"></div></div>
+        <div class="timeblock">
+          <div class="trow"><div class="digital" id="digital"></div><svg class="analogue" id="analogue" viewBox="-100 -100 200 200" aria-label="Analogue clock"></svg></div>
+          <div class="status" id="status" hidden></div>
+        </div>
+        <div class="astro" id="astro" hidden></div>
+      </section>
+      <div id="topcards"></div>
+    </div>
+    <div id="exams"></div>
+  </div>
+
+  <!-- Exam Countdown -->
+  <div id="viewTimer" hidden>
+    <section class="card tsetup" id="tSetup">
+      <div class="band">Countdown Timer</div>
+      <div class="tbody">
+        <p class="hint">For tests, quizzes, classwork and exams. Choose the length, then press Start to show a large "Time remaining" clock.</p>
+        <div class="trow2"><label class="f2">Title (optional)<input type="text" id="tTitle" placeholder="e.g. Year 11 Maths Mock"></label></div>
+        <div class="trow2">
+          <div class="f2 kgroup">Hours<div class="keys hrs" id="kH"></div></div>
+        </div>
+        <div class="trow2">
+          <div class="f2 kgroup">Minutes<div class="keys mins" id="kM"></div></div>
+        </div>
+        <div class="trow2">
+          <div class="f2">Show time as<div class="seg" id="segA"><button data-fmt="words">2 hours 14 minutes</button><button data-fmt="digits">02:14</button></div></div>
+          <label class="chk"><input type="checkbox" id="tExtra"> Also show 25% extra time</label>
+        </div>
+        <div class="preview" id="tPreview"></div>
+        <p class="fine2">Finishing times are rounded up to the next whole minute. Extra time is 25% of the length, rounded up to the next whole minute.</p>
+        <button class="startbtn" id="tStart">Start</button>
+      </div>
+    </section>
+    <div id="tRun" hidden>
+      <div class="rtitle" id="tTitleOut"></div>
+      <div class="clocks" id="tClocks"></div>
+      <div class="tctl">
+        <div class="seg" id="segB"><button data-fmt="words">2 hours 14 minutes</button><button data-fmt="digits">02:14</button></div>
+        <label class="chk"><input type="checkbox" id="tExtra2"> Show 25% extra time</label>
+        <button class="btn danger" id="tStop">Stop and reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel" role="dialog" aria-label="Settings">
+    <div class="phead"><h2>Settings</h2><button class="btn" id="closeSet">Done</button></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="pbody" id="pbody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- Built-in festival dates (generated, 2026 to 2035) ---------- */
+const TABLE = {"passover":{"2026":"2026-04-02","2027":"2027-04-22","2028":"2028-04-11","2029":"2029-03-31","2030":"2030-04-18","2031":"2031-04-08","2032":"2032-03-27","2033":"2033-04-14","2034":"2034-04-04","2035":"2035-04-24"},"rosh":{"2026":"2026-09-12","2027":"2027-10-02","2028":"2028-09-21","2029":"2029-09-10","2030":"2030-09-28","2031":"2031-09-18","2032":"2032-09-06","2033":"2033-09-24","2034":"2034-09-14","2035":"2035-10-04"},"yomkippur":{"2026":"2026-09-21","2027":"2027-10-11","2028":"2028-09-30","2029":"2029-09-19","2030":"2030-10-07","2031":"2031-09-27","2032":"2032-09-15","2033":"2033-10-03","2034":"2034-09-23","2035":"2035-10-13"},"hanukkah":{"2026":"2026-12-04","2027":"2027-12-24","2028":"2028-12-12","2029":"2029-12-01","2030":"2030-12-20","2031":"2031-12-09","2032":"2032-11-27","2033":"2033-12-16","2034":"2034-12-06","2035":"2035-12-25"},"ramadan":{"2026":"2026-02-18","2027":"2027-02-08","2028":"2028-01-28","2029":"2029-01-16","2030":"2030-12-26","2031":"2031-12-16","2032":"2032-12-04","2033":"2033-11-23","2034":"2034-11-12","2035":"2035-11-01"},"eidfitr":{"2026":"2026-03-20","2027":"2027-03-09","2028":"2028-02-26","2029":"2029-02-14","2030":"2030-02-04","2031":"2031-01-24","2032":"2032-01-14","2033":"2033-12-23","2034":"2034-12-12","2035":"2035-12-01"},"eidadha":{"2026":"2026-05-27","2027":"2027-05-16","2028":"2028-05-05","2029":"2029-04-24","2030":"2030-04-13","2031":"2031-04-02","2032":"2032-03-22","2033":"2033-03-12","2034":"2034-03-01","2035":"2035-02-19"},"gurunanak":{"2026":"2026-11-24","2027":"2027-11-14","2028":"2028-11-02","2029":"2029-11-20","2030":"2030-11-10","2031":"2031-11-28","2032":"2032-11-17","2033":"2033-11-06","2034":"2034-11-25","2035":"2035-11-15"},"diwali":{"2026":"2026-11-08","2027":"2027-10-29","2028":"2028-10-17","2029":"2029-11-05","2030":"2030-10-26","2031":"2031-11-14","2032":"2032-11-02","2033":"2033-10-22","2034":"2034-11-10","2035":"2035-10-30"}};
+
+/* ---------- Helpers ---------- */
+const KEY='calendarcountdown.v1', TKEY='calendarcountdown.timer.v1';
+const $=s=>document.querySelector(s);
+const p2=n=>String(n).padStart(2,'0');
+const valid=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s);
+const dayNum=s=>{const a=s.split('-');return Math.round(Date.UTC(+a[0],+a[1]-1,+a[2])/864e5);};
+const ymdOf=dn=>new Date(dn*864e5).toISOString().slice(0,10);
+const todayYMD=()=>{const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());};
+const addDays=(s,n)=>ymdOf(dayNum(s)+n);
+const weekday=dn=>(dn+4)%7; // 0 = Sunday
+const uid=()=>Math.random().toString(36).slice(2,9);
+const D12=s=>new Date(s+'T12:00:00');
+const fmtDate=s=>D12(s).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).replace(',','');
+const fmtMid=s=>D12(s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}).replace(',','');
+const fmtShort=s=>D12(s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}).replace(',','');
+const plural=(n,a,b)=>n===1?a:b;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function easterISO(y){
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+  h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+  mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  return y+'-'+p2(mo)+'-'+p2(da);
+}
+
+/* ---------- Special date presets ---------- */
+const PRESETS={
+  christmas:{name:'Christmas Day',calc:y=>y+'-12-25'},
+  easter:{name:'Easter Sunday',calc:easterISO},
+  goodfriday:{name:'Good Friday',calc:y=>addDays(easterISO(y),-2)},
+  ramadan:{name:'Ramadan begins',table:'ramadan',approx:true,note:'Moon sighting'},
+  eidfitr:{name:'Eid al-Fitr',table:'eidfitr',approx:true,note:'Moon sighting'},
+  eidadha:{name:'Eid al-Adha',table:'eidadha',approx:true,note:'Moon sighting'},
+  diwali:{name:'Diwali',table:'diwali',note:'Can vary by community'},
+  gurunanak:{name:'Guru Nanak Gurpurab',table:'gurunanak'},
+  vaisakhi:{name:'Vaisakhi',calc:y=>y+'-04-14'},
+  rosh:{name:'Rosh Hashanah',table:'rosh',note:'Begins at sunset before'},
+  yomkippur:{name:'Yom Kippur',table:'yomkippur',note:'Begins at sunset before'},
+  hanukkah:{name:'Hanukkah begins',table:'hanukkah',note:'First candle at sunset'},
+  passover:{name:'Passover begins',table:'passover',note:'Begins at sunset before'}
+};
+function presetDate(key,y){const d=PRESETS[key];if(!d)return null;if(d.calc)return d.calc(y);return (TABLE&&TABLE[d.table]&&TABLE[d.table][y])||null;}
+
+/* ---------- UK places for sun and moon ---------- */
+const PLACES=[
+['Aberdeen',57.15,-2.09],['Belfast',54.60,-5.93],['Birmingham',52.48,-1.90],['Bournemouth',50.72,-1.88],['Brighton',50.82,-0.14],
+['Bristol',51.45,-2.59],['Cambridge',52.21,0.12],['Canterbury',51.28,1.08],['Cardiff',51.48,-3.18],['Carlisle',54.89,-2.94],
+['Coventry',52.41,-1.51],['Derry/Londonderry',54.99,-7.32],['Dundee',56.46,-2.97],['Durham',54.78,-1.57],['Edinburgh',55.95,-3.19],
+['Exeter',50.72,-3.53],['Glasgow',55.86,-4.25],['Gloucester',51.86,-2.24],['Hull',53.74,-0.33],['Inverness',57.48,-4.22],
+['Ipswich',52.06,1.16],['Lancaster',54.05,-2.80],['Leeds',53.80,-1.55],['Leicester',52.64,-1.13],['Lincoln',53.23,-0.54],
+['Liverpool',53.41,-2.99],['London',51.51,-0.13],['Manchester',53.48,-2.24],['Newcastle upon Tyne',54.98,-1.62],['Newport',51.58,-3.00],
+['Norwich',52.63,1.30],['Nottingham',52.95,-1.15],['Oxford',51.75,-1.26],['Perth',56.40,-3.43],['Peterborough',52.57,-0.24],
+['Plymouth',50.38,-4.14],['Portsmouth',50.82,-1.09],['Reading',51.45,-0.97],['Sheffield',53.38,-1.47],['Southampton',50.90,-1.40],
+['Stirling',56.12,-3.94],['Stoke-on-Trent',53.00,-2.18],['Swansea',51.62,-3.94],['Truro',50.26,-5.05],['Worcester',52.19,-2.22],
+['Wrexham',53.05,-2.99],['York',53.96,-1.08]
+];
+
+/* ---------- State ---------- */
+// Editable starting entries (Pearson Edexcel GCSE (9-1) Mathematics, Summer 2027)
+function seedExams(){return [{id:uid(),name:'Pearson Edexcel GCSE (9-1) Mathematics',papers:[
+  {id:uid(),name:'Paper 1 (Non-Calculator)',date:'2027-05-14',time:''},
+  {id:uid(),name:'Paper 2 (Calculator)',date:'2027-05-27',time:''},
+  {id:uid(),name:'Paper 3 (Calculator)',date:'2027-06-14',time:''}]}];}
+function resultsEvent(){return {id:uid(),name:'GCSE Results Day',date:'2027-08-19',time:'',school:false,on:true};}
+function defaults(){
+  const T=['Autumn 1','Autumn 2','Spring 1','Spring 2','Summer 1','Summer 2'];
+  return {
+    v:4,seeded:4,title:'',
+    terms:T.map((n,i)=>({id:uid(),name:n,start:'',end:'',endsTerm:i%2===1})),
+    nonSchool:[],
+    exams:seedExams(),
+    internalHeading:'Internal Exams',
+    internal:['Mock Exams','Unit Tests','End of Year Exams'].map(n=>({id:uid(),name:n,papers:[]})),
+    customs:[{id:uid(),name:'Christmas Day',key:'christmas',date:'',approx:null,on:true},
+             {id:uid(),name:'Easter Sunday',key:'easter',date:'',approx:null,on:true}],
+    events:[resultsEvent()],
+    display:{sun:true,moon:true,analogue:true,h24:true,seconds:false,locName:'Birmingham',lat:52.48,lon:-1.90},
+    timerPrefs:{h:0,m:0,fmt:'words',extra:false,title:''}
+  };
+}
+let storageOK=true;
+function mergeState(s){
+  const d=defaults(),o=Object.assign({},d,s);
+  o.display=Object.assign({},d.display,s.display||{});
+  o.timerPrefs=Object.assign({},d.timerPrefs,s.timerPrefs||{});
+  o.timerPrefs.h=0;o.timerPrefs.m=0; // the timer always starts at 0 hours 0 minutes
+  ['terms','nonSchool','exams','internal','customs'].forEach(k=>{if(!Array.isArray(o[k]))o[k]=d[k];});
+  o.events=Array.isArray(s.events)?s.events:[];
+  if(!(s.seeded>=4)){ // settings saved by an earlier version: bring them up to date once
+    const first=!s.seeded;
+    if(first&&!o.exams.length)o.exams=d.exams;
+    const i=o.customs.findIndex(c=>c.name==='GCSE Results Day'&&!c.key);
+    if(i>=0){const c=o.customs.splice(i,1)[0];o.events.push({id:c.id,name:c.name,date:c.date,time:'',school:false,on:c.on!==false});}
+    else if(first&&!o.events.some(e=>e.name==='GCSE Results Day'))o.events.push(resultsEvent());
+    o.seeded=4;
+  }
+  return o;
+}
+/* The settings this copy of the page starts with the first time it is opened in a browser.
+   'Reset everything' goes back to the plain defaults() above, and 'Load sample data' to the sample set. */
+const STARTER={"v":2,"seeded":4,"title":"Ridgeway Secondary School","terms":[{"id":"36wjhxw","name":"Autumn 1","start":"2026-09-02","end":"2026-10-22","endsTerm":false},{"id":"a99ebns","name":"Autumn 2","start":"2026-11-02","end":"2026-12-18","endsTerm":true},{"id":"e9yfpor","name":"Spring 1","start":"2027-01-05","end":"2027-02-12","endsTerm":false},{"id":"a1zh06a","name":"Spring 2","start":"2027-02-22","end":"2027-03-25","endsTerm":true},{"id":"4vwi5jz","name":"Summer 1","start":"2027-04-12","end":"2027-05-28","endsTerm":false},{"id":"fv41v22","name":"Summer 2","start":"2027-06-07","end":"2027-07-16","endsTerm":true}],"nonSchool":[{"id":"mkkp0m1","label":"CPD Day","start":"2026-11-27","end":""},{"id":"yv3zi3u","label":"Bank Holiday","start":"2027-05-03","end":""}],"exams":[{"id":"jtg1o79","name":"Pearson Edexcel GCSE (9-1) Mathematics","papers":[{"id":"rqreodm","name":"Paper 1 (Non-Calculator)","date":"2027-05-14","time":"09:00"},{"id":"m0668m6","name":"Paper 2 (Calculator)","date":"2027-05-27","time":"09:00"},{"id":"tfx27is","name":"Paper 3 (Calculator)","date":"2027-06-14","time":"09:00"}]},{"id":"1rqod3y","name":"UK Mathematics Trust","papers":[{"id":"x93l6mb","name":"Junior Maths Challenge","date":"2027-05-05","time":""}]}],"internalHeading":"Internal Exams","internal":[{"id":"j72smwj","name":"Mock Exams","papers":[{"id":"7cnrjo0","name":"Maths Paper 1 (Non Calculator)","date":"2026-11-04","time":"09:00"},{"id":"0udjp6l","name":"Maths Paper 2 (Calculator)","date":"2026-11-06","time":"09:00"},{"id":"9kwe38c","name":"Maths Paper 3 (Calculator)","date":"2026-11-10","time":"09:00"}]},{"id":"ueig3in","name":"Performance Zone Fortnight","papers":[{"id":"8ma888d","name":"Assessments begin","date":"2026-11-16","time":""}]},{"id":"3ywa06a","name":"End of Year Exams","papers":[]}],"customs":[{"id":"7zgjtgq","name":"Christmas Day","key":"christmas","date":"","approx":null,"on":true},{"id":"gnubfo0","name":"Easter Sunday","key":"easter","date":"","approx":null,"on":false},{"id":"y66oj0f","name":"Good Friday","key":"goodfriday","date":"","approx":null,"on":false},{"id":"ifh1ccq","name":"Ramadan begins","key":"ramadan","date":"","approx":null,"on":false},{"id":"wm39nlp","name":"Diwali","key":"diwali","date":"","approx":null,"on":true},{"id":"0vu3pa4","name":"Eid al-Fitr","key":"eidfitr","date":"","approx":null,"on":false},{"id":"uonvfej","name":"Guru Nanak Gurpurab","key":"gurunanak","date":"","approx":null,"on":true},{"id":"8asdtg2","name":"Rosh Hashanah","key":"rosh","date":"","approx":null,"on":false},{"id":"tj8umab","name":"Yom Kippur","key":"yomkippur","date":"","approx":null,"on":false},{"id":"uqnu34i","name":"Hanukkah begins","key":"hanukkah","date":"","approx":null,"on":true},{"id":"4tl7qq6","name":"Passover begins","key":"passover","date":"","approx":null,"on":false}],"events":[{"id":"z6qnscq","name":"GCSE Results Day","date":"2027-08-19","time":"","school":false,"on":true},{"id":"4yoj334","name":"Yr 8 Parents","date":"2026-11-12","time":"16:00","school":true,"on":true},{"id":"kcdvw1e","name":"Yr 11 Parents","date":"2026-12-10","time":"16:00","school":true,"on":true},{"id":"xub3thx","name":"Talent Show","date":"2026-12-02","time":"18:00","school":true,"on":true}],"display":{"sun":true,"moon":true,"analogue":true,"h24":true,"seconds":false,"locName":"Birmingham","lat":52.48,"lon":-1.9},"timerPrefs":{"h":0,"m":0,"fmt":"words","extra":true,"title":""}};
+function loadState(){
+  try{const raw=localStorage.getItem(KEY);if(raw){const old=JSON.parse(raw),m=mergeState(old);if(!(old.seeded>=4))localStorage.setItem(KEY,JSON.stringify(m));return m;}}catch(e){storageOK=false;}
+  try{return mergeState(JSON.parse(JSON.stringify(STARTER)));}catch(e){return defaults();}
+}
+let state=loadState();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true;}catch(e){storageOK=false;}}
+
+/* ---------- School day maths ---------- */
+function termRanges(){
+  return state.terms.filter(t=>valid(t.start)&&valid(t.end)&&dayNum(t.end)>=dayNum(t.start))
+    .map(t=>Object.assign({},t,{a:dayNum(t.start),b:dayNum(t.end)})).sort((x,y)=>x.a-y.a);
+}
+function nonSchoolSet(){
+  const s=new Set();
+  state.nonSchool.forEach(n=>{
+    if(!valid(n.start))return;const a=dayNum(n.start),b=valid(n.end)?Math.max(a,dayNum(n.end)):a;
+    for(let d=a;d<=b&&d-a<400;d++)s.add(d);
+  });
+  return s;
+}
+function isSchoolDay(d,ranges,ns){const w=weekday(d);return w!==0&&w!==6&&!ns.has(d)&&ranges.some(r=>d>=r.a&&d<=r.b);}
+// School days strictly after today, up to and including the target day.
+function schoolDaysUntil(todayDn,targetDn,ranges,ns){
+  let n=0;
+  for(let d=todayDn+1;d<=targetDn;d++){
+    const w=weekday(d);if(w===0||w===6)continue;
+    if(ns.has(d))continue;
+    if(ranges.some(r=>d>=r.a&&d<=r.b))n++;
+  }
+  return n;
+}
+
+/* ---------- Sun and moon (calculated in the page, no internet needed) ---------- */
+const RAD=Math.PI/180;
+function solar(jd){
+  const T=(jd-2451545)/36525;
+  const L0=(280.46646+T*(36000.76983+T*0.0003032))%360;
+  const M=357.52911+T*(35999.05029-0.0001537*T);
+  const e=0.016708634-T*(0.000042037+0.0000001267*T);
+  const Mr=M*RAD;
+  const C=Math.sin(Mr)*(1.914602-T*(0.004817+0.000014*T))+Math.sin(2*Mr)*(0.019993-0.000101*T)+Math.sin(3*Mr)*0.000289;
+  const om=125.04-1934.136*T;
+  const lam=L0+C-0.00569-0.00478*Math.sin(om*RAD);
+  const eps=23+(26+(21.448-T*(46.815+T*(0.00059-T*0.001813)))/60)/60+0.00256*Math.cos(om*RAD);
+  const decl=Math.asin(Math.sin(eps*RAD)*Math.sin(lam*RAD))/RAD;
+  const y=Math.tan(eps*RAD/2)**2,L0r=L0*RAD;
+  const eq=4/RAD*(y*Math.sin(2*L0r)-2*e*Math.sin(Mr)+4*e*y*Math.sin(Mr)*Math.cos(2*L0r)-0.5*y*y*Math.sin(4*L0r)-1.25*e*e*Math.sin(2*Mr));
+  return {decl,eq};
+}
+function sunTimes(y,m,d,lat,lon){
+  const jd0=Date.UTC(y,m,d)/864e5+2440587.5,out={};
+  for(const rise of [true,false]){
+    let mins=(rise?360:1080)-4*lon,ok=true;
+    for(let i=0;i<4;i++){
+      const s=solar(jd0+mins/1440);
+      const c=Math.cos(90.833*RAD)/(Math.cos(lat*RAD)*Math.cos(s.decl*RAD))-Math.tan(lat*RAD)*Math.tan(s.decl*RAD);
+      if(c<-1||c>1){ok=false;break;}
+      const ha=Math.acos(c)/RAD;
+      mins=720-4*(lon+(rise?ha:-ha))-s.eq;
+    }
+    out[rise?'rise':'set']=ok?new Date(Date.UTC(y,m,d)+mins*60000):null;
+  }
+  return out;
+}
+function elongAt(t){ // Moon minus Sun ecliptic longitude, degrees 0..360
+  const d=t/864e5+2440587.5-2451545;
+  const Dm=(297.850+12.190749*d)*RAD,Mm=(134.963+13.064993*d)*RAD,Ms=(357.528+0.9856003*d)*RAD,F=(93.272+13.229350*d)*RAD;
+  const Lm=218.316+13.176396*d;
+  const lonM=Lm+6.289*Math.sin(Mm)+1.274*Math.sin(2*Dm-Mm)+0.658*Math.sin(2*Dm)+0.214*Math.sin(2*Mm)-0.186*Math.sin(Ms)-0.114*Math.sin(2*F);
+  const Ls=280.460+0.9856474*d;
+  const lonS=Ls+1.915*Math.sin(Ms)+0.020*Math.sin(2*Ms);
+  return (((lonM-lonS)%360)+360)%360;
+}
+function moonInfo(now){
+  const e=elongAt(now.getTime());
+  const ill=(1-Math.cos(e*RAD))/2;
+  const names=['New Moon','Waxing Crescent','First Quarter','Waxing Gibbous','Full Moon','Waning Gibbous','Last Quarter','Waning Crescent'];
+  return {e,ill,name:names[Math.floor(((e+22.5)%360)/45)]};
+}
+const wrap180=x=>(((x+180)%360)+360)%360-180;
+function nextPhase(from,target){
+  let t=from.getTime(),prev=elongAt(t);
+  for(let i=0;i<24*32;i++){
+    const n=t+3600e3,v=elongAt(n);
+    if(wrap180(prev-target)<0&&wrap180(v-target)>=0)return new Date(n);
+    prev=v;t=n;
+  }
+  return null;
+}
+function moonSVG(e){
+  const R=40,c=Math.cos(e*RAD),rx=(R*Math.abs(c)).toFixed(2),waxing=e<180;
+  const limb=waxing?1:0,term=waxing?(c>0?0:1):(c>0?1:0);
+  const lit='M0 '+(-R)+' A'+R+' '+R+' 0 0 '+limb+' 0 '+R+' A'+rx+' '+R+' 0 0 '+term+' 0 '+(-R)+' Z';
+  return '<svg viewBox="-46 -46 92 92" aria-hidden="true"><circle r="'+R+'" fill="#2a3640"/><path d="'+lit+'" fill="#f4efd6"/><circle r="'+R+'" fill="none" stroke="#9aa6ad" stroke-width="1.5"/></svg>';
+}
+function sunSVG(up){
+  return '<svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#b36b00" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+
+    '<path d="M6 34h36"/><path d="M14 34a10 10 0 0 1 20 0" fill="#f6c453"/><path d="M24 8v6M10 16l4 4M38 16l-4 4"/>'+
+    (up?'<path d="M19 44l5-6 5 6" stroke="#1d7a6c"/>':'<path d="M19 38l5 6 5-6" stroke="#b7312c"/>')+'</svg>';
+}
+
+/* ---------- Clock ---------- */
+const clockSvg=$('#analogue');
+(function buildClock(){
+  let s='<circle r="96" fill="#fff" stroke="#26333b" stroke-width="6"/>';
+  for(let i=0;i<60;i++){const a=i*6*RAD,big=i%5===0,r1=big?80:88,r2=93;
+    s+='<line x1="'+(Math.sin(a)*r1).toFixed(2)+'" y1="'+(-Math.cos(a)*r1).toFixed(2)+'" x2="'+(Math.sin(a)*r2).toFixed(2)+'" y2="'+(-Math.cos(a)*r2).toFixed(2)+'" stroke="#26333b" stroke-width="'+(big?4:1.4)+'"/>';}
+  s+='<line id="hh" x1="0" y1="6" x2="0" y2="-50" stroke="#1b2a33" stroke-width="8" stroke-linecap="round"/>'+
+     '<line id="mh" x1="0" y1="8" x2="0" y2="-74" stroke="#1b2a33" stroke-width="5" stroke-linecap="round"/>'+
+     '<line id="sh" x1="0" y1="14" x2="0" y2="-80" stroke="#b7312c" stroke-width="2.5" stroke-linecap="round"/><circle r="6" fill="#b7312c"/>';
+  clockSvg.innerHTML=s;
+})();
+function tickClock(){
+  const n=new Date(),h=n.getHours(),m=n.getMinutes(),sec=n.getSeconds(),D=state.display;
+  const txt=D.h24?p2(h)+':'+p2(m):((h%12)||12)+':'+p2(m);
+  $('#digital').innerHTML=txt+(D.seconds?'<span class="sec">'+p2(sec)+'</span>':'')+(D.h24?'':'<span class="sec">'+(h<12?'am':'pm')+'</span>');
+  $('#hh').setAttribute('transform','rotate('+((h%12)*30+m*0.5)+')');
+  $('#mh').setAttribute('transform','rotate('+(m*6+sec*0.1)+')');
+  $('#sh').setAttribute('transform','rotate('+(sec*6)+')');
+}
+function fmtClock(date){
+  return date.toLocaleTimeString('en-GB',{hour:state.display.h24?'2-digit':'numeric',minute:'2-digit',hour12:!state.display.h24});
+}
+
+/* ---------- Calendar view ---------- */
+let lastYMD='';
+function renderToday(){
+  const t=todayYMD(),n=new Date(),D=state.display;
+  $('#who').textContent=state.title.trim();
+  $('#dow').textContent=n.toLocaleDateString('en-GB',{weekday:'long'});
+  $('#dnum').textContent=n.getDate();
+  $('#dmy').textContent=n.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  clockSvg.style.display=D.analogue?'':'none';
+  const st=$('#status'),ranges=termRanges(),tdn=dayNum(t);
+  const cur=ranges.find(r=>tdn>=r.a&&tdn<=r.b);
+  if(cur){st.hidden=false;st.className='status';st.textContent='In term: '+cur.name;}
+  else{const nx=ranges.find(r=>r.a>tdn);
+    if(nx){const k=nx.a-tdn;st.hidden=false;st.className='status break';st.textContent=nx.name+' starts '+fmtShort(nx.start)+(k>1?' ('+k+' days)':' (tomorrow)');}
+    else st.hidden=true;}
+  const as=$('#astro');let html='';
+  const y=n.getFullYear(),m=n.getMonth(),d=n.getDate();
+  if(D.sun){
+    const s=sunTimes(y,m,d,+D.lat,+D.lon);
+    let len='';
+    if(s.rise&&s.set){const mins=Math.round((s.set-s.rise)/60000);len=Math.floor(mins/60)+' h '+p2(mins%60)+' min daylight';}
+    html+='<div class="tile">'+sunSVG(true)+'<div><div class="k">Sunrise</div><div class="v">'+(s.rise?fmtClock(s.rise):'none')+'</div></div></div>';
+    html+='<div class="tile">'+sunSVG(false)+'<div><div class="k">Sunset</div><div class="v">'+(s.set?fmtClock(s.set):'none')+'</div><div class="s">'+len+'</div></div></div>';
+  }
+  if(D.moon){
+    const mi=moonInfo(n),nf=nextPhase(n,180),nn=nextPhase(n,0);
+    const sh=x=>x?x.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}).replace(',',''):'';
+    html+='<div class="tile moon">'+moonSVG(mi.e)+'<div><div class="k">Moon</div><div class="v">'+mi.name+'</div><div class="s">'+Math.round(mi.ill*100)+'% lit &middot; Full '+sh(nf)+' &middot; New '+sh(nn)+'</div></div></div>';
+  }
+  as.hidden=!html;as.innerHTML=html;
+  lastYMD=t;
+}
+
+function card(o){ // o: {cls,label,num,unit,sub,fine,tag}
+  const now=o.num===0;
+  const fine=(o.tag||o.fine)?'<span class="fine">'+(o.tag?'<span class="tag">'+esc(o.tag)+'</span>':'')+esc(o.fine||'')+'</span>':'';
+  return '<article class="card '+(o.cls||'')+'"><div class="band">'+esc(o.label)+'</div><div class="body">'+
+    '<div class="num'+(now?' now':'')+'">'+(now?'Today':o.num)+'</div><div class="unit">'+(now?'':esc(o.unit))+'</div></div>'+
+    '<div class="sub">'+esc(o.sub||'')+fine+'</div></article>';
+}
+function listCard(cls,title,papers,tdn){
+  const first=papers[0],k=dayNum(first.date)-tdn;
+  const sameDay=papers.filter(p=>p.date===first.date),rest=papers.filter(p=>p.date!==first.date);
+  const hero='<div class="hero"><div class="pname">'+sameDay.map(p=>esc(p.name||'Untitled')+(p.time?' ('+esc(p.time)+')':'')).join(' &amp; ')+'</div><div class="when">'+esc(fmtDate(first.date))+'</div></div>';
+  let rows='';
+  if(rest.length){
+    rows='<div class="rows">'+rest.slice(0,6).map(p=>{const kk=dayNum(p.date)-tdn;
+      return '<div class="r"><span>'+esc(p.name||'Untitled')+' <span style="color:var(--muted)">'+esc(fmtShort(p.date))+(p.time?' '+esc(p.time):'')+'</span></span><b>'+kk+' '+plural(kk,'day','days')+'</b></div>';}).join('')+
+      (rest.length>6?'<div class="more">+ '+(rest.length-6)+' more</div>':'')+'</div>';
+  }
+  const now=k===0;
+  return '<article class="card '+cls+'"><div class="band">'+esc(title||'Untitled')+'</div>'+
+    '<div class="num'+(now?' now':'')+'">'+(now?'Today':k)+'</div><div class="unit">'+(now?'':plural(k,'day','days')+' to go')+'</div>'+hero+
+    (rows?'<div class="sub" style="margin-top:10px;padding:4px 0 4px">'+rows+'</div>':'<div style="height:16px"></div>')+'</article>';
+}
+
+function renderCards(){
+  const t=todayYMD(),tdn=dayNum(t),ranges=termRanges(),ns=nonSchoolSet();
+  const top=[];
+  /* Terms */
+  if(!state.terms.some(x=>valid(x.start)&&valid(x.end))){
+    top.push('<div class="empty" style="grid-column:1/-1">No term dates yet. Add the first and last day of each half term in Settings to see school days left.<button class="btn primary" data-open="terms">Enter term dates</button></div>');
+  }else{
+    const ht=ranges.find(r=>r.b>=tdn),et=ranges.find(r=>r.endsTerm&&r.b>=tdn);
+    if(ht){const k=schoolDaysUntil(tdn,ht.b,ranges,ns);
+      top.push(card({label:'End of Half Term',num:k,unit:plural(k,'school day','school days'),sub:fmtMid(ht.end),fine:ht.name+(ht.a>tdn?' (starts '+fmtShort(ht.start)+')':'')}));}
+    if(et&&!(ht&&ht.b===et.b)){const k=schoolDaysUntil(tdn,et.b,ranges,ns);
+      top.push(card({label:'End of Term',num:k,unit:plural(k,'school day','school days'),sub:fmtMid(et.end),fine:et.name}));}
+    if(!ht)top.push('<div class="empty" style="grid-column:1/-1">All the term dates entered have finished. Update them in Settings.<button class="btn primary" data-open="terms">Term dates</button></div>');
+  }
+  /* School events (red row) */
+  state.events.filter(e=>e.on!==false&&valid(e.date)&&dayNum(e.date)>=tdn)
+    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.time||'')<(b.time||'')?-1:1)
+    .forEach(e=>{
+      const dn=dayNum(e.date),useSchool=e.school!==false&&ranges.length>0&&isSchoolDay(dn,ranges,ns);
+      const k=useSchool?schoolDaysUntil(tdn,dn,ranges,ns):dn-tdn;
+      top.push(card({label:e.name||'Event',num:k,unit:useSchool?plural(k,'school day','school days'):plural(k,'day','days'),sub:fmtMid(e.date),fine:e.time?'at '+e.time:''}));
+    });
+  /* Festivals (green row) */
+  const fest=[];
+  const items=[];
+  state.customs.forEach(c=>{
+    if(!c.on)return;
+    const r=resolveCustom(c,tdn);if(!r)return;
+    const def=c.key?PRESETS[c.key]:null;
+    items.push({c,date:r.date,approx:c.approx==null?!!(def&&def.approx):c.approx,note:(r.auto&&def&&def.note)?def.note:''});
+  });
+  items.sort((a,b)=>dayNum(a.date)-dayNum(b.date));
+  items.forEach(it=>{const k=dayNum(it.date)-tdn;
+    fest.push(card({cls:'teal',label:it.c.name,num:k,unit:plural(k,'day','days'),sub:fmtMid(it.date),tag:it.approx?'approx.':'',fine:it.note}));});
+  $('#topcards').innerHTML='<div class="grid">'+top.join('')+'</div>'+(fest.length?'<div class="grid">'+fest.join('')+'</div>':'');
+
+  /* Exams */
+  const ext=[],inn=[];
+  const grp=(arr,cls,target)=>arr.forEach(q=>{
+    const up=q.papers.filter(p=>valid(p.date)&&dayNum(p.date)>=tdn).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.time||'')<(b.time||'')?-1:1);
+    if(up.length)target.push(listCard(cls,q.name,up,tdn));
+  });
+  grp(state.exams,'navy',ext);grp(state.internal,'note amber',inn);
+  let html='';
+  if(ext.length||inn.length){
+    html='<div class="examgrid'+((ext.length&&inn.length)?'':' one')+'">'+
+      (ext.length?'<section class="exsec"><h2 class="sectionhead">External Exams</h2><div class="grid">'+ext.join('')+'</div></section>':'')+
+      (inn.length?'<section class="exsec"><h2 class="sectionhead">'+esc(state.internalHeading||'Internal Exams')+'</h2><div class="grid">'+inn.join('')+'</div></section>':'')+'</div>';
+  }else if(!state.exams.some(q=>q.papers.length)&&!state.internal.some(q=>q.papers.length)){
+    html='<div class="empty" style="margin-top:22px">No exam dates yet. Add external and internal exams in Settings.<button class="btn primary" data-open="exams">Add exams</button></div>';
+  }
+  $('#exams').innerHTML=html;
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openSettings(b.getAttribute('data-open')));
+}
+function resolveCustom(c,tdn){
+  if(valid(c.date)){return dayNum(c.date)>=tdn?{date:c.date,auto:false}:null;}
+  if(c.key&&PRESETS[c.key]){
+    const ty=+todayYMD().slice(0,4);
+    for(let y=ty;y<=ty+9;y++){const d=presetDate(c.key,y);if(d&&dayNum(d)>=tdn)return {date:d,auto:true};}
+  }
+  return null;
+}
+function resolvedForSettings(c){
+  if(valid(c.date))return {date:c.date,auto:false};
+  return resolveCustom(c,dayNum(todayYMD()));
+}
+function renderAll(){renderToday();renderCards();tickClock();tickTimer();}
+let rt=null;function scheduleRender(){clearTimeout(rt);rt=setTimeout(renderAll,150);}
+function changed(){save();scheduleRender();}
+
+/* ---------- Countdown Timer ---------- */
+let timer=null,view='calendar';
+try{const r=JSON.parse(localStorage.getItem(TKEY)||'null');if(r&&r.end&&Date.now()<Math.max(r.end,r.endX||0)+12*36e5)timer=r;}catch(e){}
+function saveTimer(){try{if(timer)localStorage.setItem(TKEY,JSON.stringify(timer));else localStorage.removeItem(TKEY);}catch(e){}}
+const ceilMin=t=>Math.ceil(t/60000)*60000;
+function remainText(ms,fmt){
+  if(ms<=0)return null;
+  const m=Math.floor(ms/60000),h=Math.floor(m/60),mm=m%60;
+  if(fmt==='digits')return p2(h)+':'+p2(mm);
+  if(m<1)return 'Less than 1 minute';
+  const parts=[];
+  if(h>0)parts.push(h+' '+plural(h,'hour','hours'));
+  if(mm>0)parts.push(mm+' '+plural(mm,'minute','minutes'));
+  return parts.join(' ');
+}
+const lenText=m=>{const hh=Math.floor(m/60),mm=m%60,a=[];if(hh)a.push(hh+' '+plural(hh,'hour','hours'));if(mm)a.push(mm+' '+plural(mm,'minute','minutes'));return a.join(' ');};
+function lengths(P){const mins=P.h*60+P.m;return {mins,xmins:mins+Math.ceil(mins*0.25)};}
+function updatePreview(){
+  const P=state.timerPrefs,L=lengths(P),el=$('#tPreview');
+  if(L.mins<=0){el.textContent='Choose the length using the keypad (hours, then minutes).';$('#tStart').disabled=true;return;}
+  $('#tStart').disabled=false;
+  const now=Date.now();
+  let s='Length: '+lenText(L.mins)+'. If started now it ends at '+fmtClock(new Date(ceilMin(now+L.mins*60000)))+'.';
+  if(P.extra)s+=' With 25% extra time ('+L.xmins+' minutes in all) it ends at '+fmtClock(new Date(ceilMin(now+L.xmins*60000)))+'.';
+  el.textContent=s;
+}
+function syncKeys(){
+  const P=state.timerPrefs;
+  $('#kH').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===P.h));
+  $('#kM').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===P.m));
+}
+function syncSeg(seg,fmt){seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.fmt===fmt));}
+function syncSetup(){
+  const P=state.timerPrefs;
+  $('#tTitle').value=P.title||'';syncKeys();$('#tExtra').checked=!!P.extra;syncSeg($('#segA'),P.fmt);
+}
+function clocksHTML(){
+  const now=Date.now();
+  const list=[{label:'Time remaining',end:timer.end,cls:''}];
+  if(timer.extra)list.push({label:'25% extra time remaining',end:timer.endX,cls:'amber'});
+  return list.map(c=>{
+    const rem=c.end-now,txt=remainText(rem,timer.fmt),total=c.end-timer.start;
+    const pct=Math.max(0,Math.min(100,(1-rem/total)*100)),up=txt===null,low=!up&&rem<=5*60000;
+    const cls='big '+(timer.fmt==='digits'?'digits':'words')+(up?' up':'')+(low?' low':'');
+    return '<article class="card clk '+c.cls+'"><div class="band">'+c.label+'</div><div class="bigwrap"><div class="'+cls+'">'+(up?'Time is up':esc(txt))+'</div></div>'+
+      '<div class="bar"><i style="width:'+pct.toFixed(2)+'%"></i></div><div class="sub">Ends at <b>'+esc(fmtClock(new Date(c.end)))+'</b></div></article>';
+  }).join('');
+}
+function tickTimer(){
+  $('#vtTimer').classList.toggle('live',!!timer);
+  if(view!=='timer'){return;}
+  if(!timer){updatePreview();document.title='Calendar Countdown';return;}
+  const c=$('#tClocks');c.className='clocks'+(timer.extra?' two':'');c.innerHTML=clocksHTML();
+  const t=remainText(timer.end-Date.now(),timer.fmt);
+  document.title=(t?t+' remaining':'Time is up')+' | Calendar Countdown';
+}
+function showTimerState(){
+  $('#tSetup').hidden=!!timer;$('#tRun').hidden=!timer;
+  if(timer){
+    $('#tTitleOut').textContent=timer.title||'';$('#tTitleOut').hidden=!timer.title;
+    syncSeg($('#segB'),timer.fmt);$('#tExtra2').checked=!!timer.extra;
+  }else syncSetup();
+  tickTimer();
+}
+function startTimer(){
+  const P=state.timerPrefs,L=lengths(P);if(L.mins<=0)return;
+  const now=Date.now();
+  timer={title:(P.title||'').trim(),start:now,end:ceilMin(now+L.mins*60000),endX:ceilMin(now+L.xmins*60000),fmt:P.fmt,extra:!!P.extra};
+  saveTimer();showTimerState();
+}
+function setView(v){
+  view=v;
+  $('#viewCal').hidden=v!=='calendar';$('#viewTimer').hidden=v!=='timer';
+  document.querySelectorAll('.vt').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  if(v==='timer')showTimerState();else document.title='Calendar Countdown';
+}
+(function initTimerUI(){
+  const kH=$('#kH'),kM=$('#kM');
+  for(let i=0;i<=3;i++)kH.append(h('button',{type:'button','data-v':i},String(i)));
+  for(let i=0;i<60;i+=5)kM.append(h('button',{type:'button','data-v':i},p2(i)));
+  kH.onclick=e=>{const b=e.target.closest('button');if(!b)return;state.timerPrefs.h=+b.dataset.v;save();syncKeys();updatePreview();};
+  kM.onclick=e=>{const b=e.target.closest('button');if(!b)return;state.timerPrefs.m=+b.dataset.v;save();syncKeys();updatePreview();};
+  $('#tTitle').oninput=e=>{state.timerPrefs.title=e.target.value;save();};
+  $('#tExtra').onchange=e=>{state.timerPrefs.extra=e.target.checked;save();updatePreview();};
+  $('#segA').onclick=e=>{const b=e.target.closest('button');if(!b)return;state.timerPrefs.fmt=b.dataset.fmt;save();syncSeg($('#segA'),b.dataset.fmt);};
+  $('#segB').onclick=e=>{const b=e.target.closest('button');if(!b||!timer)return;timer.fmt=b.dataset.fmt;state.timerPrefs.fmt=timer.fmt;save();saveTimer();syncSeg($('#segB'),timer.fmt);tickTimer();};
+  $('#tExtra2').onchange=e=>{if(!timer)return;timer.extra=e.target.checked;state.timerPrefs.extra=timer.extra;save();saveTimer();tickTimer();};
+  $('#tStart').onclick=startTimer;
+  $('#tStop').onclick=()=>{if(confirm('Stop the countdown and go back to the set-up screen?')){timer=null;saveTimer();state.timerPrefs.h=0;state.timerPrefs.m=0;save();showTimerState();}};
+  document.querySelectorAll('.vt').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+})();
+
+/* ---------- Settings UI ---------- */
+function h(tag,props,...kids){
+  const e=document.createElement(tag);
+  for(const k in (props||{})){const v=props[k];
+    if(k==='class')e.className=v;
+    else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);
+    else if(k==='value')e.value=v;
+    else if(k==='checked')e.checked=!!v;
+    else if(v!==false&&v!=null)e.setAttribute(k,v===true?'':v);}
+  kids.flat(9).forEach(c=>{if(c==null||c===false)return;e.append(c.nodeType?c:document.createTextNode(c));});
+  return e;
+}
+const TABS=[['terms','School calendar'],['exams','External exams'],['internal','Internal exams'],['special','Festivals'],['display','Display'],['backup','Backup']];
+let curTab='terms';
+function openSettings(tab){if(tab)curTab=tab;$('#overlay').classList.add('open');drawSettings();}
+function closeSettings(){$('#overlay').classList.remove('open');renderAll();}
+function drawSettings(){
+  const tabs=$('#tabs');tabs.innerHTML='';
+  TABS.forEach(([k,l])=>tabs.append(h('button',{class:'tab'+(k===curTab?' on':''),onclick:()=>{curTab=k;drawSettings();}},l)));
+  const body=$('#pbody');body.innerHTML='';
+  ({terms:tabTerms,exams:tabExams,internal:tabInternal,special:tabSpecial,display:tabDisplay,backup:tabBackup})[curTab](body);
+}
+function field(label,input){return h('label',{class:'f'},label,input);}
+function textIn(obj,key,ph,extra){return h('input',Object.assign({type:'text',value:obj[key]||'',placeholder:ph||'',oninput:e=>{obj[key]=e.target.value;changed();}},extra||{}));}
+function dateIn(obj,key,after){return h('input',{type:'date',value:obj[key]||'',oninput:e=>{obj[key]=e.target.value;changed();if(after)after();}});}
+function timeIn(obj,key){return h('input',{type:'time',value:obj[key]||'',oninput:e=>{obj[key]=e.target.value;changed();}});}
+
+function tabTerms(b){
+  b.append(h('h3',null,'Half terms'),
+    h('p',{class:'hint'},'Enter the first and last day of each half term. Tick "Ends a term" on the half term that finishes a term (normally the second of each pair). School days are Monday to Friday inside these dates, excluding the non-school days below. The count is the number of school days after today, up to and including the last day.'));
+  state.terms.forEach(t=>{
+    const bad=valid(t.start)&&valid(t.end)&&dayNum(t.end)<dayNum(t.start);
+    b.append(h('div',{class:'row'},
+      field('Name',textIn(t,'name','Autumn 1',{style:'min-width:130px;width:150px'})),
+      field('First day',dateIn(t,'start',drawSettings)),field('Last day',dateIn(t,'end',drawSettings)),
+      h('label',{class:'f'},'Ends a term',h('input',{type:'checkbox',checked:t.endsTerm,onchange:e=>{t.endsTerm=e.target.checked;changed();}})),
+      h('button',{class:'btn x',title:'Remove',onclick:()=>{state.terms=state.terms.filter(x=>x!==t);changed();drawSettings();}},'Remove'),
+      bad?h('span',{class:'warn'},'Last day is before the first day'):null));
+  });
+  b.append(h('div',{class:'row'},h('button',{class:'btn',onclick:()=>{state.terms.push({id:uid(),name:'',start:'',end:'',endsTerm:false});changed();drawSettings();}},'Add half term')));
+  b.append(h('h3',null,'Non-school days'),
+    h('p',{class:'hint'},'INSET days, bank holidays or any other day the school is shut during term. Leave "To" empty for a single day.'));
+  state.nonSchool.forEach(n=>{
+    b.append(h('div',{class:'row'},field('Label',textIn(n,'label','INSET day',{style:'min-width:180px'})),field('From',dateIn(n,'start')),field('To (optional)',dateIn(n,'end')),
+      h('button',{class:'btn x',onclick:()=>{state.nonSchool=state.nonSchool.filter(x=>x!==n);changed();drawSettings();}},'Remove')));
+  });
+  b.append(h('div',{class:'row'},h('button',{class:'btn',onclick:()=>{state.nonSchool.push({id:uid(),label:'',start:'',end:''});changed();drawSettings();}},'Add non-school day')));
+  b.append(h('h3',null,'School events'),
+    h('p',{class:'hint'},'Talent show, parents\' evening, trips and so on. They appear on the red row after the term cards, in date order. When an event falls on a school day it is counted in school days; at weekends or in the holidays it is counted in calendar days. Untick the first box to hide an event without deleting it.'));
+  state.events.forEach(ev=>{
+    const passed=valid(ev.date)&&dayNum(ev.date)<dayNum(todayYMD());
+    b.append(h('div',{class:'row'},
+      h('input',{type:'checkbox',checked:ev.on!==false,title:'Show on main display',onchange:e=>{ev.on=e.target.checked;changed();}}),
+      textIn(ev,'name','e.g. Talent Show',{style:'min-width:230px'}),
+      field('Date',dateIn(ev,'date')),field('Time (optional)',timeIn(ev,'time')),
+      h('label',{style:'display:flex;gap:6px;align-items:center'},h('input',{type:'checkbox',checked:ev.school!==false,onchange:e=>{ev.school=e.target.checked;changed();}}),'count school days'),
+      passed?h('span',{class:'pill off'},'passed'):null,
+      h('button',{class:'btn x',onclick:()=>{state.events=state.events.filter(x=>x!==ev);changed();drawSettings();}},'Remove')));
+  });
+  b.append(h('div',{class:'row'},h('button',{class:'btn primary',onclick:()=>{state.events.push({id:uid(),name:'',date:'',time:'',school:true,on:true});changed();drawSettings();}},'Add school event')));
+}
+
+function paperGroups(b,arr,opts){
+  arr.forEach(q=>{
+    const g=h('div',{class:'group'});
+    g.append(h('div',{class:'gh'},textIn(q,'name',opts.ph),
+      h('button',{class:'btn x',onclick:()=>{if(confirm('Remove "'+(q.name||'this group')+'" and all its dates?')){const i=arr.indexOf(q);arr.splice(i,1);changed();drawSettings();}}},'Remove '+opts.noun)));
+    q.papers.forEach(p=>{
+      g.append(h('div',{class:'row'},field(opts.paperLabel,textIn(p,'name',opts.paperPh,{style:'min-width:220px'})),field('Date',dateIn(p,'date')),field('Time (optional)',timeIn(p,'time')),
+        h('button',{class:'btn x',onclick:()=>{q.papers=q.papers.filter(x=>x!==p);changed();drawSettings();}},'Remove')));
+    });
+    g.append(h('div',{class:'row'},h('button',{class:'btn',onclick:()=>{q.papers.push({id:uid(),name:'',date:'',time:''});changed();drawSettings();}},opts.addPaper)));
+    b.append(g);
+  });
+}
+function tabExams(b){
+  b.append(h('h3',null,'External exams'),
+    h('p',{class:'hint'},'Add each qualification (for example "GCSE Maths", "A-level Physics" or "BTEC Sport"), then add each paper with its date. The main display shows the next paper for each qualification and lists the rest. Past papers drop off automatically.'));
+  paperGroups(b,state.exams,{ph:'Qualification, e.g. GCSE Maths',noun:'qualification',paperLabel:'Paper',paperPh:'e.g. Paper 1 (Non-calculator)',addPaper:'Add paper'});
+  b.append(h('div',{class:'row'},h('button',{class:'btn primary',onclick:()=>{state.exams.push({id:uid(),name:'',papers:[]});changed();drawSettings();}},'Add qualification')));
+}
+function tabInternal(b){
+  b.append(h('h3',null,'Internal exams'),
+    h('p',{class:'hint'},'Your own school assessments. Every title is editable, including the heading shown above these cards, so use whatever your school calls them. Groups with no upcoming dates are hidden on the main display.'),
+    h('div',{class:'row'},field('Heading on the main display',textIn(state,'internalHeading','Internal Exams',{style:'min-width:300px'}))));
+  paperGroups(b,state.internal,{ph:'Group title, e.g. Mock Exams',noun:'group',paperLabel:'Assessment',paperPh:'e.g. Year 11 Maths Mock',addPaper:'Add assessment'});
+  b.append(h('div',{class:'row'},h('button',{class:'btn primary',onclick:()=>{state.internal.push({id:uid(),name:'',papers:[]});changed();drawSettings();}},'Add group')));
+}
+
+function tabSpecial(b){
+  b.append(h('h3',null,'Festivals'),
+    h('p',{class:'hint'},'Festivals and holy days appear on the green row of the main display. Christmas and Easter are on by default. Tick the box to show a date. Built-in dates run from 2026 to 2035 and the page picks the next one for you. Jewish, Sikh and Hindu (Diwali) dates are calculated; Ramadan and Eid are calculated too but marked "approx." because the actual day depends on moon sighting. You can type over any date, or add your own.'));
+  state.customs.forEach(c=>{
+    const r=resolvedForSettings(c),def=c.key?PRESETS[c.key]:null;
+    const approx=c.approx==null?!!(def&&def.approx):c.approx;
+    const passed=valid(c.date)&&dayNum(c.date)<dayNum(todayYMD());
+    b.append(h('div',{class:'row'},
+      h('input',{type:'checkbox',checked:c.on,title:'Show on main display',onchange:e=>{c.on=e.target.checked;changed();}}),
+      textIn(c,'name','Name',{style:'min-width:230px'}),
+      h('input',{type:'date',value:r?r.date:'',oninput:e=>{c.date=e.target.value;changed();}}),
+      h('label',{style:'display:flex;gap:6px;align-items:center'},h('input',{type:'checkbox',checked:approx,onchange:e=>{c.approx=e.target.checked;changed();}}),'approx.'),
+      (c.key&&valid(c.date))?h('button',{class:'btn',onclick:()=>{c.date='';changed();drawSettings();}},'Reset to built-in'):null,
+      (c.key&&!r)?h('span',{class:'warn'},'No built-in date after 2035: type one in'):null,
+      passed?h('span',{class:'pill off'},'passed'):null,
+      h('button',{class:'btn x',onclick:()=>{state.customs=state.customs.filter(x=>x!==c);changed();drawSettings();}},'Remove')));
+  });
+  const used=new Set(state.customs.map(c=>c.key).filter(Boolean));
+  const sel=h('select',null,h('option',{value:''},'Add a built-in date...'),Object.keys(PRESETS).filter(k=>!used.has(k)).map(k=>h('option',{value:k},PRESETS[k].name)));
+  sel.onchange=()=>{const k=sel.value;if(!k)return;state.customs.push({id:uid(),name:PRESETS[k].name,key:k,date:'',approx:null,on:true});changed();drawSettings();};
+  b.append(h('div',{class:'row'},sel,h('button',{class:'btn primary',onclick:()=>{state.customs.push({id:uid(),name:'',key:null,date:'',approx:false,on:true});changed();drawSettings();}},'Add my own festival')));
+  b.append(h('p',{class:'hint'},'Other festivals (for example Holi, Navratri, Vesak or Chinese New Year) are not built in yet; add them with "Add my own festival".'));
+}
+
+function tabDisplay(b){
+  const D=state.display;
+  const chk=(k,l)=>h('div',{class:'row'},h('label',{style:'display:flex;gap:10px;align-items:center;font-size:17px'},h('input',{type:'checkbox',checked:D[k],onchange:e=>{D[k]=e.target.checked;changed();}}),l));
+  b.append(h('h3',null,'Page'),
+    h('div',{class:'row'},field('School or department name (optional, shown at the top right)',textIn(state,'title','',{style:'min-width:340px'}))),
+    chk('analogue','Show analogue clock (wide screens only)'),chk('h24','24-hour clock'),chk('seconds','Show seconds on the digital clock'),
+    h('h3',null,'Sun and moon'),
+    h('p',{class:'hint'},'Calculated inside the page, so no internet connection is needed. Times are shown in this device\'s local time. Moon phase is accurate to well within a day.'),
+    chk('sun','Show sunrise and sunset'),chk('moon','Show moon phase'));
+  const sel=h('select',null,PLACES.map(p=>h('option',{value:p[0]},p[0])),h('option',{value:'__custom'},'Other (enter latitude and longitude)'));
+  const known=PLACES.find(p=>p[0]===D.locName);sel.value=known?known[0]:'__custom';
+  const lat=h('input',{type:'number',step:'0.01',value:D.lat,class:'w-s',style:'width:110px',oninput:e=>{D.lat=parseFloat(e.target.value);D.locName='Custom';changed();}});
+  const lon=h('input',{type:'number',step:'0.01',value:D.lon,class:'w-s',style:'width:110px',oninput:e=>{D.lon=parseFloat(e.target.value);D.locName='Custom';changed();}});
+  sel.onchange=()=>{const p=PLACES.find(x=>x[0]===sel.value);if(p){D.locName=p[0];D.lat=p[1];D.lon=p[2];lat.value=p[1];lon.value=p[2];changed();}};
+  b.append(h('div',{class:'row'},field('Nearest town or city',sel),field('Latitude (north +)',lat),field('Longitude (east +, west -)',lon)));
+}
+
+function tabBackup(b){
+  b.append(h('h3',null,'Saving'),
+    h('p',{class:'hint'},storageOK?'Your settings are saved automatically in this browser on this device. They are not shared with other computers, so use the backup below to move them or keep a copy.':'Warning: this browser is not allowing the page to save settings. Use Export settings to keep a copy.'),
+    h('div',{class:'row'},
+      h('button',{class:'btn primary',onclick:exportSettings},'Export settings (file)'),
+      h('label',{class:'btn'},'Import settings...',h('input',{type:'file',accept:'.json,application/json',style:'display:none',onchange:importSettings}))),
+    h('h3',null,'Sample and reset'),
+    h('p',{class:'hint'},'Sample data fills in example term dates and exams so you can see how the page looks. Replace it with your own.'),
+    h('div',{class:'row'},
+      h('button',{class:'btn',onclick:()=>{if(confirm('Replace your current settings with sample data?')){loadDemo();drawSettings();}}},'Load sample data'),
+      h('button',{class:'btn danger',onclick:()=>{if(confirm('Clear everything and go back to the defaults?')){state=defaults();save();drawSettings();renderAll();}}},'Reset everything')));
+}
+function exportSettings(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=h('a',{href:URL.createObjectURL(blob),download:'calendar-countdown-settings.json'});document.body.append(a);a.click();a.remove();
+}
+function importSettings(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{try{state=mergeState(JSON.parse(r.result));save();drawSettings();renderAll();}catch(err){alert('That file could not be read as Calendar Countdown settings.');}};
+  r.readAsText(f);
+}
+function loadDemo(){
+  const d=defaults();
+  const T=[['Autumn 1','2026-09-01','2026-10-23'],['Autumn 2','2026-11-02','2026-12-18'],['Spring 1','2027-01-05','2027-02-12'],['Spring 2','2027-02-22','2027-03-26'],['Summer 1','2027-04-12','2027-05-28'],['Summer 2','2027-06-07','2027-07-21']];
+  d.terms.forEach((t,i)=>{t.name=T[i][0];t.start=T[i][1];t.end=T[i][2];});
+  d.nonSchool=[{id:uid(),label:'INSET day (sample)',start:'2027-01-04',end:''},{id:uid(),label:'May bank holiday (sample)',start:'2027-05-03',end:''}];
+  d.exams=[{id:uid(),name:'GCSE Maths (sample)',papers:[{id:uid(),name:'Paper 1 (Non-calculator)',date:'2027-05-13',time:'09:00'},{id:uid(),name:'Paper 2 (Calculator)',date:'2027-06-02',time:'09:00'},{id:uid(),name:'Paper 3 (Calculator)',date:'2027-06-09',time:'09:00'}]},
+           {id:uid(),name:'A-level Physics (sample)',papers:[{id:uid(),name:'Paper 1',date:'2027-06-04',time:''},{id:uid(),name:'Paper 2',date:'2027-06-11',time:''},{id:uid(),name:'Paper 3',date:'2027-06-18',time:''}]}];
+  d.internal[0].papers=[{id:uid(),name:'Year 11 Maths Mock (sample)',date:'2026-11-23',time:''},{id:uid(),name:'Year 11 English Mock (sample)',date:'2026-11-25',time:''}];
+  d.internal[1].papers=[{id:uid(),name:'Year 8 Algebra Test (sample)',date:'2026-12-09',time:''}];
+  d.customs.push({id:uid(),name:'Diwali',key:'diwali',date:'',approx:null,on:true},{id:uid(),name:'Hanukkah begins',key:'hanukkah',date:'',approx:null,on:true},{id:uid(),name:'Ramadan begins',key:'ramadan',date:'',approx:null,on:true});
+  d.events.push({id:uid(),name:"Parents' Evening (sample)",date:'2026-11-12',time:'16:00',school:true,on:true},
+                {id:uid(),name:'Talent Show (sample)',date:'2026-12-11',time:'19:00',school:true,on:true},
+                {id:uid(),name:'Year 7 Trip (sample)',date:'2026-11-26',time:'',school:true,on:true});
+  d.timerPrefs=state.timerPrefs;
+  state=d;save();renderAll();
+}
+
+/* ---------- Wire up ---------- */
+$('#openSet').onclick=()=>openSettings();
+$('#closeSet').onclick=closeSettings;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#overlay').classList.contains('open'))closeSettings();});
+window.__cc={sunTimes,elongAt,moonInfo,schoolDaysUntil,easterISO,presetDate,loadDemo,renderAll,openSettings,setView,startTimer,remainText,
+  get state(){return state;},get timer(){return timer;}};
+renderAll();
+if(timer)setView('timer');
+setInterval(()=>{tickClock();if(todayYMD()!==lastYMD)renderAll();else tickTimer();},1000);
+setInterval(renderToday,600000);
+})();
+</script>
+</body>
+</html>
