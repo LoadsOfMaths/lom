@@ -239,8 +239,10 @@ input[type=checkbox]{width:20px;height:20px}
       <div class="tctl">
         <div class="seg" id="segB"><button data-fmt="words">2 hours 14 minutes</button><button data-fmt="digits">02:14</button></div>
         <label class="chk"><input type="checkbox" id="tExtra2"> Show 25% extra time</label>
+        <button class="btn" id="tFloat" title="Opens a small timer window that stays on top of your other windows, so you can drag it over the board">Float small timer</button>
         <button class="btn danger" id="tStop">Stop and reset</button>
       </div>
+      <p class="fine2" id="tFloatNote" hidden></p>
     </div>
   </div>
 </div>
@@ -699,9 +701,59 @@ function setView(v){
   $('#segB').onclick=e=>{const b=e.target.closest('button');if(!b||!timer)return;timer.fmt=b.dataset.fmt;state.timerPrefs.fmt=timer.fmt;save();saveTimer();syncSeg($('#segB'),timer.fmt);tickTimer();};
   $('#tExtra2').onchange=e=>{if(!timer)return;timer.extra=e.target.checked;state.timerPrefs.extra=timer.extra;save();saveTimer();tickTimer();};
   $('#tStart').onclick=startTimer;
-  $('#tStop').onclick=()=>{if(confirm('Stop the countdown and go back to the set-up screen?')){timer=null;saveTimer();state.timerPrefs.h=0;state.timerPrefs.m=0;save();showTimerState();}};
+  $('#tFloat').onclick=floatTimer;
+  $('#tStop').onclick=()=>{if(confirm('Stop the countdown and go back to the set-up screen?')){timer=null;saveTimer();state.timerPrefs.h=0;state.timerPrefs.m=0;save();closeMini();$('#tFloatNote').hidden=true;showTimerState();}};
   document.querySelectorAll('.vt').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 })();
+
+/* ---------- Floating mini timer ---------- */
+let mini=null,miniTick=null;
+const MINI_CSS='*{box-sizing:border-box}html,body{margin:0;height:100%}body{font-family:Inter,system-ui,"Segoe UI",Arial,sans-serif;background:#fffdf6;color:#1f2a37;display:flex;flex-direction:column;overflow:hidden;cursor:default}'+
+ '.r{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:4px 8px;min-height:0;border-bottom:1px solid #e8e2cf}.r:last-child{border-bottom:0}'+
+ '.l{font-size:clamp(10px,min(3.4vw,9vh),18px);letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#6b7280}.r.x .l{color:#b45309}'+
+ '.b{font-family:Cambria,"Times New Roman","Liberation Serif",Times,serif;font-weight:700;line-height:1.05;white-space:nowrap}'+
+ '.b.words{font-size:clamp(16px,min(8.6vw,26vh),120px)}.b.digits{font-size:clamp(28px,min(22vw,44vh),260px);font-variant-numeric:tabular-nums}'+
+ 'body.two .b.words{font-size:clamp(14px,min(7.6vw,16vh),90px)}body.two .b.digits{font-size:clamp(24px,min(18vw,28vh),200px)}'+
+ '.b.low,.b.up{color:#b7312c}.b.up{font-size:clamp(18px,min(8vw,20vh),90px)!important}'+
+ '.e{font-size:clamp(10px,min(3.8vw,9vh),20px);color:#4b5563}.e b{font-variant-numeric:tabular-nums}'+
+ '.t{padding:3px 8px;font-size:clamp(10px,3vw,14px);font-weight:700;background:#b7312c;color:#fff;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+function miniHTML(){
+  if(!timer)return '<div class="r"><div class="l">No timer running</div></div>';
+  const now=Date.now(),rows=[{l:'Time remaining',end:timer.end,c:''}];
+  if(timer.extra)rows.push({l:'25% extra time',end:timer.endX,c:'x'});
+  return (timer.title?'<div class="t">'+esc(timer.title)+'</div>':'')+rows.map(r=>{
+    const rem=r.end-now,txt=remainText(rem,timer.fmt),up=txt===null,low=!up&&rem<=5*60000;
+    return '<div class="r '+r.c+'"><div class="l">'+r.l+'</div><div class="b '+(timer.fmt==='digits'?'digits':'words')+(up?' up':'')+(low?' low':'')+'">'+(up?'Time is up':esc(txt))+'</div><div class="e">Ends at <b>'+esc(fmtClock(new Date(r.end)))+'</b></div></div>';
+  }).join('');
+}
+function miniRender(){
+  if(!mini||mini.closed){closeMini();return;}
+  try{mini.document.body.className=(timer&&timer.extra)?'two':'';mini.document.body.innerHTML=miniHTML();}catch(e){closeMini();}
+}
+function closeMini(){
+  if(miniTick){clearInterval(miniTick);miniTick=null;}
+  const w=mini;mini=null;try{if(w&&!w.closed)w.close();}catch(e){}
+  const b=$('#tFloat');if(b){b.disabled=false;b.textContent='Float small timer';}
+}
+async function floatTimer(){
+  if(!timer||mini)return;
+  const hh=timer.extra?230:140,note=$('#tFloatNote');note.hidden=true;let w=null,kind='';
+  try{
+    if(window.documentPictureInPicture){w=await documentPictureInPicture.requestWindow({width:360,height:hh});kind='pip';}
+  }catch(e){w=null;}
+  if(!w){
+    w=window.open('','cc-mini','popup=yes,width=360,height='+(hh+40)+',top=80,left='+Math.max(0,(screen.availWidth||1200)-400));kind='popup';
+  }
+  if(!w){note.hidden=false;note.textContent='Your browser blocked the small window. Allow pop-ups for this page and try again.';return;}
+  mini=w;
+  w.document.open();w.document.write('<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>Time remaining</title><style>'+MINI_CSS+'</style></head><body></body></html>');w.document.close();
+  w.addEventListener('pagehide',closeMini);
+  w.document.addEventListener('click',()=>{if(!timer)return;timer.fmt=timer.fmt==='digits'?'words':'digits';state.timerPrefs.fmt=timer.fmt;save();saveTimer();syncSeg($('#segB'),timer.fmt);tickTimer();miniRender();});
+  miniTick=w.setInterval(miniRender,1000);miniRender();
+  const b=$('#tFloat');b.disabled=true;b.textContent='Floating (close its window to bring it back)';
+  note.hidden=false;note.textContent=kind==='pip'?'The small timer stays on top of your other windows: drag it where you want it and resize it from its corner. Click it to switch between "2 hours 14 minutes" and "02:14". Keep this page open in its tab while the timer runs.':
+    'Your browser opened the small timer as a separate window. Drag it where you want it. This browser may not keep it on top of other windows (Chrome and Edge do). Keep this page open while the timer runs.';
+}
 
 /* ---------- Settings UI ---------- */
 function h(tag,props,...kids){
