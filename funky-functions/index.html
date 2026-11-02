@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funky Functions</title>
+<style>
+:root{--ink:#240046;--pink:#ff71ce;--cyan:#01cdfe;--mint:#05ffa1;--lav:#b967ff;--butter:#fffb96;--hot:#ff3cac}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;font-family:"Trebuchet MS","Segoe UI",Verdana,sans-serif;color:#fff;
+  background:linear-gradient(180deg,#12002b 0%,#2d0a5e 40%,#8a1fa8 66%,#ff3cac 90%,#ff9ad5 100%);background-attachment:fixed;overflow-x:hidden}
+button{font-family:inherit}
+
+/* ---------- decoration ---------- */
+#deco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#sun{position:absolute;left:50%;bottom:34vh;width:min(42vw,400px);transform:translate(-50%,40%)}
+#gridwrap{position:absolute;left:0;right:0;bottom:0;height:34vh;perspective:340px;overflow:hidden;background:linear-gradient(180deg,#4a0a78 0%,#1a0033 100%);border-top:3px solid #ff71ce;box-shadow:0 -4px 22px #ff3cac}
+#grid{position:absolute;left:-50%;width:200%;top:0;height:230%;transform-origin:50% 0;transform:rotateX(64deg);
+  background-image:linear-gradient(rgba(1,205,254,.85) 2px,transparent 2px),linear-gradient(90deg,rgba(1,205,254,.85) 2px,transparent 2px);
+  background-size:64px 48px;animation:gridmove 1.6s linear infinite}
+@keyframes gridmove{to{background-position:0 48px}}
+.star{position:absolute;color:#fff;text-shadow:0 0 8px #01cdfe;animation:tw 2.6s ease-in-out infinite}
+@keyframes tw{50%{opacity:.2;transform:scale(.6)}}
+
+#app{position:relative;z-index:1;max-width:1260px;margin:0 auto;padding:12px 14px 26px}
+header{text-align:center}
+h1{margin:0;font-family:Impact,"Arial Black",sans-serif;font-style:italic;text-transform:uppercase;letter-spacing:3px;
+  font-size:clamp(34px,6vw,66px);line-height:1;
+  background:linear-gradient(180deg,#fff 0%,#a8f6ff 34%,#ff71ce 54%,#fffb96 72%,#ff3cac 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  -webkit-text-stroke:2px var(--ink);filter:drop-shadow(3px 3px 0 var(--hot)) drop-shadow(0 0 14px var(--cyan))}
+.tag{margin-top:4px;font-family:"Courier New",monospace;letter-spacing:4px;text-transform:uppercase;color:var(--cyan);text-shadow:0 0 8px var(--cyan);font-size:clamp(10px,1.5vw,14px)}
+#top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:10px 0 6px}
+#tabs,#levels{display:flex;gap:8px;flex-wrap:wrap}
+#tabs{justify-content:center;flex:1}
+#score{display:flex;gap:10px;font:900 18px Impact,"Arial Black",sans-serif;letter-spacing:1px}
+#score span{background:rgba(255,255,255,.12);border:2px solid #fff;border-radius:8px;padding:4px 12px;text-shadow:0 0 8px var(--butter);color:var(--butter)}
+#levels{justify-content:center;margin:2px 0 10px}
+#rhs{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+#motion{min-height:38px;padding:4px 12px;font-size:13px}
+body.still *,body.still *::before,body.still *::after{animation:none!important;transition:none!important}
+
+.pill{--a:#ffc4ec;--b:#ff71ce;--c:#d94bb0;font-weight:900;font-size:clamp(13px,1.5vw,17px);color:var(--ink);border:3px solid var(--ink);border-radius:999px;
+  padding:8px 16px;min-height:44px;cursor:pointer;background:linear-gradient(180deg,var(--a) 0%,var(--b) 50%,var(--c) 100%);
+  box-shadow:0 4px 0 var(--ink),0 0 12px rgba(255,255,255,.25);position:relative}
+.pill:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.pill.c1{--a:#aaf0ff;--b:#01cdfe;--c:#00a8d6}.pill.c2{--a:#b5ffe0;--b:#05ffa1;--c:#00d985}.pill.c3{--a:#e0c2ff;--b:#b967ff;--c:#8f3fe0}
+.pill.on{--a:#fffde0;--b:#fffb96;--c:#e8e268;box-shadow:0 4px 0 var(--ink),0 0 20px #fffb96;transform:translateY(-1px)}
+.pill small{display:block;font-size:.62em;font-weight:700;opacity:.8;letter-spacing:.3px}
+.pill.lvl{--a:#aaf0ff;--b:#01cdfe;--c:#00a8d6;padding:5px 14px;line-height:1.1}
+.pill.lvl.on{--a:#fffde0;--b:#fffb96;--c:#e8e268}
+.pill.go{--a:#b5ffe0;--b:#05ffa1;--c:#00d985;font-size:clamp(18px,2.2vw,26px);padding:10px 30px;animation:pulse 1.2s ease-in-out infinite}
+.pill.alt{--a:#ffe0b5;--b:#ff9f43;--c:#e07b1a}
+.pill.alt2{--a:#e0c2ff;--b:#b967ff;--c:#8f3fe0}
+
+main{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px;align-items:start}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.win{background:rgba(26,4,60,.88);border:3px solid #fff;border-radius:12px;overflow:hidden;
+  box-shadow:0 0 0 3px var(--hot),0 0 26px rgba(1,205,254,.55),7px 7px 0 rgba(0,0,0,.4)}
+.tb{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:linear-gradient(90deg,#3a1cff,#ff3cac 70%,#ff9f43);
+  font:bold 14px "Courier New",monospace;letter-spacing:1px;text-shadow:1px 1px 0 var(--ink)}
+.tb i{display:inline-block;width:15px;height:15px;margin-left:4px;background:#d8d8ff;border:2px outset #fff}
+.body{padding:14px 14px 16px}
+#prompt{text-align:center;font-size:clamp(17px,2.4vw,27px);font-weight:700;line-height:1.35;min-height:2.7em;display:flex;align-items:center;justify-content:center}
+#prompt b{color:var(--butter);text-shadow:0 0 10px var(--butter)}
+#stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 4px;min-height:130px;justify-content:center}
+.cap{font:bold 13px "Courier New",monospace;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);text-shadow:0 0 8px var(--cyan);margin:4px 0 -2px}
+.msg{min-height:3.1em;text-align:center;font-size:clamp(15px,1.9vw,21px);font-weight:700;padding:6px 8px;line-height:1.35}
+.msg.good{color:var(--mint);text-shadow:0 0 10px var(--mint)}
+.msg.bad{color:#ffb3e6}
+.msg.info{color:#d9ccff}
+#actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:4px}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-12px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(5px)}}
+@keyframes pulse{50%{transform:scale(1.05)}}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+
+/* ---------- rows, machines, bubbles ---------- */
+.row{--s:100px;display:flex;align-items:center;justify-content:center;width:100%;flex-wrap:nowrap}
+.row>*{flex:none}
+.mach{width:calc(var(--s)*1.5);height:var(--s);overflow:visible;filter:drop-shadow(0 0 7px rgba(255,255,255,.35)) drop-shadow(4px 5px 0 rgba(0,0,0,.4))}
+.mach text{font-family:Impact,"Arial Black",sans-serif;font-weight:900;fill:var(--ink)}
+.mach.hid text{fill:#5a2a8a}
+.mach.act{animation:pulse 1s ease-in-out infinite;filter:drop-shadow(0 0 16px var(--butter)) drop-shadow(4px 5px 0 rgba(0,0,0,.4))}
+.arr{width:calc(var(--s)*.4);height:calc(var(--s)*.2)}
+.arr path{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px var(--cyan))}
+.arr.lf{transform:scaleX(-1)}
+.bub{width:calc(var(--s)*.85);height:calc(var(--s)*.85);border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font:900 calc(var(--s)*.34) Impact,"Arial Black",sans-serif;color:var(--ink);border:calc(var(--s)*.04) solid var(--ink);
+  background:radial-gradient(circle at 30% 28%,#fff 0,#e6f9ff 24%,#7fe8ff 68%,#01cdfe 100%);box-shadow:0 0 14px rgba(1,205,254,.6),3px 4px 0 rgba(0,0,0,.4)}
+.bub.l3{font-size:calc(var(--s)*.27)}.bub.l4{font-size:calc(var(--s)*.22)}
+.bub.hid{background:rgba(255,255,255,.08);border:calc(var(--s)*.04) dashed var(--pink);color:#ffd1f0;box-shadow:none}
+.bub.act{background:radial-gradient(circle at 30% 28%,#fff 0,#fffb96 38%,#ffc400 100%);border-color:#fff;box-shadow:0 0 22px var(--butter);animation:pulse 1s ease-in-out infinite}
+.bub.ok{background:radial-gradient(circle at 30% 28%,#fff 0,#b5ffe0 30%,#05ffa1 100%);box-shadow:0 0 18px var(--mint);animation:pop .45s}
+.bub.rev{background:radial-gradient(circle at 30% 28%,#fff 0,#ffe0b5 30%,#ff9f43 100%);box-shadow:0 0 16px #ff9f43}
+
+/* ---------- options ---------- */
+#options{margin-top:6px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;max-width:900px;margin:0 auto}
+.opts.pairs{grid-template-columns:repeat(2,1fr);max-width:720px}
+#options .cap{text-align:center;margin:0 0 8px}
+.opt{display:flex;align-items:center;justify-content:center;padding:12px 10px;min-height:96px;cursor:pointer;color:#fff;
+  background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.06));border:3px solid #fff;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.45)}
+.opt:hover:not(:disabled){background:rgba(255,255,255,.28);box-shadow:0 0 18px var(--cyan),0 4px 0 rgba(0,0,0,.45)}
+.opt:active:not(:disabled){transform:translateY(3px)}
+.opt .row{pointer-events:none}
+.opt.wrong{opacity:.35;border-color:#ff71ce;border-style:dashed}
+.opt.right{background:rgba(5,255,161,.25);border-color:var(--mint);box-shadow:0 0 22px var(--mint)}
+.opt:disabled{cursor:default}
+
+/* ---------- keypad ---------- */
+#pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+#pad.off{opacity:.35;pointer-events:none}
+.key{font:900 clamp(24px,3vw,34px) Impact,"Arial Black",sans-serif;min-height:66px;color:var(--ink);border:3px solid var(--ink);border-radius:14px;cursor:pointer;
+  background:linear-gradient(180deg,#fff 0%,#aaf0ff 45%,#01cdfe 100%);box-shadow:0 5px 0 var(--ink),0 0 12px rgba(1,205,254,.5)}
+.key:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.key.del{background:linear-gradient(180deg,#fff 0%,#ffc4ec 45%,#ff71ce 100%);font-size:clamp(15px,2vw,20px)}
+.key.ok{background:linear-gradient(180deg,#fff 0%,#b5ffe0 45%,#05ffa1 100%);font-size:clamp(18px,2.4vw,26px)}
+@media(max-width:900px){#pad{max-width:420px;margin:0 auto}.key{min-height:56px}}
+
+/* ---------- demo ---------- */
+#demo{position:fixed;inset:0;z-index:20;background:rgba(10,0,30,.8);display:none;align-items:center;justify-content:center;padding:14px}
+#demo.show{display:flex}
+#demo .win{width:min(1000px,100%);max-height:96vh;overflow:auto}
+#demoCap{min-height:3.4em;text-align:center;font-size:clamp(16px,2.2vw,24px);font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1.35}
+#demoCap b{color:var(--butter)}
+#demoView{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0;min-height:150px;justify-content:center}
+#demoBtns{display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+footer{text-align:center;margin-top:14px;font:bold 12px "Courier New",monospace;letter-spacing:2px;color:#fff;text-shadow:0 0 6px #240046,1px 1px 0 #240046;text-transform:uppercase}
+
+@media(max-width:600px){.pill{padding:6px 11px;min-height:40px}#tabs{gap:6px}#top{justify-content:center}.opts.pairs{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- gradient definitions for the machines -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="mg0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc4ec"/><stop offset=".5" stop-color="#ff71ce"/><stop offset="1" stop-color="#d94bb0"/></linearGradient>
+  <linearGradient id="mg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#aaf0ff"/><stop offset=".5" stop-color="#01cdfe"/><stop offset="1" stop-color="#00a8d6"/></linearGradient>
+  <linearGradient id="mg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b5ffe0"/><stop offset=".5" stop-color="#05ffa1"/><stop offset="1" stop-color="#00d985"/></linearGradient>
+  <linearGradient id="mg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0c2ff"/><stop offset=".5" stop-color="#b967ff"/><stop offset="1" stop-color="#8f3fe0"/></linearGradient>
+  <linearGradient id="mg4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffde0"/><stop offset=".5" stop-color="#fffb96"/><stop offset="1" stop-color="#e8e268"/></linearGradient>
+</defs></svg>
+
+<div id="deco" aria-hidden="true">
+  <span class="star" style="left:6%;top:12%;font-size:26px">✦</span>
+  <span class="star" style="left:92%;top:9%;font-size:34px;animation-delay:.6s">✦</span>
+  <span class="star" style="left:80%;top:38%;font-size:18px;animation-delay:1.1s">✦</span>
+  <span class="star" style="left:3%;top:46%;font-size:20px;animation-delay:1.6s">✦</span>
+  <span class="star" style="left:48%;top:3%;font-size:16px;animation-delay:.3s">✦</span>
+  <svg id="sun" viewBox="0 0 200 200"><defs>
+    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff56a"/><stop offset=".5" stop-color="#ff9d3c"/><stop offset="1" stop-color="#ff3cac"/></linearGradient>
+    <mask id="sm"><rect width="200" height="200" fill="#fff"/><rect y="112" width="200" height="3" fill="#000"/><rect y="128" width="200" height="5" fill="#000"/><rect y="145" width="200" height="7" fill="#000"/><rect y="163" width="200" height="9" fill="#000"/><rect y="182" width="200" height="11" fill="#000"/></mask>
+  </defs><circle cx="100" cy="100" r="98" fill="url(#sg)" mask="url(#sm)"/></svg>
+  <div id="gridwrap"><div id="grid"></div></div>
+</div>
+
+<div id="app">
+  <header>
+    <h1>Funky Functions</h1>
+    <div class="tag">&#10022; number machines &#10022; do it &#8226; undo it &#10022;</div>
+  </header>
+  <div id="top">
+    <nav id="tabs" role="tablist" aria-label="Activities"></nav>
+    <div id="rhs"><button class="pill c3" id="motion" data-act="motion" aria-pressed="true">Animation: ON</button><div id="score" aria-live="polite"></div></div>
+  </div>
+  <div id="levels" aria-label="Levels"></div>
+
+  <main>
+    <section class="win" id="stageWin">
+      <div class="tb"><span id="winTitle">FUNKY_FUNCTIONS.EXE</span><span aria-hidden="true"><i></i><i></i><i></i></span></div>
+      <div class="body">
+        <div id="prompt"></div>
+        <div id="stage"></div>
+        <div id="options"></div>
+        <div class="msg info" id="msg" aria-live="polite"></div>
+        <div id="actions"></div>
+      </div>
+    </section>
+    <aside class="win" id="padWin">
+      <div class="tb"><span>KEYPAD.EXE</span><span aria-hidden="true"><i></i><i></i></span></div>
+      <div id="pad"></div>
+    </aside>
+  </main>
+  <footer>best viewed on a very large whiteboard</footer>
+</div>
+
+<div id="demo" role="dialog" aria-modal="true" aria-label="Show me">
+  <div class="win">
+    <div class="tb"><span>SHOW_ME.EXE</span><span aria-hidden="true"><i></i><i></i><i></i></span></div>
+    <div class="body">
+      <div id="demoCap"></div>
+      <div id="demoView"></div>
+      <div id="demoBtns">
+        <button class="pill alt2" data-demo="prev">◀ Back</button>
+        <button class="pill go" data-demo="next">Next ▶</button>
+        <button class="pill alt" data-demo="close">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s);};
+var rnd=function(a,b){return a+Math.floor(Math.random()*(b-a+1));};
+var pick=function(a){return a[Math.floor(Math.random()*a.length)];};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+/* ================= operations ================= */
+var SYM={'+':'+','-':'−','*':'×','/':'÷'};
+var INV={'+':'-','-':'+','*':'/','/':'*'};
+function op(t,n){return {t:t,n:n};}
+function apply(o,x){return o.t==='+'?x+o.n:o.t==='-'?x-o.n:o.t==='*'?x*o.n:x/o.n;}
+function inv(o){return op(INV[o.t],o.n);}
+function lab(o){return SYM[o.t]+' '+o.n;}
+function same(a,b){return a.t===b.t&&a.n===b.n;}
+function isAddT(t){return t==='+'||t==='-';}
+function isAdd(o){return isAddT(o.t);}
+function fmt(v){var r=Number.isInteger(v)?String(v):String(Math.round(v*100)/100);return r.replace('-','−');}
+function verb(o){return o.t==='+'?'add '+o.n:o.t==='-'?'subtract '+o.n:o.t==='*'?'multiply it by '+o.n:'divide it by '+o.n;}
+function sentence(ops){var v=ops.map(verb);return v.length===1?v[0]:v.slice(0,-1).join(', ')+', then '+v[v.length-1];}
+function calc(x,o){return fmt(x)+' '+SYM[o.t]+' '+o.n+' = '+fmt(apply(o,x));}
+
+/* ================= generators ================= */
+var SC={
+  1:{types:['+','-'],aMin:2,aMax:12,mMin:2,mMax:5,cap:40,s0:3,s1:25},
+  2:{types:['*','/'],aMin:2,aMax:12,mMin:2,mMax:10,cap:100,s0:2,s1:40},
+  3:{types:['+','-','*','/'],aMin:5,aMax:30,mMin:2,mMax:12,cap:200,s0:6,s1:80}
+};
+var CC={
+  1:{types:['+','-','*','/'],aMin:2,aMax:9,mMin:2,mMax:5,cap:60,s0:2,s1:12},
+  2:{types:['+','-','*','/'],aMin:2,aMax:20,mMin:2,mMax:10,cap:150,s0:3,s1:30},
+  3:{types:['+','-','*','/'],aMin:2,aMax:20,mMin:2,mMax:10,cap:200,s0:2,s1:20}
+};
+function validOps(x,c){
+  var out=[],n;
+  if(c.types.indexOf('+')>=0)for(n=c.aMin;n<=c.aMax;n++)if(x+n<=c.cap)out.push(op('+',n));
+  if(c.types.indexOf('-')>=0)for(n=c.aMin;n<=c.aMax;n++)if(x-n>=1)out.push(op('-',n));
+  if(c.types.indexOf('*')>=0)for(n=c.mMin;n<=c.mMax;n++)if(x*n<=c.cap)out.push(op('*',n));
+  if(c.types.indexOf('/')>=0)for(n=c.mMin;n<=c.mMax;n++)if(x%n===0&&x/n>=1)out.push(op('/',n));
+  return out;
+}
+function randOp(x,c,ban){
+  var all=validOps(x,c).filter(function(o){return o.t!==ban;});
+  if(!all.length)return null;
+  var types=[];all.forEach(function(o){if(types.indexOf(o.t)<0)types.push(o.t);});
+  var t=pick(types);
+  return pick(all.filter(function(o){return o.t===t;}));
+}
+function genSingle(l){
+  var c=SC[l];
+  for(var i=0;i<300;i++){
+    var x=rnd(c.s0,c.s1),o=randOp(x,c);
+    if(o)return {o:o,x:x,y:apply(o,x),c:rnd(0,3)};
+  }
+  return {o:op('+',5),x:7,y:12,c:0};
+}
+function fitting(x,y){
+  var r=[];
+  if(y>x&&y-x>=2&&y-x<=30)r.push(op('+',y-x));
+  if(x>y&&x-y>=2&&x-y<=30)r.push(op('-',x-y));
+  if(y%x===0&&y/x>=2&&y/x<=12)r.push(op('*',y/x));
+  if(x%y===0&&x/y>=2&&x/y<=12)r.push(op('/',x/y));
+  return r;
+}
+function filler(c){
+  var t=pick(c.types);
+  return op(t,isAddT(t)?rnd(2,Math.min(c.aMax,20)):rnd(2,c.mMax));
+}
+function genFunc(l){
+  var c=SC[l];
+  for(var t=0;t<600;t++){
+    var x1=rnd(c.s0,c.s1),o=randOp(x1,c);if(!o)continue;
+    var pairs=[[x1,apply(o,x1)]];
+    var c1=fitting(x1,pairs[0][1]).filter(function(p){return !same(p,o);});
+    if(l>=2&&!c1.length)continue;
+    var ok=true;
+    while(pairs.length<l){
+      var found=false;
+      for(var k=0;k<80;k++){
+        var xx=rnd(c.s0,c.s1);
+        if(pairs.some(function(p){return p[0]===xx;}))continue;
+        if(!validOps(xx,c).some(function(v){return same(v,o);}))continue;
+        pairs.push([xx,apply(o,xx)]);found=true;break;
+      }
+      if(!found){ok=false;break;}
+    }
+    if(!ok)continue;
+    var fits=function(p){return pairs.every(function(q){return apply(p,q[0])===q[1];});};
+    var decoys=[];
+    if(l>=2){decoys=c1.filter(function(p){return !fits(p);}).slice(0,2);if(!decoys.length)continue;}
+    var seen={};seen[lab(o)]=1;decoys.forEach(function(d){seen[lab(d)]=1;});
+    var g=0;
+    while(decoys.length<3&&g++<300){
+      var p=filler(c),key=lab(p);
+      if(seen[key]||fits(p))continue;
+      seen[key]=1;decoys.push(p);
+    }
+    if(decoys.length<3)continue;
+    return {o:o,pairs:pairs,options:shuffle([o].concat(decoys)),c:rnd(0,3)};
+  }
+  return {o:op('+',4),pairs:[[3,7]],options:[op('+',4),op('-',4),op('+',5),op('-',3)],c:0};
+}
+function invOptions(o,wide){
+  var correct=inv(o),add=isAdd(o),maxN=add?30:12;
+  function alt(){for(var k=0;k<40;k++){var m=o.n+pick([-3,-2,-1,1,2,3]);if(m>=2&&m<=maxN&&m!==o.n)return m;}return o.n+1;}
+  var a1=alt(),a2=alt();
+  var pool=[op(o.t,o.n),op(correct.t,a1),op(o.t,a2)];
+  if(wide)pool.push(op(pick(add?['*','/']:['+','-']),o.n));
+  var dec=[],seen={};seen[lab(correct)]=1;
+  shuffle(pool).forEach(function(p){if(dec.length<3&&!seen[lab(p)]){seen[lab(p)]=1;dec.push(p);}});
+  var g=0;
+  while(dec.length<3&&g++<200){var p=op(pick(['+','-','*','/']),rnd(2,12));if(!seen[lab(p)]){seen[lab(p)]=1;dec.push(p);}}
+  return shuffle([correct].concat(dec));
+}
+function traceBack(optOps,start){ // backward machines in screen order; flow is right to left
+  var v=start;for(var i=optOps.length-1;i>=0;i--)v=apply(optOps[i],v);return v;
+}
+/* options for "which machine undoes o?", rejecting any wrong option that happens to
+   return the right number for this particular pair of values (so the feedback never contradicts itself) */
+function safeInvOptions(o,from,to,wide){
+  var opts,ok;
+  for(var k=0;k<80;k++){
+    opts=invOptions(o,wide);
+    ok=opts.every(function(p){return same(p,inv(o))||apply(p,from)!==to;});
+    if(ok)return opts;
+  }
+  return opts;
+}
+function genOpp(l){
+  if(l<3){
+    var c=SC[l],t=pick(c.types),o=op(t,isAddT(t)?rnd(2,12):rnd(2,l===2?10:5));
+    var x;
+    if(t==='/')x=o.n*rnd(2,6);else if(t==='-')x=rnd(o.n+2,o.n+15);else if(t==='+')x=rnd(5,20);else x=rnd(2,9);
+    var opts=safeInvOptions(o,apply(o,x),x,l>=2);
+    var correct=inv(o);
+    return {ops:[o],options:opts.map(function(p){return [p];}),correct:opts.findIndex(function(p){return same(p,correct);}),vals:[x,apply(o,x)]};
+  }
+  for(var tt=0;tt<300;tt++){
+    var A,B;
+    if(Math.random()<.5){A=op(pick(['+','-']),rnd(2,12));B=op(pick(['*','/']),rnd(2,9));}
+    else{A=op(pick(['*','/']),rnd(2,9));B=op(pick(['+','-']),rnd(2,12));}
+    var starts=[];
+    for(var s=2;s<=60;s++){var v1=apply(A,s),v2=apply(B,v1);if(Number.isInteger(v1)&&v1>=1&&Number.isInteger(v2)&&v2>=1&&v2<=300)starts.push(s);}
+    if(!starts.length)continue;
+    var good=[inv(A),inv(B)];
+    var half=Math.random()<.5?[inv(A),B]:[A,inv(B)];
+    var opts=[good,[inv(B),inv(A)],[A,B],half];
+    var sig={},uniq=true;
+    opts.forEach(function(o){var k=o.map(lab).join('|');if(sig[k])uniq=false;sig[k]=1;});
+    if(!uniq)continue;
+    // choose a start number for which no wrong pair returns to it by coincidence
+    var okStarts=starts.filter(function(s0){
+      var out=apply(B,apply(A,s0));
+      return opts.slice(1).every(function(p){return traceBack(p,out)!==s0;});
+    });
+    if(!okStarts.length)continue;
+    var st=pick(okStarts),vals=[st,apply(A,st),apply(B,apply(A,st))];
+    var order=shuffle([0,1,2,3]);
+    return {ops:[A,B],options:order.map(function(i){return opts[i];}),correct:order.indexOf(0),vals:vals};
+  }
+  var A2=op('*',4),B2=op('+',6);
+  return {ops:[A2,B2],options:[[op('/',4),op('-',6)],[op('-',6),op('/',4)],[A2,B2],[op('/',4),B2]],correct:0,vals:[2,8,14]};
+}
+function genChain(l,n){
+  var c=CC[l];
+  for(var t=0;t<800;t++){
+    var x=rnd(c.s0,c.s1),vals=[x],ops=[],ban=null,ok=true;
+    for(var i=0;i<n;i++){
+      var o=randOp(vals[i],c,ban);
+      if(!o){ok=false;break;}
+      var p=ops[i-1];
+      if(p&&p.n===o.n&&INV[p.t]===o.t){ok=false;break;}
+      ops.push(o);vals.push(apply(o,vals[i]));ban=o.t;
+    }
+    if(!ok)continue;
+    if(!(ops.some(isAdd)&&ops.some(function(o){return !isAdd(o);})))continue;
+    return {ops:ops,vals:vals,n:n};
+  }
+  var fo=[op('*',4),op('+',6),op('/',2)].slice(0,n),fv=[2];
+  fo.forEach(function(o,i){fv.push(apply(o,fv[i]));});
+  return {ops:fo,vals:fv,n:n};
+}
+
+/* ================= drawing helpers ================= */
+function mach(o,c,dir,k,aria){
+  var pts=dir==='f'?'4,4 100,4 146,50 100,96 4,96':'146,4 50,4 4,50 50,96 146,96';
+  var gloss=dir==='f'?'8,8 98,8 120,30 8,30':'142,8 52,8 30,30 142,30';
+  var tx=dir==='f'?63:87,txt=o?lab(o):'?',L=txt.length;
+  var fs=!o?56:L<=3?44:L===4?38:L===5?32:27;
+  return '<svg class="mach '+(k||'')+'" viewBox="0 0 150 100" role="img" aria-label="'+(dir==='f'?'forwards':'backwards')+' machine: '+(o?txt:'hidden')+'">'+
+    '<polygon points="'+pts+'" fill="url(#mg'+c+')" stroke="#240046" stroke-width="5" stroke-linejoin="round"/>'+
+    '<polygon points="'+gloss+'" fill="#fff" opacity=".28"/>'+
+    '<text x="'+tx+'" y="52" text-anchor="middle" dominant-baseline="central" font-size="'+fs+'">'+txt+'</text></svg>';
+}
+function bub(b){
+  var txt=(b.v===null||b.v===undefined||b.v==='')?'?':String(b.v),len=txt.length;
+  return '<div class="bub '+(b.k||'')+' l'+(len>3?4:len)+'"'+(b.id?' id="'+b.id+'"':'')+'><span>'+txt+'</span></div>';
+}
+function arr(dir){return '<svg class="arr'+(dir==='b'?' lf':'')+'" viewBox="0 0 40 20" aria-hidden="true"><path d="M3 10H31M24 3L35 10L24 17"/></svg>';}
+function row(spec){
+  var ms=spec.machines,n=ms.length,dir=spec.dir||'f',bs=spec.bubbles,h='',i;
+  for(i=0;i<n;i++){
+    if(bs){h+=bub(bs[i])+arr(dir);}else if(i>0){h+=arr(dir);}
+    h+=mach(ms[i].op,ms[i].c,dir,ms[i].k,'');
+    if(bs)h+=arr(dir);
+  }
+  if(bs)h+=bub(bs[n]);
+  var units=bs?(n+1)*.85+n*1.5+2*n*.4:n*1.5+(n-1)*.4;
+  return '<div class="row fit" data-units="'+units.toFixed(3)+'" data-max="'+(spec.max||110)+'" data-pad="'+(spec.pad||0)+'">'+h+'</div>';
+}
+function fit(){
+  var els=document.querySelectorAll('.fit');
+  for(var i=0;i<els.length;i++){
+    var el=els[i],p=el.parentElement,w=(p?p.clientWidth:0)-parseFloat(el.dataset.pad||0)-8;
+    var max=parseFloat(el.dataset.max),u=parseFloat(el.dataset.units);
+    var s=Math.max(22,Math.min(max,(w>0?w:800)/u));
+    el.style.setProperty('--s',s.toFixed(1)+'px');
+  }
+}
+
+/* ================= state ================= */
+var TABS=[
+  {id:'output',name:'1 · Output',win:'GUESS_THE_OUTPUT.EXE',numeric:true,lv:['Plus & minus','Times & divide','Mega mix']},
+  {id:'input',name:'2 · Input',win:'GUESS_THE_INPUT.EXE',numeric:true,lv:['Plus & minus','Times & divide','Mega mix']},
+  {id:'func',name:'3 · Function',win:'GUESS_THE_FUNCTION.EXE',numeric:false,lv:['One clue','Two clues','Three clues']},
+  {id:'opp',name:'4 · Opposites',win:'OPPOSITES.EXE',numeric:false,lv:['Plus & minus','Times & divide','Pairs in a row']},
+  {id:'chain',name:'5 · In order',win:'MACHINES_IN_ORDER.EXE',numeric:true,lv:['Two machines','Bigger numbers','Three machines']},
+  {id:'back',name:'6 · Undo it',win:'UNDO_IT.EXE',numeric:true,lv:['Guided','Pick the opposites','Three machines']}
+];
+var S={tab:0,lv:[1,1,1,1,1,1],score:0,streak:0,q:null,buf:'',errs:0,done:false,msg:null,revealed:false};
+function T(){return TABS[S.tab];}
+function tid(){return T().id;}
+
+function newQ(){
+  var id=tid(),l=S.lv[S.tab],q;
+  S.buf='';S.msg=null;S.done=false;S.errs=0;S.revealed=false;
+  if(id==='output'||id==='input')q=genSingle(l);
+  else if(id==='func'){q=genFunc(l);q.wrong={};}
+  else if(id==='opp'){q=genOpp(l);q.wrong={};}
+  else{
+    var n=l===3?3:2;
+    q=genChain(l,n);q.si=0;q.steps=[];q.known=[];q.opKnown=[];q.opWrong={};
+    var i;
+    if(id==='chain'){
+      for(i=0;i<=n;i++)q.known.push(i===0);
+      for(i=1;i<=n;i++)q.steps.push({t:i,ph:'val'});
+    }else{
+      for(i=0;i<=n;i++)q.known.push(i===n);
+      for(i=0;i<n;i++)q.opKnown.push(l===1);
+      q.opOpts=q.ops.map(function(o,j){return safeInvOptions(o,q.vals[j+1],q.vals[j],true);});
+      for(i=n-1;i>=0;i--){if(l>=2)q.steps.push({t:i,ph:'op'});q.steps.push({t:i,ph:'val'});}
+    }
+  }
+  S.q=q;
+}
+function curStep(){return S.q.steps[S.q.si];}
+function inValPhase(){
+  var id=tid();
+  if(id==='output'||id==='input')return true;
+  if(id==='chain'||id==='back')return !S.done&&curStep().ph==='val';
+  return false;
+}
+function padActive(){return T().numeric&&!S.done&&inValPhase();}
+function numTarget(){
+  var q=S.q,id=tid();
+  if(id==='output')return q.y;
+  if(id==='input')return q.x;
+  return q.vals[curStep().t];
+}
+
+/* ================= text ================= */
+function promptHTML(){
+  var q=S.q,id=tid(),l=S.lv[S.tab];
+  if(id==='output')return 'Put <b>'+q.x+'</b> into the machine. What comes out?';
+  if(id==='input')return 'This number came <b>out</b>: <b>'+q.y+'</b>. What went <b>in</b>?';
+  if(id==='func')return q.pairs.length===1?'A number went in and this number came out. What does the machine do?':'The same machine did every one of these. What does it do?';
+  if(id==='opp')return l<3?'Which backwards machine <b>undoes</b> this one?':'Which pair of backwards machines <b>undoes</b> both of these?';
+  if(id==='chain')return 'Start with <b>'+q.vals[0]+'</b>, '+sentence(q.ops)+'. What do you end up with?';
+  return 'I think of a number, '+sentence(q.ops)+'. My answer is <b>'+q.vals[q.n]+'</b>. What was my number?';
+}
+function defaultMsg(){
+  var id=tid();
+  if(S.done)return {k:'info',s:''};
+  if(id==='func')return {k:'info',s:'Tap the machine that does the job.'};
+  if(id==='opp')return {k:'info',s:'Tap the backwards machine that undoes it.'};
+  if(id==='back'){
+    return curStep().ph==='op'?{k:'info',s:'Tap the machine that undoes the glowing one.'}:{k:'info',s:'Work backwards: what number comes out of the glowing machine?'};
+  }
+  return {k:'info',s:'Type your answer on the keypad, then press OK.'};
+}
+function checkString(q){
+  return q.ops.map(function(o,i){return calc(q.vals[i],o);}).join(', ');
+}
+
+/* ================= stage / options ================= */
+function stageHTML(){
+  var q=S.q,id=tid(),h='',i,n;
+  if(id==='output'){
+    var ob=S.done?{v:q.y,k:S.revealed?'rev':'ok'}:{v:S.buf||null,k:'act',id:'actb'};
+    return row({machines:[{op:q.o,c:q.c}],bubbles:[{v:q.x,k:'given'},ob],max:125});
+  }
+  if(id==='input'){
+    var ib=S.done?{v:q.x,k:S.revealed?'rev':'ok'}:{v:S.buf||null,k:'act',id:'actb'};
+    return row({machines:[{op:q.o,c:q.c}],bubbles:[ib,{v:q.y,k:'given'}],max:125});
+  }
+  if(id==='func'){
+    q.pairs.forEach(function(p){
+      h+=row({machines:[{op:S.done?q.o:null,c:q.c,k:S.done?'':'hid'}],bubbles:[{v:p[0],k:'given'},{v:p[1],k:'given'}],max:q.pairs.length>2?78:92});
+    });
+    return h;
+  }
+  if(id==='opp'){
+    return '<div class="cap">forwards &#9654;&#9654;</div>'+row({machines:q.ops.map(function(o,i){return {op:o,c:i};}),max:88});
+  }
+  n=q.n;
+  var act=S.done?-1:curStep().t,ph=S.done?'':curStep().ph;
+  if(id==='chain'){
+    var bs=[];
+    for(i=0;i<=n;i++){
+      if(i===0)bs.push({v:q.vals[0],k:'given'});
+      else if(q.known[i])bs.push({v:q.vals[i],k:S.revealed?'rev':'ok'});
+      else if(i===act)bs.push({v:S.buf||null,k:'act',id:'actb'});
+      else bs.push({v:null,k:'hid'});
+    }
+    return row({machines:q.ops.map(function(o,j){return {op:o,c:j%3};}),bubbles:bs,max:n===3?100:115});
+  }
+  // back
+  var fb=[],bb=[];
+  for(i=0;i<=n;i++){
+    if(i===n){fb.push({v:q.vals[n],k:'given'});bb.push({v:q.vals[n],k:'given'});}
+    else{
+      var kk=q.known[i]?(S.revealed?'rev':'ok'):'hid';
+      fb.push({v:q.known[i]?q.vals[i]:null,k:kk});
+      if(q.known[i])bb.push({v:q.vals[i],k:kk});
+      else if(i===act&&ph==='val')bb.push({v:S.buf||null,k:'act',id:'actb'});
+      else bb.push({v:null,k:'hid'});
+    }
+  }
+  var fm=q.ops.map(function(o,j){return {op:o,c:j%3};});
+  var bm=q.ops.map(function(o,j){
+    var known=q.opKnown[j]||S.revealed;
+    return {op:known?inv(o):null,c:j%3,k:known?'':(act===j&&ph==='op'?'act':'hid')};
+  });
+  return '<div class="cap">forwards &#9654;&#9654;</div>'+row({machines:fm,bubbles:fb,max:n===3?84:96})+
+         '<div class="cap">&#9664;&#9664; backwards</div>'+row({machines:bm,bubbles:bb,dir:'b',max:n===3?84:96});
+}
+function optBtn(i,inner,cls,dis){return '<button class="opt '+cls+'" data-i="'+i+'"'+(dis?' disabled':'')+'>'+inner+'</button>';}
+function optionsHTML(){
+  var q=S.q,id=tid();
+  if(id==='func'){
+    return '<div class="opts">'+q.options.map(function(o,i){
+      var right=S.done&&same(o,q.o),wrong=q.wrong[i];
+      return optBtn(i,row({machines:[{op:o,c:3}],max:70,pad:30}),right?'right':wrong?'wrong':'',S.done||wrong);
+    }).join('')+'</div>';
+  }
+  if(id==='opp'){
+    var pairs=q.ops.length>1;
+    return '<div class="cap" style="text-align:center">&#9664;&#9664; backwards</div><div class="opts'+(pairs?' pairs':'')+'">'+q.options.map(function(o,i){
+      var right=S.done&&i===q.correct,wrong=q.wrong[i];
+      return optBtn(i,row({dir:'b',machines:o.map(function(p,j){return {op:p,c:pairs?j:3};}),max:pairs?58:70,pad:30}),right?'right':wrong?'wrong':'',S.done||wrong);
+    }).join('')+'</div>';
+  }
+  if(id==='back'&&!S.done&&curStep().ph==='op'){
+    var t=curStep().t,w=q.opWrong[t]||{};
+    return '<div class="opts">'+q.opOpts[t].map(function(o,i){
+      return optBtn(i,row({dir:'b',machines:[{op:o,c:t%3}],max:70,pad:30}),w[i]?'wrong':'',!!w[i]);
+    }).join('')+'</div>';
+  }
+  return '';
+}
+function actionsHTML(){
+  return (S.done?'<button class="pill go" data-act="next">Next &#9654;</button>':'<button class="pill alt" data-act="reveal">Show answer</button>')+
+         '<button class="pill alt2" data-act="demo">Show me</button>';
+}
+
+function draw(){
+  $('#tabs').innerHTML=TABS.map(function(t,i){return '<button class="pill c'+(i%4)+(i===S.tab?' on':'')+'" data-tab="'+i+'" role="tab" aria-selected="'+(i===S.tab)+'">'+t.name+'</button>';}).join('');
+  $('#levels').innerHTML=T().lv.map(function(n,i){return '<button class="pill lvl'+(S.lv[S.tab]===i+1?' on':'')+'" data-lv="'+(i+1)+'">Level '+(i+1)+'<small>'+n+'</small></button>';}).join('');
+  $('#winTitle').textContent=T().win;
+  $('#prompt').innerHTML='<div>'+promptHTML()+'</div>';
+  $('#stage').innerHTML=stageHTML();
+  $('#options').innerHTML=optionsHTML();
+  var m=S.msg||defaultMsg(),me=$('#msg');me.className='msg '+m.k;me.innerHTML=m.s;
+  $('#actions').innerHTML=actionsHTML();
+  $('#score').innerHTML='<span>★ '+S.score+'</span><span>Streak '+S.streak+'</span>';
+  $('#padWin').style.display=T().numeric?'':'none';
+  $('#pad').className=padActive()?'':'off';
+  fit();
+}
+function shake(){var st=$('#stage');st.classList.remove('shake');void st.offsetWidth;st.classList.add('shake');}
+function updateActive(){
+  var el=document.getElementById('actb');if(!el)return;
+  var txt=S.buf||'?';el.firstChild.textContent=txt;
+  el.className=el.className.replace(/\bl\d\b/,'l'+(txt.length>3?4:txt.length));
+}
+
+/* ================= play ================= */
+function award(){
+  if(S.errs===0&&!S.revealed){S.score++;S.streak++;return ' ★';}
+  return '';
+}
+function wrongBase(){S.errs++;S.streak=0;}
+function key(k){
+  if(S.done||!T().numeric||!inValPhase())return;
+  if(k==='ok'){submit();return;}
+  if(k==='del')S.buf=S.buf.slice(0,-1);
+  else if(S.buf.length<5)S.buf=(S.buf==='0'?'':S.buf)+k;
+  updateActive();
+}
+function submit(){
+  if(S.done){next();return;}
+  if(!S.buf||!inValPhase())return;
+  var v=parseInt(S.buf,10);
+  if(v===numTarget())good();else bad();
+}
+function good(){
+  var q=S.q,id=tid(),m;
+  S.buf='';
+  if(id==='output'){S.done=true;m='Correct! '+calc(q.x,q.o)+award();}
+  else if(id==='input'){S.done=true;m='Yes! '+calc(q.x,q.o)+'. Undoing '+lab(q.o)+' with '+lab(inv(q.o))+' takes you back.'+award();}
+  else{
+    var st=curStep();q.known[st.t]=true;q.si++;
+    if(q.si>=q.steps.length){
+      S.done=true;
+      m=id==='chain'?'The final answer is <b>'+q.vals[q.n]+'</b>.'+award():'The starting number was <b>'+q.vals[0]+'</b>. Check: '+checkString(q)+' ✓'+award();
+    }else m=id==='chain'?'Nice — next machine!':'Got it — keep going backwards!';
+  }
+  S.msg={k:'good',s:m};
+  draw();
+}
+function bad(){
+  var q=S.q,id=tid(),m;
+  wrongBase();S.buf='';
+  var first=S.errs<2;
+  if(id==='output')m=first?'Not quite — have another go!':'Hint: work out '+q.x+' '+SYM[q.o.t]+' '+q.o.n+'.';
+  else if(id==='input')m=first?'Not quite — try running the machine backwards.':'Hint: the opposite of '+lab(q.o)+' is '+lab(inv(q.o))+'. Try '+q.y+' '+SYM[inv(q.o).t]+' '+q.o.n+'.';
+  else if(id==='chain'){var t=curStep().t;m=first?'Not quite — check that machine again.':'Hint: '+fmt(q.vals[t-1])+' '+SYM[q.ops[t-1].t]+' '+q.ops[t-1].n+' = ?';}
+  else{var tb=curStep().t,bo=inv(q.ops[tb]);m=first?'Not quite — you are going backwards, so use the opposite machine.':'Hint: '+fmt(q.vals[tb+1])+' '+SYM[bo.t]+' '+bo.n+' = ?';}
+  S.msg={k:'bad',s:m};
+  draw();shake();
+}
+function choose(i){
+  if(S.done)return;
+  var q=S.q,id=tid(),m;
+  if(id==='func'){
+    var o=q.options[i];
+    if(same(o,q.o)){S.done=true;S.msg={k:'good',s:'Yes — it’s <b>'+lab(q.o)+'</b>!'+award()};draw();return;}
+    q.wrong[i]=true;wrongBase();
+    var bad1=q.pairs.filter(function(p){return apply(o,p[0])!==p[1];})[0];
+    S.msg={k:'bad',s:'Test it: '+calc(bad1[0],o)+', but the machine gave '+bad1[1]+'.'};
+    draw();shake();return;
+  }
+  if(id==='opp'){
+    if(i===q.correct){
+      S.done=true;
+      S.msg={k:'good',s:(q.ops.length>1?'Yes! Undo them in the <b>reverse order</b> — the last machine is undone first.':'Yes! '+lab(inv(q.ops[0]))+' undoes '+lab(q.ops[0])+'.')+award()};
+      draw();return;
+    }
+    q.wrong[i]=true;wrongBase();
+    var opt=q.options[i],end=q.vals[q.vals.length-1],z=traceBack(opt,end);
+    S.msg={k:'bad',s:'Test it: '+fmt(q.vals[0])+' goes through the machine'+(q.ops.length>1?'s':'')+' and becomes '+fmt(end)+'. Your backwards machine'+(opt.length>1?'s turn':' turns')+' '+fmt(end)+' into '+fmt(z)+' — we needed '+fmt(q.vals[0])+'.'};
+    draw();shake();return;
+  }
+  if(id==='back'){
+    var t=curStep().t,opt2=q.opOpts[t][i];
+    if(same(opt2,inv(q.ops[t]))){
+      q.opKnown[t]=true;q.si++;S.msg={k:'good',s:'Yes — '+lab(inv(q.ops[t]))+' undoes '+lab(q.ops[t])+'. Now use it!'};draw();return;
+    }
+    (q.opWrong[t]=q.opWrong[t]||{})[i]=true;wrongBase();
+    S.msg={k:'bad',s:'Test it: '+calc(q.vals[t],q.ops[t])+'. Then '+fmt(q.vals[t+1])+' '+SYM[opt2.t]+' '+opt2.n+' = '+fmt(apply(opt2,q.vals[t+1]))+', not '+fmt(q.vals[t])+'.'};
+    draw();shake();
+  }
+}
+function reveal(){
+  if(S.done)return;
+  var q=S.q,id=tid();
+  S.revealed=true;S.done=true;S.streak=0;S.buf='';
+  var m;
+  if(id==='output')m='The answer is <b>'+q.y+'</b>: '+calc(q.x,q.o)+'.';
+  else if(id==='input')m='The input was <b>'+q.x+'</b>: undo '+lab(q.o)+' with '+lab(inv(q.o))+' — '+calc(q.y,inv(q.o))+'.';
+  else if(id==='func')m='It’s <b>'+lab(q.o)+'</b>: '+q.pairs.map(function(p){return calc(p[0],q.o);}).join(', ')+'.';
+  else if(id==='opp')m=q.ops.length>1?'The pair that works undoes the machines in the <b>reverse order</b>.':'<b>'+lab(inv(q.ops[0]))+'</b> undoes '+lab(q.ops[0])+'.';
+  else{
+    for(var i=0;i<q.known.length;i++)q.known[i]=true;
+    if(q.opKnown)for(var j=0;j<q.opKnown.length;j++)q.opKnown[j]=true;
+    m=id==='chain'?'The final answer is <b>'+q.vals[q.n]+'</b>: '+checkString(q)+'.':'The starting number was <b>'+q.vals[0]+'</b>. Check: '+checkString(q)+' ✓';
+  }
+  S.msg={k:'info',s:m};
+  draw();
+}
+function next(){newQ();draw();}
+function setTab(i){S.tab=i;newQ();draw();}
+function setLevel(l){S.lv[S.tab]=l;newQ();draw();}
+
+/* ================= show me (demos) ================= */
+function B(v,k){return {v:v,k:k||'given'};}
+function demoSteps(id){
+  var o,s=[];
+  if(id==='output'){
+    o=op('+',3);
+    return [
+      {cap:'A number machine does the <b>same job</b> to every number that goes in. This one adds 3.',h:row({machines:[{op:o,c:0}],bubbles:[B('IN'),B('OUT','hid')],max:120})},
+      {cap:'Put <b>5</b> in…',h:row({machines:[{op:o,c:0}],bubbles:[B(5),B(null,'hid')],max:120})},
+      {cap:'…and out comes <b>8</b>, because 5 + 3 = 8.',h:row({machines:[{op:o,c:0}],bubbles:[B(5),B(8,'ok')],max:120})}
+    ];
+  }
+  if(id==='input'){
+    o=op('*',4);
+    return [
+      {cap:'This time we know what came <b>out</b> (20) but not what went <b>in</b>.',h:row({machines:[{op:o,c:0}],bubbles:[B(null,'hid'),B(20)],max:120})},
+      {cap:'Run the machine <b>backwards</b>! The opposite of × 4 is ÷ 4.',h:'<div class="cap">forwards &#9654;&#9654;</div>'+row({machines:[{op:o,c:0}],bubbles:[B(null,'hid'),B(20)],max:100})+'<div class="cap">&#9664;&#9664; backwards</div>'+row({dir:'b',machines:[{op:inv(o),c:0}],bubbles:[B(null,'hid'),B(20)],max:100})},
+      {cap:'20 ÷ 4 = <b>5</b>, so 5 went in. Check: 5 × 4 = 20 ✓',h:'<div class="cap">forwards &#9654;&#9654;</div>'+row({machines:[{op:o,c:0}],bubbles:[B(5,'ok'),B(20)],max:100})+'<div class="cap">&#9664;&#9664; backwards</div>'+row({dir:'b',machines:[{op:inv(o),c:0}],bubbles:[B(5,'ok'),B(20)],max:100})}
+    ];
+  }
+  if(id==='func'){
+    o=op('+',4);
+    return [
+      {cap:'The machine’s job is hidden. <b>4</b> goes in and <b>8</b> comes out. Is it + 4 or × 2? You can’t tell yet!',h:row({machines:[{op:null,c:1,k:'hid'}],bubbles:[B(4),B(8)],max:100})},
+      {cap:'Try another number. <b>5</b> goes in and <b>9</b> comes out. 5 × 2 would be 10, so it isn’t × 2.',h:row({machines:[{op:null,c:1,k:'hid'}],bubbles:[B(4),B(8)],max:90})+row({machines:[{op:null,c:1,k:'hid'}],bubbles:[B(5),B(9)],max:90})},
+      {cap:'It’s <b>+ 4</b>: 4 + 4 = 8 and 5 + 4 = 9 ✓',h:row({machines:[{op:o,c:1}],bubbles:[B(4,'ok'),B(8,'ok')],max:90})+row({machines:[{op:o,c:1}],bubbles:[B(5,'ok'),B(9,'ok')],max:90})}
+    ];
+  }
+  if(id==='opp'){
+    var pairs=[[op('*',2)],[op('/',3)],[op('+',7)],[op('-',7)]];
+    s=pairs.map(function(p){
+      var a=p[0];
+      return {cap:'The opposite of <b>'+lab(a)+'</b> is <b>'+lab(inv(a))+'</b>.',h:'<div class="cap">forwards &#9654;&#9654;</div>'+row({machines:[{op:a,c:0}],max:95})+'<div class="cap">&#9664;&#9664; backwards</div>'+row({dir:'b',machines:[{op:inv(a),c:0}],max:95})};
+    });
+    s.push({cap:'Two machines? Undo them in the <b>reverse order</b>: the last machine is undone first.',h:'<div class="cap">forwards &#9654;&#9654;</div>'+row({machines:[{op:op('*',4),c:0},{op:op('+',6),c:1}],max:95})+'<div class="cap">&#9664;&#9664; backwards</div>'+row({dir:'b',machines:[{op:op('/',4),c:0},{op:op('-',6),c:1}],max:95})});
+    return s;
+  }
+  var ops=[op('*',4),op('+',6),op('/',2)],vals=[3,12,18,9],fm=ops.map(function(p,i){return {op:p,c:i};});
+  if(id==='chain'){
+    return [
+      {cap:'Start with <b>3</b> and send it through the machines <b>in order</b>.',h:row({machines:fm,bubbles:[B(3),B(null,'hid'),B(null,'hid'),B(null,'hid')],max:90})},
+      {cap:'3 × 4 = <b>12</b>',h:row({machines:fm,bubbles:[B(3),B(12,'ok'),B(null,'hid'),B(null,'hid')],max:90})},
+      {cap:'12 + 6 = <b>18</b>',h:row({machines:fm,bubbles:[B(3),B(12,'ok'),B(18,'ok'),B(null,'hid')],max:90})},
+      {cap:'18 ÷ 2 = <b>9</b>. The answer is 9!',h:row({machines:fm,bubbles:[B(3),B(12,'ok'),B(18,'ok'),B(9,'ok')],max:90})}
+    ];
+  }
+  // back
+  var vs=[2,8,14,7];
+  function two(known,showBack){
+    var fb=[],bb=[];
+    for(var i=0;i<4;i++){
+      if(i===3){fb.push(B(7));bb.push(B(7));}
+      else{fb.push(known[i]?B(vs[i],'ok'):B(null,'hid'));bb.push(known[i]?B(vs[i],'ok'):B(null,'hid'));}
+    }
+    var h='<div class="cap">forwards &#9654;&#9654;</div>'+row({machines:fm,bubbles:fb,max:82});
+    if(showBack)h+='<div class="cap">&#9664;&#9664; backwards</div>'+row({dir:'b',machines:ops.map(function(p,i){return {op:inv(p),c:i};}),bubbles:bb,max:82});
+    return h;
+  }
+  return [
+    {cap:'I think of a number, multiply it by 4, add 6, then divide it by 2. My answer is <b>7</b>. What was my number?',h:two([false,false,false],false)},
+    {cap:'Run the machines <b>backwards</b>, last one first, using each <b>opposite</b>: ÷ 2 becomes × 2, + 6 becomes − 6, × 4 becomes ÷ 4.',h:two([false,false,false],true)},
+    {cap:'Start at 7 and undo ÷ 2: 7 × 2 = <b>14</b>',h:two([false,false,true],true)},
+    {cap:'Undo + 6: 14 − 6 = <b>8</b>',h:two([false,true,true],true)},
+    {cap:'Undo × 4: 8 ÷ 4 = <b>2</b>. My number was 2!',h:two([true,true,true],true)},
+    {cap:'Check by going forwards: 2 × 4 = 8, 8 + 6 = 14, 14 ÷ 2 = 7 ✓',h:two([true,true,true],true)}
+  ];
+}
+var D={steps:[],i:0};
+function demoDraw(){
+  var st=D.steps[D.i];
+  $('#demoCap').innerHTML='<div>'+st.cap+'</div>';
+  $('#demoView').innerHTML=st.h;
+  var b=document.querySelector('[data-demo="next"]');
+  b.textContent=D.i===D.steps.length-1?'Done ✓':'Next ▶';
+  document.querySelector('[data-demo="prev"]').style.visibility=D.i===0?'hidden':'visible';
+  fit();
+}
+function demoOpen(){D.steps=demoSteps(tid());D.i=0;$('#demo').classList.add('show');demoDraw();}
+function demoClose(){$('#demo').classList.remove('show');}
+function demoOpenQ(){return $('#demo').classList.contains('show');}
+
+/* ================= events ================= */
+document.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.tab!==undefined){setTab(+b.dataset.tab);}
+  else if(b.dataset.lv!==undefined){setLevel(+b.dataset.lv);}
+  else if(b.dataset.key!==undefined){key(b.dataset.key);}
+  else if(b.dataset.i!==undefined){choose(+b.dataset.i);}
+  else if(b.dataset.act==='next'){next();}
+  else if(b.dataset.act==='reveal'){reveal();}
+  else if(b.dataset.act==='demo'){demoOpen();}
+  else if(b.dataset.act==='motion'){still=!still;try{localStorage.setItem('ff_still',still?'1':'0');}catch(err){}applyMotion();}
+  else if(b.dataset.demo==='next'){if(D.i>=D.steps.length-1)demoClose();else{D.i++;demoDraw();}}
+  else if(b.dataset.demo==='prev'){if(D.i>0){D.i--;demoDraw();}}
+  else if(b.dataset.demo==='close'){demoClose();}
+});
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(demoOpenQ()){
+    if(e.key==='Escape')demoClose();
+    else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault();if(D.i>=D.steps.length-1)demoClose();else{D.i++;demoDraw();}}
+    else if(e.key==='ArrowLeft'){if(D.i>0){D.i--;demoDraw();}}
+    return;
+  }
+  if(e.key>='0'&&e.key<='9'){key(e.key);}
+  else if(e.key==='Backspace'){e.preventDefault();key('del');}
+  else if(e.key==='Enter'){e.preventDefault();if(S.done)next();else key('ok');}
+});
+var still=false;
+try{var sv=localStorage.getItem('ff_still');if(sv!==null)still=sv==='1';else if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)still=true;}catch(err){}
+function applyMotion(){document.body.classList.toggle('still',still);var m=$('#motion');m.textContent=still?'Animation: OFF':'Animation: ON';m.setAttribute('aria-pressed',String(!still));}
+applyMotion();
+var padHTML='';
+['7','8','9','4','5','6','1','2','3'].forEach(function(k){padHTML+='<button class="key" data-key="'+k+'" aria-label="'+k+'">'+k+'</button>';});
+padHTML+='<button class="key del" data-key="del" aria-label="Delete">DEL</button><button class="key" data-key="0" aria-label="0">0</button><button class="key ok" data-key="ok" aria-label="Check answer">OK</button>';
+$('#pad').innerHTML=padHTML;
+var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(fit,60);});
+
+window.FF={S:S,TABS:TABS,key:key,submit:submit,choose:choose,next:next,reveal:reveal,setTab:setTab,setLevel:setLevel,numTarget:numTarget,curStep:curStep,
+  op:op,apply:apply,inv:inv,lab:lab,same:same,traceBack:traceBack,genSingle:genSingle,genFunc:genFunc,genOpp:genOpp,genChain:genChain,
+  demoSteps:demoSteps,demoOpen:demoOpen,demoDraw:demoDraw,D:D,SC:SC,CC:CC,sentence:sentence};
+newQ();draw();
+})();
+</script>
+</body>
+</html>

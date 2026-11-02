@@ -27,6 +27,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Fractal Explorer | `fractal-explorer/` |
 | Fraction Blaster | `fraction-blaster/` |
 | Fraction Fight Night | `fraction-fight-night/` |
+| Funky Functions | `funky-functions/` |
 | Goods Inwards | `goods-inwards/` |
 | Hanoi | `hanoi/` |
 | HCF and LCM with Venn Diagrams | `hcf-lcm-venn/` |
