@@ -51,6 +51,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Pentomino Explorer | `pentomino-explorer/` |
 | Pi-Rate Pete’s Circle Tour | `pi-rate-pete/` |
 | Potato | `potato/` |
+| Prime Factor Circles | `prime-factor-circles/` |
 | Prime Products | `prime-products/` |
 | Prime Quest | `prime-quest/` |
 | Puzzle of the Day | `puzzle-of-the-day/` |

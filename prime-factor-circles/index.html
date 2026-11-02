@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prime Factor Circles</title>
+<style>
+  :root { --ink:#1d2b3a; --bg:#f4f1ea; --card:#fff; --line:#d8d2c4; --accent:#1d4e89; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background:var(--bg); color:var(--ink); }
+  header { text-align:center; padding:14px 12px 4px; }
+  h1 { margin:0; font-size:1.6rem; }
+  .sub { margin:4px 0 0; color:#5a6676; font-size:.95rem; }
+  .controls { display:flex; justify-content:center; align-items:center; gap:10px; padding:10px; flex-wrap:wrap; }
+  button { font:inherit; font-size:1.1rem; border:2px solid var(--accent); background:#fff; color:var(--accent);
+           border-radius:8px; padding:6px 14px; cursor:pointer; }
+  button:hover:not(:disabled) { background:var(--accent); color:#fff; }
+  button:disabled { opacity:.35; cursor:default; }
+  input[type=number] { font:inherit; font-size:1.8rem; width:5.2em; text-align:center; padding:4px;
+           border:2px solid var(--accent); border-radius:8px; }
+  .lines { text-align:center; padding:2px 12px 6px; }
+  .factors { font-size:1.9rem; font-weight:600; letter-spacing:.02em; }
+  .build { font-size:1.4rem; margin-top:4px; }
+  .build span.off { opacity:.25; }
+  .build span.on { font-weight:700; }
+  .build small { font-size:.85rem; color:#5a6676; font-weight:400; margin-right:6px; }
+  .stage { display:flex; justify-content:center; align-items:center; gap:10px; padding:4px 10px; flex-wrap:wrap; }
+  .stage .lab { font-size:.95rem; color:#5a6676; }
+  .wrap { display:flex; justify-content:center; padding:6px 10px 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+          width:min(92vw, 78vh, 760px); aspect-ratio:1; padding:6px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  svg { width:100%; height:100%; display:block; }
+  .legend { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; padding:0 12px 18px; font-size:1rem; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:16px; height:16px; border-radius:50%; display:inline-block; border:2px solid rgba(0,0,0,.25); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Prime Factor Circles</h1>
+  <p class="sub">Choose a number from 2 to 100</p>
+</header>
+
+<div class="controls">
+  <button id="prev" aria-label="Previous number">&minus;</button>
+  <input id="num" type="number" min="2" max="100" value="40" inputmode="numeric" aria-label="Number">
+  <button id="next" aria-label="Next number">+</button>
+</div>
+
+<div class="lines">
+  <div class="factors" id="factors"></div>
+  <div class="build" id="build"></div>
+</div>
+
+<div class="stage">
+  <button id="less">&#9664; Fewer</button>
+  <span class="lab" id="stageLab"></span>
+  <button id="more">More &#9654;</button>
+  <button id="all">Show all</button>
+</div>
+
+<div class="wrap"><div class="card"><svg id="svg" viewBox="0 0 1000 1000" role="img" aria-label="Prime factor diagram"></svg></div></div>
+<div class="legend" id="legend"></div>
+
+<script>
+(function () {
+  var numEl = document.getElementById('num');
+  var svg = document.getElementById('svg');
+  var stage = 0;          // number of factors currently used in the diagram
+  var current = 40;
+
+  var fixed = { 2:'#e63946', 3:'#2a9d8f', 5:'#f4a300', 7:'#7b4fb8', 11:'#2f80ed', 13:'#e86aa6' };
+  function colour(p) {
+    if (fixed[p]) return fixed[p];
+    var hue = (p * 137.508) % 360;
+    return 'hsl(' + hue.toFixed(0) + ',62%,46%)';
+  }
+
+  function factorise(n) {
+    var out = [], d = 2;
+    while (n > 1) {
+      while (n % d === 0) { out.push(d); n /= d; }
+      d++;
+    }
+    return out; // ascending
+  }
+
+  function f2(x) { return x.toFixed(2); }
+
+  function render() {
+    var asc = factorise(current);
+    var desc = asc.slice().reverse();
+    var k = desc.length;
+    if (stage < 1) stage = 1;
+    if (stage > k) stage = k;
+
+    // text lines
+    document.getElementById('factors').textContent =
+      current + ' = ' + (k === 1 ? current + ' (prime)' : asc.join(' \u00d7 '));
+    var bl = '<small>Built up as:</small>';
+    bl += desc.map(function (p, i) {
+      return '<span class="' + (i < stage ? 'on' : 'off') + '" style="color:' + (i < stage ? colour(p) : 'inherit') + '">' + p + '</span>';
+    }).join(' \u00d7 ');
+    document.getElementById('build').innerHTML = bl;
+
+    document.getElementById('stageLab').textContent = 'Factor ' + stage + ' of ' + k;
+    document.getElementById('less').disabled = stage <= 1;
+    document.getElementById('more').disabled = stage >= k;
+    document.getElementById('all').disabled = stage >= k;
+
+    // orientation for each level: 2s alternate vertical / horizontal
+    var f = desc.slice(0, stage);
+    var twoSeen = 0;
+    var base = f.map(function (p) {
+      if (p === 2) { var a = (twoSeen % 2 === 0) ? -90 : 0; twoSeen++; return a; }
+      return -90; // vertex at the top
+    });
+
+    var parts = [];
+    function draw(level, cx, cy, R) {
+      if (level >= f.length) return;
+      var p = f[level];
+      var s = Math.sin(Math.PI / p);
+      var d = R / (1 + s);
+      var r = d * s * 0.94;
+      var leaf = (level === f.length - 1);
+      var col = colour(p);
+      for (var j = 0; j < p; j++) {
+        var ang = (base[level] + 360 * j / p) * Math.PI / 180;
+        var x = cx + d * Math.cos(ang), y = cy + d * Math.sin(ang);
+        if (leaf) {
+          parts.push('<circle cx="' + f2(x) + '" cy="' + f2(y) + '" r="' + f2(r) + '" fill="' + col + '" stroke="rgba(0,0,0,.3)" stroke-width="1.5"/>');
+        } else {
+          parts.push('<circle cx="' + f2(x) + '" cy="' + f2(y) + '" r="' + f2(r) + '" fill="' + col + '" fill-opacity=".22" stroke="' + col + '" stroke-width="2.5"/>');
+          draw(level + 1, x, y, r);
+        }
+      }
+    }
+    draw(0, 500, 500, 485);
+    svg.innerHTML = parts.join('');
+
+    // legend
+    var seen = {}, lg = [];
+    desc.forEach(function (p) {
+      if (!seen[p]) { seen[p] = 1; lg.push('<span><i style="background:' + colour(p) + '"></i>' + p + '</span>'); }
+    });
+    document.getElementById('legend').innerHTML = lg.join('');
+  }
+
+  function setNumber(n, showAll) {
+    n = Math.round(Number(n));
+    if (!isFinite(n)) return;
+    if (n < 2) n = 2;
+    if (n > 100) n = 100;
+    current = n;
+    numEl.value = n;
+    stage = showAll === false ? 1 : 999;
+    render();
+  }
+
+  numEl.addEventListener('input', function () {
+    var v = Number(numEl.value);
+    if (numEl.value !== '' && v >= 2 && v <= 100 && Math.floor(v) === v) setNumber(v);
+  });
+  numEl.addEventListener('change', function () { setNumber(numEl.value); });
+  document.getElementById('prev').onclick = function () { setNumber(current - 1); };
+  document.getElementById('next').onclick = function () { setNumber(current + 1); };
+  document.getElementById('less').onclick = function () { stage--; render(); };
+  document.getElementById('more').onclick = function () { stage++; render(); };
+  document.getElementById('all').onclick = function () { stage = 999; render(); };
+
+  setNumber(40);
+})();
+</script>
+</body>
+</html>
