@@ -75,8 +75,8 @@ h1{margin:0;font-size:clamp(30px,5.2vw,58px);letter-spacing:.08em;text-transform
 .chartbox{position:relative;height:clamp(320px,54vh,600px);border:1px solid hsl(var(--h) 40% 55%);background:hsl(var(--h) 30% 98% / .7);border-radius:4px;overflow:hidden}
 .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.13;pointer-events:none}
 .wm svg{height:96%;width:auto}
-#cv,#cv2,#cv3{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y;cursor:crosshair}
-#cv.nocross,#cv2.nocross,#cv3.nocross{cursor:default}
+#cv,#cv2,#cv2b,#cv3{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y;cursor:crosshair}
+#cv.nocross,#cv2.nocross,#cv2b.nocross,#cv3.nocross{cursor:default}
 /* summary */
 .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dotted hsl(var(--h) 35% 60%);font-size:15px}
 .row .v{font:700 17px "Courier New",monospace;text-align:right;white-space:nowrap}
@@ -229,7 +229,8 @@ dialog label.lab{font-size:13px;letter-spacing:.1em;text-transform:uppercase;fon
         <label class="sw"><input type="checkbox" id="tCross2" class="xc" checked><i></i>Crosshair</label>
         <div class="legend" id="lg2"></div>
       </div>
-      <div class="chartbox" id="box2"><div class="wm"></div><canvas id="cv2"></canvas></div>
+      <div class="chartbox" id="box2" style="height:clamp(230px,36vh,380px)"><div class="wm"></div><canvas id="cv2"></canvas></div>
+      <div class="chartbox" id="box2b" style="height:clamp(170px,24vh,260px);margin-top:10px"><canvas id="cv2b"></canvas></div>
     </section>
   </div>
   <aside>
@@ -623,7 +624,11 @@ function yrsMonths(m){
   return t.join(" ");
 }
 function pick(n,list,maxTicks){for(var k=0;k<list.length;k++)if(n/list[k]<=maxTicks)return list[k];return list[list.length-1];}
+function fillArr(n,v){var a=new Float64Array(n+1);for(var i=0;i<=n;i++)a[i]=v;return a;}
 
+/* cfg: {n, ticks, yMax, xLabel, xText(i), yText(v)?, title?, note?, noteY?, main?,
+         bands:[{top,bot,to?,strips?,sc?,c} | {x,top,base,c}],
+         series:[{a,c,lw,dash,hide} | {segs:[[i0,v0,i1,v1]],c,lw}]} */
 function Chart(cvId,boxId,getCfg,onChange){
   var cv=$(cvId),cx=cv.getContext("2d"),o={cv:cv,hover:null};
   var W=0,H=0,L=76,R=22,T=22,Bm=46,pend=false,last=null;
@@ -647,12 +652,14 @@ function Chart(cvId,boxId,getCfg,onChange){
     if(!c||W<10)return;
     last=c;
     var h=CURR[S.cur].h,pw=W-L-R,ph=H-T-Bm,n=c.n;
-    var sc=niceScale(c.yMax),ymax=sc.max,st=sc.step;
+    var yMin=c.yMin||0,sc=niceScale(c.yMax-yMin),st=sc.step;
+    var y0=yMin>0?Math.floor(yMin/st+1e-9)*st:0,ymax=Math.ceil(c.yMax/st-1e-9)*st;
+    if(ymax<=y0)ymax=y0+st;
     function X(i){return L+i/n*pw;}
-    function Y(v){return T+ph*(1-v/ymax);}
+    function Y(v){return T+ph*(1-(v-y0)/(ymax-y0));}
     cx.clearRect(0,0,W,H);
     cx.font='12px "Courier New",monospace';cx.textBaseline="middle";cx.lineWidth=1;
-    for(var v=0;v<=ymax+st*0.001;v+=st){
+    for(var v=y0;v<=ymax+st*0.001;v+=st){
       var y=Math.round(Y(v))+.5;
       cx.strokeStyle="hsla("+h+",30%,40%,.28)";
       cx.beginPath();cx.moveTo(L,y);cx.lineTo(W-R,y);cx.stroke();
@@ -669,27 +676,55 @@ function Chart(cvId,boxId,getCfg,onChange){
     cx.font='bold 13px Georgia,serif';cx.fillStyle="hsl("+h+",50%,22%)";
     cx.fillText(c.xLabel,L+pw/2,T+ph+26);
     var i;
+    cx.save();cx.beginPath();cx.rect(L,T,pw,ph);cx.clip();
     c.bands.forEach(function(b){
       cx.beginPath();
-      for(i=0;i<=n;i++){var bx=X(i),by=Y(b.top[i]);if(i===0)cx.moveTo(bx,by);else cx.lineTo(bx,by);}
-      for(i=n;i>=0;i--){cx.lineTo(X(i),Y(b.bot?b.bot[i]:0));}
+      if(b.x){
+        var base=b.base||0,bl=b.x.length;
+        for(i=0;i<bl;i++){var qx=X(b.x[i]),qy=Y(b.top[i]);if(i===0)cx.moveTo(qx,qy);else cx.lineTo(qx,qy);}
+        cx.lineTo(X(b.x[bl-1]),Y(base));cx.lineTo(X(b.x[0]),Y(base));
+      }else{
+        var to=(b.to===undefined)?n:Math.min(b.to,n);
+        for(i=0;i<=to;i++){var bx=X(i),by=Y(b.top[i]);if(i===0)cx.moveTo(bx,by);else cx.lineTo(bx,by);}
+        for(i=to;i>=0;i--){cx.lineTo(X(i),Y(b.bot?b.bot[i]:0));}
+      }
       cx.closePath();cx.fillStyle=b.c;cx.fill();
+      if(b.strips&&n<=130){
+        cx.strokeStyle=b.sc;cx.lineWidth=1;cx.beginPath();
+        for(i=1;i<n;i++){var sx=Math.round(X(i))+.5;cx.moveTo(sx,Y(0));cx.lineTo(sx,Y(b.top[i]));}
+        cx.stroke();
+      }
     });
+    if(c.note){
+      cx.font='bold 15px Georgia,serif';cx.fillStyle="hsl("+h+",60%,16%)";cx.textAlign="center";cx.textBaseline="middle";
+      cx.fillText(c.note,L+pw/2,Y(c.noteY));
+    }
     c.series.forEach(function(s){
+      if(s.hide)return;
       cx.beginPath();
-      for(var k=0;k<=n;k++){var sx=X(k),sy=Y(s.a[k]);if(k===0)cx.moveTo(sx,sy);else cx.lineTo(sx,sy);}
+      if(s.segs){s.segs.forEach(function(g){cx.moveTo(X(g[0]),Y(g[1]));cx.lineTo(X(g[2]),Y(g[3]));});}
+      else{for(var k=0;k<=n;k++){var sx2=X(k),sy=Y(s.a[k]);if(k===0)cx.moveTo(sx2,sy);else cx.lineTo(sx2,sy);}}
       cx.setLineDash(s.dash||[]);cx.lineWidth=s.lw||3;cx.lineJoin="round";cx.strokeStyle=s.c;cx.stroke();cx.setLineDash([]);
     });
+    cx.restore();
     cx.strokeStyle="hsl("+h+",55%,28%)";cx.lineWidth=2;cx.strokeRect(L,T,pw,ph);
+    if(c.zoomNote){
+      cx.font='italic 12px Georgia,serif';cx.fillStyle="hsl("+h+",40%,30%)";cx.textAlign="left";cx.textBaseline="bottom";
+      cx.fillText(c.zoomNote.replace("%s",compact(y0)),L+8,T+ph-6);
+    }
+    if(c.title){
+      cx.font='bold 13px Georgia,serif';cx.fillStyle="hsl("+h+",55%,22%)";cx.textAlign="left";cx.textBaseline="top";
+      cx.fillText(c.title,L+10,T+8);
+    }
     var hi=o.hover;
     if(hi!==null&&hi>n)hi=o.hover=n;
     if(S.cross&&hi!==null){
-      var vx=X(hi),main=c.series[c.main||0],vy=Y(main.a[hi]);
+      var vx=X(hi),main=c.series[c.main||0],mv=main.a[hi],vy=Y(mv);
       cx.lineWidth=1.5;cx.strokeStyle="hsla(0,0%,10%,.8)";cx.setLineDash([5,4]);
       cx.beginPath();cx.moveTo(vx,T);cx.lineTo(vx,T+ph);cx.moveTo(L,vy);cx.lineTo(W-R,vy);cx.stroke();cx.setLineDash([]);
-      c.series.forEach(function(s){dot(vx,Y(s.a[hi]),s.c);});
+      c.series.forEach(function(s){if(s.a)dot(vx,Y(s.a[hi]),s.c);});
       cx.font='bold 12px "Courier New",monospace';
-      var yt=m0(main.a[hi]),yw=cx.measureText(yt).width+12;
+      var yt=c.yText?c.yText(mv):m0(mv),yw=cx.measureText(yt).width+12;
       pill(L+4,(vy-26<T)?vy+6:vy-26,yt,yw,"hsl("+h+",60%,22%)");
       var xt=c.xText(hi),xw=cx.measureText(xt).width+12;
       pill(Math.min(Math.max(vx-xw/2,2),W-xw-2),T+ph-24,xt,xw,"hsl(0,0%,15%)");
@@ -710,6 +745,7 @@ function Chart(cvId,boxId,getCfg,onChange){
 }
 
 /* ================= tab 2 : income for life ================= */
+var GREEN="hsl(140,55%,32%)",ORANGE="hsl(24,90%,45%)",BROWN="hsl(350,60%,35%)";
 var inc={};
 function calcInc(){
   var P=S.lump,r=S.grow/100,n=Math.max(1,Math.min(120,S.age1-S.age0));
@@ -723,30 +759,70 @@ function calcInc(){
   }
   inc={n:n,P:P,r:r,ki:ki,si:si,bk:bk,rk:rk,bs:bs,rs:rs};
 }
-function cfg2(){
-  if(!inc.n)return null;
-  var d=inc,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",or="hsl(24,90%,45%)";
+function ageTicks(d){
   var st=pick(d.n,[1,2,5,10,20],18),ticks=[];
   for(var i=0;i<=d.n;i+=st)ticks.push({i:i,label:String(S.age0+i)});
   if(d.n%st)ticks.push({i:d.n,label:String(S.age0+d.n)});
-  var series=[{a:d.bk,c:dk,lw:3.5},{a:d.rk,c:dk,lw:2.5,dash:[9,6]}];
-  var ym=Math.max(d.rk[d.n],d.P);
-  if(S.spend){series.push({a:d.bs,c:or,lw:3.5},{a:d.rs,c:or,lw:2.5,dash:[9,6]});ym=Math.max(ym,d.rs[d.n]);}
-  return {n:d.n,series:series,bands:[{top:d.bk,bot:null,c:"hsla("+h+",60%,45%,.16)"}],ticks:ticks,yMax:ym,xLabel:"Age",
-    xText:function(i){return "Age "+(S.age0+i);},main:0};
+  return ticks;
 }
-var ch2=Chart("cv2","box2",cfg2,function(){showRd2();});
+/* upper chart: the sawtooth balance */
+function cfg2(){
+  if(!inc.n)return null;
+  var d=inc,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",P=d.P,ki=d.ki,n=d.n,t;
+  var ramps=[],drops=[],xs=[0],ys=[P],peak=P+ki;
+  for(t=1;t<=n;t++){
+    ramps.push([t-1,P,t,P+ki]);drops.push([t,P+ki,t,P]);
+    xs.push(t,t);ys.push(P+ki,P);
+  }
+  var series=[{a:d.bk,c:dk,lw:0,hide:true},{segs:ramps,c:GREEN,lw:2.5},{segs:drops,c:ORANGE,lw:2.5}];
+  if(S.spend){
+    var sg=[];
+    for(t=1;t<=n;t++){
+      var b0=d.bs[t-1],pre=b0*(1+d.r);
+      sg.push([t-1,b0,t,pre]);sg.push([t,pre,t,d.bs[t]]);
+      if(pre>peak)peak=pre;
+    }
+    series.push({segs:sg,c:BROWN,lw:2});
+    series.push({a:d.bs,c:BROWN,lw:0,hide:true});
+  }
+  var zoom=!S.spend&&ki>0&&P>2*ki;
+  return {n:n,ticks:ageTicks(d),yMax:zoom?P+1.6*ki:peak*1.12,yMin:zoom?P-2*ki:0,
+    zoomNote:zoom?"Zoomed in: this axis starts at %s, not zero":null,
+    xLabel:"Age",title:"Balance in the account",main:0,
+    bands:[{x:xs,top:ys,base:P,c:"hsla(140,55%,40%,.30)"},{top:fillArr(n,P),bot:null,c:"hsla("+h+",60%,45%,.14)"}],
+    series:series,xText:function(i){return "Age "+(S.age0+i);}};
+}
+/* lower chart: income as a rectangle whose area is the total income */
+function cfg2b(){
+  if(!inc.n)return null;
+  var d=inc,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",n=d.n;
+  var kiA=fillArr(n,d.ki),series=[{a:kiA,c:dk,lw:3}];
+  if(S.spend)series.push({a:fillArr(n,d.si),c:ORANGE,lw:2.5,dash:[9,6]});
+  var bands=[{top:kiA,bot:null,c:"hsla("+h+",60%,45%,.18)",strips:true,sc:"hsla("+h+",40%,30%,.22)"}];
+  var hv=ch2b.hover;
+  if(S.cross&&hv!==null&&hv>0)bands.push({top:kiA,bot:null,to:Math.min(hv,n),c:"hsla("+h+",70%,35%,.35)"});
+  return {n:n,ticks:ageTicks(d),yMax:Math.max(d.ki,S.spend?d.si:0)*1.3,xLabel:"Age",main:0,
+    title:"Income taken each year (one strip per year)",
+    note:"Area = total income = "+m0(d.ki*n),noteY:d.ki*0.5,
+    bands:bands,series:series,
+    xText:function(i){return "Age "+(S.age0+i);},yText:function(v){return m0(v)+" a year";}};
+}
+var ch2=Chart("cv2","box2",cfg2,function(){ch2b.hover=ch2.hover;showRd2();ch2b.sched();});
+var ch2b=Chart("cv2b","box2b",cfg2b,function(){ch2.hover=ch2b.hover;showRd2();ch2.sched();});
 function showRd2(){
   var b=$("rd2"),d=inc,i=ch2.hover;
   if(!S.cross){b.innerHTML='<div class="hint">Crosshair is switched off.</div>';return;}
-  if(i===null||!d.n){b.innerHTML='<div class="hint">Move across the graph (or tap it) to read off values at any age.</div>';return;}
+  if(i===null||!d.n){b.innerHTML='<div class="hint">Move across either graph (or tap it) to read off values at any age.</div>';return;}
   if(i>d.n)i=d.n;
-  var h='<div class="when">Age '+(S.age0+i)+'</div>'+rw("Balance",m0(d.bk[i]))+rw("Income received so far",m0(d.rk[i]),!S.spend);
-  if(S.spend)h+=rw("Balance (using up capital)",m0(d.bs[i]))+rw("Income received (using up)",m0(d.rs[i]),true);
+  var h='<div class="when">Age '+(S.age0+i)+'</div>'+
+    rw("Balance after income taken",m0(d.bk[i]))+
+    rw("Income each year",m0(d.ki))+
+    rw("Income so far (area of strips)",m0(d.rk[i]),!S.spend);
+  if(S.spend)h+=rw("Balance (using up capital)",m0(d.bs[i]))+rw("Income so far (using up)",m0(d.rs[i]),true);
   b.innerHTML=h;
 }
 function updateInc(){
-  var d=inc,P=d.P,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",or="hsl(24,90%,45%)";
+  var d=inc,P=d.P;
   $("iLump").textContent=m0(P);
   $("iRate").textContent=(+S.grow.toFixed(3))+"%";
   $("iPeriod").textContent="age "+S.age0+" to "+(S.age0+d.n)+" ("+d.n+" years)";
@@ -759,10 +835,10 @@ function updateInc(){
   $("iSpend").textContent=m0(d.si);
   $("iExtra").textContent=m0(d.si-d.ki);
   $("iSpendCap").textContent=m0(0);
-  var lg='<span><em style="border-color:'+dk+'"></em>Balance (keeping the capital)</span><span><em style="border-top-style:dashed;border-color:'+dk+'"></em>Total income received</span>';
-  if(S.spend)lg+='<span><em style="border-color:'+or+'"></em>Balance (using up the capital)</span><span><em style="border-top-style:dashed;border-color:'+or+'"></em>Income received</span>';
+  var lg='<span><em style="border-color:'+GREEN+'"></em>Interest added during the year</span><span><em style="border-color:'+ORANGE+'"></em>Income taken at year end</span>';
+  if(S.spend)lg+='<span><em style="border-color:'+BROWN+'"></em>Balance, using up the capital</span><span><em style="border-top-style:dashed;border-color:'+ORANGE+'"></em>Income, using up the capital</span>';
   $("lg2").innerHTML=lg;
-  showRd2();ch2.sched();
+  showRd2();ch2.sched();ch2b.sched();
 }
 function getIncInputs(){
   S.lump=num($("lump"),0,1e12,0);
@@ -799,8 +875,9 @@ function calcMort(){
 function cfg3(){
   if(!mort.n)return null;
   var d=mort,h=CURR[S.cur].h;
-  var yrs=d.n/12,st=pick(yrs,[1,2,5,10],14),ticks=[];
-  for(var y=0;y<=yrs+1e-9;y+=st)ticks.push({i:y*12,label:String(y)});
+  var yrs=d.n/12,st=pick(yrs,[1,5,10],14),ticks=[],y;
+  for(y=0;y<=yrs+1e-9;y+=st)ticks.push({i:y*12,label:String(y)});
+  if(yrs-(y-st)>=st*0.4)ticks.push({i:d.n,label:String(+yrs.toFixed(1))});
   return {n:d.n,ticks:ticks,yMax:d.tot[d.n],xLabel:"Years",
     series:[{a:d.bal,c:"hsl("+h+",70%,25%)",lw:3.5},{a:d.cap,c:"hsl("+h+",55%,48%)",lw:2.5},{a:d.tot,c:"hsl(24,90%,45%)",lw:3.5}],
     bands:[{top:d.tot,bot:d.cap,c:"hsla(0,70%,48%,.28)"},{top:d.cap,bot:null,c:"hsla("+h+",60%,45%,.14)"}],
@@ -849,9 +926,9 @@ function recalcMort(){calcMort();updateMort();}
 function setCross(on){
   S.cross=on;
   document.querySelectorAll(".xc").forEach(function(e){e.checked=on;});
-  if(!on){hover=null;ch2.hover=null;ch3.hover=null;}
-  [cv,ch2.cv,ch3.cv].forEach(function(c){c.classList.toggle("nocross",!on);});
-  save();updateRead();showRd2();showRd3();schedule();ch2.sched();ch3.sched();
+  if(!on){hover=null;ch2.hover=null;ch2b.hover=null;ch3.hover=null;}
+  [cv,ch2.cv,ch2b.cv,ch3.cv].forEach(function(c){c.classList.toggle("nocross",!on);});
+  save();updateRead();showRd2();showRd3();schedule();ch2.sched();ch2b.sched();ch3.sched();
 }
 document.querySelectorAll(".xc").forEach(function(el){el.addEventListener("change",function(){setCross(this.checked);});});
 function refreshAll(){refresh();recalcInc();recalcMort();}
@@ -865,14 +942,14 @@ function showTab(t){
     var on=+b.getAttribute("data-t")===t;
     b.classList.toggle("on",on);b.setAttribute("aria-selected",on?"true":"false");
   });
-  requestAnimationFrame(function(){resize();ch2.size();ch3.size();});
+  requestAnimationFrame(function(){resize();ch2.size();ch2b.size();ch3.size();});
 }
 function initTabs(){
   $("lump").value=S.lump;$("grow").value=S.grow;$("age0").value=S.age0;$("age1").value=S.age1;
   $("loan").value=S.loan;$("mrate").value=S.mrate;$("term").value=S.term;
   $("tSpend").checked=S.spend;
   document.querySelectorAll(".xc").forEach(function(e){e.checked=S.cross;});
-  [ch2.cv,ch3.cv].forEach(function(c){c.classList.toggle("nocross",!S.cross);});
+  [ch2.cv,ch2b.cv,ch3.cv].forEach(function(c){c.classList.toggle("nocross",!S.cross);});
   document.querySelectorAll(".tab").forEach(function(b){
     b.addEventListener("click",function(){showTab(+this.getAttribute("data-t"));});
   });
