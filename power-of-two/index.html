@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Power of Two</title>
+<style>
+:root{
+  --bg:#f4f1ea; --ink:#1f2a37; --muted:#667085; --card:#ffffff; --line:#d9d4c7;
+  --navy:#1d3557; --gold:#e0a100; --goldlight:#fff3c4; --green:#2e6b4f; --cream:#f3e6c4;
+  --dark:#7b5e3b; --light:#ecd9b0; --red:#b42318;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+header{background:var(--navy);color:#fff;padding:14px 20px;text-align:center}
+header h1{margin:0;font-size:1.7rem;letter-spacing:.5px}
+header p{margin:4px 0 0;opacity:.85;font-size:1rem}
+.tabs{display:flex;justify-content:center;gap:8px;margin:16px 12px 0}
+.tabs button{font-size:1.15rem;padding:10px 26px;border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:10px 10px 0 0;cursor:pointer;font-weight:600}
+.tabs button.active{background:var(--navy);color:#fff}
+.panel{display:none;max-width:1150px;margin:0 auto;padding:16px}
+.panel.active{display:block}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.controls button,.controls select{font-size:1rem;padding:8px 14px;border-radius:8px;border:1px solid var(--navy);background:#fff;color:var(--navy);cursor:pointer;font-weight:600}
+.controls button.primary{background:var(--navy);color:#fff}
+.controls button:disabled{opacity:.4;cursor:default}
+.slider{width:100%;margin:2px 0 10px}
+/* calendar */
+.calhead{background:#b42318;color:#fff;text-align:center;font-size:1.5rem;font-weight:700;padding:8px;border-radius:10px 10px 0 0;letter-spacing:2px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;border:2px solid #b42318;border-top:none;padding:6px;border-radius:0 0 10px 10px;background:#fffdf8}
+.day{min-height:68px;border:1px solid var(--line);border-radius:6px;padding:3px 5px;background:#fff;opacity:.45;display:flex;flex-direction:column;justify-content:space-between;transition:all .25s}
+.day .n{font-size:.85rem;font-weight:700;color:var(--muted)}
+.day .amt{font-size:.95rem;font-weight:700;text-align:right;color:var(--navy)}
+.day.on{opacity:1;background:#eef5ff}
+.day.cur{outline:3px solid var(--gold);background:var(--goldlight);transform:scale(1.04)}
+.day.mil{background:#fff3c4;border-color:var(--gold)}
+/* accumulator */
+.acc h2{margin:0 0 6px;font-size:1.1rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.big{font-size:2.3rem;font-weight:800;color:var(--navy);word-break:break-word;line-height:1.1}
+.sub{color:var(--muted);margin:4px 0 12px;font-size:1rem}
+.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:1.05rem}
+.row b{text-align:right}
+.bar{height:22px;background:#e6e2d6;border-radius:11px;overflow:hidden;margin:6px 0 4px}
+.bar>div{height:100%;width:0;background:linear-gradient(90deg,#4f8f6f,#e0a100);transition:width .3s}
+.barlabel{font-size:.95rem;color:var(--muted)}
+.alert{display:none;margin:12px 0 0;padding:12px 14px;border-radius:10px;background:#fff3c4;border:3px solid var(--gold);font-size:1.15rem;font-weight:700;color:#7a4b00;animation:pulse 1.2s infinite}
+.alert.show{display:block}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+.fact{margin-top:12px;font-size:.98rem;color:var(--ink);background:#f7f5ee;border-radius:8px;padding:8px 10px}
+/* chess */
+.boardwrap{display:flex;gap:6px}
+.ranks{display:grid;grid-template-rows:repeat(8,1fr);font-size:.8rem;color:var(--muted);font-weight:700;align-items:center}
+.files{display:grid;grid-template-columns:repeat(8,1fr);font-size:.8rem;color:var(--muted);font-weight:700;text-align:center;margin-top:3px}
+.board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border:4px solid #4a3520;aspect-ratio:1/1;width:100%;max-width:620px}
+.sq{position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4%;font-weight:700;font-size:clamp(.6rem,1.9vw,1rem);color:#2b1d0e;transition:background .2s}
+.sq.dk{background:var(--dark);color:#fff}
+.sq.lt{background:var(--light)}
+.sq .num{position:absolute;top:2px;left:4px;font-size:clamp(.5rem,1.3vw,.7rem);opacity:.75;font-weight:600}
+.sq .g{opacity:0}
+.sq.on .g{opacity:1}
+.sq.on.lt{background:var(--cream)}
+.sq.on.dk{background:#a37b3c}
+.sq.cur{outline:4px solid var(--gold);outline-offset:-4px;z-index:2}
+.sq.cur .g{font-size:1.15em}
+.foot{max-width:1150px;margin:0 auto;padding:6px 16px 24px;color:var(--muted);font-size:.85rem;text-align:center}
+.legend{font-size:.95rem;margin-bottom:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>The Power of Two</h1>
+  <p>Start tiny. Double every time. See where you end up.</p>
+</header>
+
+<div class="tabs" role="tablist">
+  <button id="tab1btn" class="active" role="tab" aria-selected="true">📅 The January Savings Plan</button>
+  <button id="tab2btn" role="tab" aria-selected="false">♟ Rice on the Chessboard</button>
+</div>
+
+<!-- TAB 1 -->
+<section id="p1" class="panel active">
+  <div class="layout">
+    <div class="card">
+      <div class="controls">
+        <button id="c-back">◀ Back</button>
+        <button id="c-next" class="primary">Next day ▶</button>
+        <button id="c-auto">▶ Auto</button>
+        <select id="c-speed" title="Speed"><option value="1400">Slow</option><option value="700" selected>Medium</option><option value="300">Fast</option></select>
+        <button id="c-all">Show all</button>
+        <button id="c-reset">Reset</button>
+      </div>
+      <div class="calhead">JANUARY</div>
+      <div class="cal" id="cal"></div>
+    </div>
+    <div class="card acc">
+      <h2>💷 Savings accumulator</h2>
+      <div class="big" id="a-total">£0.00</div>
+      <div class="sub" id="a-day">Press “Next day” to begin</div>
+      <div class="row"><span>Put in today</span><b id="a-dep">–</b></div>
+      <div class="row"><span>Total put in before today</span><b id="a-prev">–</b></div>
+      <div style="margin-top:10px"><div class="barlabel">Progress to £1,000,000</div>
+        <div class="bar"><div id="a-bar"></div></div>
+        <div class="barlabel" id="a-barlabel">0%</div></div>
+      <div class="alert" id="a-alert"></div>
+      <div class="fact" id="a-fact">Each day’s deposit is double the day before. Doubling really does add up!</div>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 2 -->
+<section id="p2" class="panel">
+  <div class="layout">
+    <div class="card">
+      <div class="legend">One grain of rice on the first square, two on the second, four on the third… Numbers show the grains on each square.</div>
+      <div class="controls">
+        <button id="r-back">◀ Back</button>
+        <button id="r-next" class="primary">Next square ▶</button>
+        <button id="r-auto">▶ Auto</button>
+        <select id="r-speed" title="Speed"><option value="800">Slow</option><option value="400" selected>Medium</option><option value="150">Fast</option></select>
+        <button id="r-all">Show all</button>
+        <button id="r-reset">Reset</button>
+      </div>
+      <div class="boardwrap">
+        <div class="ranks" id="ranks"></div>
+        <div style="flex:1;min-width:0"><div class="board" id="board"></div><div class="files" id="files"></div></div>
+      </div>
+    </div>
+    <div class="card acc">
+      <h2>🌾 Rice accumulator</h2>
+      <div class="big" id="b-total">0</div>
+      <div class="sub" id="b-words">grains on the board so far</div>
+      <div class="row"><span>On this square</span><b id="b-sq">–</b></div>
+      <div class="row"><span>Mass on this square</span><b id="b-sqmass">–</b></div>
+      <div class="row"><span>Mass on the whole board</span><b id="b-mass">0</b></div>
+      <div style="margin-top:10px"><div class="barlabel">Compared with one year of world rice production</div>
+        <div class="bar"><div id="b-bar"></div></div>
+        <div class="barlabel" id="b-barlabel">0%</div></div>
+      <div class="alert" id="b-alert"></div>
+      <div class="fact">Every square holds <b>one more grain</b> than all the squares before it put together.</div>
+    </div>
+  </div>
+</section>
+
+<div class="foot">Assumptions: one grain of rice ≈ 25 mg; world rice production ≈ 520 million tonnes a year (approximate, milled rice).</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+
+/* ---------- Tabs ---------- */
+function showTab(n){
+  $("p1").classList.toggle("active",n===1);
+  $("p2").classList.toggle("active",n===2);
+  $("tab1btn").classList.toggle("active",n===1);
+  $("tab2btn").classList.toggle("active",n===2);
+  $("tab1btn").setAttribute("aria-selected",n===1);
+  $("tab2btn").setAttribute("aria-selected",n===2);
+  stop1();stop2();
+}
+$("tab1btn").onclick=()=>showTab(1);
+$("tab2btn").onclick=()=>showTab(2);
+
+const strip=s=>s.replace(/\.0$/,"");
+const gbp=p=>p<100?p+"p":"£"+(p/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+function cellMoney(p){
+  if(p<100)return p+"p";
+  if(p<100000)return "£"+strip((p/100).toFixed(2).replace(/0$/,"")).replace(/\.$/,"");
+  if(p<100000000)return "£"+strip((p/1e5).toFixed(1))+"k";
+  return "£"+strip((p/1e8).toFixed(1))+"m";
+}
+
+/* ---------- TAB 1: January ---------- */
+const MIL=100000000; // £1,000,000 in pence
+let day=0,t1=null;
+const cal=$("cal");
+for(let d=1;d<=31;d++){
+  const el=document.createElement("div");
+  el.className="day";el.id="d"+d;
+  el.innerHTML='<span class="n">'+d+'</span><span class="amt"></span>';
+  cal.appendChild(el);
+}
+let milDay=0;for(let d=1;d<=31;d++){if(Math.pow(2,d)-1>=MIL){milDay=d;break;}}
+const dep=d=>Math.pow(2,d-1), tot=d=>Math.pow(2,d)-1;
+
+function render1(){
+  for(let d=1;d<=31;d++){
+    const el=$("d"+d);
+    el.classList.toggle("on",d<=day);
+    el.classList.toggle("cur",d===day);
+    el.classList.toggle("mil",d>=milDay&&d<=day);
+    el.querySelector(".amt").textContent=d<=day?"+"+cellMoney(dep(d)):"";
+  }
+  const T=day?tot(day):0;
+  $("a-total").textContent=day?gbp(T):"£0.00";
+  $("a-day").textContent=day?("End of "+day+" January"):"Press “Next day” to begin";
+  $("a-dep").textContent=day?gbp(dep(day)):"–";
+  $("a-prev").textContent=day?gbp(tot(day-1)):"–";
+  const pct=Math.min(100,T/MIL*100);
+  $("a-bar").style.width=pct+"%";
+  $("a-barlabel").textContent=T>=MIL?("That’s "+strip((T/MIL).toFixed(1))+" × £1 million!"):(pct<1?pct.toFixed(3):pct.toFixed(1))+"% of £1,000,000";
+  const al=$("a-alert");
+  if(day>=milDay){
+    al.classList.add("show");
+    al.textContent="🎉 £1 million passed on "+milDay+" January! Total: "+gbp(tot(milDay));
+  } else al.classList.remove("show");
+  let f="Each day’s deposit is double the day before. Doubling really does add up!";
+  if(day>=2){f="Today’s deposit ("+gbp(dep(day))+") is "+gbp(1)+" more than ALL the previous deposits put together ("+gbp(tot(day-1))+").";}
+  if(day===10)f="After 10 days you’ve only saved "+gbp(tot(10))+". Hardly anything… but hold on.";
+  if(day===20)f="After 20 days: "+gbp(tot(20))+". Still only enough for a nice holiday. Ten days to go!";
+  if(day===31)f="The final deposit alone, on 31 January, is "+gbp(dep(31))+" — from a start of just 1p.";
+  $("a-fact").textContent=f;
+  $("c-back").disabled=day<=0;
+  $("c-next").disabled=day>=31;
+  if(day>=31)stop1();
+}
+function stop1(){if(t1){clearInterval(t1);t1=null;}$("c-auto").textContent="▶ Auto";}
+function start1(){
+  if(day>=31)day=0;
+  stop1();$("c-auto").textContent="⏸ Pause";
+  t1=setInterval(()=>{if(day<31){day++;render1();}else stop1();},+$("c-speed").value);
+  if(day<31){day++;render1();}
+}
+$("c-next").onclick=()=>{stop1();if(day<31){day++;render1();}};
+$("c-back").onclick=()=>{stop1();if(day>0){day--;render1();}};
+$("c-auto").onclick=()=>{t1?stop1():start1();};
+$("c-all").onclick=()=>{stop1();day=31;render1();};
+$("c-reset").onclick=()=>{stop1();day=0;render1();};
+$("c-speed").onchange=()=>{if(t1){stop1();start1();}};
+render1();
+
+/* ---------- TAB 2: Chessboard ---------- */
+const GRAIN_KG=0.000025, PROD_KG=5.2e11;
+const THRESH=BigInt(Math.round(PROD_KG/GRAIN_KG));
+let exceedSq=0;for(let n=1;n<=64;n++){if((1n<<BigInt(n))-1n>=THRESH){exceedSq=n;break;}}
+let sq=0,t2=null;
+const board=$("board");
+const files="abcdefgh";
+for(let r=7;r>=0;r--){
+  for(let f=0;f<8;f++){
+    const n=r*8+f+1;
+    const el=document.createElement("div");
+    el.className="sq "+(((f+r)%2===0)?"dk":"lt");
+    el.id="s"+n;
+    el.innerHTML='<span class="num">'+n+'</span><span class="g"></span>';
+    el.querySelector(".g").textContent=compact(1n<<BigInt(n-1));
+    board.appendChild(el);
+  }
+}
+for(let r=8;r>=1;r--){const s=document.createElement("span");s.textContent=r;$("ranks").appendChild(s);}
+for(let f=0;f<8;f++){const s=document.createElement("span");s.textContent=files[f];$("files").appendChild(s);}
+
+function compact(n){
+  const s=n.toString();
+  if(n<10000n)return n.toLocaleString("en-GB");
+  const units=["","k","M","B","T","Qa","Qi"];
+  const idx=Math.floor((s.length-1)/3);
+  const head=s.length-idx*3;
+  let m=s.slice(0,head);
+  if(head<3)m+="."+s.slice(head,head+1);
+  return strip(m)+units[idx];
+}
+function words(n){
+  if(n<1000000n)return n.toLocaleString("en-GB");
+  const names=["","thousand","million","billion","trillion","quadrillion","quintillion"];
+  const idx=Math.floor((n.toString().length-1)/3);
+  return strip((Number(n)/Math.pow(10,3*idx)).toFixed(1))+" "+names[idx];
+}
+function massFmt(kg){
+  if(kg<=0)return "0";
+  const g=kg*1000;
+  if(g<1)return strip((g*1000).toFixed(1))+" mg";
+  if(g<1000)return strip(g.toFixed(1))+" g";
+  if(kg<1000)return strip(kg.toFixed(1))+" kg";
+  const t=kg/1000;
+  if(t<1000)return strip(t.toFixed(1))+" tonnes";
+  if(t<1e6)return strip((t/1e3).toFixed(1))+" thousand tonnes";
+  if(t<1e9)return strip((t/1e6).toFixed(1))+" million tonnes";
+  return strip((t/1e9).toFixed(1))+" billion tonnes";
+}
+const sqName=n=>files[(n-1)%8]+(Math.floor((n-1)/8)+1);
+
+function render2(){
+  for(let n=1;n<=64;n++){
+    const el=$("s"+n);
+    el.classList.toggle("on",n<=sq);
+    el.classList.toggle("cur",n===sq);
+  }
+  const T=sq?(1n<<BigInt(sq))-1n:0n;
+  const kg=Number(T)*GRAIN_KG;
+  $("b-total").textContent=T.toLocaleString("en-GB");
+  $("b-words").textContent=sq?(T>=1000000n?"≈ "+words(T)+" grains on the board so far":"grains on the board so far"):"Press “Next square” to begin";
+  if(sq){
+    const g=1n<<BigInt(sq-1);
+    $("b-sq").textContent=g.toLocaleString("en-GB")+" (square "+sq+", "+sqName(sq)+")";
+    $("b-sqmass").textContent=massFmt(Number(g)*GRAIN_KG);
+  } else {$("b-sq").textContent="–";$("b-sqmass").textContent="–";}
+  $("b-mass").textContent=sq?massFmt(kg):"0";
+  const ratio=kg/PROD_KG;
+  $("b-bar").style.width=Math.min(100,ratio*100)+"%";
+  let lab;
+  if(!sq)lab="0%";
+  else if(T>=THRESH){lab="≈ "+(ratio<10?ratio.toFixed(1):Math.round(ratio).toLocaleString("en-GB"))+" years of the world’s rice production";}
+  else if(ratio*100<0.01)lab="less than 0.01% of a year’s world rice";
+  else lab=(ratio*100).toFixed(2)+"% of a year’s world rice";
+  $("b-barlabel").textContent=lab;
+  const al=$("b-alert");
+  if(exceedSq&&sq>=exceedSq){
+    al.classList.add("show");
+    al.textContent="🚨 ALERT! The whole world’s annual rice production has been exceeded on square "+exceedSq+" ("+sqName(exceedSq)+")!";
+  } else al.classList.remove("show");
+  $("r-back").disabled=sq<=0;
+  $("r-next").disabled=sq>=64;
+  if(sq>=64)stop2();
+}
+function stop2(){if(t2){clearInterval(t2);t2=null;}$("r-auto").textContent="▶ Auto";}
+function start2(){
+  if(sq>=64)sq=0;
+  stop2();$("r-auto").textContent="⏸ Pause";
+  t2=setInterval(()=>{if(sq<64){sq++;render2();}else stop2();},+$("r-speed").value);
+  if(sq<64){sq++;render2();}
+}
+$("r-next").onclick=()=>{stop2();if(sq<64){sq++;render2();}};
+$("r-back").onclick=()=>{stop2();if(sq>0){sq--;render2();}};
+$("r-auto").onclick=()=>{t2?stop2():start2();};
+$("r-all").onclick=()=>{stop2();sq=64;render2();};
+$("r-reset").onclick=()=>{stop2();sq=0;render2();};
+$("r-speed").onchange=()=>{if(t2){stop2();start2();}};
+render2();
+})();
+</script>
+</body>
+</html>
