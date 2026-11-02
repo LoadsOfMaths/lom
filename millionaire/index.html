@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Millionaire</title>
+<style>
+:root{--bg:#0b1020;--panel:#141b34;--card:#1c2547;--ink:#eef2ff;--mute:#9aa6d1;--accent:#ffc533}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,"Segoe UI",Arial,sans-serif;overflow:hidden}
+#app{display:grid;grid-template-columns:1fr minmax(300px,31vw);height:100%}
+#stage{position:relative;min-width:0;min-height:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:pointer}
+#panel{background:var(--panel);padding:clamp(10px,1.6vw,22px);overflow:auto;display:flex;flex-direction:column;gap:clamp(8px,1.2vw,14px);border-left:1px solid #26305c}
+h1{margin:0;font-size:clamp(26px,3.2vw,46px);letter-spacing:.5px;color:var(--accent)}
+.modes{display:flex;gap:6px;flex-wrap:wrap}
+button,select{font:inherit;color:var(--ink);background:var(--card);border:2px solid #34407a;border-radius:10px;padding:.45em .8em;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+.modes button{flex:1;font-size:clamp(13px,1.35vw,19px)}
+.modes button.on{background:var(--accent);color:#1a1a1a;border-color:var(--accent);font-weight:700}
+.pips{display:flex;gap:8px;align-items:center}
+.pip{width:clamp(16px,1.9vw,26px);height:clamp(16px,1.9vw,26px);border-radius:50%;border:3px solid;opacity:.55}
+.pip.on{opacity:1;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+.pip.done{opacity:1}
+.card{background:var(--card);border-radius:14px;padding:clamp(8px,1.1vw,16px)}
+.lab{color:var(--mute);font-size:clamp(12px,1.25vw,17px)}
+.big{font-size:clamp(28px,4vw,58px);font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden}
+.name{font-size:clamp(14px,1.6vw,22px);color:var(--accent);font-weight:600}
+.mid{font-size:clamp(18px,2.2vw,32px);font-weight:700;white-space:nowrap;overflow:hidden}
+.hint{font-size:clamp(14px,1.5vw,20px);line-height:1.35}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row button{flex:1;font-size:clamp(13px,1.35vw,18px)}
+#scr{font-size:clamp(14px,1.5vw,20px);font-weight:600}
+@media (max-aspect-ratio:1/1){
+  #app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+  #panel{max-height:46vh;border-left:0;border-top:1px solid #26305c}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><canvas id="c"></canvas></div>
+  <div id="panel">
+    <h1 id="title">Millionaire</h1>
+    <div class="modes" id="modes">
+      <button data-m="million" class="on">Millionaire</button>
+      <button data-m="billion">Billionaire</button>
+      <button data-m="trillion">Trillionaire</button>
+    </div>
+    <div class="pips" id="pips"></div>
+    <div id="scr"></div>
+    <div class="card">
+      <div class="lab">This whole screen is worth</div>
+      <div class="mid" id="screenTot"></div>
+      <div class="name" id="screenName"></div>
+    </div>
+    <div class="card">
+      <div class="lab" id="worthLab">Each dot is worth</div>
+      <div class="big" id="worth">1</div>
+      <div class="name" id="worthName"></div>
+    </div>
+    <div class="card">
+      <div class="lab">Counting every tiny dot inside this screen, one per second, non-stop, would take</div>
+      <div class="mid" id="time"></div>
+    </div>
+    <div class="hint" id="hint"></div>
+    <div class="row">
+      <button id="back">&#9664; Back one level</button>
+      <button id="start">Back to start</button>
+    </div>
+    <div class="row">
+      <button id="dive">Auto-dive</button>
+      <select id="speed" aria-label="Zoom speed">
+        <option value="4800">Slow zoom</option>
+        <option value="3000" selected>Medium zoom</option>
+        <option value="1600">Fast zoom</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const BG='#0b1020';
+const ROOT='#eef1ff';
+const COL=['#ff4b4b','#33d17a','#3d9bff','#ffc533','#c86bff','#27d9d0'];
+const CNAME=['red','green','blue','gold','purple','turquoise'];
+/* Each mode starts with a single circle (level 0) holding the whole amount. */
+const MODES={
+  million:{title:'Millionaire',word:'One million',dims:[[1,1],[10,10],[10,10],[10,10]]},
+  billion:{title:'Billionaire',word:'One billion',dims:[[1,1],[10,1],[10,10],[10,10],[10,10],[10,10]]},
+  trillion:{title:'Trillionaire',word:'One trillion',dims:[[1,1],[10,10],[10,10],[10,10],[10,10],[10,10],[10,10]]}
+};
+const NAMES=['one','ten','one hundred','one thousand','ten thousand','one hundred thousand','one million','ten million','one hundred million','one billion','ten billion','one hundred billion','one trillion'];
+
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let cw=0,ch=0,dpr=1,S=0,P=0,R=0,Rroot=0;
+let mode='million',path=[],anim=null,hover=null,flash=null,autoToken=0;
+
+const $=id=>document.getElementById(id);
+function fmt(e){return (BigInt(10)**BigInt(e)).toLocaleString('en-GB');}
+function human(s){
+  const m=60,h=3600,d=86400,y=31557600;
+  if(s<m)return s+' second'+(s===1?'':'s');
+  if(s<h)return Math.round(s/m)+' minutes';
+  if(s<d){const hh=Math.floor(s/h),mm=Math.round((s%h)/m);return hh+' hour'+(hh>1?'s':'')+(mm?' '+mm+' min':'');}
+  if(s<y){const dd=s/d;return (dd<10?dd.toFixed(1):Math.round(dd).toLocaleString('en-GB'))+' days';}
+  const yy=s/y;return (yy<10?yy.toFixed(1):Math.round(yy).toLocaleString('en-GB'))+' years';
+}
+function dims(){return MODES[mode].dims;}
+function levelColour(d){return d===0?ROOT:COL[d-1];}
+function pos(i,j,cols,rows){return {x:(i-(cols-1)/2)*P,y:(j-(rows-1)/2)*P};}
+/* scale of the next level's layout when it sits inside a dot of level d */
+function childScale(d){
+  const D=dims(),c=D[d+1][0],r=D[d+1][1];
+  const Rd=d===0?Rroot:R;
+  const hd=Math.hypot((c-1)/2,(r-1)/2);
+  return 0.94*Rd/(P*(hd+0.4));
+}
+
+function resize(){
+  const r=cv.getBoundingClientRect();
+  dpr=Math.min(window.devicePixelRatio||1,3);
+  cw=r.width;ch=r.height;
+  cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);
+}
+window.addEventListener('resize',resize);
+
+function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+const FONT='system-ui,"Segoe UI",Arial,sans-serif';
+function label(x,y,Rr,text){
+  ctx.font='bold 100px '+FONT;
+  const w=ctx.measureText(text).width;
+  const fs=100*(1.55*Rr)/w;
+  ctx.font='bold '+fs+'px '+FONT;
+  ctx.fillStyle='#12183a';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(text,x,y+fs*0.04);
+}
+function drawDot(x,y,Rd,colour,isRoot){
+  ctx.fillStyle=colour;circle(x,y,Rd);
+  if(isRoot){
+    ctx.strokeStyle='#a9b4ee';ctx.lineWidth=Rd*0.035;
+    ctx.beginPath();ctx.arc(x,y,Rd*0.985,0,Math.PI*2);ctx.stroke();
+    label(x,y,Rd,MODES[mode].word);
+  }else{
+    ctx.fillStyle='rgba(255,255,255,.22)';circle(x-Rd*.28,y-Rd*.3,Rd*.38);
+  }
+}
+
+function drawFrame(now){
+  requestAnimationFrame(drawFrame);
+  if(!cw)return;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle=BG;ctx.fillRect(0,0,cw,ch);
+  S=Math.min(cw,ch)*0.94;P=S/10;R=P*0.4;Rroot=S*0.27;
+
+  let baseD=path.length,dot=null,t=0,u=0;
+  if(anim){
+    u=Math.min(1,(now-anim.t0)/anim.dur);
+    if(u>=1){
+      if(anim.dir>0)path.push(anim.dot);else path.pop();
+      const cb=anim.onDone;anim=null;baseD=path.length;update();
+      if(cb)setTimeout(cb,380);
+    }else{
+      baseD=anim.dir>0?path.length:path.length-1;
+      dot=anim.dot;
+      const e=0.5-0.5*Math.cos(Math.PI*u);
+      t=anim.dir>0?e:1-e;
+    }
+  }
+  const D=dims();
+  const cols=D[baseD][0],rows=D[baseD][1];
+  const isRoot=baseD===0;
+  const Rd=isRoot?Rroot:R;
+  const K=dot?1/childScale(baseD):1;
+  const z=dot?Math.pow(K,t):1;
+  const f=dot?(z-1)/(K-1):0;
+  const o=dot?pos(dot.i,dot.j,cols,rows):{x:0,y:0};
+
+  ctx.save();
+  ctx.translate(cw/2,ch/2);ctx.scale(z,z);ctx.translate(-o.x*f,-o.y*f);
+
+  const colour=levelColour(baseD);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    if(dot&&dot.i===i&&dot.j===j)continue;
+    const p=pos(i,j,cols,rows);
+    drawDot(p.x,p.y,Rd,colour,isRoot);
+  }
+  // hover ring
+  if(!anim&&hover&&hover.i<cols&&hover.j<rows){
+    const p=pos(hover.i,hover.j,cols,rows);
+    ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(p.x,p.y,Rd*(isRoot?1.04:1.18),0,Math.PI*2);ctx.stroke();
+  }
+  // leaf flash
+  if(flash&&!anim){
+    const age=(now-flash.t0)/1100;
+    if(age<1){
+      const p=pos(flash.i,flash.j,cols,rows);
+      ctx.strokeStyle='rgba(255,255,255,'+(1-age)+')';ctx.lineWidth=3;
+      ctx.beginPath();ctx.arc(p.x,p.y,R*(1.1+age*.9),0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='rgba(20,20,30,'+(1-age)+')';
+      ctx.font='bold '+Math.round(R*1.1)+'px '+FONT;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('1',p.x,p.y+R*.05);
+    }else flash=null;
+  }
+  // the tapped dot, opening up to show the next grid
+  if(dot){
+    const p=pos(dot.i,dot.j,cols,rows);
+    drawDot(p.x,p.y,Rd,colour,isRoot);
+    ctx.globalAlpha=Math.min(1,t*5);
+    ctx.fillStyle=BG;circle(p.x,p.y,Rd*0.99);
+    ctx.globalAlpha=1;
+    ctx.strokeStyle=colour;ctx.lineWidth=Rd*0.07;
+    ctx.beginPath();ctx.arc(p.x,p.y,Rd,0,Math.PI*2);ctx.stroke();
+    const s=1/K,sp=P*s,r2=0.4*sp,cc=levelColour(baseD+1);
+    const c2=D[baseD+1][0],rw2=D[baseD+1][1];
+    ctx.globalAlpha=Math.min(1,t*14);
+    ctx.fillStyle=cc;
+    for(let cj=0;cj<rw2;cj++)for(let ci=0;ci<c2;ci++){
+      circle(p.x+(ci-(c2-1)/2)*sp,p.y+(cj-(rw2-1)/2)*sp,r2);
+    }
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+
+function cellAt(ev){
+  const r=cv.getBoundingClientRect();
+  const lx=ev.clientX-r.left-cw/2,ly=ev.clientY-r.top-ch/2;
+  if(path.length===0)return Math.hypot(lx,ly)<=Rroot?{i:0,j:0}:null;
+  const D=dims()[path.length],cols=D[0],rows=D[1];
+  const fi=lx/P+cols/2,fj=ly/P+rows/2;
+  const i=Math.floor(fi),j=Math.floor(fj);
+  if(i<0||j<0||i>=cols||j>=rows)return null;
+  const p=pos(i,j,cols,rows);
+  if(Math.hypot(lx-p.x,ly-p.y)>P*0.52)return null;
+  return {i,j};
+}
+cv.addEventListener('pointermove',e=>{hover=anim?null:cellAt(e);});
+cv.addEventListener('pointerleave',()=>{hover=null;});
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(anim)return;
+  autoToken++;
+  const c=cellAt(e);if(!c)return;
+  tap(c);
+});
+
+function tap(c){
+  const N=dims().length;
+  if(path.length>=N-1){flash={i:c.i,j:c.j,t0:performance.now()};return;}
+  startAnim(1,c,null);
+}
+function dur(){return +$('speed').value;}
+function startAnim(dir,dot,onDone){
+  if(anim)return;
+  if(dir<0)dot=path[path.length-1];
+  anim={dir,dot,t0:performance.now(),dur:dur(),onDone};
+  hover=null;update();
+}
+
+/* controls */
+function back(){if(anim||!path.length)return;autoToken++;startAnim(-1,null,null);}
+function toStart(){
+  if(anim||!path.length)return;
+  const tok=++autoToken;
+  (function step(){
+    if(tok!==autoToken||!path.length)return;
+    startAnim(-1,null,()=>{if(tok===autoToken)step();});
+  })();
+}
+function dive(){
+  if(anim)return;
+  const tok=++autoToken;
+  (function step(){
+    if(tok!==autoToken)return;
+    const N=dims().length;
+    if(path.length>=N-1)return;
+    const D=dims()[path.length];
+    const c={i:Math.floor(Math.random()*D[0]),j:Math.floor(Math.random()*D[1])};
+    startAnim(1,c,()=>{if(tok===autoToken)step();});
+  })();
+}
+$('back').onclick=back;$('start').onclick=toStart;$('dive').onclick=dive;
+document.addEventListener('keydown',e=>{if(e.key==='Backspace'||e.key==='Escape'){e.preventDefault();back();}});
+document.querySelectorAll('#modes button').forEach(b=>{
+  b.onclick=()=>{
+    autoToken++;anim=null;path=[];flash=null;hover=null;
+    mode=b.dataset.m;
+    document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x===b));
+    update();
+  };
+});
+
+/* keep long numbers on one line by shrinking the text to fit its box */
+function fitNumbers(){
+  ['screenTot','worth'].forEach(id=>{
+    const el=$(id);
+    el.style.fontSize='';
+    let size=parseFloat(getComputedStyle(el).fontSize);
+    while(el.scrollWidth>el.clientWidth+1&&size>11){size-=1;el.style.fontSize=size+'px';}
+  });
+}
+window.addEventListener('resize',fitNumbers);
+
+function update(){
+  const m=MODES[mode],D=m.dims,N=D.length,d=path.length;
+  // ce[k] = log10 of how many dots are on screen k; v[k] = log10 of the value of one dot on screen k
+  const ce=D.map(x=>Math.round(Math.log10(x[0]*x[1])));
+  const v=[];
+  for(let k=0;k<N;k++){let s=0;for(let j=k+1;j<N;j++)s+=ce[j];v.push(s);}
+  const T=v[0];
+  const valE=v[d];
+  const totE=d===0?T:v[d-1];
+  $('title').textContent=m.title;document.title=m.title;
+  // pips
+  const pips=$('pips');pips.innerHTML='';
+  for(let i=0;i<N;i++){
+    const s=document.createElement('div');
+    s.className='pip'+(i===d?' on':(i<d?' done':''));
+    s.style.borderColor=levelColour(i);
+    if(i<=d)s.style.background=levelColour(i);
+    pips.appendChild(s);
+  }
+  $('scr').textContent='Screen '+(d+1)+' of '+N+' – '+(d===0?'one circle':CNAME[d-1]+' dots');
+  $('screenTot').textContent=fmt(totE);
+  $('screenName').textContent=NAMES[totE];
+  $('worthLab').textContent=d===0?'The single circle is worth':'Each '+CNAME[d-1]+' dot is worth';
+  $('worth').textContent=fmt(valE);
+  $('worthName').textContent=NAMES[valE];
+  $('time').textContent=human(Math.pow(10,totE));
+  let h;
+  if(d===0)h='Tap the circle to see what '+m.word.toLowerCase()+' is made of.';
+  else if(d<N-1)h='Each dot is made of 100 smaller dots. Tap one to keep going.';
+  else h='Every dot here is just 1. All '+fmt(T)+' ('+NAMES[T]+') is made of '+fmt(T-2)+' screens like this one.';
+  $('hint').textContent=h;
+  fitNumbers();
+  const busy=!!anim;
+  $('back').disabled=busy||d===0;
+  $('start').disabled=busy||d===0;
+  $('dive').disabled=busy||d===N-1;
+}
+
+resize();update();requestAnimationFrame(drawFrame);
+new ResizeObserver(resize).observe(cv);
+})();
+</script>
+</body>
+</html>
