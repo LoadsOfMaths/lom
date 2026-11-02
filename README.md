@@ -35,6 +35,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Higher or Lower | `higher-or-lower/` |
 | Hot Seat! | `hot-seat/` |
 | In the Middle | `in-the-middle/` |
+| Interesting Interest | `interesting-interest/` |
 | Jelly Bean Disco | `jelly-bean-disco/` |
 | Karate Tables | `karate-tables/` |
 | Keep Left | `keep-left/` |

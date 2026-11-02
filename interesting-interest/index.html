@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interesting Interest</title>
+<style>
+:root{--h:275;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:Georgia,"Times New Roman",serif;
+  color:hsl(var(--h) 60% 14%);
+  min-height:100vh;
+  background:
+    repeating-radial-gradient(circle at 0 0, transparent 0 7px, hsl(var(--h) 55% 62% / .13) 7px 8px),
+    repeating-radial-gradient(circle at 100% 100%, transparent 0 9px, hsl(var(--h) 55% 62% / .12) 9px 10px),
+    repeating-radial-gradient(circle at 100% 0, transparent 0 11px, hsl(42 70% 60% / .07) 11px 12px),
+    linear-gradient(135deg, hsl(var(--h) 55% 20%), hsl(calc(var(--h) + 25) 50% 14%));
+  background-attachment:fixed;
+}
+/* ---------- ticker ---------- */
+#tickerbar{background:#0b0b0b;border-bottom:2px solid hsl(42 70% 50%);overflow:hidden;white-space:nowrap;height:34px;position:relative}
+#tickerbar.off{display:none}
+#tickertrack{display:inline-block;animation:tick 70s linear infinite;will-change:transform}
+#tickerbar:hover #tickertrack{animation-play-state:paused}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tk{display:inline-block;padding:0 22px;line-height:34px;font:600 15px "Courier New",monospace;color:#e8e8e8;letter-spacing:.5px}
+.tk b{color:#ffd166;margin-right:8px}
+.tk.up .chg{color:#4ade80}.tk.down .chg{color:#ff6b6b}
+.tk .chg{margin-left:8px}
+/* ---------- header ---------- */
+header{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 16px 6px;position:relative}
+header .ros{opacity:.55;flex:0 0 auto;line-height:0}
+header .ros svg{width:84px;height:84px}
+.titlewrap{text-align:center}
+h1{margin:0;font-size:clamp(30px,5.2vw,58px);letter-spacing:.08em;text-transform:uppercase;color:hsl(42 80% 78%);
+  text-shadow:0 1px 0 hsl(42 60% 35%),0 3px 6px rgba(0,0,0,.5);font-weight:700}
+.tag{margin:2px 0 0;font-size:clamp(11px,1.6vw,15px);color:hsl(var(--h) 40% 82%);letter-spacing:.28em;text-transform:uppercase}
+#gear{position:absolute;right:16px;top:14px;background:hsl(42 75% 62%);border:2px solid hsl(42 70% 30%);border-radius:50%;width:46px;height:46px;font-size:24px;cursor:pointer;color:hsl(var(--h) 60% 18%);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+#gear:hover{background:hsl(42 85% 72%)}
+/* ---------- layout ---------- */
+.wrap{max-width:1500px;margin:0 auto;padding:10px 16px 20px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+@media(max-width:960px){.wrap{grid-template-columns:1fr}}
+.note{
+  background:
+    repeating-linear-gradient(115deg, transparent 0 5px, hsl(var(--h) 40% 50% / .045) 5px 6px),
+    hsl(var(--h) 35% 95%);
+  border:3px double hsl(var(--h) 55% 28%);
+  border-radius:10px;
+  box-shadow:0 0 0 5px hsl(var(--h) 45% 82%), 0 0 0 7px hsl(var(--h) 55% 28%), 0 8px 22px rgba(0,0,0,.45);
+  padding:14px 16px;margin:8px 8px;position:relative;
+}
+.note h2{margin:0 0 8px;font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:hsl(var(--h) 55% 28%);text-align:center;border-bottom:1px solid hsl(var(--h) 40% 60%);padding-bottom:6px}
+/* inputs */
+.inputs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media(max-width:700px){.inputs{grid-template-columns:1fr}}
+.field label{display:block;font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:hsl(var(--h) 55% 28%);margin-bottom:4px}
+.field .sub{font-size:12px;color:hsl(var(--h) 25% 38%);font-style:italic;font-weight:400;text-transform:none;letter-spacing:0}
+.box{display:flex;align-items:center;border:2px solid hsl(var(--h) 55% 28%);border-radius:6px;background:#fff;overflow:hidden}
+.box span{padding:0 12px;font:700 22px "Courier New",monospace;background:hsl(var(--h) 45% 86%);align-self:stretch;display:flex;align-items:center;color:hsl(var(--h) 60% 20%)}
+.box input{flex:1;min-width:0;border:0;outline:0;padding:9px 10px;font:700 24px "Courier New",monospace;color:hsl(var(--h) 60% 14%);background:transparent;text-align:right}
+.box:focus-within{box-shadow:0 0 0 3px hsl(42 85% 60%)}
+.toggles{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;margin-bottom:8px}
+.sw{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700;font-size:15px;user-select:none}
+.sw input{position:absolute;opacity:0;pointer-events:none}
+.sw i{width:50px;height:26px;border-radius:13px;background:hsl(0 0% 70%);position:relative;transition:.2s;border:2px solid hsl(var(--h) 55% 28%);flex:0 0 auto}
+.sw i::after{content:"";position:absolute;top:1px;left:1px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:.2s}
+.sw input:checked + i{background:hsl(var(--h) 65% 38%)}
+.sw input:checked + i::after{left:25px}
+.sw input:focus-visible + i{box-shadow:0 0 0 3px hsl(42 85% 60%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;margin-left:auto}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend em{display:inline-block;width:26px;height:0;border-top:4px solid}
+.chartbox{position:relative;height:clamp(320px,54vh,600px);border:1px solid hsl(var(--h) 40% 55%);background:hsl(var(--h) 30% 98% / .7);border-radius:4px;overflow:hidden}
+.wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.13;pointer-events:none}
+.wm svg{height:96%;width:auto}
+#cv,#cv2,#cv3{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y;cursor:crosshair}
+#cv.nocross,#cv2.nocross,#cv3.nocross{cursor:default}
+/* summary */
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dotted hsl(var(--h) 35% 60%);font-size:15px}
+.row .v{font:700 17px "Courier New",monospace;text-align:right;white-space:nowrap}
+.row.big{border-bottom:0;padding:10px 0 2px}
+.row.big .l{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.row.big .v{font-size:clamp(20px,2.3vw,28px);color:hsl(var(--h) 70% 24%)}
+.hl{background:hsl(var(--h) 55% 28%);color:hsl(42 80% 80%);border-radius:6px;padding:8px 12px;margin:8px 0;text-align:center}
+.hl .l{font-size:12px;letter-spacing:.2em;text-transform:uppercase}
+.hl .v{font:700 clamp(24px,3vw,34px) "Courier New",monospace;display:block;margin-top:2px;word-break:break-all}
+.simplebox{border:2px dashed hsl(24 90% 45%);border-radius:6px;padding:6px 10px;margin-top:10px;background:hsl(30 100% 97%)}
+.simplebox .row{border-bottom-color:hsl(24 60% 70%)}
+.simplebox .row:last-child{border-bottom:0}
+.hidden{display:none!important}
+.read{font-size:14px}
+.read .hint{font-style:italic;color:hsl(var(--h) 25% 38%)}
+.read .when{font:700 18px "Courier New",monospace;text-align:center;margin-bottom:4px;color:hsl(var(--h) 60% 20%)}
+.serial{position:absolute;right:18px;bottom:4px;font:10px "Courier New",monospace;letter-spacing:.2em;color:hsl(var(--h) 30% 45%)}
+footer{max-width:1500px;margin:0 auto;padding:0 24px 22px;color:hsl(var(--h) 30% 80%);font-size:12px;text-align:center;line-height:1.5}
+/* settings dialog */
+dialog{border:3px double hsl(var(--h) 55% 28%);border-radius:10px;padding:0;background:hsl(var(--h) 35% 95%);color:hsl(var(--h) 60% 14%);box-shadow:0 10px 40px rgba(0,0,0,.6);width:min(92vw,420px)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+dialog .in{padding:18px 20px}
+dialog h2{margin:0 0 12px;text-align:center;letter-spacing:.2em;text-transform:uppercase;font-size:17px;color:hsl(var(--h) 55% 28%)}
+dialog select{width:100%;padding:10px;font:600 17px Georgia,serif;border:2px solid hsl(var(--h) 55% 28%);border-radius:6px;background:#fff}
+dialog .sw{margin:14px 0 4px}
+dialog button.close{margin-top:14px;width:100%;padding:10px;font:700 16px Georgia,serif;background:hsl(var(--h) 55% 28%);color:hsl(42 80% 80%);border:0;border-radius:6px;cursor:pointer}
+dialog label.lab{font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px}
+/* ---------- tabs ---------- */
+.tabs{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 16px 0}
+.tab{font:700 clamp(13px,1.8vw,19px) Georgia,serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 22px;border-radius:10px 10px 0 0;border:2px solid hsl(42 70% 45%);border-bottom:0;background:hsl(var(--h) 45% 24%);color:hsl(42 70% 78%);cursor:pointer}
+.tab:hover{background:hsl(var(--h) 45% 32%)}
+.tab.on{background:hsl(var(--h) 35% 95%);color:hsl(var(--h) 60% 20%)}
+.inputs.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.inputs.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.inputs.four{grid-template-columns:1fr}}
+.hl.red{background:hsl(0 55% 30%)}
+.chip{display:inline-block;width:18px;height:12px;border-radius:2px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<div id="tickerbar"><div id="tickertrack"></div></div>
+
+<header>
+  <div class="ros" id="rosL"></div>
+  <div class="titlewrap">
+    <h1>Interesting Interest</h1>
+    <p class="tag">Bank of Compound Growth &middot; Forty Year Note</p>
+  </div>
+  <div class="ros" id="rosR"></div>
+  <button id="gear" title="Settings" aria-label="Settings">&#9881;</button>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button class="tab on" role="tab" data-t="1">Savings Growth</button>
+  <button class="tab" role="tab" data-t="2">Income For Life</button>
+  <button class="tab" role="tab" data-t="3">Mortgage</button>
+</nav>
+
+
+<div class="wrap panel" id="p1">
+  <div>
+    <section class="note">
+      <h2>Your Investment</h2>
+      <div class="inputs">
+        <div class="field">
+          <label for="init">Initial investment</label>
+          <div class="box"><span class="csym">£</span><input id="init" type="number" min="0" step="100" value="1000" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="ann">Annual investment <span class="sub">(optional)</span></label>
+          <div class="box"><span class="csym">£</span><input id="ann" type="number" min="0" step="50" value="100" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="rate">Interest rate <span class="sub">(per year)</span></label>
+          <div class="box"><input id="rate" type="number" min="0" max="50" step="0.05" value="1.75" inputmode="decimal"><span>%</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="note">
+      <div class="toggles">
+        <label class="sw"><input type="checkbox" id="tSimple"><i></i>Show simple interest</label>
+        <label class="sw"><input type="checkbox" id="tCross" class="xc" checked><i></i>Crosshair</label>
+        <div class="legend">
+          <span><em style="border-color:hsl(var(--h) 70% 25%)"></em>Compound (daily)</span>
+          <span id="lgSimple" class="hidden"><em style="border-top-style:dashed;border-color:hsl(24 90% 45%)"></em>Simple</span>
+          <span><em style="border-top:3px dotted #666"></em>Total paid in</span>
+        </div>
+      </div>
+      <div class="chartbox" id="chartbox">
+        <div class="wm" id="wm"></div>
+        <canvas id="cv"></canvas>
+      </div>
+      <div class="serial">II 40 YR &middot; 0017 5000</div>
+    </section>
+  </div>
+
+  <aside>
+    <section class="note">
+      <h2>Statement of Account</h2>
+      <div class="row"><span>Initial investment</span><span class="v" id="sInit"></span></div>
+      <div class="row"><span>Annual investment</span><span class="v" id="sAnn"></span></div>
+      <div class="row"><span>Interest rate</span><span class="v" id="sRate"></span></div>
+      <div class="row"><span>Period</span><span class="v">40 years</span></div>
+      <div class="row big"><span class="l">Total invested</span><span class="v" id="sPaid"></span></div>
+      <div class="hl"><span class="l">Value after 40 years</span><span class="v" id="sComp"></span></div>
+      <div class="row"><span>Interest earned</span><span class="v" id="sInt"></span></div>
+      <div class="row"><span>Money multiplied by</span><span class="v" id="sMult"></span></div>
+      <div class="simplebox hidden" id="simpleBox">
+        <div class="row"><span>Value with simple interest</span><span class="v" id="sSimp"></span></div>
+        <div class="row"><span>Compound earns extra</span><span class="v" id="sDiff"></span></div>
+      </div>
+    </section>
+
+    <section class="note read" id="readBox">
+      <h2>Reading</h2>
+      <div id="readBody"></div>
+    </section>
+  </aside>
+</div>
+
+<!-- ===== TAB 2: INCOME FOR LIFE ===== -->
+<div class="wrap panel hidden" id="p2">
+  <div>
+    <section class="note">
+      <h2>Your Lump Sum</h2>
+      <div class="inputs four">
+        <div class="field">
+          <label for="lump">Lump sum to invest</label>
+          <div class="box"><span class="csym">£</span><input id="lump" type="number" min="0" step="10000" value="1000000" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="grow">Growth rate <span class="sub">(per year)</span></label>
+          <div class="box"><input id="grow" type="number" min="0" max="50" step="0.5" value="10" inputmode="decimal"><span>%</span></div>
+        </div>
+        <div class="field">
+          <label for="age0">Your age now</label>
+          <div class="box"><input id="age0" type="number" min="0" max="110" step="1" value="15" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label for="age1">Plan to age</label>
+          <div class="box"><input id="age1" type="number" min="1" max="120" step="1" value="100" inputmode="numeric"></div>
+        </div>
+      </div>
+    </section>
+    <section class="note">
+      <div class="toggles">
+        <label class="sw"><input type="checkbox" id="tSpend"><i></i>Use up the capital too</label>
+        <label class="sw"><input type="checkbox" id="tCross2" class="xc" checked><i></i>Crosshair</label>
+        <div class="legend" id="lg2"></div>
+      </div>
+      <div class="chartbox" id="box2"><div class="wm"></div><canvas id="cv2"></canvas></div>
+    </section>
+  </div>
+  <aside>
+    <section class="note">
+      <h2>Income For Life</h2>
+      <div class="row"><span>Lump sum invested</span><span class="v" id="iLump"></span></div>
+      <div class="row"><span>Growth rate</span><span class="v" id="iRate"></span></div>
+      <div class="row"><span>Period</span><span class="v" id="iPeriod"></span></div>
+      <div class="hl"><span class="l">Income each year, keeping the capital</span><span class="v" id="iAnnual"></span></div>
+      <div class="row"><span>That is, each month</span><span class="v" id="iMonthly"></span></div>
+      <div class="row"><span>Capital still there at the end</span><span class="v" id="iCap"></span></div>
+      <div class="row"><span>Total income received</span><span class="v" id="iTotal"></span></div>
+      <div class="row"><span>Total income ÷ lump sum</span><span class="v" id="iMult"></span></div>
+      <div class="simplebox hidden" id="spendBox">
+        <div class="row"><span>Income each year, using up the capital</span><span class="v" id="iSpend"></span></div>
+        <div class="row"><span>Extra each year</span><span class="v" id="iExtra"></span></div>
+        <div class="row"><span>Capital left at the end</span><span class="v" id="iSpendCap"></span></div>
+      </div>
+    </section>
+    <section class="note read">
+      <h2>Reading</h2>
+      <div id="rd2"></div>
+    </section>
+  </aside>
+</div>
+
+<!-- ===== TAB 3: MORTGAGE ===== -->
+<div class="wrap panel hidden" id="p3">
+  <div>
+    <section class="note">
+      <h2>Your Mortgage</h2>
+      <div class="inputs">
+        <div class="field">
+          <label for="loan">Amount borrowed</label>
+          <div class="box"><span class="csym">£</span><input id="loan" type="number" min="0" step="5000" value="250000" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="mrate">Interest rate <span class="sub">(per year)</span></label>
+          <div class="box"><input id="mrate" type="number" min="0" max="25" step="0.05" value="4.5" inputmode="decimal"><span>%</span></div>
+        </div>
+        <div class="field">
+          <label for="term">Term <span class="sub">(years, 1 to 40)</span></label>
+          <div class="box"><input id="term" type="number" min="1" max="40" step="1" value="25" inputmode="numeric"></div>
+        </div>
+      </div>
+    </section>
+    <section class="note">
+      <div class="toggles">
+        <label class="sw"><input type="checkbox" id="tCross3" class="xc" checked><i></i>Crosshair</label>
+        <div class="legend">
+          <span><em style="border-color:hsl(var(--h) 70% 25%)"></em>Balance still owed</span>
+          <span><em style="border-color:hsl(var(--h) 55% 48%)"></em>Capital repaid</span>
+          <span><em style="border-color:hsl(24 90% 45%)"></em>Total paid so far</span>
+          <span><i class="chip" style="background:hsl(0 70% 48% / .3);border:1px solid hsl(0 70% 40%)"></i> Interest (the lender's profit)</span>
+        </div>
+      </div>
+      <div class="chartbox" id="box3"><div class="wm"></div><canvas id="cv3"></canvas></div>
+    </section>
+  </div>
+  <aside>
+    <section class="note">
+      <h2>Mortgage Statement</h2>
+      <div class="row"><span>Amount borrowed</span><span class="v" id="mLoan"></span></div>
+      <div class="row"><span>Interest rate</span><span class="v" id="mRate"></span></div>
+      <div class="row"><span>Term</span><span class="v" id="mTerm"></span></div>
+      <div class="row big"><span class="l">Monthly payment</span><span class="v" id="mPay"></span></div>
+      <div class="hl"><span class="l">Total repaid to the lender</span><span class="v" id="mTotal"></span></div>
+      <div class="hl red"><span class="l">Interest – the lender's profit</span><span class="v" id="mInt"></span></div>
+      <div class="row"><span>Profit as a share of the loan</span><span class="v" id="mPct"></span></div>
+      <div class="row"><span id="mPerL">For every £1 borrowed, you repay</span><span class="v" id="mPer"></span></div>
+      <div class="row"><span>Half the loan is repaid after</span><span class="v" id="mHalf"></span></div>
+    </section>
+    <section class="note read">
+      <h2>Reading</h2>
+      <div id="rd3"></div>
+    </section>
+  </aside>
+</div>
+
+<footer id="foot1">
+  Company names, codes and prices in the ticker are fictitious. Interest is added every day (365 days a year); any annual investment is paid in at the end of each year.
+  Simple interest is calculated on the money paid in only, and is never added to the balance. Classroom demonstration &ndash; not financial advice.
+</footer>
+<footer id="foot2" class="hidden">
+  Growth is added once a year and the income is taken at the end of each year. Keeping the capital means drawing out only the growth, so the balance never falls.
+  Using up the capital means choosing a fixed yearly income that takes the balance to exactly zero at the final age.
+  Real investments rise and fall, and this ignores inflation, tax and charges &ndash; an illustration only, not financial advice.
+</footer>
+<footer id="foot3" class="hidden">
+  A repayment mortgage with equal monthly payments, with interest worked out each month on the balance still owed. The rate is assumed fixed for the whole term;
+  fees, overpayments and rate changes are ignored. Classroom demonstration &ndash; not financial advice.
+</footer>
+
+
+<dialog id="dlg">
+  <div class="in">
+    <h2>Settings</h2>
+    <label class="lab" for="curSel">Currency</label>
+    <select id="curSel"></select>
+    <label class="sw"><input type="checkbox" id="tTicker" checked><i></i>Show share price ticker</label>
+    <button class="close" id="dlgClose">Done</button>
+  </div>
+</dialog>
+
+<script>
+(function(){
+"use strict";
+var CURR={
+  GBP:{n:"Pound sterling (£)",h:275},
+  EUR:{n:"Euro (€)",h:215},
+  CHF:{n:"Swiss franc",h:152},
+  JPY:{n:"Japanese yen (¥)",h:22},
+  AUD:{n:"Australian dollar",h:45},
+  CAD:{n:"Canadian dollar",h:175},
+  NZD:{n:"New Zealand dollar",h:195},
+  INR:{n:"Indian rupee (₹)",h:85},
+  SEK:{n:"Swedish krona",h:232},
+  NOK:{n:"Norwegian krone",h:352},
+  DKK:{n:"Danish krone",h:6},
+  ZAR:{n:"South African rand",h:122},
+  USD:{n:"US dollar ($)",h:140}
+};
+var YEARS=40, N=YEARS*365;
+var S={cur:"GBP",simple:false,cross:true,ticker:true,init:1000,ann:100,rate:1.75,lump:1000000,grow:10,age0:15,age1:100,spend:false,loan:250000,term:25,mrate:4.5,tab:1};
+try{var sv=JSON.parse(localStorage.getItem("interestingInterest")||"null");if(sv)for(var k in sv)if(k in S)S[k]=sv[k];}catch(e){}
+if(!CURR[S.cur])S.cur="GBP";
+function save(){try{localStorage.setItem("interestingInterest",JSON.stringify(S));}catch(e){}}
+
+var $=function(id){return document.getElementById(id)};
+var comp,simp,paid,axisMax,step,hover=null,sym="£",fmt2,fmt0;
+
+/* ---------- decoration ---------- */
+function rosette(n,rx,ry,stroke,sw){
+  var s='<svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="'+stroke+'" stroke-width="'+sw+'">';
+  for(var i=0;i<n;i++){s+='<ellipse rx="'+rx+'" ry="'+ry+'" transform="rotate('+(i*180/n)+')"/>';}
+  for(var j=0;j<n;j++){s+='<ellipse rx="'+(rx*0.62)+'" ry="'+(ry*1.6)+'" transform="rotate('+(j*180/n+3)+')"/>';}
+  s+='<circle r="48"/><circle r="46.5"/><circle r="9"/><circle r="7.5"/></svg>';
+  return s;
+}
+function decorate(){
+  var h=CURR[S.cur].h;
+  document.documentElement.style.setProperty("--h",h);
+  $("rosL").innerHTML=rosette(36,46,13,"hsl(42 80% 75%)",.25);
+  $("rosR").innerHTML=rosette(36,46,13,"hsl(42 80% 75%)",.25);
+  document.querySelectorAll(".wm").forEach(function(w){w.innerHTML=rosette(48,46,15,"hsl("+h+" 60% 30%)",.3);});
+}
+
+/* ---------- currency ---------- */
+function setCurrency(){
+  fmt2=new Intl.NumberFormat("en-GB",{style:"currency",currency:S.cur,currencyDisplay:"narrowSymbol",minimumFractionDigits:S.cur==="JPY"?0:2,maximumFractionDigits:S.cur==="JPY"?0:2});
+  fmt0=new Intl.NumberFormat("en-GB",{style:"currency",currency:S.cur,currencyDisplay:"narrowSymbol",minimumFractionDigits:0,maximumFractionDigits:0});
+  var parts=fmt2.formatToParts(1);sym="";
+  parts.forEach(function(p){if(p.type==="currency")sym=p.value;});
+  document.querySelectorAll(".csym").forEach(function(e){e.textContent=sym;});
+  decorate();
+}
+function trim(x){return (+x.toFixed(2)).toString();}
+function compact(v){
+  var a=Math.abs(v),s;
+  if(a>=1e12)s=trim(v/1e12)+"tn";else if(a>=1e9)s=trim(v/1e9)+"bn";else if(a>=1e6)s=trim(v/1e6)+"m";else if(a>=1e3)s=trim(v/1e3)+"k";else s=trim(v);
+  return sym+s;
+}
+
+/* ---------- maths ---------- */
+function compute(){
+  var r=S.rate/100/365;
+  comp=new Float64Array(N+1);simp=new Float64Array(N+1);paid=new Float64Array(N+1);
+  var B=S.init,P=S.init,I=0;
+  comp[0]=B;simp[0]=P;paid[0]=P;
+  for(var d=1;d<=N;d++){
+    B*=1+r;
+    I+=P*r;
+    if(d%365===0){B+=S.ann;P+=S.ann;}
+    comp[d]=B;paid[d]=P;simp[d]=P+I;
+  }
+  var mx=comp[N];
+  if(!(mx>0)){axisMax=1;step=0.2;return;}
+  var raw=mx/5,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;
+  step=(f<=1?1:f<=2?2:f<=5?5:10)*p;
+  axisMax=Math.ceil(mx/step-1e-9)*step;
+}
+
+/* ---------- summary ---------- */
+function updateSummary(){
+  var tot=paid[N],val=comp[N];
+  $("sInit").textContent=fmt2.format(S.init);
+  $("sAnn").textContent=S.ann>0?fmt2.format(S.ann)+" a year":"None";
+  $("sRate").textContent=(+S.rate.toFixed(3))+"%";
+  $("sPaid").textContent=fmt2.format(tot);
+  $("sComp").textContent=fmt2.format(val);
+  $("sInt").textContent=fmt2.format(val-tot);
+  $("sMult").textContent=tot>0?"× "+(val/tot).toFixed(2):"–";
+  $("sSimp").textContent=fmt2.format(simp[N]);
+  $("sDiff").textContent=fmt2.format(val-simp[N]);
+  $("simpleBox").classList.toggle("hidden",!S.simple);
+  $("lgSimple").classList.toggle("hidden",!S.simple);
+  updateRead();
+}
+function whenText(d){
+  var y=Math.floor(d/365),dd=d-y*365;
+  if(d===0)return "Start";
+  var t=y+" year"+(y===1?"":"s");
+  if(dd>0)t+=" "+dd+" day"+(dd===1?"":"s");
+  return t;
+}
+function updateRead(){
+  var b=$("readBody");
+  if(!S.cross){b.innerHTML='<div class="hint">Crosshair is switched off.</div>';return;}
+  if(hover===null){b.innerHTML='<div class="hint">Move across the graph (or tap it) to read off values at any point in time.</div>';return;}
+  var d=hover;
+  var h='<div class="when">'+whenText(d)+'</div>'+
+    '<div class="row"><span>Total paid in</span><span class="v">'+fmt2.format(paid[d])+'</span></div>'+
+    '<div class="row"><span>Compound value</span><span class="v">'+fmt2.format(comp[d])+'</span></div>';
+  if(S.simple)h+='<div class="row"><span>Simple value</span><span class="v">'+fmt2.format(simp[d])+'</span></div>';
+  h+='<div class="row" style="border:0"><span>Interest earned</span><span class="v">'+fmt2.format(comp[d]-paid[d])+'</span></div>';
+  b.innerHTML=h;
+}
+
+/* ---------- drawing ---------- */
+var cv=$("cv"),ctx=cv.getContext("2d"),W=0,H=0,L=70,R=22,T=22,Bm=46,pending=false;
+function resize(){
+  var r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  W=r.width;H=r.height;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  L=W<520?58:76;
+  schedule();
+}
+function schedule(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;draw();});}
+function X(d){return L+d/N*(W-L-R);}
+function Y(v){return T+(H-T-Bm)*(1-v/axisMax);}
+function path(arr,stepDays){
+  ctx.beginPath();
+  for(var d=0;d<=N;d+=stepDays){var x=X(d),y=Y(arr[d]);if(d===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+  ctx.lineTo(X(N),Y(arr[N]));
+}
+function draw(){
+  var h=CURR[S.cur].h;
+  ctx.clearRect(0,0,W,H);
+  var pw=W-L-R,ph=H-T-Bm;
+  var sd=Math.max(1,Math.floor(N/Math.max(pw,200)));
+  /* grid */
+  ctx.font='12px "Courier New",monospace';ctx.textBaseline="middle";
+  ctx.lineWidth=1;
+  for(var v=0;v<=axisMax+step*0.001;v+=step){
+    var y=Math.round(Y(v))+.5;
+    ctx.strokeStyle="hsla("+h+",30%,40%,.28)";
+    ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();
+    ctx.fillStyle="hsl("+h+",50%,20%)";ctx.textAlign="right";
+    ctx.fillText(compact(v),L-8,y);
+  }
+  ctx.textBaseline="top";ctx.textAlign="center";
+  for(var yr=0;yr<=YEARS;yr++){
+    var x=Math.round(X(yr*365))+.5,major=yr%5===0;
+    if(major){ctx.strokeStyle="hsla("+h+",30%,40%,.28)";ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,T+ph);ctx.stroke();
+      ctx.fillStyle="hsl("+h+",50%,20%)";ctx.fillText(yr,x,T+ph+8);}
+    else{ctx.strokeStyle="hsla("+h+",30%,40%,.35)";ctx.beginPath();ctx.moveTo(x,T+ph);ctx.lineTo(x,T+ph+4);ctx.stroke();}
+  }
+  ctx.font='bold 13px Georgia,serif';ctx.fillStyle="hsl("+h+",50%,22%)";
+  ctx.fillText("Years",L+pw/2,T+ph+26);
+  /* areas */
+  ctx.beginPath();
+  for(var d=0;d<=N;d+=sd){var xx=X(d),yy=Y(paid[d]);if(d===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+  ctx.lineTo(X(N),Y(paid[N]));ctx.lineTo(X(N),Y(0));ctx.lineTo(X(0),Y(0));ctx.closePath();
+  ctx.fillStyle="hsla("+h+",25%,50%,.16)";ctx.fill();
+  ctx.beginPath();
+  for(d=0;d<=N;d+=sd){xx=X(d);yy=Y(comp[d]);if(d===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+  ctx.lineTo(X(N),Y(comp[N]));
+  for(d=N;d>=0;d-=sd){ctx.lineTo(X(d),Y(paid[d]));}
+  ctx.lineTo(X(0),Y(paid[0]));ctx.closePath();
+  var g=ctx.createLinearGradient(0,T,0,T+ph);
+  g.addColorStop(0,"hsla("+h+",70%,45%,.38)");g.addColorStop(1,"hsla("+h+",70%,55%,.12)");
+  ctx.fillStyle=g;ctx.fill();
+  /* paid line */
+  ctx.setLineDash([2,4]);ctx.lineWidth=2;ctx.strokeStyle="#555";path(paid,sd);ctx.stroke();ctx.setLineDash([]);
+  /* simple */
+  if(S.simple){ctx.setLineDash([9,6]);ctx.lineWidth=3;ctx.strokeStyle="hsl(24,90%,45%)";path(simp,sd);ctx.stroke();ctx.setLineDash([]);}
+  /* compound */
+  ctx.lineWidth=3.5;ctx.lineJoin="round";ctx.strokeStyle="hsl("+h+",70%,25%)";path(comp,sd);ctx.stroke();
+  /* frame */
+  ctx.strokeStyle="hsl("+h+",55%,28%)";ctx.lineWidth=2;ctx.strokeRect(L,T,pw,ph);
+  /* crosshair */
+  if(S.cross&&hover!==null){
+    var d0=hover,cx=X(d0),cy=Y(comp[d0]);
+    ctx.lineWidth=1.5;ctx.strokeStyle="hsla(0,0%,10%,.8)";ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(cx,T);ctx.lineTo(cx,T+ph);ctx.moveTo(L,cy);ctx.lineTo(W-R,cy);ctx.stroke();ctx.setLineDash([]);
+    dot(cx,Y(paid[d0]),"#555");
+    if(S.simple)dot(cx,Y(simp[d0]),"hsl(24,90%,45%)");
+    dot(cx,cy,"hsl("+h+",70%,25%)");
+    /* pills */
+    ctx.font='bold 12px "Courier New",monospace';
+    var yt=fmt0.format(comp[d0]),yw=ctx.measureText(yt).width+12;
+    var px=L+4,py=Math.min(Math.max(cy-10,T+2),T+ph-22);
+    if(cy-26<T)py=cy+6;else py=cy-26;
+    pill(px+(cx-L>yw+30?0:Math.max(0,cx-L+8)),py,yt,yw,"hsl("+h+",60%,22%)");
+    var xt=(d0/365).toFixed(2)+" yrs",xw=ctx.measureText(xt).width+12;
+    pill(Math.min(Math.max(cx-xw/2,2),W-xw-2),T+ph-24,xt,xw,"hsl(0,0%,15%)");
+  }
+}
+function dot(x,y,c){ctx.beginPath();ctx.arc(x,y,5.5,0,7);ctx.fillStyle="#fff";ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=c;ctx.stroke();}
+function pill(x,y,t,w,c){
+  ctx.fillStyle=c;ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(x,y,w,20,5);else ctx.rect(x,y,w,20);
+  ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(t,x+w/2,y+10.5);
+}
+function setHover(e){
+  if(!S.cross)return;
+  var r=cv.getBoundingClientRect(),x=e.clientX-r.left;
+  var d=Math.round((x-L)/(W-L-R)*N);
+  d=Math.max(0,Math.min(N,d));
+  if(d!==hover){hover=d;updateRead();schedule();}
+}
+cv.addEventListener("pointermove",setHover);
+cv.addEventListener("pointerdown",setHover);
+cv.addEventListener("pointerleave",function(e){if(e.pointerType==="mouse"&&hover!==null){hover=null;updateRead();schedule();}});
+
+/* ---------- inputs ---------- */
+function num(el,lo,hi,def){
+  var v=parseFloat(el.value);
+  if(!isFinite(v))v=def;
+  return Math.min(hi,Math.max(lo,v));
+}
+function readInputs(){
+  S.init=num($("init"),0,1e9,0);
+  S.ann=num($("ann"),0,1e9,0);
+  S.rate=num($("rate"),0,50,0);
+}
+function refresh(){compute();updateSummary();schedule();}
+["init","ann","rate"].forEach(function(id){
+  $(id).addEventListener("input",function(){readInputs();save();refresh();});
+  $(id).addEventListener("blur",function(){
+    readInputs();
+    $("init").value=S.init;$("ann").value=S.ann;$("rate").value=S.rate;
+  });
+});
+$("tSimple").addEventListener("change",function(){S.simple=this.checked;save();updateSummary();schedule();});
+
+
+/* ---------- settings ---------- */
+var sel=$("curSel");
+Object.keys(CURR).forEach(function(c){var o=document.createElement("option");o.value=c;o.textContent=c+" – "+CURR[c].n;sel.appendChild(o);});
+sel.addEventListener("change",function(){S.cur=this.value;save();setCurrency();buildTicker();refreshAll();});
+$("tTicker").addEventListener("change",function(){S.ticker=this.checked;save();$("tickerbar").classList.toggle("off",!S.ticker);resize();});
+$("gear").addEventListener("click",function(){$("dlg").showModal();});
+$("dlgClose").addEventListener("click",function(){$("dlg").close();});
+
+/* ---------- ticker ---------- */
+var CODES=["ZQRX","HOGB","WIDG","PLNK","TRBL","FLMX","CRNP","YDLO","VXTN","OMBR","BLTZ","KWAD","SNRG","JUMB","DRFT","LMTX","GRVL","PWNZ"];
+var base=CODES.map(function(){return 8+Math.random()*190;});
+var px=base.slice();
+function tkHTML(){
+  var s="";
+  CODES.forEach(function(c,i){s+='<span class="tk" data-i="'+i+'"><b>'+c+'</b><span class="p"></span><span class="chg"></span></span>';});
+  return s;
+}
+function buildTicker(){
+  var t=$("tickertrack");
+  t.innerHTML=tkHTML()+tkHTML();
+  tickUpdate(true);
+}
+function tickUpdate(first){
+  var els=document.querySelectorAll("#tickertrack .tk");
+  for(var i=0;i<CODES.length;i++){
+    if(!first)px[i]=Math.max(1,px[i]*(1+(Math.random()-.48)*0.012));
+  }
+  els.forEach(function(el){
+    var i=+el.getAttribute("data-i"),ch=(px[i]/base[i]-1)*100;
+    el.querySelector(".p").textContent=sym+px[i].toFixed(2);
+    var c=el.querySelector(".chg");
+    c.textContent=(ch>=0?"▲ ":"▼ ")+Math.abs(ch).toFixed(2)+"%";
+    el.classList.toggle("up",ch>=0);el.classList.toggle("down",ch<0);
+  });
+}
+setInterval(function(){if(S.ticker)tickUpdate(false);},1400);
+
+/* ================= tabs 2 and 3 : shared chart engine ================= */
+function niceScale(max){
+  if(!(max>0))return {max:1,step:0.2};
+  var raw=max/5,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;
+  var st=(f<=1?1:f<=2?2:f<=5?5:10)*p;
+  return {max:Math.ceil(max/st-1e-9)*st,step:st};
+}
+function m0(v){return fmt0.format(v);}
+function m2(v){return fmt2.format(v);}
+function rw(l,v,last){return '<div class="row"'+(last?' style="border:0"':'')+'><span>'+l+'</span><span class="v">'+v+'</span></div>';}
+function yrsMonths(m){
+  if(m===0)return "Start";
+  var y=Math.floor(m/12),mo=m%12,t=[];
+  if(y)t.push(y+" year"+(y===1?"":"s"));
+  if(mo)t.push(mo+" month"+(mo===1?"":"s"));
+  return t.join(" ");
+}
+function pick(n,list,maxTicks){for(var k=0;k<list.length;k++)if(n/list[k]<=maxTicks)return list[k];return list[list.length-1];}
+
+function Chart(cvId,boxId,getCfg,onChange){
+  var cv=$(cvId),cx=cv.getContext("2d"),o={cv:cv,hover:null};
+  var W=0,H=0,L=76,R=22,T=22,Bm=46,pend=false,last=null;
+  o.size=function(){
+    var r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+    W=r.width;H=r.height;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+    cx.setTransform(dpr,0,0,dpr,0,0);
+    L=W<520?58:76;
+    o.draw();
+  };
+  o.sched=function(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;o.draw();});};
+  function dot(x,y,c){cx.beginPath();cx.arc(x,y,5.5,0,7);cx.fillStyle="#fff";cx.fill();cx.lineWidth=3;cx.strokeStyle=c;cx.stroke();}
+  function pill(x,y,t,w,c){
+    cx.fillStyle=c;cx.beginPath();
+    if(cx.roundRect)cx.roundRect(x,y,w,20,5);else cx.rect(x,y,w,20);
+    cx.fill();cx.fillStyle="#fff";cx.textAlign="center";cx.textBaseline="middle";cx.fillText(t,x+w/2,y+10.5);
+  }
+  o.draw=function(){
+    var c=getCfg();
+    if(!c||W<10)return;
+    last=c;
+    var h=CURR[S.cur].h,pw=W-L-R,ph=H-T-Bm,n=c.n;
+    var sc=niceScale(c.yMax),ymax=sc.max,st=sc.step;
+    function X(i){return L+i/n*pw;}
+    function Y(v){return T+ph*(1-v/ymax);}
+    cx.clearRect(0,0,W,H);
+    cx.font='12px "Courier New",monospace';cx.textBaseline="middle";cx.lineWidth=1;
+    for(var v=0;v<=ymax+st*0.001;v+=st){
+      var y=Math.round(Y(v))+.5;
+      cx.strokeStyle="hsla("+h+",30%,40%,.28)";
+      cx.beginPath();cx.moveTo(L,y);cx.lineTo(W-R,y);cx.stroke();
+      cx.fillStyle="hsl("+h+",50%,20%)";cx.textAlign="right";
+      cx.fillText(compact(v),L-8,y);
+    }
+    cx.textBaseline="top";cx.textAlign="center";
+    c.ticks.forEach(function(t){
+      var x=Math.round(X(t.i))+.5;
+      cx.strokeStyle="hsla("+h+",30%,40%,.28)";
+      cx.beginPath();cx.moveTo(x,T);cx.lineTo(x,T+ph);cx.stroke();
+      cx.fillStyle="hsl("+h+",50%,20%)";cx.fillText(t.label,x,T+ph+8);
+    });
+    cx.font='bold 13px Georgia,serif';cx.fillStyle="hsl("+h+",50%,22%)";
+    cx.fillText(c.xLabel,L+pw/2,T+ph+26);
+    var i;
+    c.bands.forEach(function(b){
+      cx.beginPath();
+      for(i=0;i<=n;i++){var bx=X(i),by=Y(b.top[i]);if(i===0)cx.moveTo(bx,by);else cx.lineTo(bx,by);}
+      for(i=n;i>=0;i--){cx.lineTo(X(i),Y(b.bot?b.bot[i]:0));}
+      cx.closePath();cx.fillStyle=b.c;cx.fill();
+    });
+    c.series.forEach(function(s){
+      cx.beginPath();
+      for(var k=0;k<=n;k++){var sx=X(k),sy=Y(s.a[k]);if(k===0)cx.moveTo(sx,sy);else cx.lineTo(sx,sy);}
+      cx.setLineDash(s.dash||[]);cx.lineWidth=s.lw||3;cx.lineJoin="round";cx.strokeStyle=s.c;cx.stroke();cx.setLineDash([]);
+    });
+    cx.strokeStyle="hsl("+h+",55%,28%)";cx.lineWidth=2;cx.strokeRect(L,T,pw,ph);
+    var hi=o.hover;
+    if(hi!==null&&hi>n)hi=o.hover=n;
+    if(S.cross&&hi!==null){
+      var vx=X(hi),main=c.series[c.main||0],vy=Y(main.a[hi]);
+      cx.lineWidth=1.5;cx.strokeStyle="hsla(0,0%,10%,.8)";cx.setLineDash([5,4]);
+      cx.beginPath();cx.moveTo(vx,T);cx.lineTo(vx,T+ph);cx.moveTo(L,vy);cx.lineTo(W-R,vy);cx.stroke();cx.setLineDash([]);
+      c.series.forEach(function(s){dot(vx,Y(s.a[hi]),s.c);});
+      cx.font='bold 12px "Courier New",monospace';
+      var yt=m0(main.a[hi]),yw=cx.measureText(yt).width+12;
+      pill(L+4,(vy-26<T)?vy+6:vy-26,yt,yw,"hsl("+h+",60%,22%)");
+      var xt=c.xText(hi),xw=cx.measureText(xt).width+12;
+      pill(Math.min(Math.max(vx-xw/2,2),W-xw-2),T+ph-24,xt,xw,"hsl(0,0%,15%)");
+    }
+  };
+  function hv(e){
+    if(!S.cross||!last)return;
+    var r=cv.getBoundingClientRect();
+    var i=Math.round((e.clientX-r.left-L)/(W-L-R)*last.n);
+    i=Math.max(0,Math.min(last.n,i));
+    if(i!==o.hover){o.hover=i;onChange();o.sched();}
+  }
+  cv.addEventListener("pointermove",hv);
+  cv.addEventListener("pointerdown",hv);
+  cv.addEventListener("pointerleave",function(e){if(e.pointerType==="mouse"&&o.hover!==null){o.hover=null;onChange();o.sched();}});
+  if(window.ResizeObserver)new ResizeObserver(o.size).observe($(boxId));
+  return o;
+}
+
+/* ================= tab 2 : income for life ================= */
+var inc={};
+function calcInc(){
+  var P=S.lump,r=S.grow/100,n=Math.max(1,Math.min(120,S.age1-S.age0));
+  var ki=P*r,si=r>0?P*r/(1-Math.pow(1+r,-n)):P/n;
+  var bk=new Float64Array(n+1),rk=new Float64Array(n+1),bs=new Float64Array(n+1),rs=new Float64Array(n+1);
+  var B=P;bk[0]=P;bs[0]=P;
+  for(var t=1;t<=n;t++){
+    bk[t]=P;rk[t]=ki*t;
+    B=B*(1+r)-si;if(t===n||B<0)B=0;
+    bs[t]=B;rs[t]=si*t;
+  }
+  inc={n:n,P:P,r:r,ki:ki,si:si,bk:bk,rk:rk,bs:bs,rs:rs};
+}
+function cfg2(){
+  if(!inc.n)return null;
+  var d=inc,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",or="hsl(24,90%,45%)";
+  var st=pick(d.n,[1,2,5,10,20],18),ticks=[];
+  for(var i=0;i<=d.n;i+=st)ticks.push({i:i,label:String(S.age0+i)});
+  if(d.n%st)ticks.push({i:d.n,label:String(S.age0+d.n)});
+  var series=[{a:d.bk,c:dk,lw:3.5},{a:d.rk,c:dk,lw:2.5,dash:[9,6]}];
+  var ym=Math.max(d.rk[d.n],d.P);
+  if(S.spend){series.push({a:d.bs,c:or,lw:3.5},{a:d.rs,c:or,lw:2.5,dash:[9,6]});ym=Math.max(ym,d.rs[d.n]);}
+  return {n:d.n,series:series,bands:[{top:d.bk,bot:null,c:"hsla("+h+",60%,45%,.16)"}],ticks:ticks,yMax:ym,xLabel:"Age",
+    xText:function(i){return "Age "+(S.age0+i);},main:0};
+}
+var ch2=Chart("cv2","box2",cfg2,function(){showRd2();});
+function showRd2(){
+  var b=$("rd2"),d=inc,i=ch2.hover;
+  if(!S.cross){b.innerHTML='<div class="hint">Crosshair is switched off.</div>';return;}
+  if(i===null||!d.n){b.innerHTML='<div class="hint">Move across the graph (or tap it) to read off values at any age.</div>';return;}
+  if(i>d.n)i=d.n;
+  var h='<div class="when">Age '+(S.age0+i)+'</div>'+rw("Balance",m0(d.bk[i]))+rw("Income received so far",m0(d.rk[i]),!S.spend);
+  if(S.spend)h+=rw("Balance (using up capital)",m0(d.bs[i]))+rw("Income received (using up)",m0(d.rs[i]),true);
+  b.innerHTML=h;
+}
+function updateInc(){
+  var d=inc,P=d.P,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",or="hsl(24,90%,45%)";
+  $("iLump").textContent=m0(P);
+  $("iRate").textContent=(+S.grow.toFixed(3))+"%";
+  $("iPeriod").textContent="age "+S.age0+" to "+(S.age0+d.n)+" ("+d.n+" years)";
+  $("iAnnual").textContent=m0(d.ki);
+  $("iMonthly").textContent=m0(d.ki/12);
+  $("iCap").textContent=m0(P);
+  $("iTotal").textContent=m0(d.rk[d.n]);
+  $("iMult").textContent=P>0?"× "+(d.rk[d.n]/P).toFixed(1):"–";
+  $("spendBox").classList.toggle("hidden",!S.spend);
+  $("iSpend").textContent=m0(d.si);
+  $("iExtra").textContent=m0(d.si-d.ki);
+  $("iSpendCap").textContent=m0(0);
+  var lg='<span><em style="border-color:'+dk+'"></em>Balance (keeping the capital)</span><span><em style="border-top-style:dashed;border-color:'+dk+'"></em>Total income received</span>';
+  if(S.spend)lg+='<span><em style="border-color:'+or+'"></em>Balance (using up the capital)</span><span><em style="border-top-style:dashed;border-color:'+or+'"></em>Income received</span>';
+  $("lg2").innerHTML=lg;
+  showRd2();ch2.sched();
+}
+function getIncInputs(){
+  S.lump=num($("lump"),0,1e12,0);
+  S.grow=num($("grow"),0,50,0);
+  S.age0=Math.round(num($("age0"),0,110,15));
+  S.age1=Math.round(num($("age1"),1,120,100));
+}
+function recalcInc(){calcInc();updateInc();}
+["lump","grow","age0","age1"].forEach(function(id){
+  $(id).addEventListener("input",function(){getIncInputs();save();recalcInc();});
+  $(id).addEventListener("blur",function(){
+    getIncInputs();if(S.age1<=S.age0)S.age1=S.age0+1;
+    $("lump").value=S.lump;$("grow").value=S.grow;$("age0").value=S.age0;$("age1").value=S.age1;
+    save();recalcInc();
+  });
+});
+$("tSpend").addEventListener("change",function(){S.spend=this.checked;save();updateInc();});
+
+/* ================= tab 3 : mortgage ================= */
+var mort={};
+function calcMort(){
+  var Ln=S.loan,n=Math.max(1,Math.round(S.term*12)),i=S.mrate/1200;
+  var pay=i>0?Ln*i/(1-Math.pow(1+i,-n)):Ln/n;
+  var bal=new Float64Array(n+1),cap=new Float64Array(n+1),tot=new Float64Array(n+1);
+  var B=Ln;bal[0]=B;
+  for(var m=1;m<=n;m++){
+    B=B*(1+i)-pay;if(m===n||B<0)B=0;
+    bal[m]=B;cap[m]=Ln-B;tot[m]=pay*m;
+  }
+  var half=-1;
+  for(var k=0;k<=n;k++){if(bal[k]<=Ln/2){half=k;break;}}
+  mort={n:n,L:Ln,pay:pay,bal:bal,cap:cap,tot:tot,half:half};
+}
+function cfg3(){
+  if(!mort.n)return null;
+  var d=mort,h=CURR[S.cur].h;
+  var yrs=d.n/12,st=pick(yrs,[1,2,5,10],14),ticks=[];
+  for(var y=0;y<=yrs+1e-9;y+=st)ticks.push({i:y*12,label:String(y)});
+  return {n:d.n,ticks:ticks,yMax:d.tot[d.n],xLabel:"Years",
+    series:[{a:d.bal,c:"hsl("+h+",70%,25%)",lw:3.5},{a:d.cap,c:"hsl("+h+",55%,48%)",lw:2.5},{a:d.tot,c:"hsl(24,90%,45%)",lw:3.5}],
+    bands:[{top:d.tot,bot:d.cap,c:"hsla(0,70%,48%,.28)"},{top:d.cap,bot:null,c:"hsla("+h+",60%,45%,.14)"}],
+    xText:function(i){return yrsMonths(i);},main:0};
+}
+var ch3=Chart("cv3","box3",cfg3,function(){showRd3();});
+function showRd3(){
+  var b=$("rd3"),d=mort,i=ch3.hover;
+  if(!S.cross){b.innerHTML='<div class="hint">Crosshair is switched off.</div>';return;}
+  if(i===null||!d.n){b.innerHTML='<div class="hint">Move across the graph (or tap it) to read off values at any point in the mortgage.</div>';return;}
+  if(i>d.n)i=d.n;
+  b.innerHTML='<div class="when">'+yrsMonths(i)+'</div>'+
+    rw("Balance still owed",m0(d.bal[i]))+rw("Capital repaid",m0(d.cap[i]))+rw("Total paid so far",m0(d.tot[i]))+
+    rw("Interest paid so far",m0(d.tot[i]-d.cap[i]),true);
+}
+function updateMort(){
+  var d=mort,tot=d.pay*d.n,intr=tot-d.L;
+  $("mLoan").textContent=m0(d.L);
+  $("mRate").textContent=(+S.mrate.toFixed(3))+"%";
+  $("mTerm").textContent=S.term+" year"+(S.term===1?"":"s")+" ("+d.n+" payments)";
+  $("mPay").textContent=m2(d.pay);
+  $("mTotal").textContent=m0(tot);
+  $("mInt").textContent=m0(intr);
+  $("mPct").textContent=d.L>0?(intr/d.L*100).toFixed(1)+"%":"–";
+  $("mPerL").textContent="For every "+sym+"1 borrowed, you repay";
+  $("mPer").textContent=d.L>0?m2(tot/d.L):"–";
+  $("mHalf").textContent=(d.L>0&&d.half>=0)?yrsMonths(d.half):"–";
+  showRd3();ch3.sched();
+}
+function getMortInputs(){
+  S.loan=num($("loan"),0,1e9,0);
+  S.mrate=num($("mrate"),0,25,0);
+  S.term=Math.round(num($("term"),1,40,25));
+}
+function recalcMort(){calcMort();updateMort();}
+["loan","mrate","term"].forEach(function(id){
+  $(id).addEventListener("input",function(){getMortInputs();save();recalcMort();});
+  $(id).addEventListener("blur",function(){
+    getMortInputs();
+    $("loan").value=S.loan;$("mrate").value=S.mrate;$("term").value=S.term;
+    save();recalcMort();
+  });
+});
+
+/* ================= shared: crosshair toggle, currency, tabs ================= */
+function setCross(on){
+  S.cross=on;
+  document.querySelectorAll(".xc").forEach(function(e){e.checked=on;});
+  if(!on){hover=null;ch2.hover=null;ch3.hover=null;}
+  [cv,ch2.cv,ch3.cv].forEach(function(c){c.classList.toggle("nocross",!on);});
+  save();updateRead();showRd2();showRd3();schedule();ch2.sched();ch3.sched();
+}
+document.querySelectorAll(".xc").forEach(function(el){el.addEventListener("change",function(){setCross(this.checked);});});
+function refreshAll(){refresh();recalcInc();recalcMort();}
+function showTab(t){
+  S.tab=t;save();
+  [1,2,3].forEach(function(k){
+    $("p"+k).classList.toggle("hidden",k!==t);
+    $("foot"+k).classList.toggle("hidden",k!==t);
+  });
+  document.querySelectorAll(".tab").forEach(function(b){
+    var on=+b.getAttribute("data-t")===t;
+    b.classList.toggle("on",on);b.setAttribute("aria-selected",on?"true":"false");
+  });
+  requestAnimationFrame(function(){resize();ch2.size();ch3.size();});
+}
+function initTabs(){
+  $("lump").value=S.lump;$("grow").value=S.grow;$("age0").value=S.age0;$("age1").value=S.age1;
+  $("loan").value=S.loan;$("mrate").value=S.mrate;$("term").value=S.term;
+  $("tSpend").checked=S.spend;
+  document.querySelectorAll(".xc").forEach(function(e){e.checked=S.cross;});
+  [ch2.cv,ch3.cv].forEach(function(c){c.classList.toggle("nocross",!S.cross);});
+  document.querySelectorAll(".tab").forEach(function(b){
+    b.addEventListener("click",function(){showTab(+this.getAttribute("data-t"));});
+  });
+  recalcInc();recalcMort();
+  showTab(S.tab===2||S.tab===3?S.tab:1);
+}
+
+/* ---------- init ---------- */
+$("init").value=S.init;$("ann").value=S.ann;$("rate").value=S.rate;
+$("tSimple").checked=S.simple;$("tCross").checked=S.cross;$("tTicker").checked=S.ticker;
+sel.value=S.cur;
+$("tickerbar").classList.toggle("off",!S.ticker);
+cv.classList.toggle("nocross",!S.cross);
+setCurrency();buildTicker();compute();updateSummary();
+if(window.ResizeObserver)new ResizeObserver(resize).observe($("chartbox"));
+window.addEventListener("resize",resize);
+resize();
+initTabs();
+})();
+</script>
+</body>
+</html>
