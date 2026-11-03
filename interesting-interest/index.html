@@ -114,6 +114,34 @@ dialog label.lab{font-size:13px;letter-spacing:.1em;text-transform:uppercase;fon
 @media(max-width:700px){.inputs.four{grid-template-columns:1fr}}
 .hl.red{background:hsl(0 55% 30%)}
 .chip{display:inline-block;width:18px;height:12px;border-radius:2px;vertical-align:middle}
+/* draw-down slider */
+.drawtop{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.drawtop label{font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:hsl(var(--h) 55% 28%)}
+.drawval{font:700 clamp(22px,3vw,32px) "Courier New",monospace;color:hsl(var(--h) 70% 24%)}
+.sliderwrap{position:relative;padding:6px 0 0}
+#draw{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer;display:block}
+#draw::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(140 55% 55%),hsl(48 90% 60%),hsl(0 65% 55%));border:2px solid hsl(var(--h) 55% 28%)}
+#draw::-moz-range-track{height:6px;border-radius:5px;background:linear-gradient(90deg,hsl(140 55% 55%),hsl(48 90% 60%),hsl(0 65% 55%));border:2px solid hsl(var(--h) 55% 28%)}
+#draw::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:hsl(42 80% 62%);border:3px solid hsl(var(--h) 55% 28%);margin-top:-11px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
+#draw::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:hsl(42 80% 62%);border:3px solid hsl(var(--h) 55% 28%);box-shadow:0 2px 5px rgba(0,0,0,.4)}
+#draw:focus-visible{outline:3px solid hsl(42 85% 60%);outline-offset:2px;border-radius:6px}
+.marks{position:relative;height:56px}
+.marks.near{height:34px}
+.mk{position:absolute;top:0;transform:translateX(-50%);text-align:center;font-size:12px;font-weight:700;line-height:1.2;white-space:nowrap;color:hsl(var(--h) 55% 24%);padding-top:13px}
+.mk::before{content:"";position:absolute;top:0;left:calc(50% - 1px);width:2px;height:10px;background:hsl(var(--h) 55% 28%)}
+.mk.two{top:26px}
+.mk.l{transform:translateX(calc(-100% - 6px));text-align:right}
+.mk.l::before{left:auto;right:-7px}
+.mk.r{transform:translateX(6px);text-align:left}
+.mk.r::before{left:-7px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 10px}
+.btns button{font:700 14px Georgia,serif;padding:8px 14px;border-radius:6px;border:2px solid hsl(var(--h) 55% 28%);background:hsl(var(--h) 45% 90%);color:hsl(var(--h) 60% 18%);cursor:pointer}
+.btns button:hover{background:hsl(42 85% 78%)}
+.status{border-radius:6px;padding:9px 12px;font-size:15px;line-height:1.4;border:2px solid hsl(var(--h) 40% 60%);background:hsl(var(--h) 30% 92%)}
+.status.ok{border-color:hsl(140 55% 32%);background:hsl(140 45% 92%)}
+.status.grow{border-color:hsl(140 40% 45%);background:hsl(140 35% 94%)}
+.status.fall,.status.end{border-color:hsl(40 80% 45%);background:hsl(45 90% 92%)}
+.status.bad{border-color:hsl(0 60% 40%);background:hsl(0 70% 94%)}
 </style>
 </head>
 <body>
@@ -224,8 +252,26 @@ dialog label.lab{font-size:13px;letter-spacing:.1em;text-transform:uppercase;fon
       </div>
     </section>
     <section class="note">
+      <h2>Your Income</h2>
+      <div class="drawtop">
+        <label for="draw">Income you take out each year</label>
+        <span class="drawval" id="drawVal"></span>
+      </div>
+      <div class="sliderwrap">
+        <input type="range" id="draw" min="0" max="1000" step="1" value="500" aria-label="Income taken each year">
+        <div class="marks">
+          <span class="mk" id="mK">Interest only<br>(the sweet spot)</span>
+          <span class="mk two" id="mS">Uses up the<br>capital exactly</span>
+        </div>
+      </div>
+      <div class="btns">
+        <button type="button" id="bK">Sweet spot: take only the interest</button>
+        <button type="button" id="bS">Use up the capital exactly</button>
+      </div>
+      <div class="status" id="iStatus"></div>
+    </section>
+    <section class="note">
       <div class="toggles">
-        <label class="sw"><input type="checkbox" id="tSpend"><i></i>Use up the capital too</label>
         <label class="sw"><input type="checkbox" id="tCross2" class="xc" checked><i></i>Crosshair</label>
         <div class="legend" id="lg2"></div>
       </div>
@@ -239,15 +285,14 @@ dialog label.lab{font-size:13px;letter-spacing:.1em;text-transform:uppercase;fon
       <div class="row"><span>Lump sum invested</span><span class="v" id="iLump"></span></div>
       <div class="row"><span>Growth rate</span><span class="v" id="iRate"></span></div>
       <div class="row"><span>Period</span><span class="v" id="iPeriod"></span></div>
-      <div class="hl"><span class="l">Income each year, keeping the capital</span><span class="v" id="iAnnual"></span></div>
+      <div class="hl" id="iHl"><span class="l">Income each year</span><span class="v" id="iAnnual"></span></div>
       <div class="row"><span>That is, each month</span><span class="v" id="iMonthly"></span></div>
-      <div class="row"><span>Capital still there at the end</span><span class="v" id="iCap"></span></div>
+      <div class="row"><span>Capital left at the end</span><span class="v" id="iCap"></span></div>
       <div class="row"><span>Total income received</span><span class="v" id="iTotal"></span></div>
       <div class="row"><span>Total income ÷ lump sum</span><span class="v" id="iMult"></span></div>
-      <div class="simplebox hidden" id="spendBox">
-        <div class="row"><span>Income each year, using up the capital</span><span class="v" id="iSpend"></span></div>
-        <div class="row"><span>Extra each year</span><span class="v" id="iExtra"></span></div>
-        <div class="row"><span>Capital left at the end</span><span class="v" id="iSpendCap"></span></div>
+      <div class="simplebox" id="spendBox">
+        <div class="row"><span>Sweet spot (interest only)</span><span class="v" id="iK"></span></div>
+        <div class="row"><span>Income that uses up the capital</span><span class="v" id="iS"></span></div>
       </div>
     </section>
     <section class="note read">
@@ -315,8 +360,8 @@ dialog label.lab{font-size:13px;letter-spacing:.1em;text-transform:uppercase;fon
   Simple interest is calculated on the money paid in only, and is never added to the balance. Classroom demonstration &ndash; not financial advice.
 </footer>
 <footer id="foot2" class="hidden">
-  Growth is added once a year and the income is taken at the end of each year. Keeping the capital means drawing out only the growth, so the balance never falls.
-  Using up the capital means choosing a fixed yearly income that takes the balance to exactly zero at the final age.
+  Growth is added once a year and the income is taken at the end of each year. Taking only the growth (the sweet spot) keeps the balance steady for ever;
+  taking less lets the capital grow, and taking more wears it away until it runs out. One particular income uses up the capital exactly at the final age.
   Real investments rise and fall, and this ignores inflation, tax and charges &ndash; an illustration only, not financial advice.
 </footer>
 <footer id="foot3" class="hidden">
@@ -354,7 +399,7 @@ var CURR={
   USD:{n:"US dollar ($)",h:140}
 };
 var YEARS=40, N=YEARS*365;
-var S={cur:"GBP",simple:false,cross:true,ticker:true,init:1000,ann:100,rate:1.75,lump:1000000,grow:10,age0:15,age1:100,spend:false,loan:250000,term:25,mrate:4.5,tab:1};
+var S={cur:"GBP",simple:false,cross:true,ticker:true,init:1000,ann:100,rate:1.75,lump:1000000,grow:10,age0:15,age1:100,drawF:1,drawSnap:"k",loan:250000,term:25,mrate:4.5,tab:1};
 try{var sv=JSON.parse(localStorage.getItem("interestingInterest")||"null");if(sv)for(var k in sv)if(k in S)S[k]=sv[k];}catch(e){}
 if(!CURR[S.cur])S.cur="GBP";
 function save(){try{localStorage.setItem("interestingInterest",JSON.stringify(S));}catch(e){}}
@@ -745,19 +790,35 @@ function Chart(cvId,boxId,getCfg,onChange){
 }
 
 /* ================= tab 2 : income for life ================= */
-var GREEN="hsl(140,55%,32%)",ORANGE="hsl(24,90%,45%)",BROWN="hsl(350,60%,35%)";
-var inc={};
+var GREEN="hsl(140,55%,32%)",ORANGE="hsl(24,90%,45%)";
+var inc={},DMAX=1;
+/* Growth is added once a year, then the chosen income W is taken at the year end.
+   W = interest only (sweet spot) keeps the capital steady; W above that wears it down. */
 function calcInc(){
   var P=S.lump,r=S.grow/100,n=Math.max(1,Math.min(120,S.age1-S.age0));
   var ki=P*r,si=r>0?P*r/(1-Math.pow(1+r,-n)):P/n;
-  var bk=new Float64Array(n+1),rk=new Float64Array(n+1),bs=new Float64Array(n+1),rs=new Float64Array(n+1);
-  var B=P;bk[0]=P;bs[0]=P;
-  for(var t=1;t<=n;t++){
-    bk[t]=P;rk[t]=ki*t;
-    B=B*(1+r)-si;if(t===n||B<0)B=0;
-    bs[t]=B;rs[t]=si*t;
+  DMAX=Math.max(si*1.3,1);
+  var W=S.drawSnap==="k"?ki:S.drawSnap==="s"?si:Math.min(Math.max(S.drawF,0),1.3)*si;
+  var bs=new Float64Array(n+1),pre=new Float64Array(n+1),dr=new Float64Array(n+1),rs=new Float64Array(n+1);
+  var B=P,runOut=-1,tol=0.005+P*1e-10,t;
+  bs[0]=P;pre[0]=P;
+  for(t=1;t<=n;t++){
+    var p=B*(1+r),take=Math.min(W,p);
+    B=p-take;if(B<tol)B=0;
+    pre[t]=p;dr[t]=take;bs[t]=B;rs[t]=rs[t-1]+take;
+    if(runOut<0&&B===0)runOut=t;
   }
-  inc={n:n,P:P,r:r,ki:ki,si:si,bk:bk,rk:rk,bs:bs,rs:rs};
+  dr[0]=dr[1];
+  inc={n:n,P:P,r:r,ki:ki,si:si,W:W,bs:bs,pre:pre,dr:dr,rs:rs,runOut:runOut};
+}
+function incStatus(d){
+  var tol=Math.max(0.5,d.P*1e-9);
+  if(!(d.P>0))return {t:"Enter a lump sum to see how the income works.",k:""};
+  if(Math.abs(d.W-d.ki)<=tol)return {t:"The sweet spot: only the interest is taken, so the capital is the same every year and the income can carry on for ever.",k:"ok"};
+  if(d.W<d.ki)return {t:"A small income: some interest is left in the account each year, so the capital keeps growing.",k:"grow"};
+  if(d.runOut>=0&&d.runOut<d.n)return {t:"Too much! The capital is used up and the money runs out at age "+(S.age0+d.runOut)+" – "+(d.n-d.runOut)+" year"+(d.n-d.runOut===1?"":"s")+" early.",k:"bad"};
+  if(d.runOut===d.n)return {t:"The capital is used up by the final age (age "+(S.age0+d.n)+"), with nothing left over.",k:"end"};
+  return {t:"More than the interest: the capital slowly wears away, but it lasts to age "+(S.age0+d.n)+" with "+m0(d.bs[d.n])+" left.",k:"fall"};
 }
 function ageTicks(d){
   var st=pick(d.n,[1,2,5,10,20],18),ticks=[];
@@ -765,45 +826,44 @@ function ageTicks(d){
   if(d.n%st)ticks.push({i:d.n,label:String(S.age0+d.n)});
   return ticks;
 }
-/* upper chart: the sawtooth balance */
+/* upper chart: the balance, as a sawtooth (grows during the year, drops when income is taken) */
 function cfg2(){
   if(!inc.n)return null;
-  var d=inc,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",P=d.P,ki=d.ki,n=d.n,t;
-  var ramps=[],drops=[],xs=[0],ys=[P],peak=P+ki;
+  var d=inc,h=CURR[S.cur].h,P=d.P,ki=d.ki,n=d.n,t;
+  var ramps=[],drops=[],xs=[0],ys=[P],peak=P;
   for(t=1;t<=n;t++){
-    ramps.push([t-1,P,t,P+ki]);drops.push([t,P+ki,t,P]);
-    xs.push(t,t);ys.push(P+ki,P);
+    if(d.pre[t]>0||d.bs[t-1]>0){ramps.push([t-1,d.bs[t-1],t,d.pre[t]]);drops.push([t,d.pre[t],t,d.bs[t]]);}
+    xs.push(t,t);ys.push(d.pre[t],d.bs[t]);
+    if(d.pre[t]>peak)peak=d.pre[t];
   }
-  var series=[{a:d.bk,c:dk,lw:0,hide:true},{segs:ramps,c:GREEN,lw:2.5},{segs:drops,c:ORANGE,lw:2.5}];
-  if(S.spend){
-    var sg=[];
-    for(t=1;t<=n;t++){
-      var b0=d.bs[t-1],pre=b0*(1+d.r);
-      sg.push([t-1,b0,t,pre]);sg.push([t,pre,t,d.bs[t]]);
-      if(pre>peak)peak=pre;
-    }
-    series.push({segs:sg,c:BROWN,lw:2});
-    series.push({a:d.bs,c:BROWN,lw:0,hide:true});
+  var series=[{a:d.bs,c:"hsl("+h+",70%,25%)",lw:0,hide:true},{segs:ramps,c:GREEN,lw:2.5},{segs:drops,c:ORANGE,lw:2.5}];
+  var sweet=ki>0&&Math.abs(d.W-ki)<=Math.max(0.5,P*1e-9);
+  var zoom=sweet&&P>2*ki;
+  var bands;
+  if(zoom)bands=[{x:xs,top:ys,base:P,c:"hsla(140,55%,40%,.30)"},{top:fillArr(n,P),bot:null,c:"hsla("+h+",60%,45%,.14)"}];
+  else{
+    bands=[{x:xs,top:ys,base:0,c:"hsla(140,55%,40%,.22)"},{top:d.bs,bot:null,c:"hsla("+h+",60%,45%,.14)"}];
+    series.push({segs:[[0,P,n,P]],c:"#555",lw:1.5,dash:[4,5]});
   }
-  var zoom=!S.spend&&ki>0&&P>2*ki;
   return {n:n,ticks:ageTicks(d),yMax:zoom?P+1.6*ki:peak*1.12,yMin:zoom?P-2*ki:0,
     zoomNote:zoom?"Zoomed in: this axis starts at %s, not zero":null,
-    xLabel:"Age",title:"Balance in the account",main:0,
-    bands:[{x:xs,top:ys,base:P,c:"hsla(140,55%,40%,.30)"},{top:fillArr(n,P),bot:null,c:"hsla("+h+",60%,45%,.14)"}],
-    series:series,xText:function(i){return "Age "+(S.age0+i);}};
+    xLabel:"Age",title:"Balance in the account"+(zoom?"":" (dashed line = starting capital)"),main:0,
+    bands:bands,series:series,xText:function(i){return "Age "+(S.age0+i);}};
 }
 /* lower chart: income as a rectangle whose area is the total income */
 function cfg2b(){
   if(!inc.n)return null;
   var d=inc,h=CURR[S.cur].h,dk="hsl("+h+",70%,25%)",n=d.n;
-  var kiA=fillArr(n,d.ki),series=[{a:kiA,c:dk,lw:3}];
-  if(S.spend)series.push({a:fillArr(n,d.si),c:ORANGE,lw:2.5,dash:[9,6]});
-  var bands=[{top:kiA,bot:null,c:"hsla("+h+",60%,45%,.18)",strips:true,sc:"hsla("+h+",40%,30%,.22)"}];
+  var series=[{a:d.dr,c:dk,lw:3}];
+  var diff=Math.abs(d.W-d.ki)>Math.max(0.5,d.P*1e-9);
+  if(diff&&d.ki>0)series.push({segs:[[0,d.ki,n,d.ki]],c:GREEN,lw:2,dash:[9,6]});
+  var bands=[{top:d.dr,bot:null,c:"hsla("+h+",60%,45%,.18)",strips:true,sc:"hsla("+h+",40%,30%,.22)"}];
   var hv=ch2b.hover;
-  if(S.cross&&hv!==null&&hv>0)bands.push({top:kiA,bot:null,to:Math.min(hv,n),c:"hsla("+h+",70%,35%,.35)"});
-  return {n:n,ticks:ageTicks(d),yMax:Math.max(d.ki,S.spend?d.si:0)*1.3,xLabel:"Age",main:0,
+  if(S.cross&&hv!==null&&hv>0)bands.push({top:d.dr,bot:null,to:Math.min(hv,n),c:"hsla("+h+",70%,35%,.35)"});
+  var top=Math.max(d.W,d.ki);
+  return {n:n,ticks:ageTicks(d),yMax:top*1.3,xLabel:"Age",main:0,
     title:"Income taken each year (one strip per year)",
-    note:"Area = total income = "+m0(d.ki*n),noteY:d.ki*0.5,
+    note:"Area = total income = "+m0(d.rs[n]),noteY:top*0.5,
     bands:bands,series:series,
     xText:function(i){return "Age "+(S.age0+i);},yText:function(v){return m0(v)+" a year";}};
 }
@@ -814,29 +874,35 @@ function showRd2(){
   if(!S.cross){b.innerHTML='<div class="hint">Crosshair is switched off.</div>';return;}
   if(i===null||!d.n){b.innerHTML='<div class="hint">Move across either graph (or tap it) to read off values at any age.</div>';return;}
   if(i>d.n)i=d.n;
-  var h='<div class="when">Age '+(S.age0+i)+'</div>'+
-    rw("Balance after income taken",m0(d.bk[i]))+
-    rw("Income each year",m0(d.ki))+
-    rw("Income so far (area of strips)",m0(d.rk[i]),!S.spend);
-  if(S.spend)h+=rw("Balance (using up capital)",m0(d.bs[i]))+rw("Income so far (using up)",m0(d.rs[i]),true);
-  b.innerHTML=h;
+  b.innerHTML='<div class="when">Age '+(S.age0+i)+'</div>'+
+    rw("Balance after income taken",m0(d.bs[i]))+
+    rw("Income taken that year",i>0?m0(d.dr[i]):"–")+
+    rw("Income so far (area of strips)",m0(d.rs[i]),true);
 }
 function updateInc(){
-  var d=inc,P=d.P;
+  var d=inc,P=d.P,st=incStatus(d);
   $("iLump").textContent=m0(P);
   $("iRate").textContent=(+S.grow.toFixed(3))+"%";
   $("iPeriod").textContent="age "+S.age0+" to "+(S.age0+d.n)+" ("+d.n+" years)";
-  $("iAnnual").textContent=m0(d.ki);
-  $("iMonthly").textContent=m0(d.ki/12);
-  $("iCap").textContent=m0(P);
-  $("iTotal").textContent=m0(d.rk[d.n]);
-  $("iMult").textContent=P>0?"× "+(d.rk[d.n]/P).toFixed(1):"–";
-  $("spendBox").classList.toggle("hidden",!S.spend);
-  $("iSpend").textContent=m0(d.si);
-  $("iExtra").textContent=m0(d.si-d.ki);
-  $("iSpendCap").textContent=m0(0);
+  $("iAnnual").textContent=m0(d.W);
+  $("iMonthly").textContent=m0(d.W/12);
+  $("iCap").textContent=m0(d.bs[d.n]);
+  $("iTotal").textContent=m0(d.rs[d.n]);
+  $("iMult").textContent=P>0?"× "+(d.rs[d.n]/P).toFixed(1):"–";
+  $("iK").textContent=m0(d.ki);
+  $("iS").textContent=m0(d.si);
+  $("iHl").classList.toggle("red",st.k==="bad");
+  var s=$("iStatus");s.textContent=st.t;s.className="status "+st.k;
+  /* slider */
+  $("draw").value=Math.round(d.W/DMAX*1000);
+  $("drawVal").textContent=m0(d.W)+" a year";
+  $("mK").style.left="calc(14px + (100% - 28px) * "+(d.ki/DMAX)+")";
+  $("mS").style.left="calc(14px + (100% - 28px) * "+(d.si/DMAX)+")";
+  var near=Math.abs(d.si-d.ki)/DMAX<0.2;
+  $("mK").className="mk"+(near?" l":"");
+  $("mS").className="mk"+(near?" r":" two");
+  $("mK").parentNode.classList.toggle("near",near);
   var lg='<span><em style="border-color:'+GREEN+'"></em>Interest added during the year</span><span><em style="border-color:'+ORANGE+'"></em>Income taken at year end</span>';
-  if(S.spend)lg+='<span><em style="border-color:'+BROWN+'"></em>Balance, using up the capital</span><span><em style="border-top-style:dashed;border-color:'+ORANGE+'"></em>Income, using up the capital</span>';
   $("lg2").innerHTML=lg;
   showRd2();ch2.sched();ch2b.sched();
 }
@@ -855,7 +921,15 @@ function recalcInc(){calcInc();updateInc();}
     save();recalcInc();
   });
 });
-$("tSpend").addEventListener("change",function(){S.spend=this.checked;save();updateInc();});
+$("draw").addEventListener("input",function(){
+  var v=+this.value,vk=inc.ki/DMAX*1000,vs=inc.si/DMAX*1000;
+  if(Math.abs(v-vk)<=12)S.drawSnap="k";
+  else if(Math.abs(v-vs)<=8)S.drawSnap="s";
+  else{S.drawSnap=null;S.drawF=inc.si>0?(v/1000*DMAX)/inc.si:0;}
+  save();recalcInc();
+});
+$("bK").addEventListener("click",function(){S.drawSnap="k";save();recalcInc();});
+$("bS").addEventListener("click",function(){S.drawSnap="s";save();recalcInc();});
 
 /* ================= tab 3 : mortgage ================= */
 var mort={};
@@ -947,7 +1021,6 @@ function showTab(t){
 function initTabs(){
   $("lump").value=S.lump;$("grow").value=S.grow;$("age0").value=S.age0;$("age1").value=S.age1;
   $("loan").value=S.loan;$("mrate").value=S.mrate;$("term").value=S.term;
-  $("tSpend").checked=S.spend;
   document.querySelectorAll(".xc").forEach(function(e){e.checked=S.cross;});
   [ch2.cv,ch2b.cv,ch3.cv].forEach(function(c){c.classList.toggle("nocross",!S.cross);});
   document.querySelectorAll(".tab").forEach(function(b){
