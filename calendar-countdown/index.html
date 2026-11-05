@@ -28,6 +28,26 @@ body{
 .who{font-family:Georgia,serif;font-size:clamp(16px,1.5vw,22px);opacity:.85;flex:1;text-align:right;padding-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .iconbtn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:12px;padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font:inherit;font-size:16px}
 .iconbtn:hover{background:rgba(255,255,255,.2)}
+.tbr{display:flex;gap:8px;align-items:center}
+.iconbtn.on{background:#b7312c;border-color:#e58a85}
+.news{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:stretch;background:#13202a;color:#fff6d6;border-top:3px solid #b7312c;box-shadow:0 -6px 18px rgba(0,0,0,.35);cursor:pointer;user-select:none;-webkit-user-select:none;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
+.news .nlab{flex:none;display:flex;align-items:center;gap:10px;background:#b7312c;color:#fff;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:clamp(14px,1.45vw,24px);padding:0 clamp(12px,1.4vw,26px)}
+.news .nlab i{width:.7em;height:.7em;border-radius:50%;background:#fff;animation:nblink 1.4s steps(2,jump-none) infinite}
+@keyframes nblink{50%{opacity:.15}}
+.news .nview{flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;font-weight:600;font-size:clamp(18px,2vw,34px);padding:clamp(7px,.9vh,12px) 0}
+.news .ntrack{display:flex;flex:none;white-space:nowrap;will-change:transform;animation:nscroll var(--nd,40s) linear infinite}
+.news .ng{display:flex;flex:none}
+.news .ng span{padding:0 .5em}
+.news .ng .sep{color:#e8a33d;padding:0 .3em}
+@keyframes nscroll{to{transform:translateX(-50%)}}
+.news .nhint{display:none;flex:none;align-self:center;font-size:clamp(11px,1vw,15px);color:#9fb0bb;padding:0 14px;white-space:nowrap}
+.news.hold .ntrack{animation:none;transform:none;white-space:normal;display:block;padding:0 18px}
+.news.hold .ng{display:block}.news.hold .ng:nth-child(n+2){display:none}
+.news.hold .ng span{display:block;padding:.12em 0}.news.hold .ng .sep{display:none}
+.news.hold .nview{display:block;padding:clamp(8px,1.2vh,14px) 0}
+.news.hold .nhint{display:block}
+.news.hold .nlab i{animation:none}
+body.hasnews .wrap{padding-bottom:70px}
 .iconbtn svg{width:22px;height:22px}
 
 /* ---- Calendar view: today panel + countdown cards ---- */
@@ -189,10 +209,16 @@ input[type=checkbox]{width:20px;height:20px}
       <button class="vt" data-view="timer" id="vtTimer">Countdown Timer</button>
     </div>
     <div class="who" id="who"></div>
+    <div class="tbr">
+    <button class="iconbtn" id="newsBtn" title="Show or hide the news flash ticker at the bottom of the page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4h3l6 4V6L6 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+      News flash
+    </button>
     <button class="iconbtn" id="openSet" title="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
       Settings
     </button>
+    </div>
   </div>
 
   <!-- Calendar Countdown -->
@@ -247,6 +273,9 @@ input[type=checkbox]{width:20px;height:20px}
   </div>
 </div>
 
+<div class="news" id="news" hidden role="button" tabindex="0" title="Tap to hold the message still, tap again to scroll">
+  <div class="nlab"><i></i>News flash</div><div class="nview"><div class="ntrack" id="nTrack"></div></div><div class="nhint">Tap to scroll again</div>
+</div>
 <div class="overlay" id="overlay">
   <div class="panel" role="dialog" aria-label="Settings">
     <div class="phead"><h2>Settings</h2><button class="btn" id="closeSet">Done</button></div>
@@ -339,6 +368,7 @@ function defaults(){
              {id:uid(),name:'Easter Sunday',key:'easter',date:'',approx:null,on:true}],
     events:[resultsEvent()],
     display:{sun:true,moon:true,analogue:true,h24:true,seconds:false,locName:'Birmingham',lat:52.48,lon:-1.90},
+    news:{on:false,text:'',speed:'normal'},
     timerPrefs:{h:0,m:0,fmt:'words',extra:false,title:''}
   };
 }
@@ -347,6 +377,7 @@ function mergeState(s){
   const d=defaults(),o=Object.assign({},d,s);
   o.display=Object.assign({},d.display,s.display||{});
   o.timerPrefs=Object.assign({},d.timerPrefs,s.timerPrefs||{});
+  o.news=Object.assign({},d.news,s.news||{});
   o.timerPrefs.h=0;o.timerPrefs.m=0; // the timer always starts at 0 hours 0 minutes
   ['terms','nonSchool','exams','internal','customs'].forEach(k=>{if(!Array.isArray(o[k]))o[k]=d[k];});
   o.events=Array.isArray(s.events)?s.events:[];
@@ -609,7 +640,40 @@ function resolvedForSettings(c){
   if(valid(c.date))return {date:c.date,auto:false};
   return resolveCustom(c,dayNum(todayYMD()));
 }
-function renderAll(){renderToday();renderCards();tickClock();tickTimer();}
+/* ---------- News flash ticker ---------- */
+let newsSig='',newsHold=false;
+const NEWS_SPEED={slow:55,normal:90,fast:140}; // pixels per second
+function newsItems(){return (state.news.text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);}
+function buildNews(){
+  const el=$('#news'),tr=$('#nTrack'),items=newsItems();
+  if(!items.length)return;
+  const group=n=>{const g=h('div',{class:'ng'});for(let i=0;i<n;i++)items.forEach(t=>{g.append(h('span',null,t),h('span',{class:'sep'},'\u25CF'));});return g;};
+  tr.replaceChildren(group(1));
+  el.hidden=false;
+  const w=tr.firstChild.getBoundingClientRect().width||1,vw=$('.nview',el).clientWidth||window.innerWidth;
+  const n=Math.max(1,Math.ceil(vw/w));
+  tr.replaceChildren(group(n),group(n));
+  const per=w*n;tr.style.setProperty('--nd',(per/(NEWS_SPEED[state.news.speed]||90)).toFixed(1)+'s');
+}
+function renderNews(force){
+  const el=$('#news'),on=!!state.news.on&&newsItems().length>0;
+  document.body.classList.toggle('hasnews',on);
+  $('#newsBtn').classList.toggle('on',!!state.news.on);
+  if(!on){el.hidden=true;newsSig='';return;}
+  const sig=state.news.text+'|'+state.news.speed;
+  if(force||sig!==newsSig||el.hidden){newsSig=sig;buildNews();}
+  el.classList.toggle('hold',newsHold);
+}
+function toggleNewsHold(){newsHold=!newsHold;$('#news').classList.toggle('hold',newsHold);}
+(function(){
+  const el=$('#news');
+  el.onclick=toggleNewsHold;
+  el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleNewsHold();}};
+  $('#newsBtn').onclick=()=>{state.news.on=!state.news.on;if(state.news.on&&!newsItems().length){state.news.text='Type your announcements in Settings > Display, one per line';}save();renderNews();};
+  let rz=null;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>renderNews(true),250);});
+  try{if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)newsHold=true;}catch(e){}
+})();
+function renderAll(){renderToday();renderCards();tickClock();tickTimer();renderNews();}
 let rt=null;function scheduleRender(){clearTimeout(rt);rt=setTimeout(renderAll,150);}
 function changed(){save();scheduleRender();}
 
@@ -871,9 +935,15 @@ function tabSpecial(b){
 function tabDisplay(b){
   const D=state.display;
   const chk=(k,l)=>h('div',{class:'row'},h('label',{style:'display:flex;gap:10px;align-items:center;font-size:17px'},h('input',{type:'checkbox',checked:D[k],onchange:e=>{D[k]=e.target.checked;changed();}}),l));
+  const chk2=(o,k,l)=>h('div',{class:'row'},h('label',{style:'display:flex;gap:10px;align-items:center;font-size:17px'},h('input',{type:'checkbox',checked:!!o[k],onchange:e=>{o[k]=e.target.checked;changed();}}),l));
   b.append(h('h3',null,'Page'),
     h('div',{class:'row'},field('School or department name (optional, shown at the top right)',textIn(state,'title','',{style:'min-width:340px'}))),
     chk('analogue','Show analogue clock (wide screens only)'),chk('h24','24-hour clock'),chk('seconds','Show seconds on the digital clock'),
+    h('h3',null,'News flash'),
+    h('p',{class:'hint'},'A scrolling announcements bar along the bottom of the page. Type one announcement per line. Tap the bar to hold the text still so everything can be read; tap again to make it scroll. You can also switch it on and off with the News flash button at the top.'),
+    chk2(state.news,'on','Show the news flash bar'),
+    h('div',{class:'row'},field('Announcements (one per line)',h('textarea',{rows:5,style:'width:min(760px,100%);font:inherit;font-size:16px;padding:8px 10px;border:1px solid #cfc7b0;border-radius:8px',placeholder:'e.g. Chess Club today at lunchtime in Room 12',oninput:e=>{state.news.text=e.target.value;changed();}},state.news.text||''))),
+    h('div',{class:'row'},field('Scroll speed',(()=>{const sp=h('select',{onchange:e=>{state.news.speed=e.target.value;changed();}},[['slow','Slow'],['normal','Normal'],['fast','Fast']].map(o=>h('option',{value:o[0]},o[1])));sp.value=state.news.speed||'normal';return sp;})())),
     h('h3',null,'Sun and moon'),
     h('p',{class:'hint'},'Calculated inside the page, so no internet connection is needed. Times are shown in this device\'s local time. Moon phase is accurate to well within a day.'),
     chk('sun','Show sunrise and sunset'),chk('moon','Show moon phase'));
@@ -919,6 +989,7 @@ function loadDemo(){
   d.events.push({id:uid(),name:"Parents' Evening (sample)",date:'2026-11-12',time:'16:00',school:true,on:true},
                 {id:uid(),name:'Talent Show (sample)',date:'2026-12-11',time:'19:00',school:true,on:true},
                 {id:uid(),name:'Year 7 Trip (sample)',date:'2026-11-26',time:'',school:true,on:true});
+  d.news={on:true,speed:'normal',text:'Sample announcement: Chess Club today at lunchtime in Room 12\nSample announcement: Year 11 mock exam timetables are on the noticeboard\nSample announcement: Please return your parents\' evening slips by Friday'};
   d.timerPrefs=state.timerPrefs;
   state=d;save();renderAll();
 }
