@@ -253,7 +253,8 @@ const GAMES={
   crossword:{name:'Crossword Clue',colour:'#b7791f',blurb:'A crossword-style clue and the number of letters. Type your answer.',
     opts:[{k:'first',label:'Start with the first letter shown',type:'check',def:false},{k:'topic',label:'Topic hint',vals:[['off','Off'],['request','On request (-1 point)'],['always','Always shown']],def:'request'}],make:Crossword},
   symbols:{name:'Symbols',colour:'#c2410c',blurb:'Each letter is a symbol. Use the repeats to crack the word.',
-    opts:[{k:'free',label:'Letters given free at the start',vals:[0,1,2,3],def:1},{k:'clue',label:'Clue shown',vals:CLUE_OPTS,def:'vague'}],make:Symbols},
+    opts:[{k:'free',label:'Letters given free at the start',vals:[0,1,2,3],def:1},{k:'pair',label:'Only words with a double letter (such as LL or EE)',type:'check',def:false},{k:'clue',label:'Clue shown',vals:CLUE_OPTS,def:'vague'}],
+    filter:(e,o)=>!o.pair||parse(e.t).words.some(w=>/([a-z])\1/.test(w)),make:Symbols},
   riddle:{name:'Riddle',colour:'#2f6f3e',blurb:'"My first is in RHYME and also in THEM..." Work out the whole word.',
     opts:[{k:'amb',label:'Letter clues',vals:[['easy','Easier (very few choices)'],['standard','Standard'],['hard','Harder (more choices)']],def:'standard'},{k:'maxLetters',label:'Longest answer (letters)',vals:[[8,'8'],[10,'10'],[12,'12'],[15,'15'],[25,'Any']],def:12}],
     filter:(e,o)=>lettersOf(e.t).length<=+o.maxLetters,make:Riddle}
