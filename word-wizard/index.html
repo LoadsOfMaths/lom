@@ -173,6 +173,7 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
 function parse(t){const words=[],seps=[];let cur='';for(const ch of t){if(ch===' '||ch==='-'){words.push(cur);seps.push(ch);cur='';}else cur+=ch;}words.push(cur);return{words,seps};}
 function lettersOf(t){return t.replace(/[^a-z]/g,'');}
+function repeats(t){const n={};for(const ch of lettersOf(t))n[ch]=(n[ch]||0)+1;return Object.values(n).filter(v=>v>1).length;}
 function patternOf(t){const{words,seps}=parse(t);let s='';words.forEach((w,i)=>{s+=w.length;if(i<seps.length)s+=seps[i]==='-'?'-':',';});return'('+s+')';}
 function maskClue(e){let c=e.c;for(const w of parse(e.t).words){if(w.length<4)continue;const stem=w.slice(0,Math.max(4,w.length-3));c=c.replace(new RegExp('\\b'+stem+'[a-z]*','gi'),'____');}return c;}
 function clueBlock(e,mode){
@@ -253,8 +254,8 @@ const GAMES={
   crossword:{name:'Crossword Clue',colour:'#b7791f',blurb:'A crossword-style clue and the number of letters. Type your answer.',
     opts:[{k:'first',label:'Start with the first letter shown',type:'check',def:false},{k:'topic',label:'Topic hint',vals:[['off','Off'],['request','On request (-1 point)'],['always','Always shown']],def:'request'}],make:Crossword},
   symbols:{name:'Symbols',colour:'#c2410c',blurb:'Each letter is a symbol. Use the repeats to crack the word.',
-    opts:[{k:'free',label:'Letters given free at the start',vals:[0,1,2,3],def:1},{k:'pair',label:'Only words with a double letter (such as LL or EE)',type:'check',def:false},{k:'clue',label:'Clue shown',vals:CLUE_OPTS,def:'vague'}],
-    filter:(e,o)=>!o.pair||parse(e.t).words.some(w=>/([a-z])\1/.test(w)),make:Symbols},
+    opts:[{k:'free',label:'Letters given free at the start',vals:[0,1,2,3],def:1},{k:'rep',label:'Repeated letters in the word (at least)',vals:[[0,'No requirement'],[1,'1 letter repeats'],[2,'2 letters repeat'],[3,'3 letters repeat']],def:0},{k:'clue',label:'Clue shown',vals:CLUE_OPTS,def:'vague'}],
+    filter:(e,o)=>repeats(e.t)>=+o.rep,make:Symbols},
   riddle:{name:'Riddle',colour:'#2f6f3e',blurb:'"My first is in RHYME and also in THEM..." Work out the whole word.',
     opts:[{k:'amb',label:'Letter clues',vals:[['easy','Easier (very few choices)'],['standard','Standard'],['hard','Harder (more choices)']],def:'standard'},{k:'maxLetters',label:'Longest answer (letters)',vals:[[8,'8'],[10,'10'],[12,'12'],[15,'15'],[25,'Any']],def:12}],
     filter:(e,o)=>lettersOf(e.t).length<=+o.maxLetters,make:Riddle}
@@ -604,7 +605,7 @@ function Riddle(entry,ctx){
 }
 
 /* test hook */
-window.__gtmw={VOCAB,riddleLines,riddleParts,RW,RSET,lettersOf,parse,patternOf,maskClue,S,GAMES};
+window.__gtmw={repeats,VOCAB,riddleLines,riddleParts,RW,RSET,lettersOf,parse,patternOf,maskClue,S,GAMES};
 home();
 })();
 </script>
