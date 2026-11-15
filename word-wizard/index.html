@@ -224,10 +224,11 @@ function riddleParts(letter,answer,amb){
   for(let t=0;t<800;t++){
     const x=pick(withL);let y,c=0;
     if(style==='also'){y=pick(withL);if(y===x)continue;for(const ch of RSET[x])if(RSET[y].has(ch))c++;}
-    else{y=pick(without);for(const ch of RSET[x])if(!RSET[y].has(ch))c++;}
+    else{y=pick(without);let common=0;for(const ch of RSET[x]){if(RSET[y].has(ch))common++;else c++;}if(!common)continue;}
     const d=c<range[0]?range[0]-c:c>range[1]?c-range[1]:0;
     if(d<bs){bs=d;best={x,y,style,c};if(d===0)break;}
   }
+  if(!best)return riddleParts(letter,answer,amb);
   return best;
 }
 function riddleLines(entry,amb){
