@@ -21,6 +21,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Data Lab | `data-lab/` |
 | Dave | `dave/` |
 | Dice Games | `dice-games/` |
+| Double Pendulum | `double-pendulum/` |
 | Erno | `erno/` |
 | Factris | `factris/` |
 | Flip! | `flip/` |
