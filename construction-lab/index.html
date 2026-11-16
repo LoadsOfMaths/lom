@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Construction Lab</title>
+<style>
+:root{
+  --or:#F47B3F;--bl:#3F73B8;--grey:#8a8f98;--ink:#26323f;--paper:#fdf9ee;--card:#fffdf7;--ok:#2e8b57;
+  --hf:"Super Bouncer","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;
+  --wf:"Anak Orang","Segoe Print","Bradley Hand","Comic Sans MS",cursive;
+  --bf:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{min-height:100%}body{margin:0;min-height:100vh}
+body{
+  font-family:var(--bf);color:var(--ink);
+  background-color:#b98755;
+  background-image:
+    repeating-linear-gradient(91deg,rgba(90,50,20,.11) 0 2px,transparent 2px 11px),
+    repeating-linear-gradient(89deg,rgba(255,225,180,.09) 0 3px,transparent 3px 27px),
+    linear-gradient(180deg,#cb9a63,#a87645);
+  background-attachment:fixed;
+  -webkit-tap-highlight-color:transparent;
+}
+.app{max-width:1500px;margin:0 auto;padding:10px clamp(8px,2vw,22px) 24px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+header h1{font-family:var(--hf);font-size:clamp(1.4rem,3.4vw,2.4rem);margin:0;color:#fff;text-shadow:0 2px 0 rgba(70,35,10,.55);letter-spacing:.5px;flex:1}
+.logo{font-family:var(--hf);background:#fff;border-radius:999px;padding:5px 14px;font-size:clamp(.8rem,1.6vw,1.05rem);box-shadow:0 2px 5px rgba(0,0,0,.25);white-space:nowrap}
+.logo i{font-style:normal;color:var(--grey)}.logo .o{color:var(--or)}.logo .b{color:var(--bl)}
+body.nologo .logo{display:none}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 14px;background:#fff;color:var(--ink);font-weight:600;box-shadow:0 2px 0 rgba(0,0,0,.22);touch-action:manipulation}
+button:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--or);color:#fff}
+button.blue{background:var(--bl);color:#fff}
+#home{background:var(--bl);color:#fff}
+[hidden]{display:none!important}
+
+/* menu */
+.group h3{font-family:var(--hf);color:#fff;text-shadow:0 2px 0 rgba(70,35,10,.5);font-size:clamp(1.05rem,2.2vw,1.5rem);margin:16px 0 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px;background:var(--card);border-radius:14px;text-align:left;position:relative;box-shadow:0 3px 0 rgba(70,35,10,.45)}
+.card canvas{width:100%;aspect-ratio:14/10;background:var(--paper);border-radius:8px;border:1px solid #e6dcc3;display:block}
+.card span{font-size:.95rem;line-height:1.2}
+.card .tick{position:absolute;top:4px;right:6px;background:var(--ok);color:#fff;border-radius:999px;width:24px;height:24px;display:grid;place-items:center;font-size:.85rem}
+.menufoot{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+.menufoot button{font-size:.85rem;padding:7px 12px;background:rgba(255,255,255,.75)}
+.blurb{background:rgba(255,253,247,.9);border-radius:12px;padding:10px 14px;margin:0;font-size:clamp(.95rem,1.6vw,1.15rem)}
+
+/* lesson */
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.bar h2{font-family:var(--hf);color:#fff;text-shadow:0 2px 0 rgba(70,35,10,.5);margin:0;font-size:clamp(1.05rem,2.4vw,1.6rem);flex:1;min-width:200px}
+.tabs{display:flex;gap:6px}
+.tabs button{background:rgba(255,255,255,.7)}
+.tabs button.on{background:var(--bl);color:#fff}
+.work{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.stage{position:relative;aspect-ratio:14/10;width:100%;background:var(--paper);border-radius:6px;box-shadow:0 6px 16px rgba(50,25,5,.45),inset 0 0 0 1px #e9dfc6;justify-self:center}
+.stage::before,.stage::after{content:"";position:absolute;width:64px;height:20px;background:rgba(244,225,160,.8);top:-8px;box-shadow:0 1px 2px rgba(0,0,0,.2);z-index:2;pointer-events:none}
+.stage::before{left:-18px;transform:rotate(-38deg)}
+.stage::after{right:-18px;transform:rotate(38deg)}
+canvas#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;border-radius:6px}
+aside{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 3px 0 rgba(70,35,10,.45);display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row button{flex:1;white-space:nowrap;padding-left:8px;padding-right:8px}
+.stepno{font-family:var(--hf);color:var(--bl);font-size:1.05rem}
+.steptext{font-size:clamp(1.1rem,2.1vw,1.55rem);line-height:1.35;margin:0;min-height:4.2em}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dots i{width:12px;height:12px;border-radius:50%;background:#dcd3bd}
+.dots i.on{background:var(--or)}
+.prompt{font-size:clamp(1.05rem,2vw,1.4rem);line-height:1.35;margin:0;font-weight:600}
+.tool.on{background:var(--bl);color:#fff}
+.tip{margin:0;font-size:.92rem;color:#5a6470;line-height:1.35}
+.fb{margin:0;font-size:clamp(1rem,1.8vw,1.2rem);line-height:1.35;min-height:2.7em;border-radius:10px;padding:8px 10px;background:#f4eddb}
+.fb.good{background:#dff3e6;color:#17623a;font-weight:700}
+.fb.bad{background:#fde6d9;color:#8a3a12}
+.score{font-family:var(--hf);color:var(--bl)}
+@media (min-width:900px) and (orientation:landscape){
+  .work{grid-template-columns:minmax(0,1fr) clamp(290px,27vw,400px)}
+  .stage{max-width:calc((100vh - 125px) * 1.4)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button id="home" hidden>&#9776; Menu</button>
+    <h1>Construction Lab</h1>
+    <div class="logo"><i>www.</i><span class="o">loads</span><i>of</i><span class="b">maths</span><i>.co.uk</i></div>
+  </header>
+
+  <main id="menu">
+    <p class="blurb">Ruler and compass constructions and loci. Pick a topic: <b>watch it built step by step</b>, then <b>have a go yourself</b>.</p>
+    <div id="groups"></div>
+    <div class="menufoot"><button id="logoBtn">Logo: on</button></div>
+  </main>
+
+  <main id="lesson" hidden>
+    <div class="bar">
+      <h2 id="lname"></h2>
+      <div class="tabs"><button id="tTeach" class="on">1 &middot; Teach</button><button id="tPrac">2 &middot; Practise</button></div>
+    </div>
+    <div class="work">
+      <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+
+      <aside id="pTeach">
+        <div class="stepno" id="stepno"></div>
+        <p class="steptext" id="steptext"></p>
+        <div class="dots" id="dots"></div>
+        <div class="row"><button id="bBack">&#9664; Back</button><button id="bRep">&#8635; Replay</button><button id="bNext" class="primary">Next &#9654;</button></div>
+        <div class="row"><button id="bNew">New example</button></div>
+      </aside>
+
+      <aside id="pPrac" hidden>
+        <p class="prompt" id="prompt"></p>
+        <p class="fb" id="fb"></p>
+        <div class="row"><button id="tlC" class="tool on">Compasses</button><button id="tlR" class="tool">Ruler</button></div>
+        <p class="tip" id="tip"></p>
+        <div class="row"><button id="bUndo">&#8630; Undo</button><button id="bClear">Clear</button><button id="bHint">Hint</button></div>
+        <div class="row"><button id="bCheck" class="primary">Check &#10003;</button><button id="bNewQ">New question</button></div>
+        <div class="score">Correct this session: <span id="score">0</span></div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+(()=>{'use strict';
+/* ===================== GEOMETRY ===================== */
+const W=14,H=10,PI=Math.PI,TAU=PI*2,DEG=PI/180;
+const V=(x,y)=>({x,y}),add=(a,b)=>V(a.x+b.x,a.y+b.y),sub=(a,b)=>V(a.x-b.x,a.y-b.y),mul=(a,k)=>V(a.x*k,a.y*k),
+ dot=(a,b)=>a.x*b.x+a.y*b.y,cross=(a,b)=>a.x*b.y-a.y*b.x,len=a=>Math.hypot(a.x,a.y),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),
+ norm=a=>{const l=len(a)||1;return V(a.x/l,a.y/l)},perp=a=>V(-a.y,a.x),ang=a=>Math.atan2(a.y,a.x),
+ pol=(c,r,t)=>V(c.x+r*Math.cos(t),c.y+r*Math.sin(t)),lerp=(a,b,t)=>V(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t),mid=(a,b)=>lerp(a,b,.5),
+ dir=t=>V(Math.cos(t),Math.sin(t));
+const rnd=(a,b)=>a+Math.random()*(b-a),rint=(a,b)=>Math.floor(rnd(a,b+1)),pick=a=>a[rint(0,a.length-1)],half=x=>Math.round(x*2)/2;
+function cc(c1,r1,c2,r2){const d=dist(c1,c2);if(d<1e-9||d>r1+r2+1e-9||d<Math.abs(r1-r2)-1e-9)return[];
+  const a=(r1*r1-r2*r2+d*d)/(2*d),h=Math.sqrt(Math.max(0,r1*r1-a*a)),u=norm(sub(c2,c1)),m=add(c1,mul(u,a)),n=perp(u);
+  return[add(m,mul(n,h)),add(m,mul(n,-h))];}
+function lc(a,b,c,r,seg){const d=sub(b,a),L=len(d);if(L<1e-9)return[];const u=mul(d,1/L),f=sub(a,c),B=dot(f,u),C=dot(f,f)-r*r,D=B*B-C;if(D<0)return[];
+  const s=Math.sqrt(D),out=[];for(const t of[-B-s,-B+s]){if(!seg||(t>=-1e-6&&t<=L+1e-6))out.push(add(a,mul(u,t)));}return out;}
+function ll(a,b,c,d){const r=sub(b,a),s=sub(d,c),den=cross(r,s);if(Math.abs(den)<1e-9)return null;
+  const t=cross(sub(c,a),s)/den,u=cross(sub(c,a),r)/den,e=1e-6;if(t<-e||t>1+e||u<-e||u>1+e)return null;return add(a,mul(r,t));}
+function segDist(a,b,p){const d=sub(b,a),L2=dot(d,d);let t=L2?dot(sub(p,a),d)/L2:0;t=Math.max(0,Math.min(1,t));return dist(p,add(a,mul(d,t)));}
+function lineDist(a,b,p){const d=sub(b,a);return Math.abs(cross(d,sub(p,a)))/(len(d)||1);}
+function acute(l,d){const e=sub(l.b,l.a);let x=Math.abs(Math.atan2(cross(e,d),dot(e,d)))/DEG;return x>90?180-x:x;}
+const covers=(l,p,q,tol=.12)=>segDist(l.a,l.b,p)<tol&&segDist(l.a,l.b,q)<tol;
+const linesOf=st=>st.objs.filter(o=>o.k==='line'),circsOf=st=>st.objs.filter(o=>o.k==='circle');
+
+function computeKeys(pg,objs){
+  const pts=[],push=p=>{if(p&&isFinite(p.x)&&isFinite(p.y)&&!pts.some(q=>dist(p,q)<.02))pts.push(p)};
+  (pg.pts||[]).forEach(o=>push(o.p));
+  (pg.lines||[]).forEach(l=>{push(l.a);push(l.b)});
+  const ls=[...(pg.lines||[]),...objs.filter(o=>o.k==='line')],cs=objs.filter(o=>o.k==='circle');
+  objs.forEach(o=>{if(o.k==='line'&&o.ek){push(o.a);push(o.b)}});
+  for(let i=0;i<ls.length;i++)for(let j=i+1;j<ls.length;j++)push(ll(ls[i].a,ls[i].b,ls[j].a,ls[j].b));
+  for(const l of ls)for(const c of cs)lc(l.a,l.b,c.c,c.r,true).forEach(push);
+  for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++)cc(cs[i].c,cs[i].r,cs[j].c,cs[j].r).forEach(push);
+  return pts;
+}
+
+/* ===================== DRAWING OPS ===================== */
+const oArc=(c,r,a0,a1,st='con')=>({k:'arc',c,r,a0,a1,st,d:Math.min(2000,Math.max(650,Math.abs(a1-a0)*450))});
+const oNear=(c,r,p,sp=.3,st='con')=>{const a=ang(sub(p,c));return oArc(c,r,a-sp,a+sp,st)};
+const oLine=(a,b,st='con',o={})=>({k:'line',a,b,st,d:850,...o});
+const oPt=(p,s,o)=>({k:'pt',p,s,o:o||V(0,0),d:280});
+const oTxt=(p,s)=>({k:'txt',p,s,d:300});
+const oRA=(p,d1,d2)=>({k:'ra',p,d1,d2,d:300});
+const oAng=(v,a0,a1,s,r=.95)=>({k:'ang',v,a0,a1,s,r,d:300});
+const oTick=(a,b)=>({k:'tick',a,b,d:300});
+const oDash=(a,b)=>({k:'dash',a,b,d:400});
+const sideLab=(P,Q,opp,s)=>{const m=mid(P,Q);let n=perp(norm(sub(Q,P)));if(dot(n,sub(opp,m))>0)n=mul(n,-1);return oTxt(add(m,mul(n,.55)),s)};
+
+function judge(st,geo,tipMsg){
+  const ls=linesOf(st);
+  if(!ls.length)return{ok:false,msg:'Use the ruler to draw your final line.'};
+  if(ls.some(l=>l.con&&geo(l)))return{ok:true};
+  if(ls.some(geo))return{ok:false,msg:'Very close! But your line must go through points where your arcs cross — no guessing.'};
+  return{ok:false,msg:'Not yet. '+tipMsg};
+}
+
+/* ===================== LESSON BUILDERS ===================== */
+function bPerpBis(loc){
+  const L=half(rnd(6,8)),t=rnd(-.2,.2),u=dir(t),M=V(7,5),A=add(M,mul(u,-L/2)),B=add(M,mul(u,L/2));
+  const r=half(L*rnd(.58,.64));
+  const [X1,X2]=cc(A,r,B,r).sort((p,q)=>p.y-q.y),n=norm(sub(X1,X2));
+  const E1=add(X1,mul(n,.6)),E2=add(X2,mul(n,-.6));
+  const fin=[oRA(M,u,n),oTick(A,M),oTick(M,B)];
+  return{
+    g:{pts:[{p:A,s:'A',o:mul(u,-.5)},{p:B,s:'B',o:mul(u,.5)}],lines:[{a:A,b:B}]},
+    intro:loc?'We want every point that is the same distance from A as it is from B.':'We are going to construct the perpendicular bisector of the line AB.',
+    prompt:loc?pick(['Draw the locus of points that are equidistant from A and B.','Two villages are at A and B. A new road must always be the same distance from both. Draw the road.','A boat sails so that it is always the same distance from buoy A as from buoy B. Draw its path.']):'Construct the perpendicular bisector of AB.',
+    steps:[
+      {t:'Open your compasses to more than half the length of AB.',tool:{k:'compass',c:A,p:add(A,mul(u,r))}},
+      {t:'Put the compass point on A. Draw one arc above the line and one arc below it.',ops:[oNear(A,r,X1),oNear(A,r,X2)]},
+      {t:'Do not change the compasses! Put the point on B and draw two more arcs that cross the first pair.',ops:[oNear(B,r,X1),oNear(B,r,X2)]},
+      {t:'Use a ruler to join the two points where the arcs cross.',ops:[oPt(X1),oPt(X2),oLine(E1,E2,'res')]},
+      {t:loc?'Every point on this line is the same distance from A as from B. It is the perpendicular bisector of AB.':'This is the perpendicular bisector. It cuts AB exactly in half, at right angles.',ops:fin}
+    ],
+    sol:[oLine(E1,E2,'res'),...fin],
+    check:st=>judge(st,l=>lineDist(l.a,l.b,M)<.1&&acute(l,u)>89,'Draw arcs from A and from B with the same compass width, then join the two crossing points.')
+  };
+}
+
+function bAngBis(loc){
+  const Vt=V(2.2,7.7),t1=rnd(-.03,.12),th=rnd(40,80)*DEG,t2=t1-th,u1=dir(t1),u2=dir(t2);
+  const l1=9.2,l2=Math.min(8.5,(Vt.y-.9)/Math.sin(-t2));
+  const B=add(Vt,mul(u1,l1)),C=add(Vt,mul(u2,l2));
+  const r=half(rnd(3,4)),P=add(Vt,mul(u1,r)),Q=add(Vt,mul(u2,r));
+  const X=cc(P,r,Q,r).sort((a,b)=>dist(b,Vt)-dist(a,Vt))[0],bd=norm(sub(X,Vt)),E=add(X,mul(bd,1)),tb=ang(bd);
+  const fin=[oAng(Vt,t1,tb,'x',1.25),oAng(Vt,tb,t2,'x',1.25)];
+  return{
+    g:{pts:[{p:Vt,s:'A',o:V(-.45,.3)},{p:B,s:'B',o:mul(u1,.45)},{p:C,s:'C',o:mul(u2,.45)}],lines:[{a:Vt,b:B},{a:Vt,b:C}]},
+    intro:loc?'We want every point that is the same distance from the line AB as from the line AC.':'We are going to bisect the angle at A — cut it into two equal halves.',
+    prompt:loc?pick(['Draw the locus of points that are equidistant from the lines AB and AC.','AB and AC are two walls. A cable must be laid the same distance from both walls. Draw the cable.','A path runs from the corner A so that it is always the same distance from hedge AB as from hedge AC. Draw the path.']):'Construct the bisector of angle BAC.',
+    steps:[
+      {t:'Put the compass point on A. Draw an arc that crosses both arms of the angle.',ops:[oArc(Vt,r,t1+.14,t2-.14),oPt(P),oPt(Q)]},
+      {t:'Put the point where the arc crosses one arm. Draw an arc in the middle of the angle.',ops:[oNear(P,r,X)]},
+      {t:'Keep the compasses the same width. Do the same from the other crossing, so the two arcs cross.',ops:[oNear(Q,r,X)]},
+      {t:'Join A to the point where the arcs cross.',ops:[oPt(X),oLine(Vt,E,'res')]},
+      {t:loc?'Every point on this line is the same distance from AB as from AC. It is the angle bisector.':'This is the angle bisector. The two angles marked x are equal.',ops:fin}
+    ],
+    sol:[oLine(Vt,E,'res'),...fin],
+    check:st=>judge(st,l=>lineDist(l.a,l.b,Vt)<.1&&acute(l,bd)<1,'Start with an arc from A that crosses both lines. Then use equal arcs from those two crossings.')
+  };
+}
+
+function bPerpOn(mode){
+  const t=rnd(-.12,.12),u=dir(t),c=V(7,6.6),A=add(c,mul(u,-5.6)),B=add(c,mul(u,5.6)),P=add(c,mul(u,rnd(-1,1)));
+  let n=perp(u);if(n.y>0)n=mul(n,-1);
+  const r1=half(rnd(2,2.5)),r2=half(r1*1.6+.2),C1=add(P,mul(u,-r1)),D1=add(P,mul(u,r1));
+  const X=add(P,mul(n,Math.sqrt(r2*r2-r1*r1))),E=add(X,mul(n,.9));
+  const is45=mode==='45';
+  const steps=[
+    {t:'Put the compass point on P. Draw an arc on each side of P, crossing the line.',ops:[oNear(P,r1,C1),oNear(P,r1,D1),oPt(C1),oPt(D1)]},
+    {t:'Open the compasses wider. Put the point on one crossing and draw an arc above P.',ops:[oNear(C1,r2,X,.25)]},
+    {t:'Keep that width. Put the point on the other crossing and draw an arc to cross the last one.',ops:[oNear(D1,r2,X,.25)]},
+    {t:'Join the point where the arcs cross to P.',ops:[oPt(X),oLine(P,E,is45?'con':'res')]}
+  ];
+  let sol,geo,tipMsg,prompt,intro;
+  if(is45){
+    const F=add(P,mul(n,r1)),w=norm(add(u,n)),Y=add(P,mul(add(u,n),r1)),EY=add(P,mul(w,r1*Math.SQRT2+1));
+    const last=[oPt(Y),oLine(P,EY,'res'),oAng(P,ang(u),ang(w),'45°',1.05)];
+    steps.push(
+      {t:'That is 90°. Now bisect it. Point on P, same width as your first arcs: draw an arc across the new line.',ops:[oRA(P,u,n),oNear(P,r1,F),oPt(F)]},
+      {t:'Put the point on each of the two marks in turn and draw arcs that cross.',ops:[oNear(D1,r1,Y),oNear(F,r1,Y)]},
+      {t:'Join P to where the arcs cross. Half of 90° is 45°.',ops:last});
+    sol=last;geo=l=>lineDist(l.a,l.b,P)<.1&&Math.abs(acute(l,u)-45)<1;
+    tipMsg='First construct 90° at P, then bisect that right angle.';
+    prompt='Construct an angle of 45° at P.';intro='To make 45° we construct 90° and then bisect it.';
+  }else{
+    const fin=[oRA(P,u,n)];
+    steps.push({t:mode==='90'?'The angle at P is exactly 90°.':'This line is perpendicular to the original line — it meets it at 90°.',ops:fin});
+    sol=[oLine(P,E,'res'),...fin];geo=l=>lineDist(l.a,l.b,P)<.1&&acute(l,u)>89;
+    tipMsg='Mark two points on the line the same distance either side of P, then use equal arcs from those points.';
+    prompt=mode==='90'?'Construct an angle of 90° at P.':'Construct the perpendicular to the line at the point P.';
+    intro=mode==='90'?'We are going to construct a 90° angle at the point P.':'We are going to construct a line through P at right angles to the line.';
+  }
+  return{g:{pts:[{p:P,s:'P',o:V(.15,.5)}],lines:[{a:A,b:B}]},intro,prompt,steps,sol,check:st=>judge(st,geo,tipMsg)};
+}
+
+function bPerpFrom(){
+  const t=rnd(-.1,.1),u=dir(t),c=V(7,6.2),A=add(c,mul(u,-5.6)),B=add(c,mul(u,5.6));
+  let n=perp(u);if(n.y>0)n=mul(n,-1);
+  const d=rnd(3,3.6),F=add(c,mul(u,rnd(-1,1))),P=add(F,mul(n,d));
+  const r1=half(d+rnd(.9,1.4)),[C1,D1]=lc(A,B,P,r1,true).sort((p,q)=>p.x-q.x);
+  const hw=dist(C1,D1)/2,r2=half(hw+.6),X=add(F,mul(n,-Math.sqrt(r2*r2-hw*hw)));
+  const a1=ang(sub(C1,P)),a2=ang(sub(D1,P)),E=add(X,mul(n,-.6));
+  const fin=[oRA(F,u,n)];
+  return{
+    g:{pts:[{p:P,s:'P',o:V(0,-.5)}],lines:[{a:A,b:B}]},
+    intro:'We are going to construct a line from P that meets the line at right angles.',
+    prompt:'Construct the perpendicular from the point P to the line.',
+    steps:[
+      {t:'Put the compass point on P. Draw an arc that crosses the line in two places.',ops:[oArc(P,r1,Math.min(a1,a2)-.12,Math.max(a1,a2)+.12),oPt(C1),oPt(D1)]},
+      {t:'Put the point on one crossing. Draw an arc on the opposite side of the line from P.',ops:[oNear(C1,r2,X)]},
+      {t:'Keep the same width. Do the same from the other crossing, so the arcs cross.',ops:[oNear(D1,r2,X)]},
+      {t:'Join P to the point where the arcs cross.',ops:[oPt(X),oLine(P,E,'res')]},
+      {t:'This line passes through P and is perpendicular to the original line.',ops:fin}
+    ],
+    sol:[oLine(P,E,'res'),...fin],
+    check:st=>judge(st,l=>lineDist(l.a,l.b,P)<.1&&acute(l,u)>89,'Draw an arc from P that crosses the line twice, then use equal arcs from those two crossings.')
+  };
+}
+
+function bAng60(target){
+  const A=V(2.6,7.8),u=V(1,0),B=V(11.8,7.8),r=half(rnd(4,5)),C1=add(A,mul(u,r)),X=pol(A,r,-60*DEG),E=pol(A,r+1.1,-60*DEG);
+  const is60=target===60;
+  const steps=[
+    {t:'Put the compass point on A. Draw a long arc, starting on the line and curving upwards.',ops:[oArc(A,r,.14,-75*DEG),oPt(C1)]},
+    {t:'Keep the compasses the same width. Put the point where the arc crosses the line. Draw an arc to cross the first one.',ops:[oNear(C1,r,X,.25)]},
+    {t:'Join A to the point where the arcs cross.',ops:[oPt(X),oLine(A,E,is60?'res':'con')]}
+  ];
+  let sol;
+  if(is60){
+    const fin=[oAng(A,0,-60*DEG,'60°')];
+    steps.push({t:'The angle at A is exactly 60°. (The three points make an equilateral triangle.)',ops:fin});
+    sol=[oLine(A,E,'res'),...fin];
+  }else{
+    const r2=half(r*.7),Y=cc(C1,r2,X,r2).sort((a,b)=>dist(b,A)-dist(a,A))[0],EY=pol(A,dist(A,Y)+1,-30*DEG);
+    const last=[oPt(Y),oLine(A,EY,'res'),oAng(A,0,-30*DEG,'30°',1.5)];
+    steps.push(
+      {t:'That makes 60°. Now bisect it: put the point on each of the two crossing points in turn and draw arcs that cross.',ops:[oNear(C1,r2,Y),oNear(X,r2,Y)]},
+      {t:'Join A to where these arcs cross. Half of 60° is 30°.',ops:last});
+    sol=last;
+  }
+  return{
+    g:{pts:[{p:A,s:'A',o:V(-.4,.35)}],lines:[{a:A,b:B}]},
+    intro:is60?'We are going to construct an angle of exactly 60° at A, without a protractor.':'To make 30° we construct 60° and then bisect it.',
+    prompt:`Construct an angle of ${target}° at A.`,
+    steps,sol,
+    check:st=>judge(st,l=>lineDist(l.a,l.b,A)<.1&&Math.abs(acute(l,u)-target)<1,is60?'Draw an arc from A, then an arc of the same width from where it crosses the line.':'First construct 60° at A, then bisect that angle.')
+  };
+}
+
+function triBase(a){const A=V(7-a/2,8.3),B=V(7+a/2,8.3);
+  return{A,B,pg:{pts:[{p:A,s:'A',o:V(-.4,.3)},{p:B,s:'B',o:V(.4,.3)}],lines:[{a:A,b:B}],texts:[{p:V(7,8.9),s:`${a} cm`}]},
+    first:{t:`Use a ruler to draw the side AB = ${a} cm.`,skip:true,ops:[oLine(A,B,'giv',{scale:true}),oPt(A,'A',V(-.4,.3)),oPt(B,'B',V(.4,.3)),oTxt(V(7,8.9),`${a} cm`)]}};}
+const triSol=(A,B,X)=>[oLine(A,X,'res'),oLine(B,X,'res'),oPt(X,'C',V(0,X.y<A.y?-.5:.55))];
+
+function bSSS(){
+  let a,b,c;do{a=pick([7,8,9]);b=half(rnd(4,7));c=half(rnd(4,7));}while(b+c<a+1.5||Math.abs(b-c)>a-2);
+  const {A,B,pg,first}=triBase(a),C=cc(A,b,B,c).sort((p,q)=>p.y-q.y)[0];
+  return{
+    g:{},pg,measure:false,
+    intro:`We are going to construct triangle ABC with AB = ${a} cm, AC = ${b} cm and BC = ${c} cm.`,
+    prompt:`AB = ${a} cm is drawn for you. Construct triangle ABC with AC = ${b} cm and BC = ${c} cm.`,
+    steps:[first,
+      {t:`Set your compasses to ${b} cm using the ruler. Put the point on A and draw an arc.`,ops:[oNear(A,b,C,.38)]},
+      {t:`Now set the compasses to ${c} cm. Put the point on B and draw an arc to cross the first one.`,ops:[oNear(B,c,C,.38)]},
+      {t:'The arcs cross at C. Join C to A and to B.',ops:[oPt(C,'C',V(0,-.5)),oLine(A,C,'res'),oLine(B,C,'res')]},
+      {t:'Triangle ABC is finished. Leave your construction arcs in — they earn marks!',ops:[sideLab(A,C,B,`${b} cm`),sideLab(B,C,A,`${c} cm`)]}
+    ],
+    check:st=>{
+      const X=st.keys.find(p=>Math.abs(dist(p,A)-b)<.12&&Math.abs(dist(p,B)-c)<.12);
+      if(!X)return{ok:false,msg:`Not yet. C is ${b} cm from A and ${c} cm from B — find where those two arcs cross.`};
+      const ls=linesOf(st);
+      if(ls.some(l=>covers(l,A,X))&&ls.some(l=>covers(l,B,X)))return{ok:true,sol:triSol(A,B,X)};
+      return{ok:false,msg:'You have found C. Now join it to A and to B with the ruler.'};
+    }
+  };
+}
+
+function bSAS(){
+  const a=pick([6,7,8]),th=pick([30,40,50,60,70,80,100,110]),b=half(rnd(4,6));
+  const {A,B,pg,first}=triBase(a),C=pol(A,b,-th*DEG),EL=pol(A,b+1.2,-th*DEG);
+  return{
+    g:{},pg,measure:true,
+    intro:`We are going to construct triangle ABC with AB = ${a} cm, angle A = ${th}° and AC = ${b} cm.`,
+    prompt:`AB = ${a} cm is drawn for you. Construct triangle ABC with angle A = ${th}° and AC = ${b} cm.`,
+    steps:[first,
+      {t:`Put the centre of the protractor on A, with the zero line along AB. Make a small mark at ${th}°.`,tool:{k:'pro',c:A,base:0,sign:-1},ops:[oPt(pol(A,2.65,-th*DEG))]},
+      {t:'Draw a long line from A through your mark.',ops:[oLine(A,EL,'con')]},
+      {t:`Measure ${b} cm along this line from A. Mark the point C.`,tool:{k:'ruler',a:A,b:EL,scale:true},ops:[oPt(C,'C',mul(dir(-th*DEG-.6),.55))]},
+      {t:'Join C to B to finish the triangle.',ops:[oLine(A,C,'res'),oLine(C,B,'res'),oAng(A,0,-th*DEG,`${th}°`)]}
+    ],
+    check:st=>{
+      const X=st.keys.find(p=>{if(Math.abs(dist(p,A)-b)>.15)return false;const d=sub(p,A);return Math.abs(Math.abs(Math.atan2(cross(V(1,0),d),d.x))/DEG-th)<1.2;});
+      if(!X)return{ok:false,msg:`Not yet. From A, draw a line at ${th}° to AB that is ${b} cm long.`};
+      const ls=linesOf(st);
+      if(ls.some(l=>covers(l,A,X,.15))&&ls.some(l=>covers(l,B,X,.15)))return{ok:true,sol:triSol(A,B,X)};
+      return{ok:false,msg:'You have found C. Now join C to B.'};
+    }
+  };
+}
+
+function bASA(){
+  let a,al,be,h;do{a=pick([7,8,9]);al=pick([30,40,50,60,70]);be=pick([30,40,50,60,70]);h=a*Math.sin(al*DEG)*Math.sin(be*DEG)/Math.sin((al+be)*DEG);}while(h>5.8||h<2.5);
+  const {A,B,pg,first}=triBase(a),s=Math.sin((al+be)*DEG),AC=a*Math.sin(be*DEG)/s,BC=a*Math.sin(al*DEG)/s;
+  const C=pol(A,AC,-al*DEG),EA=pol(A,AC+.9,-al*DEG),EB=pol(B,BC+.9,PI+be*DEG),Cm=V(C.x,2*A.y-C.y);
+  return{
+    g:{},pg,measure:true,
+    intro:`We are going to construct triangle ABC with AB = ${a} cm, angle A = ${al}° and angle B = ${be}°.`,
+    prompt:`AB = ${a} cm is drawn for you. Construct triangle ABC with angle A = ${al}° and angle B = ${be}°.`,
+    steps:[first,
+      {t:`Protractor on A: make a mark at ${al}°. Then draw a long line from A through the mark.`,tool:{k:'pro',c:A,base:0,sign:-1},ops:[oPt(pol(A,2.65,-al*DEG)),oLine(A,EA,'con')]},
+      {t:`Protractor on B: measure ${be}° from the line BA and make a mark. Draw a long line from B through it.`,tool:{k:'pro',c:B,base:PI,sign:1},ops:[oPt(pol(B,2.65,PI+be*DEG)),oLine(B,EB,'con')]},
+      {t:'The two lines cross at C. Triangle ABC is finished.',ops:[oPt(C,'C',V(0,-.55)),oLine(A,C,'res'),oLine(B,C,'res'),oAng(A,0,-al*DEG,`${al}°`),oAng(B,PI,PI+be*DEG,`${be}°`)]}
+    ],
+    check:st=>{
+      const ls=linesOf(st);
+      for(const X of[C,Cm])if(ls.some(l=>covers(l,A,X,.2))&&ls.some(l=>covers(l,B,X,.2)))return{ok:true,sol:triSol(A,B,X)};
+      const near=(l,p)=>Math.min(dist(l.a,p),dist(l.b,p))<.15;
+      if(ls.some(l=>near(l,A)&&Math.abs(acute(l,V(1,0))-al)<1.2)&&ls.some(l=>near(l,B)&&Math.abs(acute(l,V(1,0))-be)<1.2))
+        return{ok:false,msg:'Good angles! Make both lines long enough to cross — that crossing point is C.'};
+      return{ok:false,msg:`Not yet. Draw a line from A at ${al}° to AB, and a line from B at ${be}° to BA.`};
+    }
+  };
+}
+
+function bLocusPoint(){
+  const P=V(7,4.7),d=pick([2.5,3,3.5,4]),ra=V(4,9.1),Q=pol(P,d,-.5),m=mid(P,Q);
+  const fin=[oDash(P,Q),oTxt(add(m,V(-.15,-.45)),`${d} cm`)];
+  return{
+    g:{pts:[{p:P,s:'P',o:V(-.35,.4)}]},measure:false,
+    intro:`We want every point that is exactly ${d} cm from P.`,
+    prompt:pick([`Draw the locus of points that are exactly ${d} cm from P.`,`A goat is tied to a post at P by a rope ${d} m long. Show the edge of the grass it can reach. (1 cm = 1 m)`,`A radio mast at P has a range of ${d} km. Draw the boundary of its range. (1 cm = 1 km)`]),
+    steps:[
+      {t:`Set your compasses to ${d} cm using a ruler.`,tool:[{k:'ruler',a:ra,b:add(ra,V(6,0)),scale:true},{k:'compass',c:ra,p:add(ra,V(d,0))}]},
+      {t:'Put the compass point on P and draw a full circle.',ops:[oArc(P,d,-.5,TAU-.5,'res')]},
+      {t:`Every point on the circle is exactly ${d} cm from P. Inside the circle is closer than ${d} cm; outside is further away.`,ops:fin}
+    ],
+    sol:[oArc(P,d,0,TAU,'res'),...fin],
+    check:st=>{
+      const cs=circsOf(st);
+      if(cs.some(c=>dist(c.c,P)<.1&&Math.abs(c.r-d)<.08))return{ok:true};
+      if(cs.some(c=>dist(c.c,P)<.1))return{ok:false,msg:`Right centre — but the compasses must be set to ${d} cm.`};
+      return{ok:false,msg:'Not yet. Use the compasses with the point on P.'};
+    }
+  };
+}
+
+function bLocusLine(){
+  const L=pick([5,6,7]),d=pick([1.5,2,2.5]),A=V(7-L/2,5),B=V(7+L/2,5),up=V(0,-d),dn=V(0,d);
+  const A1=add(A,up),A2=add(A,dn),B1=add(B,up),B2=add(B,dn);
+  const out=[oLine(A1,B1,'res'),oLine(A2,B2,'res'),oArc(A,d,PI/2,PI*1.5,'res'),oArc(B,d,-PI/2,PI/2,'res')];
+  return{
+    g:{pts:[{p:A,s:'A',o:V(.38,.45)},{p:B,s:'B',o:V(-.38,.45)}],lines:[{a:A,b:B}]},measure:true,
+    intro:`We want every point that is exactly ${d} cm from the line AB.`,
+    prompt:pick([`Draw the locus of points that are exactly ${d} cm from the line AB.`,`AB is a wall. A security guard walks so that she is always ${d} m from the wall. Draw her path. (1 cm = 1 m)`]),
+    steps:[
+      {t:`Measure ${d} cm at right angles above and below each end of the line. Mark the four points.`,ops:[oDash(A,A1),oDash(A,A2),oDash(B,B1),oDash(B,B2),oPt(A1),oPt(A2),oPt(B1),oPt(B2)]},
+      {t:'Join the marks with a ruler to make two lines parallel to AB.',ops:[out[0],out[1]]},
+      {t:`Set your compasses to ${d} cm. Put the point on A and draw a semicircle round the end.`,ops:[out[2]]},
+      {t:'Do the same at B.',ops:[out[3]]},
+      {t:`Every point on this “running track” shape is exactly ${d} cm from the line AB.`,ops:[oTxt(add(mid(A,A1),V(.75,0)),`${d} cm`)]}
+    ],
+    sol:out,
+    check:st=>{
+      const ls=linesOf(st),cs=circsOf(st);
+      const top=ls.some(l=>covers(l,A1,B1,.15)),bot=ls.some(l=>covers(l,A2,B2,.15));
+      const ca=cs.some(c=>dist(c.c,A)<.1&&Math.abs(c.r-d)<.08),cb=cs.some(c=>dist(c.c,B)<.1&&Math.abs(c.r-d)<.08);
+      if(top&&bot&&ca&&cb)return{ok:true};
+      if(!top||!bot)return{ok:false,msg:`You need two straight lines parallel to AB, each ${d} cm away from it and as long as AB.`};
+      return{ok:false,msg:`Good lines. Now the ends: every point ${d} cm from A (and from B) lies on a circle.`};
+    }
+  };
+}
+
+const GROUPS=['Bisectors and perpendiculars','Standard angles','Triangles','Loci'];
+const LESSONS=[
+  {id:'pb',g:0,name:'Perpendicular bisector',b:()=>bPerpBis(false)},
+  {id:'ab',g:0,name:'Angle bisector',b:()=>bAngBis(false)},
+  {id:'pon',g:0,name:'Perpendicular at a point on a line',b:()=>bPerpOn('perp')},
+  {id:'pfrom',g:0,name:'Perpendicular from a point to a line',b:bPerpFrom},
+  {id:'a60',g:1,name:'60° angle',b:()=>bAng60(60)},
+  {id:'a30',g:1,name:'30° angle',b:()=>bAng60(30)},
+  {id:'a90',g:1,name:'90° angle',b:()=>bPerpOn('90')},
+  {id:'a45',g:1,name:'45° angle',b:()=>bPerpOn('45')},
+  {id:'sss',g:2,name:'Triangle: three sides (SSS)',b:bSSS},
+  {id:'sas',g:2,name:'Triangle: two sides and the angle between (SAS)',b:bSAS},
+  {id:'asa',g:2,name:'Triangle: two angles and the side between (ASA)',b:bASA},
+  {id:'lp',g:3,name:'Locus: fixed distance from a point',b:bLocusPoint},
+  {id:'ll',g:3,name:'Locus: fixed distance from a line',b:bLocusLine},
+  {id:'l2p',g:3,name:'Locus: equidistant from two points',b:()=>bPerpBis(true)},
+  {id:'l2l',g:3,name:'Locus: equidistant from two lines',b:()=>bAngBis(true)}
+];
+if(typeof module!=='undefined'){module.exports={LESSONS,computeKeys,cc,lc,V,add,sub,mul,dist,pol,dir,DEG,PI,W,H};return;}
+
+/* ===================== RENDERING ===================== */
+const $=id=>document.getElementById(id);
+const cs=getComputedStyle(document.documentElement),WF=cs.getPropertyValue('--wf'),BF=cs.getPropertyValue('--bf');
+const COL={giv:'#26323f',con:'#8b929c',res:'#F47B3F',user:'#4b5563',pt:'#3F73B8'};
+const LW={giv:[.055,2],con:[.03,1.2],res:[.07,2.6],user:[.04,1.6]};
+function sty(c,st,S){c.strokeStyle=COL[st];c.lineWidth=Math.max(LW[st][1],LW[st][0]*S);c.lineCap='round';c.setLineDash([]);}
+function seg(c,S,a,b){c.beginPath();c.moveTo(a.x*S,a.y*S);c.lineTo(b.x*S,b.y*S);c.stroke();}
+function label(v,p,s,col){if(v.thumb)return;const c=v.ctx,S=v.S;c.font=`${Math.max(14,.44*S)}px ${WF}`;c.fillStyle=col||COL.giv;c.textAlign='center';c.textBaseline='middle';c.fillText(s,p.x*S,p.y*S);}
+
+function drawCompass(v,C,Pn){
+  const c=v.ctx,S=v.S,cx=C.x*S,cy=C.y*S,px=Pn.x*S,py=Pn.y*S,d=Math.hypot(px-cx,py-cy);
+  const L=Math.max(S*4.2,d/2+S*.6),h=Math.sqrt(L*L-d*d/4),hx=(cx+px)/2,hy=(cy+py)/2-h;
+  c.save();c.globalAlpha=.92;c.lineCap='round';c.setLineDash([]);
+  c.strokeStyle='#5b6676';c.lineWidth=Math.max(3,.11*S);
+  c.beginPath();c.moveTo(cx,cy);c.lineTo(hx,hy);c.lineTo(px,py);c.stroke();
+  c.beginPath();c.moveTo(hx,hy);c.lineTo(hx,hy-.55*S);c.stroke();
+  c.fillStyle='#3F73B8';c.beginPath();c.arc(hx,hy,Math.max(5,.17*S),0,TAU);c.fill();
+  c.fillStyle='#1f2933';c.beginPath();c.arc(cx,cy,Math.max(2.5,.06*S),0,TAU);c.fill();
+  c.fillStyle='#F47B3F';c.beginPath();c.arc(px,py,Math.max(3,.07*S),0,TAU);c.fill();
+  c.restore();
+}
+function drawRuler(v,a,b,scale){
+  const c=v.ctx,S=v.S,u=norm(sub(b,a));let n=perp(u);if(n.y<0)n=mul(n,-1);
+  const L=dist(a,b),p0=add(a,mul(u,-.5)),p1=add(a,mul(u,L+.5)),wd=1.05;
+  c.save();c.setLineDash([]);
+  c.beginPath();c.moveTo(p0.x*S,p0.y*S);c.lineTo(p1.x*S,p1.y*S);const q1=add(p1,mul(n,wd)),q0=add(p0,mul(n,wd));
+  c.lineTo(q1.x*S,q1.y*S);c.lineTo(q0.x*S,q0.y*S);c.closePath();
+  c.fillStyle='rgba(255,214,120,.42)';c.fill();c.strokeStyle='rgba(150,105,30,.65)';c.lineWidth=1;c.stroke();
+  c.strokeStyle='rgba(110,75,20,.8)';
+  for(let k=0;k<=Math.floor(L*2+.001);k++){const p=add(a,mul(u,k/2)),q=add(p,mul(n,k%2?.14:.26));c.beginPath();c.moveTo(p.x*S,p.y*S);c.lineTo(q.x*S,q.y*S);c.stroke();
+    if(scale&&k%2===0&&!v.thumb){const t=add(p,mul(n,.6));c.font=`${Math.max(9,.3*S)}px ${BF}`;c.fillStyle='rgba(90,60,15,.95)';c.textAlign='center';c.textBaseline='middle';c.fillText(k/2,t.x*S,t.y*S);}}
+  c.restore();
+}
+function drawPro(v,t){
+  const c=v.ctx,S=v.S,r=2.4,x=t.c.x*S,y=t.c.y*S;
+  c.save();c.setLineDash([]);c.beginPath();c.moveTo(x,y);c.arc(x,y,r*S,t.base,t.base+t.sign*PI,t.sign<0);c.closePath();
+  c.fillStyle='rgba(63,115,184,.13)';c.fill();c.strokeStyle='rgba(63,115,184,.75)';c.lineWidth=1.2;c.stroke();
+  for(let k=0;k<=180;k+=10){const a=t.base+t.sign*k*DEG,p=pol(t.c,r,a),q=pol(t.c,r-(k%30?.16:.3),a);c.beginPath();c.moveTo(p.x*S,p.y*S);c.lineTo(q.x*S,q.y*S);c.stroke();
+    if(k%30===0){const m=pol(t.c,r-.62,a);c.font=`${Math.max(9,.27*S)}px ${BF}`;c.fillStyle='rgba(40,80,140,.95)';c.textAlign='center';c.textBaseline='middle';c.fillText(k,m.x*S,m.y*S);}}
+  c.restore();
+}
+function drawTool(v,t){if(!t)return;if(Array.isArray(t)){t.forEach(x=>drawTool(v,x));return;}
+  if(t.k==='pro')drawPro(v,t);else if(t.k==='ruler')drawRuler(v,t.a,t.b,t.scale);else if(t.k==='compass')drawCompass(v,t.c,t.p);}
+
+function drawOp(v,op,p,live){
+  if(p<=0)return;const c=v.ctx,S=v.S;c.save();
+  switch(op.k){
+    case'arc':{sty(c,op.st,S);const a1=op.a0+(op.a1-op.a0)*p;c.beginPath();c.arc(op.c.x*S,op.c.y*S,op.r*S,op.a0,a1,op.a1<op.a0);c.stroke();
+      if(live&&p<1)drawCompass(v,op.c,pol(op.c,op.r,a1));break;}
+    case'line':{const q=lerp(op.a,op.b,p);if(live&&p<1)drawRuler(v,op.a,op.b,op.scale);sty(c,op.st,S);seg(c,S,op.a,q);
+      if(live&&p<1){c.fillStyle=COL.res;c.beginPath();c.arc(q.x*S,q.y*S,Math.max(3,.07*S),0,TAU);c.fill();}break;}
+    case'pt':{c.globalAlpha=p;c.fillStyle=COL.pt;c.beginPath();c.arc(op.p.x*S,op.p.y*S,Math.max(2.6,.075*S),0,TAU);c.fill();if(op.s)label(v,add(op.p,op.o),op.s);break;}
+    case'txt':{c.globalAlpha=p;label(v,op.p,op.s,'#3F73B8');break;}
+    case'ra':{c.globalAlpha=p;sty(c,'giv',S);c.lineWidth=Math.max(1.2,.03*S);const s=.36,a=add(op.p,mul(op.d1,s)),b=add(a,mul(op.d2,s)),d=add(op.p,mul(op.d2,s));
+      c.beginPath();c.moveTo(a.x*S,a.y*S);c.lineTo(b.x*S,b.y*S);c.lineTo(d.x*S,d.y*S);c.stroke();break;}
+    case'ang':{c.globalAlpha=p;let d=op.a1-op.a0;while(d>PI)d-=TAU;while(d<-PI)d+=TAU;sty(c,'giv',S);c.lineWidth=Math.max(1.2,.03*S);
+      c.beginPath();c.arc(op.v.x*S,op.v.y*S,op.r*S,op.a0,op.a0+d,d<0);c.stroke();if(op.s)label(v,pol(op.v,op.r+.5,op.a0+d/2),op.s,'#3F73B8');break;}
+    case'tick':{c.globalAlpha=p;sty(c,'giv',S);c.lineWidth=Math.max(1.4,.035*S);const m=mid(op.a,op.b),n=perp(norm(sub(op.b,op.a)));seg(c,S,add(m,mul(n,.17)),add(m,mul(n,-.17)));break;}
+    case'dash':{c.globalAlpha=p;sty(c,'con',S);c.setLineDash([.14*S,.12*S]);seg(c,S,op.a,op.b);break;}
+  }
+  c.restore();
+}
+function drawGiven(v,g){
+  const c=v.ctx,S=v.S;if(!g)return;
+  (g.lines||[]).forEach(l=>{sty(c,'giv',S);seg(c,S,l.a,l.b);});
+  (g.texts||[]).forEach(t=>label(v,t.p,t.s,'#3F73B8'));
+  (g.pts||[]).forEach(o=>drawOp(v,oPt(o.p,o.s,o.o),1));
+}
+
+/* ===================== STATE ===================== */
+const cv=$('cv'),stage=$('stage');
+let store={logo:true,done:{}};
+try{const s=JSON.parse(localStorage.getItem('lom-construction-lab'));if(s&&typeof s==='object')store=Object.assign(store,s);}catch(e){}
+const save=()=>{try{localStorage.setItem('lom-construction-lab',JSON.stringify(store));}catch(e){}};
+let cur=null,mode='teach',raf=0;
+const T={inst:null,step:-1,t0:0};
+const Pz={inst:null,objs:[],keys:[],tool:'compass',rad:null,drag:null,prev:null,hover:null,solved:false,sol:null,hint:0,score:0,hints:[]};
+
+function fit(){
+  const r=stage.getBoundingClientRect(),d=window.devicePixelRatio||1,w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));
+  if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}
+  const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,r.width,r.height);
+  return{ctx:c,S:r.width/W,w:r.width,h:r.height};
+}
+function render(){cancelAnimationFrame(raf);if(!cur)return;if(mode==='teach')renderTeach();else renderPrac();}
+
+/* ---------- Teach ---------- */
+function renderTeach(){
+  const v=fit(),L=T.inst,now=performance.now();
+  drawGiven(v,L.g);
+  for(let i=0;i<T.step;i++)(L.steps[i].ops||[]).forEach(o=>drawOp(v,o,1));
+  if(T.step>=0){
+    const st=L.steps[T.step];let off=0,busy=false;const t=now-T.t0;
+    const tl=st.tool,under=tl&&!Array.isArray(tl)&&tl.k!=='compass';
+    if(under)drawTool(v,tl);
+    for(const o of st.ops||[]){const p=Math.max(0,Math.min(1,(t-off)/o.d));drawOp(v,o,p,true);if(p<1)busy=true;off+=o.d+140;}
+    if(tl&&!under)drawTool(v,tl);
+    if(busy)raf=requestAnimationFrame(renderTeach);
+  }
+}
+function tUI(){
+  const L=T.inst,n=L.steps.length;
+  $('stepno').textContent=T.step<0?'Get ready':`Step ${T.step+1} of ${n}`;
+  $('steptext').textContent=T.step<0?L.intro+' Press Next to begin.':L.steps[T.step].t;
+  $('dots').innerHTML=L.steps.map((s,i)=>`<i class="${i<=T.step?'on':''}"></i>`).join('');
+  $('bBack').disabled=T.step<0;$('bRep').disabled=T.step<0;
+  $('bNext').innerHTML=T.step>=n-1?'Practise &#9654;':'Next &#9654;';
+}
+function tGo(n,animate){const L=T.inst;T.step=Math.max(-1,Math.min(L.steps.length-1,n));T.t0=animate?performance.now():-1e9;tUI();render();}
+function tNext(){if(T.step>=T.inst.steps.length-1)setMode('prac');else tGo(T.step+1,true);}
+$('bNext').onclick=tNext;
+$('bBack').onclick=()=>tGo(T.step-1,false);
+$('bRep').onclick=()=>tGo(T.step,true);
+$('bNew').onclick=()=>{T.inst=cur.b();tGo(-1,false);};
+document.addEventListener('keydown',e=>{if(!cur||mode!=='teach')return;if(e.key==='ArrowRight'){tNext();e.preventDefault();}else if(e.key==='ArrowLeft'){tGo(T.step-1,false);e.preventDefault();}});
+
+/* ---------- Practise ---------- */
+const pgOf=()=>Pz.inst.pg||Pz.inst.g;
+function rekey(){Pz.keys=computeKeys(pgOf(),Pz.objs);}
+function newQ(){
+  Pz.inst=cur.b();Pz.objs=[];Pz.rad=null;Pz.drag=null;Pz.prev=null;Pz.hover=null;Pz.solved=false;Pz.sol=null;Pz.hint=0;
+  Pz.hints=Pz.inst.steps.filter(s=>!s.skip).map(s=>s.t);
+  $('prompt').textContent=Pz.inst.prompt;setFb('Use the compasses and ruler on the paper, then press Check.','');
+  rekey();pUI();render();
+}
+function setFb(s,cls){const f=$('fb');f.textContent=s;f.className='fb'+(cls?' '+cls:'');}
+function pUI(){
+  $('tlC').classList.toggle('on',Pz.tool==='compass');$('tlR').classList.toggle('on',Pz.tool==='ruler');
+  $('tip').textContent=Pz.tool==='compass'
+    ?'Compasses: drag out from the centre to set the width. Tap a point to draw again with the same width'+(Pz.rad?` (now ${Pz.rad} cm).`:'.')
+    :(Pz.inst&&Pz.inst.measure?'Ruler: drag from a point — the length and the angle are shown as you draw.':'Ruler: drag from one point to another. It locks on to points where lines and arcs cross, and you can carry the line on past them.');
+  $('bCheck').disabled=Pz.solved;$('bUndo').disabled=Pz.solved||!Pz.objs.length;$('bClear').disabled=Pz.solved||!Pz.objs.length;$('bHint').disabled=Pz.solved;
+  $('bNewQ').className=Pz.solved?'primary':'';$('score').textContent=Pz.score;
+}
+function renderPrac(){
+  const v=fit(),c=v.ctx,S=v.S,I=Pz.inst;
+  drawGiven(v,pgOf());
+  for(const o of Pz.objs){
+    if(o.k==='circle'){sty(c,'con',S);c.beginPath();c.arc(o.c.x*S,o.c.y*S,o.r*S,0,TAU);c.stroke();c.fillStyle=COL.con;c.beginPath();c.arc(o.c.x*S,o.c.y*S,2,0,TAU);c.fill();}
+    else{sty(c,'user',S);seg(c,S,o.a,o.b);}
+  }
+  if(!Pz.solved){c.fillStyle='rgba(63,115,184,.55)';for(const k of Pz.keys){c.beginPath();c.arc(k.x*S,k.y*S,Math.max(2.2,.05*S),0,TAU);c.fill();}}
+  if(Pz.solved&&Pz.sol)Pz.sol.forEach(o=>drawOp(v,o,1));
+  const pv=Pz.prev;
+  if(pv){
+    if(pv.pro)drawPro(v,pv.pro);
+    c.save();c.strokeStyle=COL.pt;c.lineWidth=Math.max(1.8,.045*S);c.setLineDash([.16*S,.1*S]);
+    if(pv.k==='circle'){c.beginPath();c.arc(pv.c.x*S,pv.c.y*S,pv.r*S,0,TAU);c.stroke();c.setLineDash([]);c.restore();drawCompass(v,pv.c,pv.pen);}
+    else{seg(c,S,pv.a,pv.b);c.restore();}
+    if(pv.info){c.save();c.font=`700 ${Math.max(14,.36*S)}px ${BF}`;const tw=c.measureText(pv.info).width+16,th=Math.max(26,.6*S);
+      let x=pv.at.x*S-tw/2,y=pv.at.y*S-th-46;x=Math.max(4,Math.min(v.w-tw-4,x));if(y<4)y=pv.at.y*S+40;
+      c.fillStyle='rgba(38,50,63,.92)';c.beginPath();if(c.roundRect)c.roundRect(x,y,tw,th,8);else c.rect(x,y,tw,th);c.fill();
+      c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(pv.info,x+tw/2,y+th/2+1);c.restore();}
+  }
+  const ring=p=>{c.save();c.strokeStyle=COL.res;c.lineWidth=2.5;c.beginPath();c.arc(p.x*S,p.y*S,Math.max(8,.2*S),0,TAU);c.stroke();c.restore();};
+  if(pv&&pv.rings)pv.rings.forEach(ring);else if(Pz.hover)ring(Pz.hover);
+}
+const toWorld=e=>{const r=cv.getBoundingClientRect();return V((e.clientX-r.left)*W/r.width,(e.clientY-r.top)*W/r.width);};
+const scaleS=()=>cv.getBoundingClientRect().width/W;
+function snap(w,tol){let best=null,bd=tol;for(const k of Pz.keys){const d=dist(k,w);if(d<bd){bd=d;best=k;}}return best;}
+function refDir(a){
+  const ls=[...(pgOf().lines||[]),...Pz.objs.filter(o=>o.k==='line')];
+  for(const l of ls){if(dist(a,l.a)<.05)return norm(sub(l.b,l.a));if(dist(a,l.b)<.05)return norm(sub(l.a,l.b));}
+  for(const l of ls)if(segDist(l.a,l.b,a)<.05)return norm(sub(l.b,l.a));
+  return null;
+}
+function fitLine(a,ss,curP,ke,tl){
+  const b=ke||curP,anc=[];if(ss)anc.push(a);if(ke)anc.push(ke);
+  if(anc.length<2){
+    const cand=Pz.keys.map(k=>({k,d:segDist(a,b,k)})).filter(o=>o.d<tl).sort((x,y)=>x.d-y.d);
+    for(const o of cand){if(anc.length>=2)break;if(anc.every(q=>dist(q,o.k)>.3))anc.push(o.k);}
+  }
+  if(anc.length<2)return{a,b,con:false,rings:anc};
+  const u=norm(sub(anc[1],anc[0])),pr=p=>add(anc[0],mul(u,dot(sub(p,anc[0]),u)));
+  return{a:ss?a:pr(a),b:ke?b:pr(b),con:true,rings:anc};
+}
+function preview(){
+  const D=Pz.drag;if(!D){Pz.prev=null;return;}
+  const a=D.start,w=D.cur;
+  if(D.tool==='compass'){
+    const k=snap(w,D.tol);let r,rings=D.ss?[a]:[];
+    if(k&&dist(k,a)>.2){r=dist(a,k);rings.push(k);}else r=Math.max(.5,half(dist(a,w)));
+    const pen=k&&dist(k,a)>.2?k:pol(a,r,ang(sub(w,a)));
+    Pz.prev={k:'circle',c:a,r,pen,rings,info:`${Math.round(r*10)/10} cm`,at:w};
+  }else{
+    const ke0=snap(w,D.tol),ke=ke0&&dist(ke0,a)>.15?ke0:null,meas=!!Pz.inst.measure;
+    if(meas){
+      let b,con=D.ss,info,pro=null,rings=D.ss?[a]:[];
+      if(ke){b=ke;rings.push(ke);info=`${Math.round(dist(a,b)*10)/10} cm`;}
+      else{
+        const d=sub(w,a),L=Math.max(.5,half(len(d))),ref=refDir(a);
+        if(ref){const deg=Math.round(Math.atan2(cross(ref,d),dot(ref,d))/DEG);b=pol(a,L,ang(ref)+deg*DEG);info=`${L} cm · ${Math.abs(deg)}°`;pro={c:a,base:ang(ref),sign:deg<0?-1:1};}
+        else{b=add(a,mul(norm(d),L));info=`${L} cm`;}
+      }
+      Pz.prev={k:'line',a,b,con,ek:true,info,at:w,pro,rings};
+    }else{
+      const f=fitLine(a,D.ss,w,ke,D.tol*.6);
+      Pz.prev={k:'line',a:f.a,b:f.b,con:f.con,ek:false,rings:f.rings,at:w};
+    }
+  }
+}
+cv.addEventListener('pointerdown',e=>{
+  if(mode!=='prac'||Pz.solved)return;e.preventDefault();
+  try{cv.setPointerCapture(e.pointerId);}catch(_){}
+  const w=toWorld(e),tol=(e.pointerType==='mouse'?13:24)/scaleS(),s=snap(w,tol);
+  Pz.drag={tool:Pz.tool,start:s||w,ss:!!s,cur:w,tol,moved:false,x:e.clientX,y:e.clientY};Pz.hover=null;
+  preview();render();
+});
+cv.addEventListener('pointermove',e=>{
+  if(mode!=='prac'||Pz.solved)return;const w=toWorld(e);
+  if(Pz.drag){const D=Pz.drag;D.cur=w;if(Math.hypot(e.clientX-D.x,e.clientY-D.y)>7)D.moved=true;
+    if(D.moved)preview();else Pz.prev=D.tool==='compass'&&Pz.rad?{k:'circle',c:D.start,r:Pz.rad,pen:pol(D.start,Pz.rad,-.6),rings:D.ss?[D.start]:[]}:null;
+    render();}
+  else if(e.pointerType==='mouse'){const h=snap(w,13/scaleS());if(h!==Pz.hover){Pz.hover=h;render();}}
+});
+function endDrag(e,cancel){
+  const D=Pz.drag;if(!D)return;Pz.drag=null;
+  if(!cancel){
+    if(D.tool==='compass'){
+      if(D.moved){preview0(D);const p=Pz.prev;if(p&&p.r>=.5){Pz.objs.push({k:'circle',c:p.c,r:p.r});Pz.rad=Math.round(p.r*1000)/1000;}}
+      else if(Pz.rad)Pz.objs.push({k:'circle',c:D.start,r:Pz.rad});
+      else setFb('Drag outwards from the centre to set the width of the compasses.','');
+    }else if(D.moved){preview0(D);const p=Pz.prev;if(p&&dist(p.a,p.b)>.3)Pz.objs.push({k:'line',a:p.a,b:p.b,con:p.con,ek:p.ek});}
+  }
+  Pz.prev=null;rekey();pUI();render();
+}
+function preview0(D){Pz.drag=D;preview();Pz.drag=null;}
+cv.addEventListener('pointerup',e=>endDrag(e,false));
+cv.addEventListener('pointercancel',e=>endDrag(e,true));
+cv.addEventListener('pointerleave',()=>{if(Pz.hover){Pz.hover=null;render();}});
+
+$('tlC').onclick=()=>{Pz.tool='compass';pUI();};
+$('tlR').onclick=()=>{Pz.tool='ruler';pUI();};
+$('bUndo').onclick=()=>{Pz.objs.pop();rekey();pUI();render();};
+$('bClear').onclick=()=>{Pz.objs=[];Pz.rad=null;rekey();pUI();render();};
+$('bHint').onclick=()=>{const h=Pz.hints;if(!h.length)return;const i=Math.min(Pz.hint,h.length-1);setFb(`Hint ${i+1} of ${h.length}: ${h[i]}`,'');Pz.hint=Math.min(Pz.hint+1,h.length-1);};
+$('bNewQ').onclick=newQ;
+$('bCheck').onclick=()=>{
+  if(Pz.solved)return;
+  if(!Pz.objs.length){setFb('Nothing drawn yet. Pick a tool and draw on the paper.','bad');return;}
+  const r=Pz.inst.check({objs:Pz.objs,keys:Pz.keys});
+  if(r.ok){Pz.solved=true;Pz.sol=r.sol||Pz.inst.sol||null;Pz.score++;store.done[cur.id]=(store.done[cur.id]||0)+1;save();
+    setFb(pick(['Correct! A perfect construction.','Spot on! Well constructed.','Correct! Full marks for that one.']),'good');}
+  else setFb(r.msg,'bad');
+  pUI();render();
+};
+
+/* ---------- Navigation ---------- */
+function setMode(m){
+  mode=m;$('tTeach').classList.toggle('on',m==='teach');$('tPrac').classList.toggle('on',m==='prac');
+  $('pTeach').hidden=m!=='teach';$('pPrac').hidden=m!=='prac';
+  if(m==='prac'){if(!Pz.inst)newQ();else{pUI();render();}}else{tUI();render();}
+}
+$('tTeach').onclick=()=>setMode('teach');
+$('tPrac').onclick=()=>setMode('prac');
+function openLesson(L){
+  cur=L;T.inst=L.b();T.step=-1;T.t0=-1e9;Pz.inst=null;Pz.score=0;
+  $('lname').textContent=L.name;$('menu').hidden=true;$('lesson').hidden=false;$('home').hidden=false;
+  setMode('teach');window.scrollTo(0,0);
+}
+function showMenu(){cancelAnimationFrame(raf);cur=null;$('lesson').hidden=true;$('menu').hidden=false;$('home').hidden=true;buildMenu();window.scrollTo(0,0);}
+$('home').onclick=showMenu;
+
+function thumb(canvas,L){
+  canvas.width=280;canvas.height=200;const c=canvas.getContext('2d'),v={ctx:c,S:280/W,thumb:true},I=L.b();
+  drawGiven(v,I.g);I.steps.forEach(s=>(s.ops||[]).forEach(o=>drawOp(v,o,1)));
+}
+function buildMenu(){
+  const box=$('groups');box.innerHTML='';
+  GROUPS.forEach((gname,gi)=>{
+    const sec=document.createElement('section');sec.className='group';
+    const h=document.createElement('h3');h.textContent=gname;sec.appendChild(h);
+    const cards=document.createElement('div');cards.className='cards';
+    LESSONS.filter(L=>L.g===gi).forEach(L=>{
+      const b=document.createElement('button');b.className='card';
+      const cvs=document.createElement('canvas');b.appendChild(cvs);
+      const s=document.createElement('span');s.textContent=L.name.replace(/^(Triangle|Locus): /,'').replace(/^./,ch=>ch.toUpperCase());b.appendChild(s);
+      if(store.done[L.id]){const t=document.createElement('i');t.className='tick';t.textContent='✓';t.title='Completed';b.appendChild(t);}
+      b.onclick=()=>openLesson(L);cards.appendChild(b);thumb(cvs,L);
+    });
+    sec.appendChild(cards);box.appendChild(sec);
+  });
+}
+function logoUI(){document.body.classList.toggle('nologo',!store.logo);$('logoBtn').textContent='Logo: '+(store.logo?'on':'off');}
+$('logoBtn').onclick=()=>{store.logo=!store.logo;save();logoUI();};
+if(window.ResizeObserver)new ResizeObserver(()=>{if(cur)render();}).observe(stage);else window.addEventListener('resize',()=>{if(cur)render();});
+logoUI();buildMenu();
+})();
+</script>
+</body>
+</html>
