@@ -44,7 +44,7 @@ button.blue{background:var(--bl);color:#fff}
 .card canvas{width:100%;aspect-ratio:14/10;background:var(--paper);border-radius:8px;border:1px solid #e6dcc3;display:block}
 .card span{font-size:.95rem;line-height:1.2}
 .card .tick{position:absolute;top:4px;right:6px;background:var(--ok);color:#fff;border-radius:999px;width:24px;height:24px;display:grid;place-items:center;font-size:.85rem}
-.menufoot{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+.menufoot{margin-top:18px;display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap}.menufoot span{font-family:var(--hf);color:#fff;text-shadow:0 2px 0 rgba(70,35,10,.5)}
 .menufoot button{font-size:.85rem;padding:7px 12px;background:rgba(255,255,255,.75)}
 .blurb{background:rgba(255,253,247,.9);border-radius:12px;padding:10px 14px;margin:0;font-size:clamp(.95rem,1.6vw,1.15rem)}
 
@@ -92,7 +92,7 @@ aside{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 3px 0 
   <main id="menu">
     <p class="blurb">Ruler and compass constructions and loci. Pick a topic: <b>watch it built step by step</b>, then <b>have a go yourself</b>.</p>
     <div id="groups"></div>
-    <div class="menufoot"><button id="logoBtn">Logo: on</button></div>
+    <div class="menufoot"><span>Settings</span><button id="arcBtn"></button><button id="logoBtn">Logo: on</button></div>
   </main>
 
   <main id="lesson" hidden>
@@ -145,6 +145,9 @@ function segDist(a,b,p){const d=sub(b,a),L2=dot(d,d);let t=L2?dot(sub(p,a),d)/L2
 function lineDist(a,b,p){const d=sub(b,a);return Math.abs(cross(d,sub(p,a)))/(len(d)||1);}
 function acute(l,d){const e=sub(l.b,l.a);let x=Math.abs(Math.atan2(cross(e,d),dot(e,d)))/DEG;return x>90?180-x:x;}
 const covers=(l,p,q,tol=.12)=>segDist(l.a,l.b,p)<tol&&segDist(l.a,l.b,q)<tol;
+const onAng=(o,t)=>{if(o.s===undefined)return true;let d=t-o.a0;if(o.s<0)d=-d;d=((d%TAU)+TAU)%TAU;return d<=Math.abs(o.s)+.02||d>=TAU-.02;};
+const onArc=(o,p)=>onAng(o,ang(sub(p,o.c)));
+const swept=(st,c,r,a,b)=>{for(let i=0;i<=24;i++){const t=a+(b-a)*i/24;if(!st.objs.some(o=>o.k==='circle'&&dist(o.c,c)<.1&&Math.abs(o.r-r)<.08&&onAng(o,t)))return false;}return true;};
 const linesOf=st=>st.objs.filter(o=>o.k==='line'),circsOf=st=>st.objs.filter(o=>o.k==='circle');
 
 function computeKeys(pg,objs){
@@ -154,8 +157,8 @@ function computeKeys(pg,objs){
   const ls=[...(pg.lines||[]),...objs.filter(o=>o.k==='line')],cs=objs.filter(o=>o.k==='circle');
   objs.forEach(o=>{if(o.k==='line'&&o.ek){push(o.a);push(o.b)}});
   for(let i=0;i<ls.length;i++)for(let j=i+1;j<ls.length;j++)push(ll(ls[i].a,ls[i].b,ls[j].a,ls[j].b));
-  for(const l of ls)for(const c of cs)lc(l.a,l.b,c.c,c.r,true).forEach(push);
-  for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++)cc(cs[i].c,cs[i].r,cs[j].c,cs[j].r).forEach(push);
+  for(const l of ls)for(const c of cs)lc(l.a,l.b,c.c,c.r,true).filter(p=>onArc(c,p)).forEach(push);
+  for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++)cc(cs[i].c,cs[i].r,cs[j].c,cs[j].r).filter(p=>onArc(cs[i],p)&&onArc(cs[j],p)).forEach(push);
   return pts;
 }
 
@@ -403,7 +406,8 @@ function bLocusPoint(){
     sol:[oArc(P,d,0,TAU,'res'),...fin],
     check:st=>{
       const cs=circsOf(st);
-      if(cs.some(c=>dist(c.c,P)<.1&&Math.abs(c.r-d)<.08))return{ok:true};
+      if(swept(st,P,d,0,TAU))return{ok:true};
+      if(cs.some(c=>dist(c.c,P)<.1&&Math.abs(c.r-d)<.08))return{ok:false,msg:'Right centre and width. Now take the arc all the way round to make a full circle.'};
       if(cs.some(c=>dist(c.c,P)<.1))return{ok:false,msg:`Right centre — but the compasses must be set to ${d} cm.`};
       return{ok:false,msg:'Not yet. Use the compasses with the point on P.'};
     }
@@ -429,10 +433,10 @@ function bLocusLine(){
     check:st=>{
       const ls=linesOf(st),cs=circsOf(st);
       const top=ls.some(l=>covers(l,A1,B1,.15)),bot=ls.some(l=>covers(l,A2,B2,.15));
-      const ca=cs.some(c=>dist(c.c,A)<.1&&Math.abs(c.r-d)<.08),cb=cs.some(c=>dist(c.c,B)<.1&&Math.abs(c.r-d)<.08);
+      const ca=swept(st,A,d,PI/2+.12,PI*1.5-.12),cb=swept(st,B,d,-PI/2+.12,PI/2-.12);
       if(top&&bot&&ca&&cb)return{ok:true};
       if(!top||!bot)return{ok:false,msg:`You need two straight lines parallel to AB, each ${d} cm away from it and as long as AB.`};
-      return{ok:false,msg:`Good lines. Now the ends: every point ${d} cm from A (and from B) lies on a circle.`};
+      return{ok:false,msg:`Good lines. Now the ends: every point ${d} cm from A (and from B) lies on a circle, so draw at least a semicircle round each end.`};
     }
   };
 }
@@ -528,12 +532,12 @@ function drawGiven(v,g){
 
 /* ===================== STATE ===================== */
 const cv=$('cv'),stage=$('stage');
-let store={logo:true,done:{}};
+let store={logo:true,arcs:true,done:{}};
 try{const s=JSON.parse(localStorage.getItem('lom-construction-lab'));if(s&&typeof s==='object')store=Object.assign(store,s);}catch(e){}
 const save=()=>{try{localStorage.setItem('lom-construction-lab',JSON.stringify(store));}catch(e){}};
 let cur=null,mode='teach',raf=0;
 const T={inst:null,step:-1,t0:0};
-const Pz={inst:null,objs:[],keys:[],tool:'compass',rad:null,drag:null,prev:null,hover:null,solved:false,sol:null,hint:0,score:0,hints:[]};
+const Pz={inst:null,objs:[],keys:[],tool:'compass',rad:null,drag:null,prev:null,hover:null,plant:null,solved:false,sol:null,hint:0,score:0,hints:[]};
 
 function fit(){
   const r=stage.getBoundingClientRect(),d=window.devicePixelRatio||1,w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));
@@ -577,7 +581,7 @@ document.addEventListener('keydown',e=>{if(!cur||mode!=='teach')return;if(e.key=
 const pgOf=()=>Pz.inst.pg||Pz.inst.g;
 function rekey(){Pz.keys=computeKeys(pgOf(),Pz.objs);}
 function newQ(){
-  Pz.inst=cur.b();Pz.objs=[];Pz.rad=null;Pz.drag=null;Pz.prev=null;Pz.hover=null;Pz.solved=false;Pz.sol=null;Pz.hint=0;
+  Pz.inst=cur.b();Pz.objs=[];Pz.rad=null;Pz.plant=null;Pz.drag=null;Pz.prev=null;Pz.hover=null;Pz.solved=false;Pz.sol=null;Pz.hint=0;
   Pz.hints=Pz.inst.steps.filter(s=>!s.skip).map(s=>s.t);
   $('prompt').textContent=Pz.inst.prompt;setFb('Use the compasses and ruler on the paper, then press Check.','');
   rekey();pUI();render();
@@ -586,7 +590,8 @@ function setFb(s,cls){const f=$('fb');f.textContent=s;f.className='fb'+(cls?' '+
 function pUI(){
   $('tlC').classList.toggle('on',Pz.tool==='compass');$('tlR').classList.toggle('on',Pz.tool==='ruler');
   $('tip').textContent=Pz.tool==='compass'
-    ?'Compasses: drag out from the centre to set the width. Tap a point to draw again with the same width'+(Pz.rad?` (now ${Pz.rad} cm).`:'.')
+    ?(store.arcs?'Compasses: drag out from a point to set the width, or tap a point to keep the same width'+(Pz.rad?` (now ${Pz.rad} cm)`:'')+'. Then drag round the dotted circle to draw your arc.'
+      :'Compasses: drag out from the centre to set the width. Tap a point to draw again with the same width'+(Pz.rad?` (now ${Pz.rad} cm).`:'.'))
     :(Pz.inst&&Pz.inst.measure?'Ruler: drag from a point — the length and the angle are shown as you draw.':'Ruler: drag from one point to another. It locks on to points where lines and arcs cross, and you can carry the line on past them.');
   $('bCheck').disabled=Pz.solved;$('bUndo').disabled=Pz.solved||!Pz.objs.length;$('bClear').disabled=Pz.solved||!Pz.objs.length;$('bHint').disabled=Pz.solved;
   $('bNewQ').className=Pz.solved?'primary':'';$('score').textContent=Pz.score;
@@ -595,12 +600,17 @@ function renderPrac(){
   const v=fit(),c=v.ctx,S=v.S,I=Pz.inst;
   drawGiven(v,pgOf());
   for(const o of Pz.objs){
-    if(o.k==='circle'){sty(c,'con',S);c.beginPath();c.arc(o.c.x*S,o.c.y*S,o.r*S,0,TAU);c.stroke();c.fillStyle=COL.con;c.beginPath();c.arc(o.c.x*S,o.c.y*S,2,0,TAU);c.fill();}
+    if(o.k==='circle'){sty(c,'con',S);c.beginPath();if(o.s===undefined)c.arc(o.c.x*S,o.c.y*S,o.r*S,0,TAU);else c.arc(o.c.x*S,o.c.y*S,o.r*S,o.a0,o.a0+o.s,o.s<0);c.stroke();c.fillStyle=COL.con;c.beginPath();c.arc(o.c.x*S,o.c.y*S,2,0,TAU);c.fill();}
     else{sty(c,'user',S);seg(c,S,o.a,o.b);}
   }
   if(!Pz.solved){c.fillStyle='rgba(63,115,184,.55)';for(const k of Pz.keys){c.beginPath();c.arc(k.x*S,k.y*S,Math.max(2.2,.05*S),0,TAU);c.fill();}}
   if(Pz.solved&&Pz.sol)Pz.sol.forEach(o=>drawOp(v,o,1));
-  const pv=Pz.prev;
+  const pv=Pz.prev,pl=Pz.plant;
+  if(pl&&store.arcs&&Pz.tool==='compass'&&!Pz.solved&&!pv){
+    c.save();c.strokeStyle='rgba(63,115,184,.45)';c.lineWidth=Math.max(1.2,.03*S);c.setLineDash([.05*S,.16*S]);c.beginPath();c.arc(pl.c.x*S,pl.c.y*S,pl.r*S,0,TAU);c.stroke();
+    const D=Pz.drag;if(D&&D.tool==='sweep'){c.setLineDash([]);c.strokeStyle=COL.pt;c.lineWidth=Math.max(2,.05*S);c.beginPath();c.arc(pl.c.x*S,pl.c.y*S,pl.r*S,D.a0,D.a0+D.total,D.total<0);c.stroke();}
+    c.restore();drawCompass(v,pl.c,pol(pl.c,pl.r,pl.pen));
+  }
   if(pv){
     if(pv.pro)drawPro(v,pv.pro);
     c.save();c.strokeStyle=COL.pt;c.lineWidth=Math.max(1.8,.045*S);c.setLineDash([.16*S,.1*S]);
@@ -661,12 +671,16 @@ function preview(){
 cv.addEventListener('pointerdown',e=>{
   if(mode!=='prac'||Pz.solved)return;e.preventDefault();
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
-  const w=toWorld(e),tol=(e.pointerType==='mouse'?13:24)/scaleS(),s=snap(w,tol);
+  const w=toWorld(e),tol=(e.pointerType==='mouse'?13:24)/scaleS(),s=snap(w,tol),pl=Pz.plant;
+  if(Pz.tool==='compass'&&store.arcs&&!s&&pl&&Math.abs(dist(w,pl.c)-pl.r)<tol){
+    const a=ang(sub(w,pl.c));Pz.drag={tool:'sweep',a0:a,last:a,total:0,cur:w};pl.pen=a;Pz.prev=null;Pz.hover=null;render();return;}
   Pz.drag={tool:Pz.tool,start:s||w,ss:!!s,cur:w,tol,moved:false,x:e.clientX,y:e.clientY};Pz.hover=null;
   preview();render();
 });
 cv.addEventListener('pointermove',e=>{
   if(mode!=='prac'||Pz.solved)return;const w=toWorld(e);
+  if(Pz.drag&&Pz.drag.tool==='sweep'){const D=Pz.drag,pl=Pz.plant;let a=ang(sub(w,pl.c)),d=a-D.last;while(d>PI)d-=TAU;while(d<-PI)d+=TAU;
+    D.total=Math.max(-TAU,Math.min(TAU,D.total+d));D.last=a;pl.pen=D.a0+D.total;render();return;}
   if(Pz.drag){const D=Pz.drag;D.cur=w;if(Math.hypot(e.clientX-D.x,e.clientY-D.y)>7)D.moved=true;
     if(D.moved)preview();else Pz.prev=D.tool==='compass'&&Pz.rad?{k:'circle',c:D.start,r:Pz.rad,pen:pol(D.start,Pz.rad,-.6),rings:D.ss?[D.start]:[]}:null;
     render();}
@@ -674,8 +688,14 @@ cv.addEventListener('pointermove',e=>{
 });
 function endDrag(e,cancel){
   const D=Pz.drag;if(!D)return;Pz.drag=null;
-  if(!cancel){
-    if(D.tool==='compass'){
+  if(D.tool==='sweep'){
+    if(!cancel&&Math.abs(D.total)>.05){const pl=Pz.plant,o={k:'circle',c:pl.c,r:pl.r};if(Math.abs(D.total)<TAU-.03){o.a0=D.a0;o.s=D.total;}Pz.objs.push(o);}
+  }else if(!cancel){
+    if(D.tool==='compass'&&store.arcs){
+      if(D.moved){preview0(D);const p=Pz.prev;if(p&&p.r>=.5){Pz.rad=Math.round(p.r*1000)/1000;Pz.plant={c:p.c,r:p.r,pen:ang(sub(p.pen,p.c))};}}
+      else if(Pz.rad)Pz.plant={c:D.start,r:Pz.rad,pen:-.6};
+      else setFb('Drag outwards from the centre to set the width of the compasses.','');
+    }else if(D.tool==='compass'){
       if(D.moved){preview0(D);const p=Pz.prev;if(p&&p.r>=.5){Pz.objs.push({k:'circle',c:p.c,r:p.r});Pz.rad=Math.round(p.r*1000)/1000;}}
       else if(Pz.rad)Pz.objs.push({k:'circle',c:D.start,r:Pz.rad});
       else setFb('Drag outwards from the centre to set the width of the compasses.','');
@@ -691,7 +711,7 @@ cv.addEventListener('pointerleave',()=>{if(Pz.hover){Pz.hover=null;render();}});
 $('tlC').onclick=()=>{Pz.tool='compass';pUI();};
 $('tlR').onclick=()=>{Pz.tool='ruler';pUI();};
 $('bUndo').onclick=()=>{Pz.objs.pop();rekey();pUI();render();};
-$('bClear').onclick=()=>{Pz.objs=[];Pz.rad=null;rekey();pUI();render();};
+$('bClear').onclick=()=>{Pz.objs=[];Pz.rad=null;Pz.plant=null;rekey();pUI();render();};
 $('bHint').onclick=()=>{const h=Pz.hints;if(!h.length)return;const i=Math.min(Pz.hint,h.length-1);setFb(`Hint ${i+1} of ${h.length}: ${h[i]}`,'');Pz.hint=Math.min(Pz.hint+1,h.length-1);};
 $('bNewQ').onclick=newQ;
 $('bCheck').onclick=()=>{
@@ -713,7 +733,7 @@ function setMode(m){
 $('tTeach').onclick=()=>setMode('teach');
 $('tPrac').onclick=()=>setMode('prac');
 function openLesson(L){
-  cur=L;T.inst=L.b();T.step=-1;T.t0=-1e9;Pz.inst=null;Pz.score=0;
+  cur=L;T.inst=L.b();T.step=-1;T.t0=-1e9;Pz.inst=null;Pz.score=0;Pz.tool='compass';
   $('lname').textContent=L.name;$('menu').hidden=true;$('lesson').hidden=false;$('home').hidden=false;
   setMode('teach');window.scrollTo(0,0);
 }
@@ -740,7 +760,8 @@ function buildMenu(){
     sec.appendChild(cards);box.appendChild(sec);
   });
 }
-function logoUI(){document.body.classList.toggle('nologo',!store.logo);$('logoBtn').textContent='Logo: '+(store.logo?'on':'off');}
+function logoUI(){document.body.classList.toggle('nologo',!store.logo);$('logoBtn').textContent='Logo: '+(store.logo?'on':'off');$('arcBtn').textContent='Compasses draw: '+(store.arcs?'arcs':'full circles');}
+$('arcBtn').onclick=()=>{store.arcs=!store.arcs;save();logoUI();};
 $('logoBtn').onclick=()=>{store.logo=!store.logo;save();logoUI();};
 if(window.ResizeObserver)new ResizeObserver(()=>{if(cur)render();}).observe(stage);else window.addEventListener('resize',()=>{if(cur)render();});
 logoUI();buildMenu();
