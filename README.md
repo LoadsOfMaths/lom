@@ -64,6 +64,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Recite Pi | `recite-pi/` |
 | Slider | `slider/` |
 | Sports Day | `sports-day/` |
+| Substitution | `substitution/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
 | Tangram Explorer | `tangram-explorer/` |
 | The Choice | `the-choice/` |

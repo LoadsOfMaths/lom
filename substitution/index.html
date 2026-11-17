@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Substitution – real formulae</title>
+<style>
+:root{--u:min(1vw,1.8vh);--ink:#1a1a2e;--blue:#1e40af;--green:#166534;--yellow:#fde047;--paper:#fbf8ef;--orange:#b45309}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--paper);color:var(--ink);display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;font-size:calc(var(--u)*2.1);font-weight:700;padding:calc(var(--u)*.6) calc(var(--u)*1.6);min-height:calc(var(--u)*4.4);border-radius:calc(var(--u)*1);border:calc(var(--u)*.25) solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+button:disabled{opacity:.35;cursor:default}
+button.pri{background:var(--blue);border-color:#1e3a8a;color:#fff}
+button.on{background:var(--yellow);border-color:#a16207}
+
+header{display:flex;align-items:center;gap:calc(var(--u)*2);padding:calc(var(--u)*1) calc(var(--u)*2);background:#1e3a8a;color:#fff}
+header h1{margin:0;font-size:calc(var(--u)*2.8);flex:1}
+header .tools{display:flex;gap:calc(var(--u)*1)}
+header button{border-color:#fff}
+
+main{flex:1;min-height:0;overflow:auto;padding:calc(var(--u)*1.5) calc(var(--u)*2.5)}
+
+/* menu */
+.mix{display:flex;align-items:center;flex-wrap:wrap;gap:calc(var(--u)*1);margin-bottom:calc(var(--u)*1.2)}
+.mix span{font-size:calc(var(--u)*2.4);font-weight:800;margin-right:calc(var(--u)*.6)}
+.mix button{font-size:calc(var(--u)*2.2);min-height:calc(var(--u)*4.4)}
+.grp{margin-bottom:calc(var(--u)*1.1)}
+.grp h2{margin:0 0 calc(var(--u)*.4);font-size:calc(var(--u)*2.1);color:var(--blue);text-transform:uppercase;letter-spacing:.08em}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(var(--u)*21),1fr));gap:calc(var(--u)*.9)}
+.tile{text-align:left;padding:calc(var(--u)*.5) calc(var(--u)*1.1);min-height:0;line-height:1.15;display:flex;flex-direction:column;gap:calc(var(--u)*.2)}
+.tile .nm{font-size:calc(var(--u)*1.7);font-weight:700;color:#374151}
+.tile .fm{font-size:calc(var(--u)*2.3);font-weight:800;color:var(--ink)}
+.tile .lv{font-size:calc(var(--u)*1.4);letter-spacing:.15em;color:var(--orange)}
+
+/* question */
+.qgrid{display:grid;grid-template-columns:1fr 1.1fr;gap:calc(var(--u)*3);min-height:100%;align-items:center}
+.chip{display:inline-block;font-size:calc(var(--u)*2.1);font-weight:800;background:#dbeafe;color:#1e3a8a;border-radius:calc(var(--u)*2);padding:calc(var(--u)*.3) calc(var(--u)*1.4);margin-bottom:calc(var(--u)*1.4)}
+.ctx{font-size:calc(var(--u)*3.4*var(--kl,1));font-weight:700;line-height:1.3}
+.note{font-size:calc(var(--u)*2.2*var(--kl,1));color:#4b5563;margin-top:calc(var(--u)*1);font-weight:600}
+.givens{display:flex;flex-wrap:wrap;gap:calc(var(--u)*.9*var(--kl,1));margin-top:calc(var(--u)*1.6*var(--kl,1))}
+.g{font-size:calc(var(--u)*3.4*var(--kl,1));font-weight:800;background:#fff;border:calc(var(--u)*.3) solid var(--ink);border-radius:calc(var(--u)*1);padding:calc(var(--u)*.4) calc(var(--u)*1.4)}
+.g i{color:var(--blue)}
+.g b{color:var(--orange)}
+.wl{position:relative;margin-bottom:calc(var(--u)*1.1*var(--k,1))}
+.wl.new{animation:pop .25s}
+.wl.unshown{visibility:hidden}
+.right{position:relative}
+.lab{font-size:calc(var(--u)*1.9*var(--k,1));font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;margin-bottom:calc(var(--u)*.2)}
+.ln{font-size:calc(var(--u)*3.8*var(--k,1));font-weight:800;background:#fff;border-left:calc(var(--u)*1) solid var(--blue);border-radius:calc(var(--u)*.8);padding:calc(var(--u)*.7) calc(var(--u)*1.4);overflow-wrap:anywhere;line-height:1.25}
+.ln b{color:var(--orange)}
+.wl.final .ln{background:var(--yellow);border-color:#ca8a04}
+.wl.work .lab{visibility:hidden;height:0;margin:0}
+.hint{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;visibility:visible;font-size:calc(var(--u)*2.6*var(--k,1));color:#6b7280;font-weight:700;padding-left:calc(var(--u)*1.4)}
+.fcard{margin-bottom:calc(var(--u)*1.5*var(--k,1))}
+.fl{font-size:calc(var(--u)*4.4*var(--k,1));font-weight:800;background:#dbeafe;border-left:calc(var(--u)*1) solid var(--blue);border-radius:calc(var(--u)*.8);padding:calc(var(--u)*.7) calc(var(--u)*1.4);overflow-wrap:anywhere;line-height:1.25}
+@keyframes pop{from{opacity:0;transform:translateY(calc(var(--u)*1))}to{opacity:1;transform:none}}
+
+footer{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--u)*1.5);padding:calc(var(--u)*1) calc(var(--u)*2.5);background:#efe9d2;border-top:calc(var(--u)*.3) solid var(--ink)}
+footer[hidden]{display:none}
+footer button{font-size:calc(var(--u)*2.8);padding:calc(var(--u)*.8) calc(var(--u)*2.4);min-height:calc(var(--u)*5.6)}
+.count{font-size:calc(var(--u)*2.8);font-weight:800}
+
+@media (max-aspect-ratio:1/1){
+ :root{--u:2.1vw}
+ .qgrid{grid-template-columns:1fr;align-items:start}
+}
+</style>
+</head>
+<body>
+<header>
+ <h1>Substitution</h1>
+ <div class="tools"><button id="bMenu">Menu</button><button id="bFull">Full screen</button></div>
+</header>
+<main id="main"></main>
+<footer id="foot" hidden></footer>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var ri=function(a,b){return a+Math.floor(Math.random()*(b-a+1))};
+var pick=function(a){return a[Math.floor(Math.random()*a.length)]};
+var fmt=function(n){return Number(n.toFixed(6)).toLocaleString('en-GB',{maximumFractionDigits:6})};
+var money=function(n){return '£'+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})};
+var B=function(x){return '<b>'+x+'</b>'};
+/* standard form helpers: sci(x,sf,trim) -> 'a × 10<sup>b</sup>' */
+var sci=function(x,sf,trim){var p=x.toExponential(sf-1).split('e');var m=trim?String(parseFloat(p[0])):p[0];return m+' × 10<sup>'+String(+p[1]).replace('-','−')+'</sup>'};
+var big=function(x){return Math.abs(x)>=1e5||Math.abs(x)<1e-3};
+var val=function(x,sf){return big(x)?sci(x,sf,true):fmt(Number(x.toPrecision(sf)))};
+var brk=function(x,sf){return big(x)?'('+sci(x,sf,true)+')':fmt(Number(x.toPrecision(sf)))};
+var G=6.674e-11,GSTR='6.674 × 10<sup>−11</sup>';
+
+/* ---------- the formulae ---------- */
+var F=[
+
+/* ===== Science ===== */
+{id:'well',topic:'Science',lvl:1,name:'Falling down a well',formula:'d = ½gt²',gen:function(){
+ var t=ri(1,6);
+ return {ctx:'A stone is dropped down a well. How far has it fallen after '+t+' seconds?',
+  note:'g = 9.8 is the pull of gravity',
+  given:[['g','9.8','m/s²'],['t',t,'s']],
+  sub:'d = ½ × '+B('9.8')+' × '+B(t)+'²',
+  work:['= ½ × 9.8 × '+(t*t)],
+  ans:'d = '+fmt(0.5*9.8*t*t)+' m'};
+}},
+{id:'sound',topic:'Science',lvl:1,name:'Speed of sound',formula:'v = 331 + 0.6T',gen:function(){
+ var T=pick([0,5,10,15,20,25,30]);
+ return {ctx:'The air temperature is '+T+' °C. How fast does sound travel?',
+  given:[['T',T,'°C']],
+  sub:'v = 331 + 0.6 × '+B(T),
+  work:['= 331 + '+fmt(0.6*T)],
+  ans:'v = '+fmt(331+0.6*T)+' m/s'};
+}},
+{id:'weight',topic:'Science',lvl:1,name:'Weight (Earth or Moon)',formula:'W = mg',gen:function(){
+ var m=pick([40,50,60,70,80,90]),moon=Math.random()<0.5,g=moon?1.6:9.8;
+ return {ctx:'An astronaut has a mass of '+m+' kg. What is their weight '+(moon?'on the Moon':'on Earth')+'?',
+  note:'g = '+g+' N/kg '+(moon?'on the Moon':'on Earth'),
+  given:[['m',m,'kg'],['g',g,'N/kg']],
+  sub:'W = '+B(m)+' × '+B(g),
+  work:[],
+  ans:'W = '+fmt(m*g)+' N'};
+}},
+{id:'ohm',topic:'Science',lvl:1,name:'Voltage in a circuit',formula:'V = IR',gen:function(){
+ var I=ri(2,9),R=ri(2,12);
+ return {ctx:'A current of '+I+' amps flows through a resistance of '+R+' ohms. What is the voltage?',
+  given:[['I',I,'A'],['R',R,'Ω']],
+  sub:'V = '+B(I)+' × '+B(R),
+  work:[],
+  ans:'V = '+(I*R)+' V'};
+}},
+{id:'ke',topic:'Science',lvl:2,name:'Kinetic energy',formula:'KE = ½mv²',gen:function(){
+ var m=pick([50,60,70,80,90,100]),v=ri(2,10);
+ return {ctx:'A cyclist and bike have a mass of '+m+' kg and travel at '+v+' m/s. What is their kinetic energy?',
+  given:[['m',m,'kg'],['v',v,'m/s']],
+  sub:'KE = ½ × '+B(m)+' × '+B(v)+'²',
+  work:['= ½ × '+m+' × '+(v*v),'= '+fmt(m/2)+' × '+(v*v)],
+  ans:'KE = '+fmt(0.5*m*v*v)+' J'};
+}},
+{id:'gpe',topic:'Science',lvl:2,name:'Potential energy',formula:'GPE = mgh',gen:function(){
+ var m=ri(2,10),h=ri(2,20);
+ return {ctx:'A crane lifts a '+m+' kg crate up '+h+' m. What is its gravitational potential energy?',
+  note:'g = 9.8 N/kg',
+  given:[['m',m,'kg'],['g','9.8','N/kg'],['h',h,'m']],
+  sub:'GPE = '+B(m)+' × '+B('9.8')+' × '+B(h),
+  work:['= '+fmt(m*9.8)+' × '+h],
+  ans:'GPE = '+fmt(m*9.8*h)+' J'};
+}},
+{id:'power',topic:'Science',lvl:2,name:'Electrical power',formula:'P = IV',gen:function(){
+ var I=ri(5,13);
+ return {ctx:'An appliance draws '+I+' amps from the 230 V mains supply. What is its power?',
+  given:[['I',I,'A'],['V','230','V']],
+  sub:'P = '+B(I)+' × '+B('230'),
+  work:[],
+  ans:'P = '+fmt(I*230)+' W'};
+}},
+{id:'horizon',topic:'Science',lvl:2,name:'Distance to the horizon',formula:'d = 3.6√h',gen:function(){
+ var h=pick([4,9,16,25,36,49,64,100]),r=Math.sqrt(h);
+ return {ctx:'You stand on a cliff '+h+' m above the sea. How many kilometres away is the horizon?',
+  note:'An approximate formula, h is the height in metres',
+  given:[['h',h,'m']],
+  sub:'d = 3.6 × √'+B(h),
+  work:['= 3.6 × '+r],
+  ans:'d = '+fmt(3.6*r)+' km'};
+}},
+{id:'pendulum',topic:'Science',lvl:3,name:'Pendulum period',formula:'T = 2π√(L ÷ g)',gen:function(){
+ var L=pick([0.5,1,2,3]),pl=pick([['Earth',9.8],['the Moon',1.6],['Mars',3.7]]),g=pl[1];
+ var q=L/g,sq=Math.sqrt(q),T=2*Math.PI*sq;
+ return {ctx:'A pendulum is '+L+' m long on '+pl[0]+'. How long does one full swing take?',
+  note:'Use the π button. g = '+g+' m/s² on '+pl[0]+'. Give your answer to 3 s.f.',
+  given:[['L',L,'m'],['g',g,'m/s²']],
+  sub:'T = 2 × π × √('+B(L)+' ÷ '+B(g)+')',
+  work:['= 2 × π × √'+fmt(Number(q.toPrecision(4))),'= 2 × π × '+fmt(Number(sq.toPrecision(4)))],
+  ans:'T = '+T.toPrecision(3)+' s',approx:true};
+}},
+{id:'emc',topic:'Space',lvl:3,name:'Mass into energy',formula:'E = mc²',gen:function(){
+ var m=pick([0.001,0.002,0.005,0.01]),c=299792458,c2=c*c,E=m*c2;
+ return {ctx:fmt(m)+' kg of matter is turned completely into energy. How much energy is released?',
+  note:'c is the speed of light. Calculator needed. Give your answer to 3 s.f.',
+  given:[['m',fmt(m),'kg'],['c',fmt(c),'m/s']],
+  sub:'E = '+B(fmt(m))+' × '+B(fmt(c))+'²',
+  work:['= '+fmt(m)+' × '+sci(c2,7,true),'= '+sci(E,7,true)],
+  ans:'E = '+sci(E,3)+' J',approx:true};
+}},
+{id:'escape',topic:'Space',lvl:3,name:'Escape velocity',formula:'v = √(2GM ÷ r)',gen:function(){
+ var bd=pick([['Earth',5.972e24,6.371e6],['the Moon',7.342e22,1.737e6],['Mars',6.417e23,3.390e6],['Jupiter',1.898e27,7.149e7]]);
+ var M=bd[1],r=bd[2],t=2*G*M,q=t/r,v=Math.sqrt(q);
+ return {ctx:'How fast must a rocket travel to escape the gravity of '+bd[0]+'?',
+  note:'M = mass of the planet, r = its radius. Calculator needed. Give your answer to 3 s.f.',
+  given:[['G',GSTR,'N m²/kg²'],['M',sci(M,4,true),'kg'],['r',sci(r,4,true),'m']],
+  sub:'v = √(2 × '+B('('+GSTR+')')+' × '+B('('+sci(M,4,true)+')')+' ÷ '+B('('+sci(r,4,true)+')')+')',
+  work:['= √('+sci(t,4,true)+' ÷ ('+sci(r,4,true)+'))','= √('+sci(q,4,true)+')'],
+  ans:'v = '+sci(v,3)+' m/s',approx:true};
+}},
+{id:'gravity',topic:'Space',lvl:3,name:'Gravitational attraction',formula:'F = Gm₁m₂ ÷ r²',gen:function(){
+ var rp=pick([0.5,1,2]);
+ var cx=pick([
+  {txt:'Two pupils of mass 50 kg and 60 kg sit '+rp+' m apart. How big is the gravitational force between them?',m1:50,m2:60,r:rp},
+  {txt:'How big is the gravitational force between the Earth and the Moon?',m1:5.972e24,m2:7.342e22,r:3.844e8},
+  {txt:'How big is the gravitational force between the Earth and the Sun?',m1:1.989e30,m2:5.972e24,r:1.496e11},
+  {txt:'The International Space Station has a mass of 420,000 kg. How big is the gravitational force between it and the Earth?',m1:5.972e24,m2:4.2e5,r:6.771e6}
+ ]);
+ var N=G*cx.m1*cx.m2,r2=cx.r*cx.r,F=N/r2;
+ return {ctx:cx.txt,
+  note:'Calculator needed. Give your answer to 3 s.f.',
+  given:[['G',GSTR,'N m²/kg²'],['m₁',val(cx.m1,4),'kg'],['m₂',val(cx.m2,4),'kg'],['r',val(cx.r,4),'m']],
+  sub:'F = '+B('('+GSTR+')')+' × '+B(brk(cx.m1,4))+' × '+B(brk(cx.m2,4))+' ÷ '+B(brk(cx.r,4))+'²',
+  work:['= '+val(N,4)+' ÷ '+brk(r2,4)],
+  ans:'F = '+sci(F,3)+' N',approx:true};
+}},
+
+/* ===== Motion (SUVAT) ===== */
+{id:'suvat1',topic:'Motion',lvl:2,name:'Final speed',formula:'v = u + at',gen:function(){
+ var u=ri(1,10),a=ri(1,5),t=ri(2,8);
+ return {ctx:'A car is travelling at '+u+' m/s. It accelerates at '+a+' m/s² for '+t+' seconds. What is its final speed?',
+  given:[['u',u,'m/s'],['a',a,'m/s²'],['t',t,'s']],
+  sub:'v = '+B(u)+' + '+B(a)+' × '+B(t),
+  work:['= '+u+' + '+(a*t)],
+  ans:'v = '+(u+a*t)+' m/s'};
+}},
+{id:'suvat2',topic:'Motion',lvl:2,name:'Distance (average speed)',formula:'s = ½(u + v)t',gen:function(){
+ var u=pick([2,4,6]),v=pick([8,10,12]),t=ri(2,8);
+ return {ctx:'A train speeds up steadily from '+u+' m/s to '+v+' m/s in '+t+' seconds. How far does it travel?',
+  given:[['u',u,'m/s'],['v',v,'m/s'],['t',t,'s']],
+  sub:'s = ½ × ('+B(u)+' + '+B(v)+') × '+B(t),
+  work:['= ½ × '+(u+v)+' × '+t,'= '+((u+v)/2)+' × '+t],
+  ans:'s = '+((u+v)/2*t)+' m'};
+}},
+{id:'suvat3',topic:'Motion',lvl:3,name:'Distance (acceleration)',formula:'s = ut + ½at²',gen:function(){
+ var u=ri(1,6),a=pick([2,4,6]),t=ri(2,6);
+ return {ctx:'A cyclist travelling at '+u+' m/s accelerates at '+a+' m/s² for '+t+' seconds. How far does the cyclist go?',
+  given:[['u',u,'m/s'],['a',a,'m/s²'],['t',t,'s']],
+  sub:'s = '+B(u)+' × '+B(t)+' + ½ × '+B(a)+' × '+B(t)+'²',
+  work:['= '+(u*t)+' + ½ × '+a+' × '+(t*t),'= '+(u*t)+' + '+(a/2*t*t)],
+  ans:'s = '+(u*t+a/2*t*t)+' m'};
+}},
+{id:'suvat4',topic:'Motion',lvl:3,name:'Speed without time',formula:'v² = u² + 2as',gen:function(){
+ var u=ri(1,8),a=ri(1,5),s=ri(2,10);
+ return {ctx:'A skateboarder travelling at '+u+' m/s accelerates at '+a+' m/s² over '+s+' m. Find v².',
+  given:[['u',u,'m/s'],['a',a,'m/s²'],['s',s,'m']],
+  sub:'v² = '+B(u)+'² + 2 × '+B(a)+' × '+B(s),
+  work:['= '+(u*u)+' + 2 × '+a+' × '+s,'= '+(u*u)+' + '+(2*a*s)],
+  ans:'v² = '+(u*u+2*a*s)};
+}},
+
+/* ===== Maths ===== */
+{id:'poly',topic:'Maths',lvl:1,name:'Angles in a polygon',formula:'sum = (n − 2) × 180',gen:function(){
+ var nm={3:'triangle',4:'quadrilateral',5:'pentagon',6:'hexagon',7:'heptagon',8:'octagon',9:'nonagon',10:'decagon',12:'dodecagon'};
+ var n=pick([3,4,5,6,7,8,9,10,12]);
+ return {ctx:(n===8?'An ':'A ')+nm[n]+' has '+n+' sides. What is the sum of its interior angles?',
+  given:[['n',n,'sides']],
+  sub:'sum = ('+B(n)+' − 2) × 180',
+  work:['= '+(n-2)+' × 180'],
+  ans:'sum = '+fmt((n-2)*180)+'°'};
+}},
+{id:'hands',topic:'Maths',lvl:2,name:'Handshakes',formula:'n(n − 1) ÷ 2',gen:function(){
+ var n=pick([4,5,6,8,10,12,15,20,30]);
+ return {ctx:n+' people meet. Everybody shakes hands with everybody else once. How many handshakes?',
+  given:[['n',n,'people']],
+  sub:'handshakes = '+B(n)+' × ('+B(n)+' − 1) ÷ 2',
+  work:['= '+n+' × '+(n-1)+' ÷ 2','= '+fmt(n*(n-1))+' ÷ 2'],
+  ans:'handshakes = '+fmt(n*(n-1)/2)};
+}},
+{id:'tri',topic:'Maths',lvl:2,name:'Adding 1 up to n',formula:'sum = n(n + 1) ÷ 2',gen:function(){
+ var n=pick([10,20,30,50,100]);
+ return {ctx:'Add up all the whole numbers from 1 to '+n+'.',
+  given:[['n',n,'']],
+  sub:'sum = '+B(n)+' × ('+B(n)+' + 1) ÷ 2',
+  work:['= '+n+' × '+(n+1)+' ÷ 2','= '+fmt(n*(n+1))+' ÷ 2'],
+  ans:'sum = '+fmt(n*(n+1)/2)};
+}},
+{id:'circle',topic:'Maths',lvl:2,name:'Area of a circle',formula:'A = πr²',gen:function(){
+ var r=ri(2,10);
+ return {ctx:'A circular pond has a radius of '+r+' m. What is its area?',
+  note:'Use π = 3.14',
+  given:[['π','3.14',''],['r',r,'m']],
+  sub:'A = '+B('3.14')+' × '+B(r)+'²',
+  work:['= 3.14 × '+(r*r)],
+  ans:'A = '+fmt(3.14*r*r)+' m²'};
+}},
+{id:'sphere',topic:'Maths',lvl:3,name:'Volume of a sphere',formula:'V = (4/3)πr³',gen:function(){
+ var r=pick([3,6,9]);
+ return {ctx:'A spherical balloon has a radius of '+r+' cm. What is its volume?',
+  note:'Use π = 3.14',
+  given:[['π','3.14',''],['r',r,'cm']],
+  sub:'V = (4/3) × '+B('3.14')+' × '+B(r)+'³',
+  work:['= (4/3) × 3.14 × '+(r*r*r),'= '+fmt(4*r*r*r/3)+' × 3.14'],
+  ans:'V = '+fmt(4*r*r*r/3*3.14)+' cm³'};
+}},
+
+/* ===== Everyday ===== */
+{id:'temp',topic:'Everyday',lvl:1,name:'Temperature conversion',formula:'F = 1.8C + 32',gen:function(){
+ var C=pick([0,5,10,15,20,25,30,35,40,100]);
+ return {ctx:'The temperature is '+C+' °C. What is that in °F?',
+  given:[['C',C,'°C']],
+  sub:'F = 1.8 × '+B(C)+' + 32',
+  work:['= '+fmt(1.8*C)+' + 32'],
+  ans:'F = '+fmt(1.8*C+32)+' °F'};
+}},
+{id:'ftoc',topic:'Everyday',lvl:2,name:'Fahrenheit to Celsius',formula:'C = (F − 32) × 5 ÷ 9',gen:function(){
+ var fv=pick([32,41,50,59,68,77,86,95,104,212]);
+ return {ctx:'A thermometer reads '+fv+' °F. What is that in °C?',
+  given:[['F',fv,'°F']],
+  sub:'C = ('+B(fv)+' − 32) × 5 ÷ 9',
+  work:['= '+(fv-32)+' × 5 ÷ 9','= '+((fv-32)*5)+' ÷ 9'],
+  ans:'C = '+((fv-32)*5/9)+' °C'};
+}},
+{id:'standing',topic:'Everyday',lvl:1,name:'Standing charge',formula:'cost = standing charge + rate × amount',gen:function(){
+ var m2=function(v){return Number.isInteger(v)?String(v):v.toFixed(2)};
+ var pm=function(v){return '£'+m2(v)};
+ var pence=function(v){return Math.round(v*100)+'p'};
+ var rd=function(v){return Math.round(v*100)/100};
+ var kind=pick(['plumber','phone','energy','taxi','abstract']);
+ var c,r,a,txt,lhs,fm,given,note;
+ if(kind==='abstract'){
+  var mm=ri(2,9),xx=ri(2,10),cc=ri(1,20),yy=mm*xx+cc;
+  return {ctx:'Find y when m = '+mm+', x = '+xx+' and c = '+cc+'.',
+   formula:'y = mx + c',
+   given:[['m',mm,''],['x',xx,''],['c',cc,'']],
+   sub:'y = '+B(mm)+' × '+B(xx)+' + '+B(cc),
+   work:['= '+(mm*xx)+' + '+cc],
+   ans:'y = '+yy};
+ }
+ if(kind==='plumber'){
+  c=pick([40,50,60,80]);r=pick([30,35,40,45]);a=pick([1,1.5,2,2.5,3,4]);
+  txt='A plumber charges a call-out fee of '+pm(c)+' plus '+pm(r)+' for each hour of work. How much does a job of '+a+(a===1?' hour':' hours')+' cost?';
+  lhs='cost';fm='cost = call-out fee + hourly rate × hours';
+  given=[['call-out fee',pm(c),''],['hourly rate',pm(r),'per hour'],['hours',a,'']];note='';
+ }else if(kind==='phone'){
+  c=pick([10,12,15,20]);r=pick([0.05,0.10,0.20,0.25]);a=pick([20,30,40,50,60,80,100,120,150,200]);
+  txt='A phone plan costs '+pm(c)+' a month plus '+pence(r)+' for each minute of calls. What is the monthly bill for '+a+' minutes?';
+  lhs='bill';fm='bill = monthly cost + rate × minutes';
+  given=[['monthly cost',pm(c),''],['rate',pm(r),'per minute'],['minutes',a,'']];note='Remember '+pence(r)+' = '+pm(r);
+ }else if(kind==='energy'){
+  c=pick([10,12,15,20]);r=pick([0.20,0.25,0.30]);a=pick([100,150,200,250,300,400]);
+  txt='An energy bill has a standing charge of '+pm(c)+' plus '+pence(r)+' for each unit of electricity used. What is the bill for '+a+' units?';
+  lhs='bill';fm='bill = standing charge + unit rate × units';
+  given=[['standing charge',pm(c),''],['unit rate',pm(r),'per unit'],['units',a,'']];note='Remember '+pence(r)+' = '+pm(r);
+ }else{
+  c=pick([2,3,4,5]);r=pick([1.5,2,2.5,3]);a=ri(2,10);
+  txt='A taxi charges '+pm(c)+' to start the journey plus '+pm(r)+' for each mile. What is the fare for a '+a+' mile journey?';
+  lhs='fare';fm='fare = starting charge + rate × miles';
+  given=[['starting charge',pm(c),''],['rate',pm(r),'per mile'],['miles',a,'']];note='';
+ }
+ var prod=rd(r*a),tot=rd(c+prod);
+ var q={ctx:txt,formula:fm,given:given,
+  sub:lhs+' = '+B(m2(c))+' + '+B(m2(r))+' × '+B(a),
+  work:['= '+m2(c)+' + '+m2(prod)],
+  ans:lhs+' = '+money(tot)};
+ if(note)q.note=note;
+ return q;
+}},
+{id:'elec',topic:'Everyday',lvl:2,name:'Cost of electricity',formula:'cost = kW × hours × rate',gen:function(){
+ var kw=pick([1,2,3]),h=ri(1,6),rate=pick([20,25,30]),c=kw*h*rate;
+ return {ctx:'A '+kw+' kW heater is on for '+h+' hours. Electricity costs '+rate+'p for each kWh. How much does it cost?',
+  given:[['kW',kw,'kW'],['hours',h,'h'],['rate',rate,'p per kWh']],
+  sub:'cost = '+B(kw)+' × '+B(h)+' × '+B(rate),
+  work:['= '+(kw*h)+' × '+rate],
+  ans:'cost = '+c+'p'+(c>=100?' = '+money(c/100):'')};
+}},
+{id:'stop',topic:'Everyday',lvl:2,name:'Car stopping distance',formula:'total = v + v² ÷ 20',gen:function(){
+ var v=pick([20,30,40,50,60,70]);
+ return {ctx:'A car travels at '+v+' mph. What is its total stopping distance in feet?',
+  note:'Thinking distance + braking distance (matches the Highway Code)',
+  given:[['v',v,'mph']],
+  sub:'total = '+B(v)+' + '+B(v)+'² ÷ 20',
+  work:['= '+v+' + '+fmt(v*v)+' ÷ 20','= '+v+' + '+fmt(v*v/20)],
+  ans:'total = '+fmt(v+v*v/20)+' feet'};
+}},
+{id:'compound',topic:'Everyday',lvl:3,name:'Compound interest',formula:'A = P(1 + r/100)<sup>n</sup>',gen:function(){
+ var c=pick([[200,10,2],[500,10,2],[100,20,2],[250,20,2],[400,5,2],[1000,10,3],[1000,5,3]]);
+ var P=c[0],r=c[1],n=c[2],k=1+r/100,A=P*Math.pow(k,n);
+ return {ctx:money(P).replace('.00','')+' is saved at '+r+'% interest per year for '+n+' years. How much is it worth at the end?',
+  given:[['P',money(P).replace('.00',''),''],['r',r,'%'],['n',n,'years']],
+  sub:'A = '+B(P)+' × (1 + '+B(r)+' ÷ 100)<sup>'+B(n)+'</sup>',
+  work:['= '+P+' × (1 + '+fmt(r/100)+')<sup>'+n+'</sup>','= '+P+' × '+fmt(k)+'<sup>'+n+'</sup>','= '+P+' × '+fmt(Math.pow(k,n))],
+  ans:'A = '+money(A)};
+}}
+];
+window.__F=F;
+
+var TOPICS=['Science','Space','Motion','Maths','Everyday'];
+var TOPIC_LABEL={Science:'Science',Space:'Space and big numbers',Motion:'Motion (SUVAT)',Maths:'Maths',Everyday:'Everyday life'};
+var dots=function(l){return '●'.repeat(l)+'○'.repeat(3-l)};
+
+/* ---------- state ---------- */
+var S={screen:'menu',focus:null,pool:null,f:null,q:null,shown:0,n:1};
+window.__S=S;
+
+function chooseFormula(){
+ var list=S.focus?[S.focus]:S.pool;
+ var cand=list.filter(function(x){return x!==S.f});
+ return pick(cand.length?cand:list);
+}
+function newQ(reset){
+ S.f=chooseFormula();
+ S.q=S.f.gen();
+ S.shown=0;
+ S.n=reset?1:S.n+1;
+}
+function lines(){
+ var q=S.q,L=[{lab:'Substitute',html:q.sub}];
+ q.work.forEach(function(w,i){L.push({lab:i===0?'Work out':'',html:w,work:true})});
+ L.push({lab:'Answer',html:q.ans,final:true});
+ return L;
+}
+
+/* ---------- render ---------- */
+function renderMenu(){
+ var h='<div class="mix"><span>Mixed practice:</span>'
+  +'<button data-mix="1">Easy</button><button data-mix="2">Medium</button><button data-mix="3">Hard</button><button class="pri" data-mix="0">Everything</button></div>';
+ TOPICS.forEach(function(t){
+  h+='<div class="grp"><h2>'+TOPIC_LABEL[t]+'</h2><div class="tiles">';
+  F.filter(function(f){return f.topic===t}).forEach(function(f){
+   h+='<button class="tile" data-id="'+f.id+'"><span class="nm">'+f.name+'</span><span class="fm">'+f.formula+'</span><span class="lv">'+dots(f.lvl)+'</span></button>';
+  });
+  h+='</div></div>';
+ });
+ $('main').innerHTML=h;
+ $('foot').hidden=true;
+}
+function fit(){
+ var m=$('main');
+ if(!m.querySelectorAll||!window.getComputedStyle)return;
+ var secs=m.querySelectorAll('.qgrid > section');
+ if(!secs||secs.length<2)return;
+ var cs=window.getComputedStyle(m);
+ var avail=m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+ var kl=1,kr=1;
+ m.style.setProperty('--kl','1');m.style.setProperty('--k','1');
+ while(secs[0].offsetHeight>avail&&kl>0.5){kl-=0.05;m.style.setProperty('--kl',kl.toFixed(2));}
+ while(secs[1].offsetHeight>avail&&kr>0.5){kr-=0.05;m.style.setProperty('--k',kr.toFixed(2));}
+}
+function renderQ(){
+ var q=S.q,L=lines(),h='<div class="qgrid"><section>';
+ h+='<div class="chip">'+S.f.name+' · '+dots(S.f.lvl)+'</div>';
+ h+='<div class="ctx">'+q.ctx.replace(/(\d) (?=[A-Za-z°])/g,'$1\u00a0')+'</div>';
+ if(q.note)h+='<div class="note">'+q.note+'</div>';
+ h+='<div class="givens">';
+ q.given.forEach(function(g){h+='<div class="g"><i>'+g[0]+'</i> = <b>'+g[1]+'</b>'+(g[2]?' '+g[2]:'')+'</div>'});
+ h+='</div></section><section class="right">';
+ h+='<div class="fcard"><div class="lab">Formula</div><div class="fl">'+(q.formula||S.f.formula)+'</div></div>';
+ for(var i=0;i<L.length;i++){
+  var x=L[i];
+  h+='<div class="wl'+(x.final?' final':'')+(x.work?' work':'')+(i>=S.shown?' unshown':'')+(i===S.shown-1?' new':'')+'"><div class="lab">'+x.lab+'</div><div class="ln">'+x.html+'</div>'+(i===0&&S.shown===0?'<div class="hint">Press Next ▶ to start the working</div>':'')+'</div>';
+ }
+ h+='</section></div>';
+ var done=S.shown>=L.length;
+ $('foot').hidden=false;
+ $('foot').innerHTML='<button id="fBack"'+(S.shown===0?' disabled':'')+'>◀ Back</button>'
+  +'<div class="count">Question '+S.n+'</div>'
+  +'<button id="fNew">New question</button>'
+  +'<button class="pri" id="fNext">'+(done?'Next question ▶':'Next step ▶')+'</button>';
+ /* footer must be in place before measuring, or the first question is sized for a taller screen */
+ $('main').innerHTML=h;
+ fit();
+}
+function render(){
+ $('bMenu').disabled=S.screen==='menu';
+ if(S.screen==='menu')renderMenu();else renderQ();
+}
+
+/* ---------- actions ---------- */
+function startFocus(id){
+ S.focus=F.filter(function(f){return f.id===id})[0];S.pool=null;S.f=null;S.screen='q';newQ(true);render();
+}
+function startMix(l){
+ S.focus=null;S.pool=l?F.filter(function(f){return f.lvl===l}):F.slice();S.f=null;S.screen='q';newQ(true);render();
+}
+function next(){
+ if(S.screen!=='q')return;
+ if(S.shown<lines().length)S.shown++;else newQ(false);
+ render();
+}
+function back(){
+ if(S.screen==='q'&&S.shown>0){S.shown--;render();}
+}
+
+/* ---------- events ---------- */
+$('main').addEventListener('click',function(e){
+ var b=e.target.closest&&e.target.closest('button');if(!b)return;
+ if(b.dataset.id)startFocus(b.dataset.id);
+ else if(b.dataset.mix!==undefined)startMix(+b.dataset.mix);
+});
+$('foot').addEventListener('click',function(e){
+ var b=e.target.closest&&e.target.closest('button');if(!b)return;
+ if(b.id==='fNext')next();
+ else if(b.id==='fBack')back();
+ else if(b.id==='fNew'){newQ(false);render();}
+});
+$('bMenu').onclick=function(){S.screen='menu';render();};
+$('bFull').onclick=function(){
+ try{if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}catch(err){}
+};
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button');if(b)b.blur();});
+document.addEventListener('keydown',function(e){
+ if(e.key==='ArrowRight'||e.key===' '||e.key==='Enter'){e.preventDefault();next();}
+ else if(e.key==='ArrowLeft'){e.preventDefault();back();}
+ else if((e.key==='n'||e.key==='N')&&S.screen==='q'){newQ(false);render();}
+ else if(e.key==='m'||e.key==='M'||e.key==='Escape'){S.screen='menu';render();}
+});
+
+render();
+})();
+</script>
+</body>
+</html>
