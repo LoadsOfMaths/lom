@@ -209,6 +209,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.4;font-family:Consolas,M
   <span class="last" id="lastTxt"></span>
   <span id="waitChip">Wait…</span>
   <span class="count" id="count">0 / 0 in</span>
+  <button class="hbtn" id="listBtn">Record student list</button>
   <button class="hbtn" id="missBtn">Still to tap</button>
   <button class="hbtn" id="teachBtn">⚙ Teacher</button>
 </header>
@@ -853,6 +854,23 @@ function buildRTF(people,iso){
   });
   return r+"}";
 }
+function buildListRTF(){
+  const list=roster.slice().sort((a,b)=>cmp(a.sur||'',b.sur||'')||cmp(a.first,b.first));
+  const tabs="\\tx2400\\tx5000\\tx6200\\tx7400";
+  const line=(c,b)=>"{\\pard"+tabs+"\\fs24 "+(b?"\\b ":"")+c.map(rtfEsc).join("\\tab ")+(b?"\\b0":"")+"\\par}\n";
+  let r="{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0\\fswiss\\fcharset0 Arial;}}\\f0\\fs24\n";
+  r+="{\\pard\\fs36\\b "+rtfEsc(heading())+" – student list\\b0\\par}\n";
+  r+="{\\pard\\sa200\\fs24 "+rtfEsc(longDate(todayISO()))+"   Students: "+list.length+"\\par}\n";
+  r+=line(["Surname","First name","Emoji","Year","Form"],true);
+  list.forEach(p=>r+=line([p.sur||"",p.first,p.emoji||"",p.year?String(p.year):"",p.form||""],false));
+  return r+"}";
+}
+$('listBtn').onclick=async()=>{
+  if(!(await gate()))return;
+  if(!roster.length){showMsg('<span class="big">📋</span>There are no names in this register yet.',[{t:'OK',c:'btn primary'}]);return}
+  download('Student_list_'+heading().replace(/[^A-Za-z0-9]+/g,'_')+'_'+todayISO()+'.rtf',buildListRTF());
+  toast('Student list downloaded');
+};
 function askFinish(){
   rollover();
   const n=attendees().length;
@@ -1106,9 +1124,9 @@ $('impGo').onclick=()=>{
 
 /* ---------- add / edit a name ---------- */
 let editId=null,F={first:'',emoji:'',sur:'',year:'',form:''},active='first',shift=false;
-const order=()=>{const o=['first'];if(C.emoji)o.push('emoji');if(C.sur)o.push('sur');if(C.form){o.push('year');o.push('form')}return o};
-const LABEL=()=>({first:C.sur?'First name':'Name',emoji:'Emoji',sur:'Surname',year:'Year',form:'Form'});
-const HINT=()=>({first:C.sur?'Type or tap your first name':'Type or tap your name – add an initial if someone shares it',emoji:'Choose your emoji',sur:'Type or tap your surname',year:'Tap your year group',form:'Tap your form'});
+const order=()=>['first','emoji','sur','year','form'];
+const LABEL=()=>({first:'First name',emoji:'Emoji',sur:'Surname',year:'Year',form:'Form'});
+const HINT=()=>({first:'Type or tap your first name',emoji:'Choose your emoji',sur:'Type or tap your surname',year:'Tap your year group',form:'Tap your form'});
 function fieldOk(k){
   if(k==='first')return nameOk(F.first);
   if(k==='sur')return nameOk(F.sur);
