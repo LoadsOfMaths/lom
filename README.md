@@ -66,6 +66,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Sports Day | `sports-day/` |
 | Substitution | `substitution/` |
 | Super Fun Maths Quiz | `super-fun-maths-quiz/` |
+| Tap In | `tap-in/` |
 | Tangram Explorer | `tangram-explorer/` |
 | The Choice | `the-choice/` |
 | Times Tables Quiz | `times-tables-quiz/` |
