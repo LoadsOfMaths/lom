@@ -6,6 +6,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 
 | Game | Folder |
 | --- | --- |
+| 3D Drawing | `3d-drawing/` |
 | Algebra Lab | `algebra-lab/` |
 | Angle Detective | `angle-detective/` |
 | Baked Bean Sim | `baked-bean-sim/` |

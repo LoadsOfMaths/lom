@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>3D Drawing</title>
+<style>
+:root{
+  --or:#F47B3F;--bl:#3F73B8;--grey:#8a8f98;--ink:#1f2d3d;--paper:#fdf9ee;--card:#fffdf7;--ok:#2e8b57;--bad:#d23b3b;
+  --hf:"Super Bouncer","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;
+  --wf:"Anak Orang","Segoe Print","Bradley Hand","Comic Sans MS",cursive;
+  --bf:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{min-height:100%}
+body{margin:0;min-height:100vh;font-family:var(--bf);color:var(--ink);-webkit-tap-highlight-color:transparent;
+  background-color:#dbe8f6;
+  /* isometric dotty paper behind everything */
+  background-image:radial-gradient(circle,rgba(63,115,184,.28) 1.6px,transparent 2.2px),radial-gradient(circle,rgba(63,115,184,.28) 1.6px,transparent 2.2px);
+  background-size:55.4px 32px,55.4px 32px;background-position:0 0,27.7px 16px;background-attachment:fixed}
+.app{max-width:1500px;margin:0 auto;padding:10px clamp(8px,2vw,22px) 24px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+header h1{font-family:var(--hf);font-size:clamp(1.6rem,3.8vw,2.7rem);margin:0;color:var(--bl);letter-spacing:.5px;flex:1;text-shadow:0 2px 0 #fff}
+header h1 span{color:var(--or)}
+.logo{font-family:var(--hf);background:#fff;border-radius:999px;padding:5px 14px;font-size:clamp(.8rem,1.6vw,1.05rem);box-shadow:0 2px 5px rgba(0,0,0,.2);white-space:nowrap}
+.logo i{font-style:normal;color:var(--grey)}.logo .o{color:var(--or)}.logo .b{color:var(--bl)}
+body.nologo .logo{display:none}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 14px;background:#fff;color:var(--ink);font-weight:600;box-shadow:0 2px 0 rgba(0,0,0,.22);touch-action:manipulation}
+button:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+button:disabled{opacity:.4;cursor:default}
+button.on{background:var(--bl);color:#fff}
+button.pri{background:var(--or);color:#fff}
+button.sm{padding:6px 10px;font-size:.85rem}
+[hidden]{display:none!important}
+
+nav.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+nav.tabs button{font-family:var(--hf);font-size:clamp(1rem,2.2vw,1.5rem);padding:10px 22px;border-radius:14px 14px 0 0;background:#fff;box-shadow:0 -2px 0 rgba(0,0,0,.08) inset;font-weight:400}
+nav.tabs button.on{background:var(--bl);color:#fff}
+.card{background:var(--card);border-radius:16px;padding:12px 14px;box-shadow:0 3px 0 rgba(31,45,61,.22)}
+.card h3{font-family:var(--hf);font-weight:400;margin:0 0 6px;font-size:clamp(1rem,1.8vw,1.3rem);color:var(--bl)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.mb{margin-bottom:10px}
+.lbl{font-family:var(--hf);color:var(--ink);margin-right:2px}
+.msg{min-height:2.6em;margin-top:8px;font-size:clamp(1rem,1.7vw,1.2rem);line-height:1.35}
+.msg b.ok{color:var(--ok)}.msg b.bad{color:var(--bad)}
+svg{display:block;width:100%;height:auto}
+
+/* learn */
+.learngrid{display:grid;grid-template-columns:minmax(150px,230px) 1fr;gap:12px}
+.lessons{display:flex;flex-direction:column;gap:8px}
+.lessons button{text-align:left;font-size:clamp(.95rem,1.6vw,1.1rem)}
+.lessons button small{display:block;font-weight:400;opacity:.8}
+.stage{display:flex;flex-direction:column;gap:8px}
+.fig{background:#fff;border-radius:12px;border:1px solid #d7e2f0;padding:6px;min-height:200px}
+.fig svg{max-height:62vh}
+.cap{font-family:var(--wf);font-size:clamp(1.15rem,2.3vw,1.7rem);line-height:1.3;min-height:3.2em}
+.cap b{color:var(--or)}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.nav .dotsrow{flex:1;text-align:center;font-family:var(--hf);color:var(--grey)}
+.vfig{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;align-items:end}
+.vfig .vc{background:#fff;border:2px solid #d7e2f0;border-radius:10px;padding:4px;transition:opacity .3s,border-color .3s}
+.vfig .vc h4{margin:0 0 2px;font-size:.9rem;text-align:center;color:var(--bl)}
+.vfig .vc.hid{opacity:.08}
+.vfig .vc.hl{border-color:var(--or);box-shadow:0 0 0 3px rgba(244,123,63,.25)}
+.exrow{display:flex;gap:6px;flex-wrap:wrap}
+
+/* draw */
+.drawgrid{display:grid;grid-template-columns:minmax(210px,300px) 1fr;gap:12px}
+.paperwrap{background:#fffef8;border:2px solid #cfdcec;border-radius:12px;padding:4px}
+#paper{touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.letbtn{min-width:34px;padding:6px 8px;font-size:.95rem}
+.pill{display:inline-block;border-radius:999px;padding:3px 10px;background:#eef3fa;font-size:.9rem}
+.targetfig{background:#fff;border-radius:12px;border:1px solid #d7e2f0;padding:4px;margin-bottom:8px}
+
+/* views */
+.vgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.4fr);gap:12px;align-items:start}
+.vgrid .vcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.vcard{background:#fff;border:2px solid #d7e2f0;border-radius:10px;padding:4px}
+.vcard h4{margin:0 0 2px;font-size:.88rem;text-align:center;color:var(--bl)}
+.vgrid .wide{grid-column:span 2}
+.vcard.good{border-color:var(--ok)}.vcard.wrong{border-color:var(--bad)}
+.vcard h4 .t{color:var(--ok)}.vcard h4 .x{color:var(--bad)}
+.cellbtn{cursor:pointer}
+@media(max-width:1000px){.vgrid{grid-template-columns:1fr 1fr}.vgrid .vcol3,.vgrid .wide{grid-column:1/-1}}
+@media(max-width:760px){.learngrid,.drawgrid,.vgrid{grid-template-columns:1fr}.vfig{grid-template-columns:1fr 1fr}.lessons{flex-direction:row;flex-wrap:wrap}}
+.foot{margin-top:14px;display:flex;justify-content:flex-end}
+.foot button{font-size:.8rem;padding:6px 10px;background:rgba(255,255,255,.75)}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>3D <span>Drawing</span></h1>
+  <button id="setBtn" class="sm">&#9881; Settings</button>
+  <div class="logo"><i>www.</i><span class="o">loads</span><i>of</i><span class="b">maths</span><i>.co.uk</i></div>
+</header>
+<div class="card" id="settings" hidden style="margin-bottom:10px">
+  <h3>Settings</h3>
+  <div class="row mb"><span class="lbl">Name of the paper</span>
+    <span class="row" id="setPre"></span><span class="row" id="setSuf"></span>
+    <span class="pill" id="paperPrev"></span></div>
+  <div class="msg" style="min-height:0;margin:0 0 8px;font-size:.9rem;color:#5b6b7d">Choose a word to go before &ldquo;Paper&rdquo; (Triangular or Isometric), and a word for the dots (Dot or Dotty). At least one of them is always used.</div>
+  <div class="row"><button id="logoBtn" class="sm"></button></div>
+</div>
+<nav class="tabs" id="tabs">
+  <button data-tab="learn" class="on">Learn</button>
+  <button data-tab="draw">Draw</button>
+  <button data-tab="views">Plans &amp; Elevations</button>
+</nav>
+
+<!-- LEARN -->
+<section id="learn">
+  <div class="learngrid">
+    <div class="lessons card" id="lessonList"></div>
+    <div class="stage card">
+      <div class="exrow" id="exRow" hidden></div>
+      <div class="fig" id="learnFig"></div>
+      <div class="cap" id="learnCap"></div>
+      <div class="nav">
+        <button id="lBack">&#9664; Back</button>
+        <div class="dotsrow" id="lCount"></div>
+        <button id="lRestart" class="sm">Restart</button>
+        <button id="lNext" class="pri">Next &#9654;</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DRAW -->
+<section id="draw" hidden>
+  <div class="row mb">
+    <span class="lbl">Level</span>
+    <span class="row" id="dLevels"></span>
+    <button id="dNew" class="pri">New shape</button>
+    <span class="pill" id="dScore"></span>
+  </div>
+  <div class="row mb" id="dLetterRow" hidden>
+    <span class="lbl">Letter</span><span class="row" id="dLetters"></span>
+    <button id="dOrient" class="sm"></button>
+  </div>
+  <div class="drawgrid">
+    <div class="card">
+      <h3 id="dTitle">Draw this solid</h3>
+      <div class="targetfig" id="dTarget"></div>
+      <div class="pill" id="dInfo"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="dGuide" class="sm">Guide: off</button>
+        <button id="dLines" class="sm">Lines between cubes: on</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="paperwrap"><svg id="paper" viewBox="0 0 10 10"></svg></div>
+      <div class="row" style="margin-top:8px">
+        <button id="tPen" class="on">&#9998; Draw</button>
+        <button id="tErase">Rub out</button>
+        <button id="dUndo">&#8630; Undo</button>
+        <button id="dClear">Clear</button>
+        <span style="flex:1"></span>
+        <button id="dCheck" class="pri">Check</button>
+        <button id="dShow">Show me</button>
+      </div>
+      <div class="msg" id="dMsg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANS & ELEVATIONS -->
+<section id="views" hidden>
+  <div class="row mb">
+    <span class="row" id="vModes"></span>
+  </div>
+  <div class="row mb" id="vOpts"></div>
+  <div class="vgrid">
+    <div class="card" id="vBuildCard"><h3>Build it</h3><div id="vBuild"></div><div class="row" id="vBuildBtns" style="margin-top:6px"></div></div>
+    <div class="card"><h3 id="vIsoTitle">Your solid</h3><div id="vIso"></div></div>
+    <div class="card vcol3" id="vViewsCard"><h3 id="vViewsTitle">The three views</h3><div class="vcards" id="vViews"></div><div class="row" id="vViewBtns" style="margin-top:8px"></div></div>
+  </div>
+  <div class="msg" id="vMsg"></div>
+</section>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ====================================================================
+   Isometric geometry.  A lattice point (i,j) sits at x=i*H, y(up)=j/2,
+   with j having the same parity as i.  Lattice edges all have length 1:
+   vertical (i,j)-(i,j+2) and sloping (i,j)-(i+1,j+-1).
+   A cube at (c,r,z) [c = across to the right, r = back from the front,
+   z = up] projects its near-bottom corner to i=c+r, j=2z+r-c.
+   We view from the front-right-above, so the LEFT face shown is the
+   FRONT face and the RIGHT face shown is the RIGHT-HAND SIDE face.
+   ==================================================================== */
+var H=Math.sqrt(3)/2;
+function $(s){return document.querySelector(s);}
+function rnd(n){return Math.floor(Math.random()*n);}
+var COL={top:'#fbeaa8',left:'#a9c8ee',right:'#6f98cc',ink:'#1f2d3d',or:'#F47B3F',bl:'#3F73B8',ok:'#2e8b57',bad:'#d23b3b',grey:'#9aa3ad'};
+function px(i){return +(i*H).toFixed(3);}
+function py(j){return +(-j*0.5).toFixed(3);}
+function tv(i,j,t){return t==='R'?[[i,j],[i,j+2],[i+1,j+1]]:[[i+1,j],[i+1,j+2],[i,j+1]];}
+function ekey(p,q){return (p[0]<q[0]||(p[0]===q[0]&&p[1]<q[1]))?p[0]+','+p[1]+','+q[0]+','+q[1]:q[0]+','+q[1]+','+p[0]+','+p[1];}
+function cubesOf(h){
+  var L=[];
+  for(var r=0;r<h.length;r++)for(var c=0;c<h[r].length;c++)for(var z=0;z<h[r][c];z++)L.push({c:c,r:r,z:z,d:c-r+z});
+  L.sort(function(p,q){return p.d-q.d||p.z-q.z||p.c-q.c;});
+  return L;
+}
+function cubeFaces(c,r,z){
+  var a=c+r,B=2*z+r-c;
+  return [
+    {type:'top',plane:z,tris:[[a,B+1,'L'],[a+1,B+1,'R']]},
+    {type:'left',plane:r,tris:[[a,B,'R'],[a,B-1,'L']]},
+    {type:'right',plane:c+1,tris:[[a+1,B-1,'R'],[a+1,B,'L']]}
+  ];
+}
+/* paint cubes back-to-front onto a map of lattice triangles */
+function scene(cubes){
+  var tri=new Map();
+  cubes.forEach(function(cb,idx){
+    cubeFaces(cb.c,cb.r,cb.z).forEach(function(f){
+      var face={id:idx+f.type,type:f.type,key:f.type+f.plane,cube:idx};
+      f.tris.forEach(function(t){tri.set(t.join(','),{face:face,v:tv(t[0],t[1],t[2])});});
+    });
+  });
+  return tri;
+}
+/* visible edges.  mode 'cubes': every face boundary;  'outline': merge coplanar faces */
+function edgesOf(tri,mode){
+  var em=new Map();
+  tri.forEach(function(t){
+    var v=t.v;
+    [[v[0],v[1]],[v[1],v[2]],[v[2],v[0]]].forEach(function(pq){
+      var k=ekey(pq[0],pq[1]),e=em.get(k);
+      if(!e){e={p:pq[0],q:pq[1],f:[]};em.set(k,e);}
+      e.f.push(t.face);
+    });
+  });
+  var out=new Map();
+  em.forEach(function(e,k){
+    if(e.f.length===1||(mode==='outline'?e.f[0].key!==e.f[1].key:e.f[0].id!==e.f[1].id))out.set(k,{p:e.p,q:e.q});
+  });
+  return out;
+}
+function allTopsVisible(h){
+  var cubes=cubesOf(h),tri=scene(cubes),seen={};
+  tri.forEach(function(t){if(t.face.type==='top')seen[t.face.cube]=1;});
+  for(var r=0;r<h.length;r++)for(var c=0;c<h[r].length;c++){
+    if(h[r][c]>0){
+      var idx=-1;cubes.forEach(function(cb,k){if(cb.c===c&&cb.r===r&&cb.z===h[r][c]-1)idx=k;});
+      if(!seen[idx])return false;
+    }
+  }
+  return true;
+}
+/* ---------- SVG helpers ---------- */
+function Ln(p,q,st){return '<line x1="'+px(p[0])+'" y1="'+py(p[1])+'" x2="'+px(q[0])+'" y2="'+py(q[1])+'" '+(st||'')+'/>';}
+function dotsSVG(i0,i1,j0,j1,r,fill){
+  var s='';
+  for(var i=i0;i<=i1;i++){var par=((i%2)+2)%2,j=j0;if(((j%2)+2)%2!==par)j++;for(;j<=j1;j+=2)s+='<circle cx="'+px(i)+'" cy="'+py(j)+'" r="'+r+'" fill="'+fill+'"/>';}
+  return s;
+}
+function paperSVG(i0,i1,j0,j1,inner,cls){
+  var pad=.35,vx=px(i0)-pad,vy=py(j1)-pad,vw=(i1-i0)*H+2*pad,vh=(j1-j0)*.5+2*pad;
+  return '<svg class="'+(cls||'')+'" viewBox="'+vx+' '+vy+' '+vw+' '+vh+'" preserveAspectRatio="xMidYMid meet">'+dotsSVG(i0,i1,j0,j1,.06,'#7d96b8')+inner+'</svg>';
+}
+function arrow(x1,y1,x2,y2,col){
+  var dx=x2-x1,dy=y2-y1,l=Math.sqrt(dx*dx+dy*dy),ux=dx/l,uy=dy/l,nx=-uy,ny=ux,a=.28,w=.13;
+  return '<line x1="'+x1+'" y1="'+y1+'" x2="'+(x2-ux*a*.6)+'" y2="'+(y2-uy*a*.6)+'" stroke="'+col+'" stroke-width=".07" stroke-linecap="round"/>'+
+    '<polygon points="'+x2+','+y2+' '+(x2-ux*a+nx*w)+','+(y2-uy*a+ny*w)+' '+(x2-ux*a-nx*w)+','+(y2-uy*a-ny*w)+'" fill="'+col+'"/>';
+}
+function fsArrows(vx,vy,vw,vh){
+  var yb=vy+vh-.2,L1=1.2,dx=L1*H,dy=-L1*.5,x1=vx+.25,x2=vx+vw-.25,s='';
+  s+=arrow(x1,yb,x1+dx,yb+dy,COL.or)+'<text x="'+(x1+dx+.08)+'" y="'+(yb+dy-.08)+'" font-size=".55" font-weight="800" fill="'+COL.or+'">F</text>';
+  s+=arrow(x2,yb,x2-dx,yb+dy,COL.or)+'<text x="'+(x2-dx-.5)+'" y="'+(yb+dy-.08)+'" font-size=".55" font-weight="800" fill="'+COL.or+'">S</text>';
+  return s;
+}
+/* a shaded picture of a stack of cubes */
+function isoSVG(h,o){
+  o=o||{};
+  var cubes=o.cubes||cubesOf(h),tri=scene(cubes),ed=edgesOf(tri,o.mode||'cubes'),b=o.bounds;
+  if(!b){
+    var i0=1e9,i1=-1e9,j0=1e9,j1=-1e9;
+    tri.forEach(function(t){t.v.forEach(function(p){i0=Math.min(i0,p[0]);i1=Math.max(i1,p[0]);j0=Math.min(j0,p[1]);j1=Math.max(j1,p[1]);});});
+    if(i0>i1){i0=0;i1=2;j0=0;j1=2;}
+    b=[i0,i1,j0,j1];
+  }
+  var pad=o.pad==null?.45:o.pad,vx=px(b[0])-pad,vy=py(b[3])-pad,vw=(b[1]-b[0])*H+2*pad,vh=(b[3]-b[2])*.5+2*pad,s='';
+  if(o.paper)s+=dotsSVG(b[0],b[1],b[2],b[3],.05,'#9db0cc');
+  tri.forEach(function(t){
+    var col=COL[t.face.type];
+    s+='<polygon points="'+t.v.map(function(p){return px(p[0])+','+py(p[1]);}).join(' ')+'" fill="'+col+'" stroke="'+col+'" stroke-width=".03" stroke-linejoin="round"/>';
+  });
+  ed.forEach(function(e){s+=Ln(e.p,e.q,'stroke="'+COL.ink+'" stroke-width=".07" stroke-linecap="round"');});
+  if(o.arrows)s+=fsArrows(vx,vy,vw,vh);
+  return '<svg viewBox="'+vx+' '+vy+' '+vw+' '+vh+'" preserveAspectRatio="xMidYMid meet">'+s+'</svg>';
+}
+function fixedBounds(N,maxH){return [0,2*N,-N,2*maxH+N];}
+function boundsFor(h){var N=h.length,m=2;h.forEach(function(r){r.forEach(function(v){m=Math.max(m,v);});});return fixedBounds(N,m);}
+
+/* ---------- views (plan and elevations) ---------- */
+function makeGrid(rows,cols,v){var g=[];for(var a=0;a<rows;a++){g.push([]);for(var b=0;b<cols;b++)g[a].push(v);}return g;}
+function viewsOf(h){
+  var N=h.length,front=[],side=[],plan=[];
+  for(var c=0;c<N;c++)front.push(0);
+  for(var r=0;r<N;r++){side.push(0);plan.push([]);for(var c2=0;c2<N;c2++){plan[r].push(h[r][c2]>0);front[c2]=Math.max(front[c2],h[r][c2]);side[r]=Math.max(side[r],h[r][c2]);}}
+  return {plan:plan,front:front,side:side};
+}
+function elevGrid(heights,maxH){ /* [k][i], k=0 bottom */
+  var g=[];for(var k=0;k<maxH;k++){g.push(heights.map(function(v){return k<v;}));}return g;
+}
+/* plan: cells[r][c] booleans (front row r=0 at the bottom).  opts.h = heights for numbers/colour, opts.cls = interactive */
+function planSVG(cells,o){
+  o=o||{};var N=cells.length,s='';
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var on=cells[r][c],hv=o.h?o.h[r][c]:0,fill=on?(o.h?'hsl(212,62%,'+(90-13*Math.min(hv,5))+'%)':'#bcd5f2'):'#fff';
+    s+='<g'+(o.act?' class="cellbtn" data-v="plan" data-a="'+r+'" data-b="'+c+'"':'')+'><rect x="'+c+'" y="'+(N-1-r)+'" width="1" height="1" fill="'+fill+'" stroke="#6d84a3" stroke-width=".05"/>';
+    if(o.h&&hv>0)s+='<text x="'+(c+.5)+'" y="'+(N-1-r+.68)+'" font-size=".55" text-anchor="middle" font-weight="700" fill="#1f2d3d">'+hv+'</text>';
+    s+='</g>';
+  }
+  s+='<rect x="0" y="0" width="'+N+'" height="'+N+'" fill="none" stroke="#1f2d3d" stroke-width=".07"/>';
+  s+=arrow(N/2,N+1.05,N/2,N+.3,COL.or)+'<text x="'+(N/2+.3)+'" y="'+(N+.95)+'" font-size=".5" font-weight="800" fill="'+COL.or+'">F</text>';
+  s+=arrow(N+1.15,N/2,N+.3,N/2,COL.or)+'<text x="'+(N+.7)+'" y="'+(N/2-.25)+'" font-size=".5" font-weight="800" fill="'+COL.or+'">S</text>';
+  return '<svg viewBox="-.2 -.2 '+(N+1.5)+' '+(N+1.4)+'">'+s+'</svg>';
+}
+/* elevation: grid[k][i] booleans, k=0 bottom */
+function elevSVG(grid,o){
+  o=o||{};var maxH=grid.length,N=grid[0].length,s='';
+  for(var k=0;k<maxH;k++)for(var i=0;i<N;i++){
+    s+='<g'+(o.act?' class="cellbtn" data-v="'+o.v+'" data-a="'+k+'" data-b="'+i+'"':'')+'><rect x="'+i+'" y="'+(maxH-1-k)+'" width="1" height="1" fill="'+(grid[k][i]?'#a9c8ee':'#fff')+'" stroke="#6d84a3" stroke-width=".05"/></g>';
+  }
+  s+='<line x1="-.1" y1="'+maxH+'" x2="'+(N+.1)+'" y2="'+maxH+'" stroke="#1f2d3d" stroke-width=".12" stroke-linecap="round"/>';
+  return '<svg viewBox="-.2 -.2 '+(N+.4)+' '+(maxH+.5)+'">'+s+'</svg>';
+}
+
+/* ====================================================================
+   Tabs
+   ==================================================================== */
+var tabs=$('#tabs');
+tabs.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  [].forEach.call(tabs.children,function(x){x.classList.toggle('on',x===b);});
+  ['learn','draw','views'].forEach(function(t){$('#'+t).hidden=(t!==b.dataset.tab);});
+  if(b.dataset.tab==='draw')drawInit();
+  if(b.dataset.tab==='views')viewsInit();
+});
+var store={logo:true,pre:'Isometric',suf:'Dotty'};
+try{var sv=JSON.parse(localStorage.getItem('3dDrawing')||'{}');if(sv.logo===false)store.logo=false;
+  if(['','Triangular','Isometric'].indexOf(sv.pre)>=0&&['','Dot','Dotty'].indexOf(sv.suf)>=0&&(sv.pre||sv.suf)){store.pre=sv.pre;store.suf=sv.suf;}}catch(e){}
+function saveStore(){try{localStorage.setItem('3dDrawing',JSON.stringify(store));}catch(e){}}
+function paperName(lower){var w=[store.pre,store.suf,'Paper'].filter(Boolean).join(' ');return lower?w.toLowerCase():w;}
+function renderSettings(){
+  function btns(k,opts){return opts.map(function(o){return '<button class="sm '+(store[k]===o[0]?'on':'')+'" data-k="'+k+'" data-v="'+o[0]+'">'+o[1]+'</button>';}).join('');}
+  $('#setPre').innerHTML='<span class="lbl">Before:</span>'+btns('pre',[['','None'],['Triangular','Triangular'],['Isometric','Isometric']]);
+  $('#setSuf').innerHTML='<span class="lbl">Dots:</span>'+btns('suf',[['','None'],['Dot','Dot'],['Dotty','Dotty']]);
+  $('#paperPrev').textContent=paperName();
+}
+$('#setBtn').onclick=function(){var st=$('#settings');st.hidden=!st.hidden;$('#setBtn').classList.toggle('on',!st.hidden);};
+$('#settings').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-k]');if(!b)return;
+  store[b.dataset.k]=b.dataset.v;
+  if(!store.pre&&!store.suf){if(b.dataset.k==='pre')store.suf='Dotty';else store.pre='Isometric';}
+  saveStore();renderSettings();renderLearn();if(D.inited)syncDraw();
+});
+function logoUI(){document.body.classList.toggle('nologo',!store.logo);$('#logoBtn').textContent='Logo: '+(store.logo?'on':'off');}
+$('#logoBtn').onclick=function(){store.logo=!store.logo;saveStore();logoUI();};
+logoUI();
+
+/* ====================================================================
+   LEARN
+   ==================================================================== */
+var EX=[
+  {n:'L-shape',h:[[1,1],[1,0]]},
+  {n:'2 × 2 slab',h:[[1,1],[1,1]]},
+  {n:'Stairs',h:[[3,2,1]]},
+  {n:'Tower and wall',h:[[2,1],[1,1]]}
+];
+var VEX=[[2,1,0],[1,1,0],[1,0,0]];
+var LESSONS=[
+  {t:function(){return paperName();},s:'Three directions only',n:6},
+  {t:'Draw a cube',s:'Nine lines, step by step',n:6},
+  {t:'Build it cube by cube',s:'Back to front',n:function(){return cubesOf(EX[LS.ex].h).length;}},
+  {t:'Plans and elevations',s:'Looking from above and the side',n:5}
+];
+var LS={cur:0,step:0,ex:0};
+function lessonCount(){var n=LESSONS[LS.cur].n;return typeof n==='function'?n():n;}
+function renderLessonList(){
+  $('#lessonList').innerHTML='<h3>Lessons</h3>'+LESSONS.map(function(l,i){return '<button data-i="'+i+'" class="'+(i===LS.cur?'on':'')+'">'+(i+1)+'. '+(typeof l.t==='function'?l.t():l.t)+'<small>'+l.s+'</small></button>';}).join('');
+}
+$('#lessonList').addEventListener('click',function(e){var b=e.target.closest('button[data-i]');if(!b)return;LS.cur=+b.dataset.i;LS.step=0;renderLearn();});
+$('#exRow').addEventListener('click',function(e){var b=e.target.closest('button[data-e]');if(!b)return;LS.ex=+b.dataset.e;LS.step=0;renderLearn();});
+$('#lBack').onclick=function(){if(LS.step>0){LS.step--;renderLearn();}};
+$('#lNext').onclick=function(){if(LS.step<lessonCount()-1){LS.step++;renderLearn();}};
+$('#lRestart').onclick=function(){LS.step=0;renderLearn();};
+
+function figPaper(){
+  var s=LS.step,fig='',cap='',W=2.6,st;
+  var P=function(q){return q;};
+  if(s===0){cap='This is <b>'+paperName(true)+'</b>. The dots line up in vertical columns, and also along two sloping directions.';}
+  var inner='';
+  if(s>=1&&s<=3||s===4){
+    var A=s>=1,B=s>=2,C=s>=3,fade=s===4?' opacity=".3"':'';
+    if(A){[1,4,7,10].forEach(function(i){var par=i%2;inner+=Ln([i,par],[i,par+10],'stroke="'+COL.bl+'" stroke-width=".11" stroke-linecap="round"'+fade);});}
+    if(B){[[0,2,8,10],[3,1,11,9],[0,8,4,12]].forEach(function(a){inner+=Ln([a[0],a[1]],[a[2],a[3]],'stroke="'+COL.or+'" stroke-width=".11" stroke-linecap="round"'+fade);});}
+    if(C){[[12,2,4,10],[9,1,1,9],[12,8,8,12]].forEach(function(a){inner+=Ln([a[0],a[1]],[a[2],a[3]],'stroke="'+COL.ok+'" stroke-width=".11" stroke-linecap="round"'+fade);});}
+  }
+  if(s===1)cap='<b>Direction 1:</b> straight up and down. A vertical edge of a solid is always drawn as a vertical line.';
+  if(s===2)cap='<b>Direction 2:</b> lines sloping <b>up to the right</b>, at 30° to the horizontal.';
+  if(s===3)cap='<b>Direction 3:</b> lines sloping <b>up to the left</b>, also at 30° to the horizontal.';
+  if(s===4){
+    inner+=Ln([2,6],[8,6],'stroke="'+COL.bad+'" stroke-width=".13" stroke-dasharray=".3 .22" stroke-linecap="round"');
+    inner+='<text x="'+px(5)+'" y="'+(py(6)+.26)+'" text-anchor="middle" font-size=".85" font-weight="900" fill="'+COL.bad+'" stroke="#fff" stroke-width=".18" paint-order="stroke">✗</text>';
+    cap='<b>Never draw horizontal lines!</b> The dots do line up across the page, but no edge of a solid is horizontal on isometric paper.';
+  }
+  if(s===5){
+    inner+=Ln([3,1],[3,7],'stroke="'+COL.bl+'" stroke-width=".11" stroke-linecap="round"');
+    inner+=Ln([6,0],[9,3],'stroke="'+COL.or+'" stroke-width=".11" stroke-linecap="round"');
+    [1,3,5,7].forEach(function(j,k){if(k>0)inner+=num(3,j,k);});
+    [1,2,3].forEach(function(k){inner+=num(6+k,k,k);});
+    cap='Measure by <b>counting dots</b> along a line. One step to the next dot is one edge long. Both of these lines are <b>3 edges</b> long.';
+  }
+  return {svg:paperSVG(0,12,0,12,inner),cap:cap};
+}
+function num(i,j,k){return '<circle cx="'+px(i)+'" cy="'+py(j)+'" r=".2" fill="#fff" stroke="'+COL.ink+'" stroke-width=".04"/><text x="'+px(i)+'" y="'+(py(j)+.1)+'" text-anchor="middle" font-size=".3" font-weight="800" fill="'+COL.ink+'">'+k+'</text>';}
+
+var CUBE_STEPS=[
+  [[[1,-1],[1,1]]],
+  [[[0,0],[1,-1]],[[1,-1],[2,0]]],
+  [[[0,2],[1,1]],[[1,1],[2,2]]],
+  [[[0,0],[0,2]],[[2,0],[2,2]]],
+  [[[0,2],[1,3]],[[1,3],[2,2]]]
+];
+var CUBE_CAP=[
+  'Start with the <b>nearest edge</b> of the cube: one vertical line, one edge long.',
+  'From the <b>bottom</b> of that line, draw two sloping lines: one up to the left, one up to the right.',
+  'Now do the same from the <b>top</b> of the line.',
+  'Join the ends with two more <b>vertical</b> lines to make the left and right faces.',
+  'Finish the top face with two sloping lines that meet at the <b>back corner</b>.',
+  'Done: a cube has <b>9 visible edges</b>. Shade it if you like: top lightest, left mid, right darkest.'
+];
+function figCube(){
+  var s=LS.step,inner='';
+  if(s===5){inner+=isoSVG([[1]],{}).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'');}
+  else{
+    for(var k=0;k<=s;k++){
+      var col=k===s?COL.or:COL.ink,w=k===s?'.13':'.08';
+      CUBE_STEPS[k].forEach(function(e){inner+=Ln(e[0],e[1],'stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round"');});
+    }
+  }
+  return {svg:paperSVG(-1,3,-3,5,inner),cap:CUBE_CAP[s]};
+}
+function figBuild(){
+  var h=EX[LS.ex].h,cubes=cubesOf(h),k=LS.step+1;
+  var cur=edgesOf(scene(cubes.slice(0,k)),'cubes'),prev=k>1?edgesOf(scene(cubes.slice(0,k-1)),'cubes'):new Map();
+  var b=[1e9,-1e9,1e9,-1e9],all=scene(cubes);
+  all.forEach(function(t){t.v.forEach(function(p){b[0]=Math.min(b[0],p[0]);b[1]=Math.max(b[1],p[0]);b[2]=Math.min(b[2],p[1]);b[3]=Math.max(b[3],p[1]);});});
+  var i0=b[0]-1,i1=b[1]+1,j0=b[2]-2,j1=b[3]+2,inner='';
+  scene(cubes.slice(0,k)).forEach(function(t){var col=COL[t.face.type];inner+='<polygon points="'+t.v.map(function(p){return px(p[0])+','+py(p[1]);}).join(' ')+'" fill="'+col+'" fill-opacity=".85" stroke="'+col+'" stroke-width=".03"/>';});
+  prev.forEach(function(e,key){if(!cur.has(key))inner+=Ln(e.p,e.q,'stroke="'+COL.bad+'" stroke-width=".07" stroke-dasharray=".16 .12" stroke-linecap="round"');});
+  cur.forEach(function(e,key){var isNew=!prev.has(key);inner+=Ln(e.p,e.q,'stroke="'+(isNew?COL.or:COL.ink)+'" stroke-width="'+(isNew?'.13':'.08')+'" stroke-linecap="round"');});
+  var gone=0;prev.forEach(function(e,key){if(!cur.has(key))gone++;});
+  var cap=k===1?'Start with the cube <b>furthest from you</b> (at the back). Draw all of its visible edges.'
+    :'Add cube '+k+' of '+cubes.length+'. The <b style="color:#F47B3F">orange</b> lines are new'+(gone?'; the <b style="color:#d23b3b">red dashed</b> lines are now hidden behind it, so they must be rubbed out.':'.');
+  if(k===cubes.length)cap+=' <b>Finished!</b> Only the edges you can actually see are drawn.';
+  return {svg:paperSVG(i0,i1,j0,j1,inner),cap:cap};
+}
+function figViews(){
+  var s=LS.step,h=VEX,N=3,maxH=3,v=viewsOf(h);
+  var hl=function(i){return s===i?' hl':'';},hid=function(i){return s<i?' hid':'';};
+  var iso=isoSVG(h,{bounds:fixedBounds(N,maxH),arrows:true});
+  var html='<div class="vfig"><div class="vc'+(s===0?' hl':'')+'"><h4>The solid</h4>'+iso+'</div>'+
+    '<div class="vc'+hl(1)+hid(1)+'"><h4>Plan</h4>'+planSVG(v.plan,{h:h})+'</div>'+
+    '<div class="vc'+hl(2)+hid(2)+'"><h4>Front elevation</h4>'+elevSVG(elevGrid(v.front,maxH))+'</div>'+
+    '<div class="vc'+hl(3)+hid(3)+'"><h4>Side elevation</h4>'+elevSVG(elevGrid(v.side,maxH))+'</div></div>';
+  var caps=[
+    'Here is a solid made from cubes. <b>F</b> marks the front and <b>S</b> marks the side we look at from the right. To describe it we draw three views.',
+    'The <b>plan</b> is the view from <b>directly above</b>. The numbers show how many cubes are in each stack. The front of the solid is at the bottom of the plan.',
+    'The <b>front elevation</b> is what you see looking from <b>F</b>. Only the outline matters: a tall stack hides the shorter ones behind it.',
+    'The <b>side elevation</b> is what you see looking from <b>S</b>, from the right. The front of the solid is on the <b>left</b> of this view.',
+    'Plan, front elevation, side elevation. Together they describe the solid. Try the <b>Plans &amp; Elevations</b> tab to build your own!'
+  ];
+  if(s===4)html=html.replace(/ hl/g,' hl');
+  return {html:html,cap:caps[s]};
+}
+function renderLearn(){
+  renderLessonList();
+  var n=lessonCount(),r;
+  if(LS.step>=n)LS.step=n-1;
+  $('#exRow').hidden=LS.cur!==2;
+  if(LS.cur===2)$('#exRow').innerHTML='<span class="lbl">Example</span>'+EX.map(function(x,i){return '<button class="sm '+(i===LS.ex?'on':'')+'" data-e="'+i+'">'+x.n+'</button>';}).join('');
+  if(LS.cur===0)r=figPaper();else if(LS.cur===1)r=figCube();else if(LS.cur===2)r=figBuild();else r=figViews();
+  $('#learnFig').innerHTML=r.html||r.svg;
+  $('#learnCap').innerHTML=r.cap;
+  $('#lCount').textContent='Step '+(LS.step+1)+' of '+n;
+  $('#lBack').disabled=LS.step===0;
+  $('#lNext').disabled=LS.step>=n-1;
+}
+
+/* ====================================================================
+   DRAW
+   ==================================================================== */
+var IW=22,JM=24;
+var LIB={
+  1:[[[1]],[[1,1]],[[1],[1]],[[1,1,1]],[[1],[1],[1]],[[2]],[[1,1],[1,1]]],
+  2:[[[1,1],[1,0]],[[1,0],[1,1]],[[2,1]],[[1,2]],[[1,1,1],[0,1,0]],[[2,2]],[[1,1],[0,1]],[[3]]],
+  3:[[[2,1],[1,1]],[[1,2],[2,1]],[[3,2,1]],[[1,2,3]],[[2,2],[2,1]],[[1,1,1],[1,0,1]],[[2,1,1],[1,0,0]],[[1,1],[1,2]]]
+};
+var FONT={
+A:['#####', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+B:['#####', '#...#', '#...#', '#####', '#...#', '#...#', '#####'],
+C:['#####', '#....', '#....', '#....', '#....', '#....', '#####'],
+D:['#####', '#...#', '#...#', '#...#', '#...#', '#...#', '#####'],
+E:['#####', '#....', '#....', '####.', '#....', '#....', '#####'],
+F:['#####', '#....', '#....', '####.', '#....', '#....', '#....'],
+G:['#####', '#....', '#....', '#..##', '#...#', '#...#', '#####'],
+H:['#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+I:['.###.', '..#..', '..#..', '..#..', '..#..', '..#..', '.###.'],
+J:['.###.', '..#..', '..#..', '..#..', '..#..', '..#..', '###..'],
+K:['#..##', '#.##.', '###..', '##...', '###..', '#.##.', '#..##'],
+L:['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
+M:['#####', '#.#.#', '#.#.#', '#...#', '#...#', '#...#', '#...#'],
+N:['####..#', '#..#..#', '#..#..#', '#..#..#', '#..####'],
+O:['#####', '#...#', '#...#', '#...#', '#...#', '#...#', '#####'],
+P:['#####', '#...#', '#...#', '#####', '#....', '#....', '#....'],
+Q:['#####.', '#...#.', '#...#.', '#...#.', '#...#.', '#...#.', '######'],
+R:['#####', '#...#', '#...#', '#####', '###..', '#.##.', '#..##'],
+S:['#####', '#....', '#....', '#####', '....#', '....#', '#####'],
+T:['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..'],
+U:['#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#####'],
+V:['#...#', '#...#', '##.##', '.#.#.', '.###.', '..#..', '..#..'],
+W:['#...#', '#...#', '#...#', '#...#', '#.#.#', '#.#.#', '#####'],
+X:['#...#', '#...#', '##.##', '.###.', '##.##', '#...#', '#...#'],
+Y:['#...#', '#...#', '##.##', '.###.', '..#..', '..#..', '..#..'],
+Z:['#####', '....#', '...##', '..##.', '.##..', '##...', '#####']
+};
+function letterCubes(ch,orient){
+  var L=[];
+  FONT[ch].forEach(function(row,y){for(var x=0;x<row.length;x++)if(row.charAt(x)==='#'){
+    var c=orient==='right'?0:x,r=orient==='right'?x:0,z=FONT[ch].length-1-y;L.push({c:c,r:r,z:z,d:c-r+z});}});
+  L.sort(function(p,q){return p.d-q.d||p.z-q.z||p.c-q.c;});
+  return L;
+}
+var D={level:1,h:null,cubes:null,letter:'R',orient:'left',mode:'cubes',segs:[],tool:'pen',pending:null,drag:null,marks:null,guide:false,showMiss:false,solved:0,gs:[0,0],T:[],queue:[],inited:false};
+var LEVNAME={5:'5 \u00b7 Letters',0:'Free draw',1:'1 · Cubes and cuboids',2:'2 · L-shapes and steps',3:'3 · Stacks',4:'4 · Random'};
+function randomSolid(N,maxH,minC,maxC){
+  var h=makeGrid(N,N,0),cells=[],k=minC+rnd(maxC-minC+1),r=rnd(N),c=rnd(N),dirs=[[1,0],[-1,0],[0,1],[0,-1]],guard=0;
+  h[r][c]=1+rnd(maxH);cells.push([r,c]);
+  while(cells.length<k&&guard++<500){
+    var p=cells[rnd(cells.length)],d=dirs[rnd(4)],r1=p[0]+d[0],c1=p[1]+d[1];
+    if(r1<0||c1<0||r1>=N||c1>=N||h[r1][c1])continue;
+    h[r1][c1]=1+rnd(maxH);cells.push([r1,c1]);
+  }
+  return h;
+}
+function cubeTotal(h){var t=0;h.forEach(function(r){r.forEach(function(v){t+=v;});});return t;}
+function drawInit(){
+  if(!D.inited){
+    D.inited=true;
+    if(window.innerWidth<700){IW=14;JM=24;}
+    $('#dLevels').innerHTML=[1,2,3,4,5,0].map(function(l){return '<button class="sm" data-l="'+l+'">'+LEVNAME[l]+'</button>';}).join('');
+    buildPaper();
+    pickShape();
+  }
+  syncDraw();
+}
+$('#dLevels').addEventListener('click',function(e){var b=e.target.closest('button[data-l]');if(!b)return;D.level=+b.dataset.l;D.queue=[];D.mode=D.level===5?'outline':'cubes';pickShape();syncDraw();});
+$('#dNew').onclick=function(){if(D.level===5){var o=D.letter;while(D.letter===o)D.letter=String.fromCharCode(65+rnd(26));}pickShape();syncDraw();};
+$('#dLetters').addEventListener('click',function(e){var b=e.target.closest('button[data-ch]');if(!b)return;D.letter=b.dataset.ch;pickShape();syncDraw();});
+$('#dOrient').onclick=function(){D.orient=D.orient==='left'?'right':'left';pickShape();syncDraw();};
+$('#dGuide').onclick=function(){D.guide=!D.guide;syncDraw();};
+$('#dLines').onclick=function(){D.mode=D.mode==='cubes'?'outline':'cubes';D.marks=null;computeTarget();syncDraw();};
+$('#tPen').onclick=function(){D.tool='pen';D.pending=null;syncDraw();};
+$('#tErase').onclick=function(){D.tool='erase';D.pending=null;syncDraw();};
+$('#dUndo').onclick=function(){D.segs.pop();D.marks=null;D.showMiss=false;D.pending=null;syncDraw();setMsg('');};
+$('#dClear').onclick=function(){D.segs=[];D.marks=null;D.showMiss=false;D.pending=null;syncDraw();setMsg('');};
+$('#dCheck').onclick=function(){checkDraw();};
+$('#dShow').onclick=function(){if(!curCubes())return;if(!D.marks)checkDraw(true);D.showMiss=true;renderLines();};
+function setMsg(t){$('#dMsg').innerHTML=t;}
+function pickShape(){
+  D.h=null;D.cubes=null;
+  if(D.level===0)D.h=null;
+  else if(D.level===5)D.cubes=letterCubes(D.letter,D.orient);
+  else if(D.level===4)D.h=randomSolid(3,3,5,8);
+  else{var lib=LIB[D.level];if(!D.queue.length)D.queue=lib.map(function(_,i){return i;}).sort(function(){return Math.random()-.5;});D.h=lib[D.queue.pop()];}
+  D.segs=[];D.marks=null;D.showMiss=false;D.pending=null;D.drag=null;
+  computeTarget();setMsg('');
+}
+function curCubes(){return D.cubes||(D.h?cubesOf(D.h):null);}
+function computeTarget(){
+  var cb=curCubes();if(!cb){D.T=[];return;}
+  D.T=[];edgesOf(scene(cb),D.mode).forEach(function(e){D.T.push(e);});
+  var a0=1e9,a1=-1e9,b0=1e9,b1=-1e9;
+  D.T.forEach(function(e){[e.p,e.q].forEach(function(p){a0=Math.min(a0,p[0]);a1=Math.max(a1,p[0]);b0=Math.min(b0,p[1]);b1=Math.max(b1,p[1]);});});
+  var gi=Math.round((IW-(a1-a0))/2-a0),gj=Math.round((JM-(b1-b0))/2-b0);
+  if((((gj-gi)%2)+2)%2!==0)gj++;
+  D.gs=[gi,gj];
+}
+function syncDraw(){
+  $('#tPen').classList.toggle('on',D.tool==='pen');$('#tErase').classList.toggle('on',D.tool==='erase');
+  $('#dGuide').textContent='Guide: '+(D.guide?'on':'off');$('#dGuide').classList.toggle('on',D.guide);
+  $('#dLines').textContent='Lines between cubes: '+(D.mode==='cubes'?'on':'off');
+  [].forEach.call($('#dLevels').children,function(b){b.classList.toggle('on',+b.dataset.l===D.level);});
+  $('#dScore').textContent='Drawn correctly: '+D.solved;
+  var cb=curCubes(),free=!cb;
+  $('#dLetterRow').hidden=D.level!==5;
+  if(D.level===5){$('#dLetters').innerHTML='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(function(ch){return '<button class="sm letbtn '+(ch===D.letter?'on':'')+'" data-ch="'+ch+'">'+ch+'</button>';}).join('');$('#dOrient').textContent='Letter faces: '+(D.orient==='left'?'left (front face)':'right (side face)');}
+  $('#dCheck').disabled=free;$('#dShow').disabled=free;$('#dGuide').disabled=free;$('#dLines').disabled=free;
+  $('#dTitle').textContent=free?'Free drawing':(D.level===5?'Draw this letter':'Draw this solid');
+  $('#dTarget').innerHTML=free?'<p style="padding:10px;margin:0">Practise your three directions on the '+paperName(true)+'. Vertical, up-right and up-left only!</p>':isoSVG(null,{cubes:cb,mode:D.mode});
+  $('#dInfo').textContent=free?'No target':((D.level===5?'Letter '+D.letter+' \u00b7 ':'')+cb.length+' cube'+(cb.length===1?'':'s'));
+  renderLines();
+}
+function buildPaper(){
+  var pad=.5,s='<rect x="'+(-pad)+'" y="'+(-pad)+'" width="'+(IW*H+2*pad)+'" height="'+(JM*.5+2*pad)+'" fill="#fffef8"/>';
+  for(var i=0;i<=IW;i++){var par=i%2;for(var j=par;j<=JM;j+=2)s+='<circle cx="'+px(i)+'" cy="'+(JM*.5-j*.5)+'" r=".075" fill="#6d84a3"/>';}
+  s+='<g id="gGhost"></g><g id="gLines"></g><g id="gPrev"></g>';
+  var p=$('#paper');p.setAttribute('viewBox',(-pad)+' '+(-pad)+' '+(IW*H+2*pad)+' '+(JM*.5+2*pad));p.innerHTML=s;
+}
+function X(i){return +(i*H).toFixed(3);}
+function Y(j){return +((JM-j)*.5).toFixed(3);}
+function Lp(p,q,st){return '<line x1="'+X(p[0])+'" y1="'+Y(p[1])+'" x2="'+X(q[0])+'" y2="'+Y(q[1])+'" '+st+'/>';}
+function unitEdges(a,b){
+  var out=[],di=b[0]-a[0],dj=b[1]-a[1],k;
+  if(di===0){var s=Math.sign(dj);for(var j=a[1];j!==b[1];j+=2*s)out.push({p:[a[0],j],q:[a[0],j+2*s]});}
+  else{var sx=Math.sign(di),sy=Math.sign(dj);for(k=0;k<Math.abs(di);k++)out.push({p:[a[0]+sx*k,a[1]+sy*k],q:[a[0]+sx*(k+1),a[1]+sy*(k+1)]});}
+  return out;
+}
+function validSeg(a,b){var di=b[0]-a[0],dj=b[1]-a[1];if(di===0&&dj===0)return false;if(di===0)return dj%2===0;return Math.abs(dj)===Math.abs(di);}
+function same(a,b){return a&&b&&a[0]===b[0]&&a[1]===b[1];}
+function studentEdges(){var m=new Map();D.segs.forEach(function(s){unitEdges(s.a,s.b).forEach(function(e){m.set(ekey(e.p,e.q),e);});});return m;}
+function shiftEdge(e,d){return {p:[e.p[0]+d[0],e.p[1]+d[1]],q:[e.q[0]+d[0],e.q[1]+d[1]]};}
+function bestShift(S,T){
+  var sv={},tvv={},sl=[],tl=[];
+  S.forEach(function(e){[e.p,e.q].forEach(function(p){var k=p.join(',');if(!sv[k]){sv[k]=1;sl.push(p);}});});
+  T.forEach(function(e){[e.p,e.q].forEach(function(p){var k=p.join(',');if(!tvv[k]){tvv[k]=1;tl.push(p);}});});
+  var best=null,bc=-1,seen={};
+  sl.forEach(function(s){tl.forEach(function(t){
+    var d=[s[0]-t[0],s[1]-t[1]],k=d.join(',');if(seen[k])return;seen[k]=1;
+    var c=0;T.forEach(function(e){if(S.has(ekey([e.p[0]+d[0],e.p[1]+d[1]],[e.q[0]+d[0],e.q[1]+d[1]])))c++;});
+    if(c>bc){bc=c;best=d;}
+  });});
+  return best||D.gs;
+}
+function checkDraw(quiet){
+  if(!curCubes())return;
+  var S=studentEdges();
+  if(!S.size){if(!quiet)setMsg('Draw something first, then press <b>Check</b>.');return;}
+  var sh=bestShift(S,D.T),Ts=new Map();
+  D.T.forEach(function(e){var t=shiftEdge(e,sh);Ts.set(ekey(t.p,t.q),t);});
+  var ok=[],extra=[],miss=[];
+  S.forEach(function(e,k){(Ts.has(k)?ok:extra).push(e);});
+  Ts.forEach(function(e,k){if(!S.has(k))miss.push(e);});
+  var wasPerfect=D.marks&&D.marks.perfect;
+  D.marks={ok:ok,extra:extra,miss:miss,perfect:!extra.length&&!miss.length};
+  var m;
+  if(D.marks.perfect){m='<b class="ok">✓ Perfect!</b> Every line is in the right place. Press <b>New shape</b> for the next one.';if(!wasPerfect)D.solved++;}
+  else{
+    m='<b class="bad">Not quite.</b> ';
+    if(miss.length)m+='<b>'+miss.length+'</b> line'+(miss.length===1?' is':'s are')+' missing. ';
+    if(extra.length)m+='<b>'+extra.length+'</b> line'+(extra.length===1?' is':'s are')+' in the wrong place (red). ';
+    m+='Fix it and check again, or press <b>Show me</b>.';
+  }
+  if(!quiet)setMsg(m);
+  $('#dScore').textContent='Drawn correctly: '+D.solved;
+  renderLines();
+}
+function renderLines(){
+  var g=$('#gLines'),gg=$('#gGhost');if(!g)return;
+  var s='';
+  gg.innerHTML=(D.guide&&curCubes())?D.T.map(function(e){var t=shiftEdge(e,D.gs);return Lp(t.p,t.q,'stroke="#9db7da" stroke-width=".16" stroke-linecap="round" stroke-dasharray=".02 .3"');}).join(''):'';
+  if(D.marks){
+    D.marks.ok.forEach(function(e){s+=Lp(e.p,e.q,'stroke="'+COL.ok+'" stroke-width=".12" stroke-linecap="round"');});
+    D.marks.extra.forEach(function(e){s+=Lp(e.p,e.q,'stroke="'+COL.bad+'" stroke-width=".12" stroke-linecap="round"');});
+    if(D.showMiss)D.marks.miss.forEach(function(e){s+=Lp(e.p,e.q,'stroke="'+COL.or+'" stroke-width=".13" stroke-linecap="round" stroke-dasharray=".22 .16"');});
+  }else{
+    D.segs.forEach(function(sg){s+=Lp(sg.a,sg.b,'stroke="'+COL.ink+'" stroke-width=".1" stroke-linecap="round"');});
+  }
+  g.innerHTML=s;
+  drawPrev();
+}
+function drawPrev(){
+  var g=$('#gPrev');if(!g)return;var s='';
+  if(D.pending)s+='<circle cx="'+X(D.pending[0])+'" cy="'+Y(D.pending[1])+'" r=".22" fill="none" stroke="'+COL.or+'" stroke-width=".07"/>';
+  if(D.drag){
+    var a=D.drag.a,b=D.drag.b;
+    s+='<circle cx="'+X(a[0])+'" cy="'+Y(a[1])+'" r=".22" fill="none" stroke="'+COL.or+'" stroke-width=".07"/>';
+    if(D.drag.moved&&validSeg(a,b))s+=Lp(a,b,'stroke="'+COL.or+'" stroke-width=".1" stroke-linecap="round" stroke-dasharray=".2 .14"');
+  }
+  g.innerHTML=s;
+}
+function svgPt(e){var p=$('#paper'),pt=p.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(p.getScreenCTM().inverse());}
+function nearestDot(p){
+  var best=null,bd=.62,i0=Math.floor(p.x/H);
+  for(var i=i0-1;i<=i0+2;i++){
+    if(i<0||i>IW)continue;
+    var par=((i%2)+2)%2,jf=JM-2*p.y,j=par+2*Math.round((jf-par)/2);
+    if(j<par)j=par;if(j>JM-(JM-par)%2)j=JM-((JM-par)%2);
+    var d=Math.hypot(p.x-i*H,p.y-(JM-j)*.5);
+    if(d<bd){bd=d;best=[i,j];}
+  }
+  return best;
+}
+function segDist(p,a,b){
+  var x1=X(a[0]),y1=Y(a[1]),x2=X(b[0]),y2=Y(b[1]),dx=x2-x1,dy=y2-y1,t=((p.x-x1)*dx+(p.y-y1)*dy)/(dx*dx+dy*dy);
+  t=Math.max(0,Math.min(1,t));return Math.hypot(p.x-(x1+t*dx),p.y-(y1+t*dy));
+}
+function addSeg(a,b){D.segs.push({a:a,b:b});D.marks=null;D.showMiss=false;setMsg('');renderLines();}
+function eraseAt(p){
+  var bi=-1,bd=.4;
+  D.segs.forEach(function(s,i){var d=segDist(p,s.a,s.b);if(d<bd){bd=d;bi=i;}});
+  if(bi>=0){D.segs.splice(bi,1);D.marks=null;D.showMiss=false;setMsg('');renderLines();}
+}
+(function(){
+  var paper=$('#paper');
+  paper.addEventListener('pointerdown',function(e){
+    e.preventDefault();try{paper.setPointerCapture(e.pointerId);}catch(x){}
+    var p=svgPt(e);
+    if(D.tool==='erase'){eraseAt(p);return;}
+    var d=nearestDot(p);D.drag=d?{a:d,b:d,moved:false}:null;drawPrev();
+  });
+  paper.addEventListener('pointermove',function(e){
+    if(!D.drag)return;var d=nearestDot(svgPt(e));
+    if(d){D.drag.b=d;if(!same(d,D.drag.a))D.drag.moved=true;}
+    drawPrev();
+  });
+  paper.addEventListener('pointerup',function(e){
+    if(!D.drag)return;
+    var a=D.drag.a,moved=D.drag.moved,d=nearestDot(svgPt(e))||D.drag.b;D.drag=null;
+    if(moved||!same(a,d)){if(validSeg(a,d))addSeg(a,d);D.pending=null;}
+    else{
+      if(D.pending&&!same(D.pending,a)&&validSeg(D.pending,a)){addSeg(D.pending,a);D.pending=null;}
+      else D.pending=same(D.pending,a)?null:a;
+    }
+    drawPrev();
+  });
+  paper.addEventListener('pointercancel',function(){D.drag=null;drawPrev();});
+})();
+
+/* ====================================================================
+   PLANS & ELEVATIONS
+   ==================================================================== */
+var V={mode:'explore',N:4,maxH:4,h:null,add:true,numbers:true,lines:true,level:'easy',target:null,ans:null,res:null,mine:false,inited:false};
+var VMODES=[['explore','Build and explore'],['toSolid','Views → Solid'],['toViews','Solid → Views']];
+function viewsInit(){
+  if(!V.inited){
+    V.inited=true;
+    V.h=makeGrid(4,4,0);V.h[0][0]=2;V.h[0][1]=1;V.h[1][0]=1;
+  }
+  renderViews();
+}
+function setSize(N,maxH){V.N=N;V.maxH=maxH;}
+function newChallenge(){
+  var N=V.level==='easy'?3:4,mx=V.level==='easy'?3:4,h,tries=0;
+  setSize(N,mx);
+  do{h=randomSolid(N,mx,V.level==='easy'?4:6,V.level==='easy'?6:9);tries++;}while(V.mode==='toViews'&&!allTopsVisible(h)&&tries<200);
+  V.target=h;V.res=null;V.mine=false;
+  if(V.mode==='toSolid')V.h=makeGrid(N,N,0);
+  if(V.mode==='toViews')V.ans={plan:makeGrid(N,N,false),front:makeGrid(mx,N,false),side:makeGrid(mx,N,false)};
+  setVMsg('');
+}
+function setVMode(m){
+  V.mode=m;V.res=null;V.mine=false;
+  if(m==='explore'){V.N=V.h&&V.h.length||4;V.maxH=4;if(!V.h||V.h.length!==V.N)V.h=makeGrid(V.N,V.N,0);setVMsg('');}
+  else newChallenge();
+}
+function setVMsg(t){$('#vMsg').innerHTML=t;}
+function equalArr(a,b){return JSON.stringify(a)===JSON.stringify(b);}
+function renderViews(){
+  var m=V.mode;
+  $('#vModes').innerHTML=VMODES.map(function(x){return '<button class="'+(m===x[0]?'on':'')+'" data-m="'+x[0]+'">'+x[1]+'</button>';}).join('');
+  var o='';
+  if(m==='explore'){
+    o+='<span class="lbl">Grid</span>'+[3,4,5].map(function(n){return '<button class="sm '+(V.N===n?'on':'')+'" data-n="'+n+'">'+n+' × '+n+'</button>';}).join('');
+  }else{
+    o+='<span class="lbl">Level</span><button class="sm '+(V.level==='easy'?'on':'')+'" data-lv="easy">Easier (3 × 3)</button><button class="sm '+(V.level==='hard'?'on':'')+'" data-lv="hard">Harder (4 × 4)</button><button class="sm pri" data-act="new">New challenge</button>';
+  }
+  o+='<button class="sm '+(V.lines?'on':'')+'" data-act="lines">Lines between cubes: '+(V.lines?'on':'off')+'</button>';
+  $('#vOpts').innerHTML=o;
+  var N=V.N,maxH=V.maxH,mode=V.lines?'cubes':'outline';
+  var buildH=V.h;
+  $('#vBuildCard').hidden=(m==='toViews');$('#vViewsCard').classList.toggle('wide',m==='toViews');
+  /* builder */
+  if(m!=='toViews'){
+    $('#vBuild').innerHTML=planSVG(viewsOf(buildH).plan,{h:buildH,act:true});
+    $('#vBuildBtns').innerHTML='<button class="sm '+(V.add?'on':'')+'" data-act="add">＋ Add cube</button><button class="sm '+(!V.add?'on':'')+'" data-act="rem">− Remove cube</button><button class="sm" data-act="clear">Clear</button>'+(m==='explore'?'<button class="sm" data-act="rand">Random</button>':'');
+    $('#vBuild').previousElementSibling.textContent=m==='explore'?'Build it (tap the plan)':'Build your solid (tap the plan)';
+  }
+  /* iso */
+  var isoH=(m==='toViews')?V.target:buildH;
+  $('#vIsoTitle').textContent=m==='toViews'?'The solid':'Your solid';
+  $('#vIso').innerHTML=isoSVG(isoH,{bounds:boundsFor(isoH),arrows:true,mode:mode})+'<div class="pill" style="margin-top:4px">'+cubeTotal(isoH)+' cube'+(cubeTotal(isoH)===1?'':'s')+'</div>';
+  /* views */
+  var html='',btns='',res=V.res||{};
+  function card(title,svg,key){
+    var cls='vcard'+(res[key]===true?' good':res[key]===false?' wrong':''),badge=res[key]===true?' <span class="t">✓</span>':res[key]===false?' <span class="x">✗</span>':'';
+    return '<div class="'+cls+'"><h4>'+title+badge+'</h4>'+svg+'</div>';
+  }
+  if(m==='toViews'){
+    $('#vViewsTitle').textContent='Draw the three views (tap squares)';
+    html=card('Plan',planSVG(V.ans.plan,{act:true}),'plan')+card('Front elevation',elevSVG(V.ans.front,{act:true,v:'front'}),'front')+card('Side elevation',elevSVG(V.ans.side,{act:true,v:'side'}),'side');
+    btns='<button class="pri" data-act="checkViews">Check</button><button data-act="showAns">Show answers</button>';
+  }else{
+    var src=m==='toSolid'&&!V.mine?V.target:buildH,vw=viewsOf(src);
+    $('#vViewsTitle').textContent=m==='explore'?'The three views':(V.mine?'The views of your solid':'Target views: build a solid with these');
+    var pcard=planSVG(vw.plan,{h:(m==='explore'||V.mine)&&V.numbers?src:null});
+    if(m==='toSolid'&&!V.mine)pcard=planSVG(vw.plan,{});
+    html=card('Plan',pcard,'plan')+card('Front elevation',elevSVG(elevGrid(vw.front,maxH)),'front')+card('Side elevation',elevSVG(elevGrid(vw.side,maxH)),'side');
+    if(m==='explore')btns='<button class="sm '+(V.numbers?'on':'')+'" data-act="nums">Numbers on plan: '+(V.numbers?'on':'off')+'</button>';
+    else btns='<button class="pri" data-act="checkSolid">Check</button><button data-act="mine">'+(V.mine?'Show the target':'Show my views')+'</button>';
+  }
+  $('#vViews').innerHTML=html;$('#vViewBtns').innerHTML=btns;
+}
+$('#views').addEventListener('click',function(e){
+  var b=e.target.closest('button'),cell=e.target.closest('.cellbtn');
+  if(b){
+    if(b.dataset.m){setVMode(b.dataset.m);renderViews();return;}
+    if(b.dataset.n){var n=+b.dataset.n,old=V.h,nh=makeGrid(n,n,0);for(var r=0;r<Math.min(n,old.length);r++)for(var c=0;c<Math.min(n,old.length);c++)nh[r][c]=old[r][c];V.h=nh;V.N=n;V.maxH=4;renderViews();return;}
+    if(b.dataset.lv){V.level=b.dataset.lv;newChallenge();renderViews();return;}
+    var a=b.dataset.act;
+    if(a==='new'){newChallenge();renderViews();}
+    else if(a==='lines'){V.lines=!V.lines;renderViews();}
+    else if(a==='add'){V.add=true;renderViews();}
+    else if(a==='rem'){V.add=false;renderViews();}
+    else if(a==='clear'){V.h=makeGrid(V.N,V.N,0);V.res=null;setVMsg('');renderViews();}
+    else if(a==='rand'){V.h=randomSolid(V.N,V.maxH,Math.max(3,V.N),V.N*2+1);renderViews();}
+    else if(a==='nums'){V.numbers=!V.numbers;renderViews();}
+    else if(a==='mine'){V.mine=!V.mine;renderViews();}
+    else if(a==='checkSolid')checkSolid();
+    else if(a==='checkViews')checkViews();
+    else if(a==='showAns')showAns();
+    return;
+  }
+  if(cell){
+    var v=cell.dataset.v,p=+cell.dataset.a,q=+cell.dataset.b;
+    if(v==='plan'&&V.mode!=='toViews'){
+      var cur=V.h[p][q];V.h[p][q]=Math.max(0,Math.min(V.maxH,cur+(V.add?1:-1)));V.res=null;setVMsg('');renderViews();
+    }else if(V.mode==='toViews'){
+      var g=V.ans[v];g[p][q]=!g[p][q];V.res=null;setVMsg('');renderViews();
+    }
+  }
+});
+function checkSolid(){
+  var a=viewsOf(V.h),t=viewsOf(V.target);
+  if(!cubeTotal(V.h)){setVMsg('Tap the plan to add cubes first.');return;}
+  V.res={plan:equalArr(a.plan,t.plan),front:equalArr(a.front,t.front),side:equalArr(a.side,t.side)};
+  var bad=[];if(!V.res.plan)bad.push('plan');if(!V.res.front)bad.push('front elevation');if(!V.res.side)bad.push('side elevation');
+  if(!bad.length)setVMsg('<b class="ok">✓ All three views match!</b> Your solid uses '+cubeTotal(V.h)+' cubes. Any solid with these views is correct, so yours might use a different number of cubes from the original ('+cubeTotal(V.target)+').');
+  else setVMsg('<b class="bad">Not yet.</b> The '+(bad.length>2?bad[0]+', '+bad[1]+' and '+bad[2]:bad.join(' and '))+(bad.length>1?' do':' does')+' not match. Press <b>Show my views</b> to compare.');
+  renderViews();
+}
+function checkViews(){
+  var t=viewsOf(V.target),mx=V.maxH;
+  V.res={plan:equalArr(V.ans.plan,t.plan),front:equalArr(V.ans.front,elevGrid(t.front,mx)),side:equalArr(V.ans.side,elevGrid(t.side,mx))};
+  var good=V.res.plan&&V.res.front&&V.res.side;
+  if(good)setVMsg('<b class="ok">✓ All three views are correct!</b> Press <b>New challenge</b> for another.');
+  else setVMsg('<b class="bad">Not quite.</b> A view with a red border has a mistake. Remember the front of the solid is at the <b>bottom</b> of the plan and on the <b>left</b> of the side elevation.');
+  renderViews();
+}
+function showAns(){
+  var t=viewsOf(V.target);
+  V.ans={plan:t.plan.map(function(r){return r.slice();}),front:elevGrid(t.front,V.maxH),side:elevGrid(t.side,V.maxH)};
+  V.res=null;setVMsg('Here are the three views of this solid. Press <b>New challenge</b> to try another.');renderViews();
+}
+
+/* ---------- start ---------- */
+renderSettings();renderLearn();
+window.__t={cubesOf:cubesOf,scene:scene,edgesOf:edgesOf,viewsOf:viewsOf,allTopsVisible:allTopsVisible,D:D,V:V,LIB:LIB};
+})();
+</script>
+</body>
+</html>
