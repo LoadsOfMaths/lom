@@ -105,6 +105,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .mx{display:inline-flex;align-items:center;gap:.1em}
 sup{font-size:.62em;line-height:0}
 #qcard i,.opt i{font-family:Georgia,serif}
+.ov{text-decoration:overline;text-decoration-thickness:.09em}
 
 
 /* ---------- modes + lifelines + timer ---------- */
@@ -285,6 +286,7 @@ const GBP=x=>{const r=Math.round(x*100)/100;return '£'+(Number.isInteger(r)?r.t
 const sup=(b,e)=>`${b}<sup>${String(e).replace('-',MINUS)}</sup>`;
 const frac=(n,d)=>`<span class="fr"><span>${n}</span><span>${d}</span></span>`;
 const simp=(n,d)=>{const g=gcd(Math.abs(n),Math.abs(d))||1;return [n/g,d/g];};
+const fs=(n,d)=>{[n,d]=simp(n,d);return d===1?String(n):frac(n,d);};
 function F(n,d){[n,d]=simp(n,d);if(d===1)return N(n);if(n>d){const w=Math.floor(n/d),r=n-w*d;return `<span class="mx">${w}${frac(r,d)}</span>`;}return frac(n,d);}
 const dec=(n,dp)=>N(n/Math.pow(10,dp));
 const fixedStr=(n,dp)=>(n/Math.pow(10,dp)).toFixed(dp);
@@ -333,7 +335,11 @@ topic('primes','Primes',[
     return Q(`How many prime numbers are there between ${a} and ${b}?`,c,[c+1,c-1,c+2,c-2].filter(v=>v>=0),`The primes are ${ps.join(', ')}.`,()=>c+rnd(1,4));},
   ()=>{const n=rnd(90,200);let p=n+1;while(!isPrime(p))p++;
     const pool=[];for(let i=n+1;i<=p+8;i++)if(i!==p)pool.push(N(i));
-    return Q(`What is the smallest prime number that is bigger than ${n}?`,N(p),pool,`Check each number after ${n} in turn. ${p} is the first one with no factors other than 1 and itself.`,numFill(p,[2,3,4,5,6]));}
+    return Q(`What is the smallest prime number that is bigger than ${n}?`,N(p),pool,`Check each number after ${n} in turn. ${p} is the first one with no factors other than 1 and itself.`,numFill(p,[2,3,4,5,6]));},
+  ()=>{const ps=[];for(let i=101;i<=997;i+=2)if(isPrime(i))ps.push(i);
+    const comps=[];for(let i=101;i<=999;i+=2)if(!isPrime(i)&&i%3!==0&&i%5!==0)comps.push(i);
+    const c=pick(comps);let d=7;while(c%d)d+=2;
+    return Q('Which of these numbers is <b>not</b> a prime number?',N(c),shuffle(ps).slice(0,6).map(N),`${c} = ${d} × ${c/d}, so it has more factors than 1 and itself.`);}
 ]);
 
 /* ---------------- FACTORS ---------------- */
@@ -437,7 +443,17 @@ topic('fractions','Fractions',[
   ()=>{let a,b;do{b=rnd(3,9);a=rnd(1,b-1);}while(gcd(a,b)!==1);const k=pick([2,3,4,5,6]);
     const pool=[];if(k===4)pool.push(frac(2*a,2*b));if(k===6){pool.push(frac(2*a,2*b));pool.push(frac(3*a,3*b));}
     [[a+1,b],[a,b+1],[b,a],[a,b-1],[a+2,b]].forEach(([n,d])=>{if(d>0&&n!==d&&n*b!==a*d)pool.push(frac(n,d));});
-    return Q(`Write ${frac(k*a,k*b)} in its simplest form.`,frac(a,b),pool,`Divide the top and bottom by ${k}.`,()=>frac(rnd(1,9),rnd(2,12)));}
+    return Q(`Write ${frac(k*a,k*b)} in its simplest form.`,frac(a,b),pool,`Divide the top and bottom by ${k}.`,()=>frac(rnd(1,9),rnd(2,12)));},
+  ()=>{let f;
+    do{f=[];let tries=0;while(f.length<3&&tries++<50){const d=rnd(2,12),n=rnd(1,d-1);if(gcd(n,d)===1&&!f.some(([a,b])=>a*d===n*b))f.push([n,d]);}}
+    while(f.length<3||new Set(f.map(x=>x[1])).size<2);
+    const inc=Math.random()<.5,sg=inc?1:-1;
+    const sorted=f.slice().sort((x,y)=>(x[0]*y[1]-y[0]*x[1])*sg);
+    const str=a=>a.map(([n,d])=>frac(n,d)).join(',&nbsp; ');
+    const perms=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]].map(o=>str(o.map(i=>f[i])));
+    const ans=str(sorted),L=f.reduce((m,[n,d])=>lcm(m,d),1);
+    return Q(`Which list puts these fractions in <b>${inc?'increasing':'decreasing'}</b> order (${inc?'smallest':'biggest'} first)?<br>${str(f)}`,ans,perms.filter(p=>p!==ans),
+      `Use a common denominator of ${L}: ${f.map(([n,d])=>`${n}/${d} = ${n*L/d}/${L}`).join(', ')}.`);}
 ],[
   ()=>{let b,d,a,c;do{b=rnd(2,9);d=rnd(2,9);}while(b===d||gcd(b,d)===Math.max(b,d));
     a=rnd(1,b-1);c=rnd(1,d-1);const add=Math.random()<.6;
@@ -450,7 +466,24 @@ topic('fractions','Fractions',[
     const num=a*d,den=b*c;
     const pool=[[a*c,b*d],[b*c,a*d],[a*d,b*d],[a*c,b*c]].map(([n,dd])=>F(n,dd));
     return Q(`Work out ${frac(a,b)} ÷ ${frac(c,d)}. Give your answer in its simplest form.`,F(num,den),pool,
-      `Flip the second fraction and multiply: ${frac(a,b)} × ${frac(d,c)}.`,()=>F(num+rnd(-3,3)||1,den));}
+      `Flip the second fraction and multiply: ${frac(a,b)} × ${frac(d,c)}.`,()=>F(num+rnd(-3,3)||1,den));},
+  ()=>{const two=Math.random()<.6;let r;
+    if(two){do{r=rnd(1,98);}while(r%11===0);}else r=rnd(1,8);
+    const s=two?String(r).padStart(2,'0'):String(r),den=two?99:9,[sn,sd]=simp(r,den);
+    const rec=t=>`0.<span class="ov">${t}</span>`;
+    const rev=two?parseInt(s[1]+s[0],10):r+1;
+    const how=sn===r?'':` = ${fs(r,den)}`;
+    if(Math.random()<.5){
+      const shown=`${rec(s)} &nbsp;(${'0.'+s.repeat(two?3:5)}…)`;
+      return Q(`Which fraction is equal to the recurring decimal ${shown}?`,fs(r,den),
+        [fs(r,100),fs(r,two?90:10),fs(rev,den),fs(r,999),fs(r+1,den),fs(r,two?98:99)],
+        `${two?'Two digits repeat, so the denominator is 99':'One digit repeats, so the denominator is 9'}: ${frac(r,den)}${how}.`,
+        ()=>fs(rnd(1,98),99));}
+    const pool=two?[rec(String(rev).padStart(2,'0')),rec(String(r+1).padStart(2,'0')),`0.${s[0]}<span class="ov">${s[1]}</span>`,`0.${s}`,rec(String(Math.max(1,r-1)).padStart(2,'0'))]
+                  :[rec(String(r+1)),`0.${r}`,`0.0<span class="ov">${r}</span>`,rec(String(r*2>9?r+2:r*2)+''),rec(String(r+2))];
+    return Q(`Write ${fs(sn,sd)} as a recurring decimal.`,rec(s),pool,
+      `${fs(sn,sd)} = ${frac(r,den)}, and ${r} ÷ ${den} = ${'0.'+s.repeat(two?3:5)}…`,
+      ()=>rec(two?String(rnd(1,98)).padStart(2,'0'):String(rnd(1,9))));}
 ]);
 
 /* ---------------- DECIMALS ---------------- */
@@ -475,14 +508,31 @@ topic('percentages','Percentages',[
   ()=>{const p=pick([5,10,15,20,25,30,35,40,50,60,75]),n=20*rnd(1,20),v=p*n/100;
     return Q(`What is ${p}% of ${n}?`,N(v),[n-v,v*2,p*n/10,v*10,v/2,n*p].map(N),`${p}% of ${n} = ${p}/100 × ${n} = ${N(v)}.`,numFill(v,[1,-1,5,-5,10]));},
   ()=>{const d=pick([4,5,10,20,25,50]),n=rnd(1,d-1),p=100*n/d;
-    return Q(`Write ${frac(n,d)} as a percentage.`,N(p)+'%',[p/10,p*10,100-p,n+d,p+10,p-10].map(v=>N(v)+'%'),`${frac(n,d)} = ${N(p)}/100 = ${N(p)}%.`,()=>N(p+pick([5,-5,10,-10,1,-1]))+'%');}
+    return Q(`Write ${frac(n,d)} as a percentage.`,N(p)+'%',[p/10,p*10,100-p,n+d,p+10,p-10].map(v=>N(v)+'%'),`${frac(n,d)} = ${N(p)}/100 = ${N(p)}%.`,()=>N(p+pick([5,-5,10,-10,1,-1]))+'%');},
+  ()=>{const p=pick([5,10,20,25,30,50]),A=pick([20,40,60,80,100,120,160,200,240,300]),up=Math.random()<.5,ch=A*p/100,v=up?A+ch:A-ch;
+    return Q(`${up?'Increase':'Decrease'} ${GBP(A)} by ${p}%.`,GBP(v),[up?A-ch:A+ch,ch,A+p,A-p,up?A*(100+p)/10:A*(100-p)/10].map(GBP),
+      `${p}% of ${GBP(A)} is ${GBP(ch)}. ${up?'Add it to':'Take it off'} ${GBP(A)}.`,()=>GBP(Math.abs(v+pick([ch,-ch,10,-10,5]))||ch));},
+  ()=>{const p=pick([4,6,7,9,12,15,23,35,45,62,85]),t=rnd(1,3);
+    if(t===1)return Q(`Write ${p}% as a decimal.`,N(p/100),[N(p/10),N(p/1000),N(p),N(p/100+.1),N(p/100*10+.01)].map(String),`${p}% = ${p} ÷ 100 = ${N(p/100)}.`,()=>N(p/pick([10,100,1000])+pick([0,.01,.1])));
+    if(t===2)return Q(`Write ${N(p/100)} as a percentage.`,p+'%',[p/10,p*10,p/100,100-p,p+10].map(v=>N(v)+'%'),`Multiply by 100: ${N(p/100)} × 100 = ${p}%.`,()=>N(p+pick([5,-5,10,-10,1,-1]))+'%');
+    return Q(`Write ${p}% as a fraction in its simplest form.`,fs(p,100),[frac(p,10),frac(1,p),frac(100-p,100),frac(p,p+100),frac(p+1,100)].map(String),`${p}% means ${p} out of 100: ${frac(p,100)}${simp(p,100)[1]===100?'':' = '+fs(p,100)}.`,()=>fs(rnd(1,99),100));}
 ],[
   ()=>{const p=pick([10,20,25,30,40,50]),k=rnd(3,20),orig=20*k,sale=orig*(100-p)/100;
     return Q(`In a sale, a jacket costs ${GBP(sale)} after a ${p}% reduction. What was the original price?`,GBP(orig),[sale*(100+p)/100,sale+p,sale*100/(100+p),orig+10,orig-10].map(GBP),`${sale} is ${100-p}% of the original price, so ÷ ${100-p} × 100 gives ${orig}.`,()=>GBP(orig+pick([10,-10,20,-20,5])));},
   ()=>{const p=pick([10,20,25,30,40,50]),old=20*rnd(1,10),nw=old*(100+p)/100,diff=nw-old;
     return Q(`The price of a bag rises from ${GBP(old)} to ${GBP(nw)}. What is the percentage increase?`,p+'%',[(diff/nw*100).toFixed(1).replace(/\.0$/,'')+'%',diff+'%',(p+10)+'%',(p-5)+'%',(nw-old+p)+'%'],`Increase = ${GBP(diff)}. ${GBP(diff)} ÷ ${GBP(old)} × 100 = ${p}%. Divide by the <b>original</b>.`,()=>(p+pick([5,-5,10,-10]))+'%');},
   ()=>{const [A,p]=pick([[200,10],[100,20],[400,5],[1000,10],[500,20],[600,10],[800,5],[300,20]]),v=A*Math.pow(1+p/100,2);
-    return Q(`${GBP(A)} is invested for 2 years at ${p}% compound interest per year. How much is it worth after 2 years?`,GBP(v),[A*(1+2*p/100),A*(1+p/100),A*Math.pow(1+p/100,3),A+2*p].map(GBP),`Multiply by ${clean(1+p/100)} twice: ${GBP(A)} × ${clean(1+p/100)} × ${clean(1+p/100)} = ${GBP(v)}.`,()=>GBP(v+pick([2,-2,5,-5,10])));}
+    return Q(`${GBP(A)} is invested for 2 years at ${p}% compound interest per year. How much is it worth after 2 years?`,GBP(v),[A*(1+2*p/100),A*(1+p/100),A*Math.pow(1+p/100,3),A+2*p].map(GBP),`Multiply by ${clean(1+p/100)} twice: ${GBP(A)} × ${clean(1+p/100)} × ${clean(1+p/100)} = ${GBP(v)}.`,()=>GBP(v+pick([2,-2,5,-5,10])));},
+  ()=>{const A=pick([100,200,300,400,500,1000,2000]),up=Math.random()<.55,p=up?pick([2,3,4,6,8]):pick([5,10,12,15,20]),m=up?1+p/100:1-p/100,v=A*m*m;
+    const q=up?`${GBP(A)} is invested for 2 years at ${p}% compound interest per year. How much is it worth after 2 years?`
+              :`A car is worth ${GBP(A)}. It loses ${p}% of its value each year. How much is it worth after 2 years?`;
+    const s=up?1:-1;
+    return Q(q,GBP(v),[A*(1+s*2*p/100),A*(1+s*p/100),A*Math.pow(m,3),A*(1-s*p/100)*(1-s*p/100)].map(GBP),
+      `Multiply by ${clean(m)} twice: ${GBP(A)} × ${clean(m)} × ${clean(m)} = ${GBP(v)}.`,()=>GBP(Math.abs(v+pick([2,-2,5,-5,10]))));},
+  ()=>{const p=pick([5,10,15,20,25]),o=clean(p*p/100);
+    return Q(`A price is increased by ${p}%, and then the new price is decreased by ${p}%. What is the overall change in the price?`,`${N(o)}% decrease`,
+      ['No change',`${p}% decrease`,`${N(o)}% increase`,`${2*p}% decrease`,`${p}% increase`],
+      `Multipliers: ${clean(1+p/100)} × ${clean(1-p/100)} = ${clean(1-p*p/10000)}, which is a decrease of ${N(o)}%.`,()=>`${N(o+pick([1,2,3,5]))}% ${pick(['decrease','increase'])}`);}
 ]);
 
 /* ---------------- SIGNIFICANT FIGURES ---------------- */
@@ -598,6 +648,120 @@ topic('bidmas','BIDMAS',[
     const r=rnd(3,12),b=rnd(2,6),c=rnd(2,6),v=r+b*c;
     return Q(`Work out √${r*r} + ${b} × ${c}`,N(v),[(r+b)*c,r*r+b*c,r+b+c,v-1,v+1].map(N),`Roots first: √${r*r} = ${r}. Then multiply: ${b} × ${c} = ${b*c}. Then add ${r}.`,numFill(v,[1,-1,2,-2,b]));}
 ]);
+/* ---------------- RATIO ---------------- */
+const rj=a=>a.join(' : ');
+const rsimp=a=>{const g=a.reduce((x,y)=>gcd(x,y));return rj(a.map(x=>x/g));};
+const threeParts=()=>shuffle([1,2,3,4,5,6,7,8,9]).slice(0,3).sort((a,b)=>a-b);
+topic('ratio','Ratio',[
+  ()=>{const g=rnd(2,9);let m1,m2;do{m1=rnd(1,9);m2=rnd(1,9);}while(m1===m2||gcd(m1,m2)!==1);
+    const a=g*m1,b=g*m2;
+    return Q(`Write the ratio ${a} : ${b} in its simplest form.`,rj([m1,m2]),[rj([m2,m1]),rj([m1+1,m2]),rj([m1,m2+1]),rj([2*m1,2*m2])],
+      `Divide both numbers by ${g}: ${a} ÷ ${g} = ${m1} and ${b} ÷ ${g} = ${m2}.`,()=>rj([rnd(1,9),rnd(1,9)]));},
+  ()=>{let a,b;do{a=rnd(1,8);b=rnd(1,8);}while(a===b);
+    const k=rnd(2,15),t=k*(a+b),mx=Math.max(a,b),mn=Math.min(a,b);
+    return Q(`Share ${GBP(t)} in the ratio ${a} : ${b}. How much is the larger share?`,GBP(k*mx),[k*mn,t/2,k*(mx+1),t-k,t/mx].map(GBP),
+      `${a} + ${b} = ${a+b} parts. ${GBP(t)} ÷ ${a+b} = ${GBP(k)} for each part. The larger share is ${mx} × ${GBP(k)}.`,
+      ()=>GBP(Math.abs(k*mx+pick([k,2*k,1,-1,5,-5]))));},
+  ()=>{const [A,B]=pick([['boys','girls'],['red counters','blue counters'],['cats','dogs'],['adults','children'],['apples','pears']]);
+    let a,b;do{a=rnd(1,8);b=rnd(1,8);}while(a===b);const k=rnd(2,9),x=a*k,y=b*k;
+    return Q(`The ratio of ${A} to ${B} is ${a} : ${b}. There are ${x} ${A}. How many ${B} are there?`,N(y),[x+(b-a),x+y,k,y+k,y-k,b*x].map(N),
+      `${x} ÷ ${a} = ${k} for each part, so ${B}: ${b} × ${k} = ${y}.`,()=>N(Math.abs(y+pick([1,2,3,k,-1]))));}
+],[
+  ()=>{const p=threeParts(),s=p[0]+p[1]+p[2],k=rnd(2,20),t=k*s;
+    const am=p.map(x=>GBP(k*x));
+    const perms=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]].map(o=>o.map(i=>am[i]).join(', '));
+    return Q(`Share ${GBP(t)} in the ratio ${rj(p)}. What are the three amounts, in that order?`,perms[0],perms.slice(1),
+      `${p.join(' + ')} = ${s} parts. ${GBP(t)} ÷ ${s} = ${GBP(k)} for each part. Then multiply each part of the ratio by ${GBP(k)}.`);},
+  ()=>{let x,y,z,w;
+    do{x=rnd(1,9);y=rnd(1,9);z=rnd(1,9);w=rnd(1,9);}while(gcd(x,y)!==1||gcd(z,w)!==1||y===z||x===y||z===w);
+    const L=lcm(y,z),A=x*L/y,C=w*L/z,ans=rsimp([A,C]);
+    return Q(`<i>a</i> : <i>b</i> = ${x} : ${y} and <i>b</i> : <i>c</i> = ${z} : ${w}. Work out <i>a</i> : <i>c</i> in its simplest form.`,ans,
+      [rsimp([x,w]),rsimp([y,z]),rsimp([x*y,z*w]),rsimp([C,A]),rsimp([A+1,C]),rsimp([A,C+1])].filter(v=>v!==ans),
+      `Make the <i>b</i> parts the same: the LCM of ${y} and ${z} is ${L}. Then <i>a</i> = ${A} and <i>c</i> = ${C}, so <i>a</i> : <i>c</i> = ${ans}.`,
+      ()=>rj([rnd(1,12),rnd(1,12)]));},
+  ()=>{const p=threeParts(),s=p[0]+p[1]+p[2];
+    const [i,j,hn,ln]=pick([[2,1,'largest','middle'],[2,0,'largest','smallest'],[1,0,'middle','smallest']]);
+    const dp=p[i]-p[j],k=rnd(2,15),D=k*dp,ask=pick(['total','largest','smallest']);
+    const n=ask==='total'?s:ask==='largest'?p[2]:p[0],ans=k*n;
+    const what=ask==='total'?'the total amount shared':`the ${ask} share`;
+    return Q(`Money is shared in the ratio ${rj(p)}. The ${hn} share is ${GBP(D)} more than the ${ln} share. How much is ${what}?`,GBP(ans),
+      [D*n,k*(n+1),k*(n-1),D+ans,k*s,k*p[1]].filter(v=>v>0).map(GBP),
+      `The difference is ${p[i]} − ${p[j]} = ${dp} part${dp>1?'s':''}, which is ${GBP(D)}, so one part is ${GBP(k)}. ${ask==='total'?p.join(' + ')+' = '+s:n} part${n>1?'s':''} × ${GBP(k)} = ${GBP(ans)}.`,
+      ()=>GBP(Math.abs(ans+pick([k,-k,2*k,D,-D]))||k));}
+]);
+
+/* ---------------- SEQUENCES ---------------- */
+const linExp=(d,c)=>{const n='<i>n</i>';
+  if(d<0)return `${c} ${MINUS} ${-d}${n}`;
+  return `${d}${n}${c>0?' + '+c:c<0?' '+MINUS+' '+(-c):''}`;};
+topic('sequences','Sequences',[
+  ()=>{const desc=Math.random()<.3,d=rnd(3,9),a=desc?rnd(150,200):rnd(1,20),sg=desc?-1:1,t=n=>a+(n-1)*sg*d;
+    const k=rnd(6,12),off=rnd(1,d-1)*(Math.random()<.5?1:-1),odd=t(k)+off;
+    const pool=[];for(let n=5;n<=16;n++)if(n!==k)pool.push(N(t(n)));
+    return Q(`Here is a sequence: ${[1,2,3,4].map(t).join(', ')}, … Which of these is <b>not</b> in the sequence?`,N(odd),pool,
+      `The sequence ${desc?'goes down':'goes up'} by ${d} each time, so ${N(t(k))} is a term but ${N(odd)} is not.`,()=>N(t(rnd(5,18))));},
+  ()=>{const t=rnd(1,4);let seq,next,x,pool;
+    if(t===1){const a=rnd(2,30),d=rnd(2,12),dn=Math.random()<.4&&a>5*d;
+      seq=[0,1,2,3].map(i=>a+(dn?-1:1)*i*d);next=a+(dn?-1:1)*4*d;pool=[next+d,next-d,next+1,next-1,next+2*d];x=`The sequence goes ${dn?'down':'up'} by ${d} each time.`;}
+    else if(t===2){const a=rnd(1,5),r=pick([2,3]);seq=[0,1,2,3].map(i=>a*Math.pow(r,i));next=a*Math.pow(r,4);const l=seq[3];
+      pool=[2*l-seq[2],l*(r+1),l+r,next+r,l+10];x=`Each term is ${r} times the one before.`;}
+    else if(t===3){const s=rnd(1,6),sq=Math.random()<.5,f=i=>sq?i*i:i*(i+1)/2;seq=[0,1,2,3].map(i=>f(s+i));next=f(s+4);
+      pool=[2*seq[3]-seq[2],next+1,next-1,seq[3]+seq[2],next+2];x=sq?'These are square numbers.':'The gaps grow by 1 each time (triangular numbers).';}
+    else{const a=rnd(1,5),b=rnd(2,6);seq=[a,b,a+b,a+2*b];next=seq[2]+seq[3];
+      pool=[2*seq[3]-seq[2],seq[3]+1,next+1,next-1,seq[3]*2];x='Add the two previous terms to get the next term.';}
+    return Q(`What is the next term in this sequence?<br>${seq.map(N).join(', ')}, …`,N(next),pool.map(N),x,()=>N(next+pick([1,-1,2,-2,3,5])));}
+],[
+  ()=>{const dn=Math.random()<.3;let d,a,c;
+    if(dn){d=-rnd(2,9);a=rnd(15,40);c=a-d;}else{d=rnd(2,9);a=rnd(1,15);c=a-d;}
+    const seq=[1,2,3,4].map(n=>a+(n-1)*d);
+    const pool=dn?[linExp(d,a),linExp(-d,c),linExp(d,c+1),linExp(d,c-1),linExp(-d,a)]:[linExp(d,a),linExp(a,d),linExp(d,-c),linExp(d+1,c),linExp(d,c+1),linExp(d,c-1)];
+    return Q(`Which of these is the <i>n</i>th term of the sequence ${seq.join(', ')}, …?`,linExp(d,c),pool,
+      `The sequence ${dn?'goes down':'goes up'} by ${Math.abs(d)} each time, so the <i>n</i> is multiplied by ${d<0?MINUS+(-d):d}. Check with <i>n</i> = 1: the first term is ${a}.`,
+      ()=>linExp(rnd(2,9)*(dn?-1:1),rnd(1,15)));},
+  ()=>{const d=rnd(4,9),c=rnd(-9,9),k=rnd(8,30),t=d*k+c;
+    const pool=[t+1,t-1,t+2,t-2,t+3,t-3].filter(v=>(v-c)%d!==0);
+    return Q(`The <i>n</i>th term of a sequence is ${linExp(d,c)}. Which of these is a term in the sequence?`,N(t),pool.map(N),
+      `${N(t)} = ${d} × ${k} ${c<0?MINUS:'+'} ${Math.abs(c)}, so it is the ${k}th term.`,()=>N(t+pick([1,-1,2,-2])));},
+  ()=>{const a=rnd(1,3),b=pick([-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+    const ex=`${a>1?a:''}<i>n</i><sup>2</sup> ${b<0?MINUS:'+'} ${Math.abs(b)}`,v=a*100+b;
+    return Q(`The <i>n</i>th term of a sequence is ${ex}. What is the 10th term?`,N(v),[a*100-b,a*100,a*10+b,a*20+b,a*a*100+b+a*10,(a*10)*(a*10)+b].map(N),
+      `Replace <i>n</i> with 10: ${a} × 10² ${b<0?MINUS:'+'} ${Math.abs(b)} = ${N(a*100)} ${b<0?MINUS:'+'} ${Math.abs(b)} = ${N(v)}.`,()=>N(v+pick([1,-1,10,-10,a*10])));}
+]);
+
+/* ---------------- UNITS ---------------- */
+const hm=(h,m)=>`${h} h ${m} min`;
+const hms=(h,m,s)=>`${h} h ${m} min ${s} s`;
+function metric(pairs,easy){
+  const [big,small,f]=pick(pairs),up=Math.random()<.5;
+  let bi,dp;
+  if(easy){dp=pick([0,0,1]);bi=rnd(2,99);}
+  else{dp=pick([0,1,2,3]);do{bi=rnd(11,999);}while(dp>0&&bi%10===0);}
+  const bigV=clean(bi/Math.pow(10,dp)),smallV=clean(bigV*f);
+  const q=up?`Convert ${N(bigV)} ${big} to ${small}.`:`Convert ${N(smallV)} ${small} to ${big}.`,a=up?smallV:bigV;
+  const w=[a*10,a/10,a*100,a/100,up?a/f:a*f].map(clean).map(N);
+  return Q(q,N(a),w,`1 ${big} = ${N(f)} ${small}, so ${up?'multiply':'divide'} by ${N(f)}.`,()=>N(a*pick([10,100,1000,.1,.01,.001])));
+}
+topic('units','Units',[
+  ()=>{const m=rnd(80,599);if(m%60===0)return null;const h=Math.floor(m/60),r=m%60;
+    return Q(`Write ${m} minutes in hours and minutes.`,hm(h,r),[...(m%100>0&&m%100<60?[hm(Math.floor(m/100),m%100)]:[]),hm(h+1,r),hm(h,60-r),hm(h,Math.floor(m/10)),hm(h-1,r)],
+      `${m} ÷ 60 = ${h} remainder ${r}, so ${h} hours and ${r} minutes.`,()=>hm(Math.max(1,h+pick([-1,0,1])),(r+pick([5,10,-5,-10,15,-15])+60)%60));},
+  ()=>{const s=rnd(70,599);if(s%60===0)return null;const m=Math.floor(s/60),r=s%60;const f=(a,b)=>`${a} min ${b} s`;
+    return Q(`Write ${s} seconds in minutes and seconds.`,f(m,r),[...(s%100>0&&s%100<60?[f(Math.floor(s/100),s%100)]:[]),f(m+1,r),f(m,60-r),f(m,Math.floor(s/10)),f(m-1,r)],
+      `${s} ÷ 60 = ${m} remainder ${r}, so ${m} minutes and ${r} seconds.`,()=>f(Math.max(1,m+pick([-1,0,1])),(r+pick([5,10,-5,-10,15,-15])+60)%60));},
+  ()=>{const h=rnd(2,6),r=5*rnd(1,11),v=h*60+r;
+    return Q(`How many minutes are there in ${h} hours ${r} minutes?`,N(v),[h*100+r,h*60,h+r,v+60,v-60,h*r].map(N),
+      `${h} × 60 = ${h*60}, then add ${r}.`,()=>N(v+pick([10,-10,5,-5,60])));},
+  ()=>metric([['cm','mm',10],['m','cm',100],['km','m',1000],['m','mm',1000]],true)
+],[
+  ()=>{const s=rnd(3700,40000);if(s%60===0||Math.floor(s/60)%60===0)return null;const h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60;
+    return Q(`Write ${N(s)} seconds in hours, minutes and seconds.`,hms(h,m,r),[hms(h,r,m),hms(h+1,m,r),hms(h,m+1,r),hms(h,m,60-r),hms(h,m-1,r)],
+      `${N(s)} ÷ 3600 = ${h} remainder ${N(s-h*3600)}. ${N(s-h*3600)} ÷ 60 = ${m} remainder ${r}.`,
+      ()=>hms(Math.max(1,h+pick([0,1,1])),(m+pick([-10,-1,1,10])+60)%60,r));},
+  ()=>{const h=rnd(1,6),k=pick([1,2,3,4,6,7,8,9]);
+    return Q(`Write ${h}.${k} hours in hours and minutes.`,hm(h,6*k),[hm(h,10*k),hm(h,k),hm(h,10*k+6),hm(h,6*k+10),hm(h,6*k-6)],
+      `0.${k} of an hour is 0.${k} × 60 = ${6*k} minutes. (Time is not in tens: an hour has 60 minutes.)`,()=>hm(h,pick([5,10,15,20,25,35,40,45,50])));},
+  ()=>metric([['km','m',1000],['m','mm',1000],['kg','g',1000],['litres','ml',1000],['tonnes','kg',1000]],false)
+]);
 // === ENGINE END ===
 
 /* ================= GAME / UI ================= */
@@ -608,6 +772,11 @@ const store={
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 };
 let enabled=new Set(store.get('mil_topics',TOPICS.map(t=>t.id)));
+// topics added since a teacher's settings were saved start ticked; topics they unticked stay unticked
+{const OLD=['primes','factors','multiples','hcf','lcm','powers','roots','fractions','decimals','percentages','sf','dp','estimation','stdform','bounds','bidmas'];
+ const known=new Set(store.get('mil_known',OLD));
+ TOPICS.forEach(t=>{if(!known.has(t.id)){enabled.add(t.id);known.add(t.id);}});
+ store.set('mil_known',[...known]);store.set('mil_topics',[...enabled]);}
 let showEx=store.get('mil_explain',true);
 let secs=store.get('mil_secs',30);
 let G=null,timer=null;
@@ -662,7 +831,7 @@ function showQuestion(){
   $('qn').textContent=`${G.i+1} / ${NQ}`;
   const tag=$('qtag');tag.className='tag '+q.level;tag.textContent=(q.level==='easy'?'Easy':'Hard')+' ×'+q.mult;
   $('topic').textContent=q.topic;
-  $('qcard').innerHTML=q.q;
+  $('qcard').innerHTML='<div>'+q.q+'</div>';
   const o=$('opts');o.innerHTML='';
   q.opts.forEach((t,i)=>{
     const b=document.createElement('button');b.className='opt';b.dataset.i=i;
