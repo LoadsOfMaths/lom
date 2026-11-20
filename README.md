@@ -37,6 +37,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Hex Connect | `hex-connect/` |
 | Higher or Lower | `higher-or-lower/` |
 | Hot Seat! | `hot-seat/` |
+| How Big’s A Million? | `how-big-is-a-million/` |
 | In the Middle | `in-the-middle/` |
 | Interesting Interest | `interesting-interest/` |
 | Jelly Bean Disco | `jelly-bean-disco/` |

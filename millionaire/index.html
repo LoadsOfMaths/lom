@@ -2,351 +2,903 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Millionaire</title>
 <style>
-:root{--bg:#0b1020;--panel:#141b34;--card:#1c2547;--ink:#eef2ff;--mute:#9aa6d1;--accent:#ffc533}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,"Segoe UI",Arial,sans-serif;overflow:hidden}
-#app{display:grid;grid-template-columns:1fr minmax(300px,31vw);height:100%}
-#stage{position:relative;min-width:0;min-height:0}
-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:pointer}
-#panel{background:var(--panel);padding:clamp(10px,1.6vw,22px);overflow:auto;display:flex;flex-direction:column;gap:clamp(8px,1.2vw,14px);border-left:1px solid #26305c}
-h1{margin:0;font-size:clamp(26px,3.2vw,46px);letter-spacing:.5px;color:var(--accent)}
-.modes{display:flex;gap:6px;flex-wrap:wrap}
-button,select{font:inherit;color:var(--ink);background:var(--card);border:2px solid #34407a;border-radius:10px;padding:.45em .8em;cursor:pointer}
-button:hover:not(:disabled){border-color:var(--accent)}
-button:disabled{opacity:.4;cursor:default}
-.modes button{flex:1;font-size:clamp(13px,1.35vw,19px)}
-.modes button.on{background:var(--accent);color:#1a1a1a;border-color:var(--accent);font-weight:700}
-.pips{display:flex;gap:8px;align-items:center}
-.pip{width:clamp(16px,1.9vw,26px);height:clamp(16px,1.9vw,26px);border-radius:50%;border:3px solid;opacity:.55}
-.pip.on{opacity:1;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
-.pip.done{opacity:1}
-.card{background:var(--card);border-radius:14px;padding:clamp(8px,1.1vw,16px)}
-.lab{color:var(--mute);font-size:clamp(12px,1.25vw,17px)}
-.big{font-size:clamp(28px,4vw,58px);font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden}
-.name{font-size:clamp(14px,1.6vw,22px);color:var(--accent);font-weight:600}
-.mid{font-size:clamp(18px,2.2vw,32px);font-weight:700;white-space:nowrap;overflow:hidden}
-.hint{font-size:clamp(14px,1.5vw,20px);line-height:1.35}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.row button{flex:1;font-size:clamp(13px,1.35vw,18px)}
-#scr{font-size:clamp(14px,1.5vw,20px);font-weight:600}
-@media (max-aspect-ratio:1/1){
-  #app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
-  #panel{max-height:46vh;border-left:0;border-top:1px solid #26305c}
+:root{
+  --bg1:#0b1240; --bg2:#1d0b4a; --panel:#141c5c; --panel2:#1b2577;
+  --gold:#ffc83d; --gold2:#ffe48a; --ink:#f4f6ff; --mute:#a9b4ff;
+  --good:#1fb26b; --bad:#e0475b; --easy:#34c3d6; --hard:#ffb02e;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:"Segoe UI",Arial,Helvetica,sans-serif; color:var(--ink);
+  background:radial-gradient(ellipse at 50% 0%,#2a1a7a 0%,var(--bg2) 40%,var(--bg1) 100%) fixed;
+  overflow:hidden; user-select:none;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+.screen{position:absolute;inset:0;display:none;padding:2vmin 3vmin}
+.screen.on{display:flex}
+
+/* ---------- title ---------- */
+#title{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2.2vmin}
+#title h1{
+  margin:0;font-size:min(13vmin,15vw);letter-spacing:.04em;text-transform:uppercase;
+  background:linear-gradient(180deg,#fff6c9,var(--gold) 55%,#c98a00);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 .6vmin 0 rgba(0,0,0,.35));
+}
+#title .sub{font-size:3.2vmin;color:var(--mute);margin:0}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:2vmin;max-width:120vmin;width:100%}
+.rule{background:rgba(255,255,255,.07);border:.3vmin solid rgba(255,255,255,.14);border-radius:2vmin;padding:2vmin;font-size:2.6vmin;line-height:1.35}
+.rule b{color:var(--gold)}
+.big{
+  font-size:4vmin;padding:1.6vmin 6vmin;border-radius:10vmin;border:.4vmin solid var(--gold2);
+  background:linear-gradient(180deg,#ffd75e,#e9a400);color:#2b1d00;font-weight:800;
+  box-shadow:0 1vmin 0 #9a6a00,0 2vmin 4vmin rgba(0,0,0,.4);
+}
+.big.sm{font-size:3.4vmin;padding:1.2vmin 4vmin}
+.big:active{transform:translateY(.5vmin);box-shadow:0 .5vmin 0 #9a6a00}
+.ghost{font-size:2.8vmin;padding:1.2vmin 4vmin;border-radius:10vmin;border:.3vmin solid rgba(255,255,255,.35);background:rgba(255,255,255,.08)}
+.ghost:hover{background:rgba(255,255,255,.16)}
+
+/* ---------- game ---------- */
+#game{gap:2.5vmin}
+#ladder{
+  width:23vmin;flex:none;display:flex;flex-direction:column;gap:.7vmin;
+}
+.rung{
+  flex:1;display:flex;align-items:center;gap:1vmin;padding:0 1.2vmin;border-radius:1.2vmin;
+  background:rgba(255,255,255,.06);border:.25vmin solid rgba(255,255,255,.12);font-size:2.5vmin;
+}
+.rung .no{width:4vmin;text-align:right;color:var(--mute);font-weight:700}
+.rung .m{font-weight:800;min-width:6.5vmin}
+.rung.easy .m{color:var(--easy)} .rung.hard .m{color:var(--hard)}
+.rung .lv{font-size:1.9vmin;color:var(--mute);margin-left:auto}
+.rung.now{background:linear-gradient(90deg,#ffd75e,#e9a400);color:#2b1d00;border-color:var(--gold2)}
+.rung.now .no,.rung.now .m,.rung.now .lv{color:#2b1d00}
+.rung.right{background:rgba(31,178,107,.35);border-color:var(--good)}
+.rung.wrong{background:rgba(224,71,91,.28);border-color:var(--bad);opacity:.85}
+.rung.right .lv::after{content:" ✓"} .rung.wrong .lv::after{content:" ✗"}
+
+#main{flex:1;display:flex;flex-direction:column;gap:2vmin;min-width:0}
+#top{display:flex;align-items:stretch;gap:2vmin}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:.3vmin solid rgba(255,255,255,.15);border-radius:2vmin}
+#scoreBox{flex:1;padding:1.2vmin 2.4vmin;display:flex;align-items:center;justify-content:space-between;gap:2vmin}
+#scoreBox .lab{font-size:2.2vmin;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+#score{font-size:8.5vmin;font-weight:900;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums}
+#best{font-size:2.3vmin;color:var(--mute);text-align:right}
+#best b{color:var(--ink);font-size:3vmin}
+#qno{padding:1.2vmin 2.6vmin;text-align:center;min-width:19vmin}
+#qno .lab{font-size:2.1vmin;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+#qno .v{font-size:5.2vmin;font-weight:900;line-height:1.1}
+#qno .tag{display:inline-block;margin-top:.4vmin;padding:.3vmin 1.6vmin;border-radius:5vmin;font-weight:800;font-size:2.4vmin;color:#10163f}
+#qno .tag.easy{background:var(--easy)} #qno .tag.hard{background:var(--hard)}
+#topic{font-size:2.2vmin;color:var(--mute);margin-top:.3vmin}
+
+#qcard{flex:1.05;display:flex;align-items:center;justify-content:center;text-align:center;padding:2vmin 4vmin;font-size:5.6vmin;line-height:1.3;min-height:0}
+#opts{flex:1.1;display:grid;grid-template-columns:1fr 1fr;gap:1.8vmin;min-height:0}
+.opt{
+  display:flex;align-items:center;gap:2vmin;padding:1vmin 2.6vmin;border-radius:10vmin;
+  background:linear-gradient(180deg,#1f2a8f,#141c5c);border:.35vmin solid #6f7dff;font-size:5vmin;text-align:left;
+}
+.opt .l{color:var(--gold);font-weight:900;font-size:4.4vmin}
+.opt .t{flex:1;text-align:center}
+.opt:hover:not([disabled]){background:linear-gradient(180deg,#2c3bc0,#1b2577);border-color:var(--gold2)}
+.opt.right{background:linear-gradient(180deg,#25c77c,#128654);border-color:#8cf5c3}
+.opt.bad{background:linear-gradient(180deg,#e85a6d,#a8283b);border-color:#ffb3bd}
+.opt.dim{opacity:.45}
+.opt[disabled]{cursor:default}
+#fb{display:flex;align-items:center;gap:2vmin;padding:1.2vmin 2.4vmin;min-height:11vmin;font-size:3vmin}
+#fb .msg{flex:1;line-height:1.3}
+#fb .msg b{font-size:3.8vmin}
+#fb .good{color:#6bf0ae} #fb .no{color:#ff9aa8}
+#fb .ex{color:var(--mute);font-size:2.6vmin;display:block;margin-top:.3vmin}
+#next{font-size:3.4vmin;padding:1.2vmin 4vmin;white-space:nowrap}
+#fb.hide #next{visibility:hidden}
+
+/* fraction + sup */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .15em;line-height:1.05}
+.fr>span:first-child{border-bottom:.08em solid currentColor;padding:0 .2em .04em}
+.fr>span:last-child{padding:.04em .2em 0}
+.fr{font-size:.82em}
+.mx{display:inline-flex;align-items:center;gap:.1em}
+sup{font-size:.62em;line-height:0}
+#qcard i,.opt i{font-family:Georgia,serif}
+
+
+/* ---------- modes + lifelines + timer ---------- */
+#title{gap:1.8vmin}
+#title .sub{font-size:4vmin;color:var(--gold2);font-weight:600}
+.rule{font-size:2.3vmin;padding:1.4vmin 1.8vmin}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:2.4vmin;max-width:130vmin;width:100%}
+.mode{background:rgba(255,255,255,.07);border:.3vmin solid rgba(255,255,255,.18);border-radius:2.4vmin;padding:1.8vmin 2.4vmin;display:flex;flex-direction:column;align-items:center;gap:1.2vmin}
+.mode h3{margin:0;font-size:3.6vmin;color:var(--gold)}
+.mode p{margin:0;font-size:2.3vmin;color:var(--mute);line-height:1.35;text-align:center}
+.mode p b{color:var(--ink)}
+.tiny{font-size:1.9vmin;padding:.4vmin 1.8vmin;margin-top:.5vmin}
+#lifeCard{padding:1vmin 1.6vmin;display:flex;gap:1.2vmin;align-items:center}
+.lf{font-size:2.4vmin;font-weight:800;padding:1vmin 1.8vmin;border-radius:3vmin;border:.3vmin solid var(--gold2);background:linear-gradient(180deg,#2b3ab8,#18218a);line-height:1.1;text-align:center;min-width:12vmin}
+.lf:hover:not(:disabled){background:linear-gradient(180deg,#3a4be0,#222fa6)}
+.lf:disabled{opacity:.35;cursor:default;border-color:rgba(255,255,255,.3);text-decoration:line-through}
+#timerCard{flex:1;display:none;align-items:center;gap:2.4vmin;padding:1.2vmin 2.4vmin}
+.m-class #timerCard{display:flex}
+.m-class #scoreBox,.m-class #lifeCard{display:none}
+#tnum{font-size:9vmin;font-weight:900;color:var(--gold);min-width:14vmin;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+#tcol{flex:1}
+#tcol .lab{font-size:2.2vmin;color:var(--mute);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.8vmin}
+.tbar{height:2.4vmin;border-radius:5vmin;background:rgba(255,255,255,.14);overflow:hidden}
+.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ffd75e,#e9a400);transition:width .1s linear}
+.tbtns{display:flex;gap:1.2vmin}
+#timerCard.low #tnum{color:#ff6b7f;animation:pulse .6s infinite alternate}
+#timerCard.low .tbar i{background:#e0475b}
+#timerCard.paused{opacity:.7}
+#timerCard.marking .tbar,#timerCard.marking .tbtns{display:none}
+#timerCard.marking #tnum{font-size:5.6vmin;min-width:0}
+@keyframes pulse{to{transform:scale(1.12)}}
+.opt{position:relative;overflow:hidden}
+.opt .bar{position:absolute;left:0;top:0;bottom:0;background:rgba(255,200,61,.38);transition:width .7s;z-index:0}
+.opt>.l,.opt>.t,.opt>.pct{position:relative;z-index:1}
+.opt .pct{font-weight:800;color:var(--gold);font-size:3.6vmin}
+.opt.gone{visibility:hidden}
+.m-class .opt{pointer-events:none}
+.opt:disabled{color:var(--ink)}
+#review.tick .rv{cursor:pointer}
+.rv.t{background:rgba(31,178,107,.28)}
+
+/* ---------- end ---------- */
+#end{flex-direction:column;align-items:center;gap:2vmin;overflow:auto}
+#end .lab{font-size:3vmin;color:var(--mute);margin-top:1vmin}
+#final{font-size:min(17vmin,16vw);font-weight:900;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums}
+#rank{font-size:5vmin;font-weight:800}
+#endStats{font-size:3vmin;color:var(--mute);text-align:center}
+#review{width:100%;max-width:150vmin;display:grid;gap:.8vmin}
+.rv{display:flex;gap:1.5vmin;align-items:center;padding:.9vmin 2vmin;border-radius:1.4vmin;background:rgba(255,255,255,.06);font-size:2.5vmin}
+.rv .n{width:4vmin;font-weight:800;color:var(--mute)} .rv .q{flex:1} .rv .a{color:#6bf0ae;font-weight:700;white-space:nowrap}
+.rv .ok{width:3vmin;font-weight:900}.rv.r .ok{color:#6bf0ae}.rv.w .ok{color:#ff9aa8}
+.rv .mul{width:6vmin;color:var(--mute);text-align:right}
+.btnrow{display:flex;gap:2vmin;margin:1vmin 0 3vmin}
+
+/* ---------- settings ---------- */
+#settings{position:absolute;inset:0;background:rgba(5,8,35,.82);display:none;align-items:center;justify-content:center;z-index:10}
+#settings.on{display:flex}
+#sbox{width:min(150vmin,94vw);max-height:94vh;overflow:auto;padding:3vmin 4vmin;background:linear-gradient(180deg,#232fa0,#141c5c);border:.4vmin solid var(--gold2);border-radius:3vmin}
+#sbox h2{margin:0 0 .5vmin;font-size:5vmin;color:var(--gold)}
+#sbox p{margin:0 0 2vmin;color:var(--mute);font-size:2.5vmin}
+#tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2vmin;margin-bottom:2vmin}
+.tg{display:flex;align-items:center;gap:1.2vmin;padding:1.3vmin 1.6vmin;border-radius:1.4vmin;background:rgba(255,255,255,.08);border:.3vmin solid rgba(255,255,255,.18);font-size:2.7vmin;cursor:pointer}
+.tg input{width:3vmin;height:3vmin;accent-color:#ffc83d;flex:none}
+.tg.off{opacity:.5}
+.srow{display:flex;gap:2vmin;align-items:center;flex-wrap:wrap;margin-bottom:2vmin;font-size:2.7vmin}
+.small{font-size:2.5vmin;padding:1vmin 2.6vmin}
+#warn{color:#ff9aa8;font-size:2.5vmin;min-height:3vmin}
+
+@media (max-width:820px){
+  #game{flex-direction:column}
+  #ladder{width:100%;flex-direction:row;flex:none;height:9vmin}
+  .rung{flex-direction:column;justify-content:center;gap:0;padding:0;font-size:2vmin}
+  .rung .no{width:auto;text-align:center}.rung .lv{display:none}.rung .m{min-width:0}
+  .opt{font-size:3.6vmin;padding:1vmin 1.6vmin}.opt .l{font-size:3.4vmin}
+  #qcard{font-size:4.4vmin}
+  #tgrid{grid-template-columns:repeat(2,1fr)}
+  .rules{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="stage"><canvas id="c"></canvas></div>
-  <div id="panel">
-    <h1 id="title">Millionaire</h1>
-    <div class="modes" id="modes">
-      <button data-m="million" class="on">Millionaire</button>
-      <button data-m="billion">Billionaire</button>
-      <button data-m="trillion">Trillionaire</button>
+
+<!-- TITLE -->
+<div id="title" class="screen on">
+  <h1>Millionaire</h1>
+  <p class="sub">How high can you climb?</p>
+  <div class="rules">
+    <div class="rule">You start on <b>1 point</b>.</div>
+    <div class="rule"><b>Easy</b> questions: a correct answer <b>multiplies</b> your score by <b>2</b>.<br><b>Hard</b> questions: by <b>5</b>.</div>
+    <div class="rule">A wrong answer just multiplies by <b>1</b>: you keep what you have. A perfect round makes <b>1,000,000</b>.</div>
+  </div>
+  <div class="modes">
+    <div class="mode"><h3>Interactive</h3>
+      <p>Game-show style: tap your answer and watch the score climb. Three lifelines: <b>50:50</b>, <b>Ask the Class</b> and <b>Ask a Friend</b>.</p>
+      <button class="big sm" id="play">Play</button></div>
+    <div class="mode"><h3>Class game</h3>
+      <p>Hands-free: each question is on the board for <b><span id="modeSecs">30</span> seconds</b>. Students write their answers, then you mark together at the end.</p>
+      <button class="big sm" id="playClass">Start class game</button></div>
+  </div>
+  <button class="ghost" id="openSet">⚙ Settings</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div id="ladder"></div>
+  <div id="main">
+    <div id="top">
+      <div id="scoreBox" class="card">
+        <div><div class="lab">Score</div><div id="score">1</div></div>
+        <div id="best">Best still possible<br><b id="bestv">1,000,000</b></div>
+      </div>
+      <div id="lifeCard" class="card">
+        <button class="lf" id="lf50">50:50</button>
+        <button class="lf" id="lfCls">Ask the<br>Class</button>
+        <button class="lf" id="lfFr">Ask a<br>Friend</button>
+      </div>
+      <div id="timerCard" class="card">
+        <div id="tnum">30</div>
+        <div id="tcol"><div class="lab" id="tlab">Time left</div><div class="tbar"><i id="tfill"></i></div></div>
+        <div class="tbtns"><button class="ghost small" id="tpause">Pause</button><button class="ghost small" id="tskip">Skip →</button></div>
+      </div>
+      <div id="qno" class="card">
+        <div class="lab">Question</div>
+        <div class="v" id="qn">1</div>
+        <span class="tag easy" id="qtag">Easy ×2</span>
+        <div id="topic"></div>
+        <button class="ghost tiny" id="quit">Menu</button>
+      </div>
     </div>
-    <div class="pips" id="pips"></div>
-    <div id="scr"></div>
-    <div class="card">
-      <div class="lab">This whole screen is worth</div>
-      <div class="mid" id="screenTot"></div>
-      <div class="name" id="screenName"></div>
+    <div id="qcard" class="card"></div>
+    <div id="opts"></div>
+    <div id="fb" class="card hide"><div class="msg" id="msg"></div><button class="big" id="next">Next →</button></div>
+  </div>
+</div>
+
+<!-- END -->
+<div id="end" class="screen">
+  <div class="lab" id="endlab">Final score</div>
+  <div id="final">1</div>
+  <div id="rank"></div>
+  <div id="endStats"></div>
+  <div class="btnrow">
+    <button class="big" id="again">Play again</button>
+    <button class="ghost" id="toTitle">Title</button>
+  </div>
+  <div id="review"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings">
+  <div id="sbox">
+    <h2>Settings</h2>
+    <p>Choose which topics can appear. Each game picks from the ticked topics only.</p>
+    <div id="tgrid"></div>
+    <div class="srow">
+      <button class="ghost small" id="allOn">Tick all</button>
+      <button class="ghost small" id="allOff">Untick all</button>
+      <label class="tg" style="margin-left:auto"><input type="checkbox" id="showEx"> Show a quick explanation after each answer</label>
     </div>
-    <div class="card">
-      <div class="lab" id="worthLab">Each dot is worth</div>
-      <div class="big" id="worth">1</div>
-      <div class="name" id="worthName"></div>
-    </div>
-    <div class="card">
-      <div class="lab">Counting every tiny dot inside this screen, one per second, non-stop, would take</div>
-      <div class="mid" id="time"></div>
-    </div>
-    <div class="hint" id="hint"></div>
-    <div class="row">
-      <button id="back">&#9664; Back one level</button>
-      <button id="start">Back to start</button>
-    </div>
-    <div class="row">
-      <button id="dive">Auto-dive</button>
-      <select id="speed" aria-label="Zoom speed">
-        <option value="4800">Slow zoom</option>
-        <option value="3000" selected>Medium zoom</option>
-        <option value="1600">Fast zoom</option>
-      </select>
-    </div>
+    <div class="srow"><label class="tg">Class game: seconds per question
+      <select id="secsSel"><option>15</option><option>20</option><option>30</option><option>45</option><option>60</option><option>90</option></select></label></div>
+    <div id="warn"></div>
+    <div class="srow"><button class="big" id="closeSet" style="font-size:3.4vmin;padding:1vmin 5vmin">Done</button></div>
   </div>
 </div>
 
 <script>
-(function(){
-'use strict';
-const BG='#0b1020';
-const ROOT='#eef1ff';
-const COL=['#ff4b4b','#33d17a','#3d9bff','#ffc533','#c86bff','#27d9d0'];
-const CNAME=['red','green','blue','gold','purple','turquoise'];
-/* Each mode starts with a single circle (level 0) holding the whole amount. */
-const MODES={
-  million:{title:'Millionaire',word:'One million',dims:[[1,1],[10,10],[10,10],[10,10]]},
-  billion:{title:'Billionaire',word:'One billion',dims:[[1,1],[10,1],[10,10],[10,10],[10,10],[10,10]]},
-  trillion:{title:'Trillionaire',word:'One trillion',dims:[[1,1],[10,10],[10,10],[10,10],[10,10],[10,10],[10,10]]}
-};
-const NAMES=['one','ten','one hundred','one thousand','ten thousand','one hundred thousand','one million','ten million','one hundred million','one billion','ten billion','one hundred billion','one trillion'];
+// === ENGINE START ===
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rnd(0,a.length-1)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;};
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const lcm=(a,b)=>a/gcd(a,b)*b;
+const clean=x=>parseFloat(x.toPrecision(12));
+const MINUS='−';
+const N=x=>clean(x).toLocaleString('en-GB',{maximumFractionDigits:10}).replace('-',MINUS);
+const GBP=x=>{const r=Math.round(x*100)/100;return '£'+(Number.isInteger(r)?r.toLocaleString('en-GB'):r.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}));};
+const sup=(b,e)=>`${b}<sup>${String(e).replace('-',MINUS)}</sup>`;
+const frac=(n,d)=>`<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+const simp=(n,d)=>{const g=gcd(Math.abs(n),Math.abs(d))||1;return [n/g,d/g];};
+function F(n,d){[n,d]=simp(n,d);if(d===1)return N(n);if(n>d){const w=Math.floor(n/d),r=n-w*d;return `<span class="mx">${w}${frac(r,d)}</span>`;}return frac(n,d);}
+const dec=(n,dp)=>N(n/Math.pow(10,dp));
+const fixedStr=(n,dp)=>(n/Math.pow(10,dp)).toFixed(dp);
+const isPrime=n=>{if(n<2)return false;for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true;};
+const numFill=(c,steps,fmt)=>()=>(fmt||N)(c+pick(steps));
+function commaFixed(s){const [i,d]=s.split('.');const ii=parseInt(i,10).toLocaleString('en-GB');return d!==undefined?ii+'.'+d:ii;}
+// round/truncate to sf significant figures, returns display string
+function sfRound(x,sf,mode){
+  const e=Math.floor(Math.log10(x)+1e-12), p=Math.pow(10,e-sf+1);
+  let v=x/p; v=mode==='t'?Math.floor(v+1e-9):Math.round(v);
+  const r=v*p, e2=Math.floor(Math.log10(r)+1e-9), dp=Math.max(0,sf-1-e2);
+  return dp>0?commaFixed(r.toFixed(dp)):N(Math.round(r));
+}
+const sfNum=(x,sf)=>{const e=Math.floor(Math.log10(x)+1e-12),p=Math.pow(10,e-sf+1);return clean(Math.round(x/p)*p);};
+function stdForm(m,e){return `${N(m)} × 10<sup>${String(e).replace('-',MINUS)}</sup>`;}
 
-const cv=document.getElementById('c'),ctx=cv.getContext('2d');
-let cw=0,ch=0,dpr=1,S=0,P=0,R=0,Rroot=0;
-let mode='million',path=[],anim=null,hover=null,flash=null,autoToken=0;
+function Q(q,a,w,x,fill){return {q,a:String(a),w:w.map(String),x:x||'',fill};}
+function key(s){const t=String(s).replace(/,/g,'').replace(/−/g,'-');return /^-?\d+(\.\d+)?$/.test(t)?String(parseFloat(t)):String(s);}
+const bad=s=>/NaN|undefined|Infinity/.test(s);
+function build(raw){
+  if(!raw||bad(raw.a))return null;
+  const seen=new Set([key(raw.a)]);const out=[];
+  for(const p of shuffle(raw.w)){const k=key(p);if(!seen.has(k)&&!bad(p)){seen.add(k);out.push(p);}if(out.length===3)break;}
+  let t=0;
+  while(out.length<3&&raw.fill&&t++<200){const p=String(raw.fill());const k=key(p);if(!seen.has(k)&&!bad(p)){seen.add(k);out.push(p);}}
+  if(out.length<3)return null;
+  const opts=shuffle([raw.a,...out]);
+  return {q:raw.q,opts,ans:opts.indexOf(raw.a),x:raw.x,a:raw.a};
+}
 
+const TOPICS=[];
+function topic(id,name,easy,hard){TOPICS.push({id,name,easy,hard});}
+
+/* ---------------- PRIMES ---------------- */
+topic('primes','Primes',[
+  ()=>{const ps=[];for(let i=11;i<=97;i++)if(isPrime(i))ps.push(i);
+    const comps=[];for(let i=9;i<=99;i+=2)if(!isPrime(i))comps.push(i);
+    const p=pick(ps);
+    return Q('Which of these is a <b>prime</b> number?',N(p),shuffle(comps).slice(0,6).map(N),`${p} has exactly two factors: 1 and ${p}.`);},
+  ()=>{const ps=[];for(let i=11;i<=97;i++)if(isPrime(i))ps.push(i);
+    const comps=[];for(let i=9;i<=99;i+=2)if(!isPrime(i)&&i%3!==0&&i%5!==0)comps.push(i);
+    const c=pick(comps);let d=2;while(c%d)d++;
+    return Q('Which of these is <b>not</b> a prime number?',N(c),shuffle(ps).slice(0,6).map(N),`${c} = ${d} × ${c/d}, so it has more than two factors.`);}
+],[
+  ()=>{const a=rnd(10,60),b=a+rnd(15,25),ps=[];for(let i=a+1;i<b;i++)if(isPrime(i))ps.push(i);const c=ps.length;
+    return Q(`How many prime numbers are there between ${a} and ${b}?`,c,[c+1,c-1,c+2,c-2].filter(v=>v>=0),`The primes are ${ps.join(', ')}.`,()=>c+rnd(1,4));},
+  ()=>{const n=rnd(90,200);let p=n+1;while(!isPrime(p))p++;
+    const pool=[];for(let i=n+1;i<=p+8;i++)if(i!==p)pool.push(N(i));
+    return Q(`What is the smallest prime number that is bigger than ${n}?`,N(p),pool,`Check each number after ${n} in turn. ${p} is the first one with no factors other than 1 and itself.`,numFill(p,[2,3,4,5,6]));}
+]);
+
+/* ---------------- FACTORS ---------------- */
+topic('factors','Factors',[
+  ()=>{const n=pick([36,48,54,60,72,84,90,96,100,120]);const divs=[],non=[];
+    for(let d=3;d<=n/2;d++)(n%d===0?divs:non).push(d);
+    const d=pick(divs);return Q(`Which of these is a factor of ${n}?`,N(d),shuffle(non).slice(0,6).map(N),`${n} ÷ ${d} = ${n/d}, with no remainder.`);},
+  ()=>{const n=pick([12,16,18,20,24,28,30,32,36,40]);const f=[];for(let d=1;d<=n;d++)if(n%d===0)f.push(d);
+    return Q(`How many factors does ${n} have?`,f.length,[f.length+1,f.length-1,f.length+2,f.length-2],`The factors are ${f.join(', ')}.`,()=>f.length+rnd(1,4));}
+],[
+  ()=>{const P=[2,3,5,7];let ps,ex,n;
+    do{ps=shuffle(P).slice(0,rnd(2,3)).sort((a,b)=>a-b);ex=ps.map(()=>rnd(1,4));n=ps.reduce((m,p,i)=>m*Math.pow(p,ex[i]),1);}
+    while(n<60||n>1500||ex.reduce((s,e)=>s+e,0)<3);
+    const fmt=(ps,ex)=>ps.map((p,i)=>ex[i]>1?sup(p,ex[i]):p).join(' × ');
+    const pool=[];
+    ps.forEach((p,i)=>{[-1,1].forEach(dv=>{if(ex[i]+dv>=1){const e2=ex.slice();e2[i]+=dv;pool.push(fmt(ps,e2));}});
+      const alt=P.filter(q=>!ps.includes(q));if(alt.length){const p2=ps.slice();p2[i]=pick(alt);pool.push(fmt(p2.slice().sort((a,b)=>a-b),ex));}});
+    return Q(`Write ${N(n)} as a product of its prime factors.`,fmt(ps,ex),pool,`Keep dividing by primes: ${N(n)} = ${fmt(ps,ex)}.`);},
+  ()=>{const n=pick([60,72,84,90,96,100,108,120,144,180,210]);const f=[];for(let d=1;d<=n;d++)if(n%d===0)f.push(d);
+    return Q(`How many factors does ${n} have?`,f.length,[f.length+1,f.length-1,f.length+2,f.length-2,f.length/2],`Factors come in pairs: ${f.join(', ')}.`,()=>f.length+rnd(1,5));}
+]);
+
+/* ---------------- MULTIPLES ---------------- */
+topic('multiples','Multiples',[
+  ()=>{const n=pick([6,7,8,9,11,12,13]),k=rnd(6,14),m=n*k;const pool=[];
+    [-2,-1,1,2,3,-3].forEach(d=>{if((m+d)%n!==0)pool.push(N(m+d));});
+    return Q(`Which of these is a multiple of ${n}?`,N(m),pool,`${n} × ${k} = ${m}.`);},
+  ()=>{const n=rnd(4,9),k=rnd(5,9),m=n*k;
+    return Q(`What is the ${k}th multiple of ${n}?`,N(m),[m+n,m-n,n+k,m+1,m-1],`The ${k}th multiple of ${n} is ${n} × ${k} = ${m}.`,numFill(m,[n,-n,1,-1,2*n]));}
+],[
+  ()=>{const n=rnd(7,19),M=rnd(100,500),c=(Math.floor(M/n)+1)*n;
+    return Q(`What is the smallest multiple of ${n} that is bigger than ${M}?`,N(c),[c-n,c+n,Math.floor(M/n)*n,c+1,c-1],`${Math.floor(M/n)} × ${n} = ${Math.floor(M/n)*n} is not bigger than ${M}, so the next multiple is ${Math.floor(M/n)+1} × ${n} = ${c}.`,numFill(c,[n,-n,2*n,1,-1]));},
+  ()=>{const n=rnd(6,13),a=rnd(50,150),b=a+rnd(60,140),c=Math.floor(b/n)-Math.floor((a-1)/n);
+    return Q(`How many multiples of ${n} are there from ${a} to ${b} inclusive?`,c,[c+1,c-1,c+2,c-2],`The first is ${(Math.floor((a-1)/n)+1)*n} and the last is ${Math.floor(b/n)*n}.`,()=>c+rnd(1,4));}
+]);
+
+/* ---------------- HCF ---------------- */
+topic('hcf','HCF',[
+  ()=>{const g=rnd(2,9);let m1,m2;do{m1=rnd(2,9);m2=rnd(2,9);}while(m1===m2||gcd(m1,m2)!==1);
+    const a=g*m1,b=g*m2,pool=[lcm(a,b),Math.abs(a-b),Math.min(a,b)];
+    for(let d=1;d<g;d++)if(g%d===0)pool.push(d);
+    return Q(`What is the highest common factor (HCF) of ${a} and ${b}?`,N(g),pool.map(N),`The biggest number that divides both ${a} and ${b} is ${g}.`,numFill(g,[1,2,3,-1,4]));}
+],[
+  ()=>{const g=rnd(4,15);let m1,m2,m3;
+    do{m1=rnd(2,12);m2=rnd(2,12);m3=rnd(2,12);}while(new Set([m1,m2,m3]).size<3||gcd(gcd(m1,m2),m3)!==1);
+    const a=g*m1,b=g*m2,c=g*m3,pool=[gcd(a,b),gcd(b,c),gcd(a,c),Math.min(a,b,c),lcm(lcm(a,b),c)];
+    return Q(`What is the HCF of ${a}, ${b} and ${c}?`,N(g),pool.map(N),`All three numbers are multiples of ${g}, and no bigger number divides all three.`,numFill(g,[1,2,3,-1,-2,4]));},
+  ()=>{const g=rnd(6,24);let m1,m2;do{m1=rnd(2,9);m2=rnd(2,9);}while(m1===m2||gcd(m1,m2)!==1);
+    const a=g*m1,b=g*m2;
+    return Q(`What is the HCF of ${a} and ${b}?`,N(g),[lcm(a,b),Math.abs(a-b),Math.min(a,b),g*2,g+m1].map(N),`${a} = ${g} × ${m1} and ${b} = ${g} × ${m2}, and ${m1} and ${m2} have no common factor.`,numFill(g,[1,2,3,-1,-2,4,6]));}
+]);
+
+/* ---------------- LCM ---------------- */
+topic('lcm','LCM',[
+  ()=>{let a,b;do{a=rnd(2,12);b=rnd(2,12);}while(a===b);const l=lcm(a,b);
+    return Q(`What is the lowest common multiple (LCM) of ${a} and ${b}?`,N(l),[a*b,gcd(a,b),l*2,a+b,Math.max(a,b)].map(N),`Multiples of ${Math.max(a,b)}: the first one that is also a multiple of ${Math.min(a,b)} is ${l}.`,numFill(l,[Math.max(a,b),-Math.max(a,b),Math.min(a,b)]));}
+],[
+  ()=>{let a,b,c,l;do{a=rnd(3,15);b=rnd(3,15);c=rnd(3,15);l=lcm(lcm(a,b),c);}while(new Set([a,b,c]).size<3||l>400||l===a*b*c);
+    const ctx=pick([
+      [`Three lights flash every ${a}, ${b} and ${c} seconds. They all flash together now. After how many seconds will they next flash together?`],
+      [`Three buses leave a station every ${a}, ${b} and ${c} minutes. They all leave together at 9:00. After how many minutes will they next leave together?`],
+      [`Three bells ring every ${a}, ${b} and ${c} seconds. They all ring together now. After how many seconds will they next ring together?`]]);
+    return Q(ctx[0],N(l),[a*b*c,lcm(a,b),lcm(b,c),lcm(a,c),a+b+c,l*2].map(N),`The LCM of ${a}, ${b} and ${c} is ${l}.`,numFill(l,[a,b,c,-a,-b,-c]));}
+]);
+
+/* ---------------- POWERS ---------------- */
+topic('powers','Powers',[
+  ()=>{let b,e,v;do{b=rnd(2,10);e=rnd(2,5);v=Math.pow(b,e);}while(v>10000);
+    return Q(`What is ${sup(b,e)}?`,N(v),[b*e,Math.pow(b,e-1),Math.pow(b,e+1),b+e,e===2?b*2:Math.pow(e,b)].map(N),`${sup(b,e)} = ${Array(e).fill(b).join(' × ')} = ${N(v)}.`,numFill(v,[b,-b,1,-1,10]));}
+],[
+  ()=>{const t=rnd(1,4);
+    if(t===1){const b=rnd(2,5),k=rnd(1,3),v=Math.pow(b,k);
+      return Q(`Work out ${sup(b,-k)}`,F(1,v),[MINUS+N(v),N(v),F(1,b*k),MINUS+F(1,v),F(1,Math.pow(b,k+1))],`A negative power means “one over”: ${sup(b,-k)} = 1 ÷ ${sup(b,k)} = ${F(1,v)}.`,()=>F(1,Math.pow(b,rnd(1,4))+rnd(1,3)));}
+    const b=pick([2,3,4,5,6,7,10]);let m=rnd(2,7),n=rnd(2,7);
+    if(t===2)return Q(`Write ${sup(b,m)} × ${sup(b,n)} as a single power.`,sup(b,m+n),[sup(b,m*n),sup(b,m+n+1),sup(b,m+n-1),sup(b*b,m+n),sup(b,Math.abs(m-n))],`Same base, so add the powers: ${m} + ${n} = ${m+n}.`,()=>sup(b,rnd(2,14)));
+    if(t===3){if(m<=n)[m,n]=[n+1,m];
+      return Q(`Write ${sup(b,m)} ÷ ${sup(b,n)} as a single power.`,sup(b,m-n),[sup(b,m+n),sup(b,m*n),sup(b,m-n+1),sup(b,m-n-1),sup(b,n-m)],`Same base, so subtract the powers: ${m} − ${n} = ${m-n}.`,()=>sup(b,rnd(1,12)));}
+    return Q(`Write (${sup(b,m)})<sup>${n}</sup> as a single power of ${b}.`,sup(b,m*n),[sup(b,m+n),sup(b,m*n+1),sup(b,m*n-1),sup(b,Math.pow(m,n)),sup(b,m*n+m)],`Power of a power: multiply the powers, ${m} × ${n} = ${m*n}.`,()=>sup(b,rnd(2,30)));}
+]);
+
+/* ---------------- ROOTS ---------------- */
+topic('roots','Roots',[
+  ()=>{if(Math.random()<.6){const r=rnd(5,15),v=r*r;
+      return Q(`What is √${v}?`,N(r),[r+1,r-1,r+2,v/2,r*2].map(N),`${r} × ${r} = ${v}.`,numFill(r,[1,-1,2,-2,3]));}
+    const r=rnd(2,10),v=r*r*r;
+    return Q(`What is ∛${N(v)}?`,N(r),[r+1,r-1,v/3,r*3,r+2].map(N),`${r} × ${r} × ${r} = ${N(v)}.`,numFill(r,[1,-1,2,-2,3]));}
+],[
+  ()=>{if(Math.random()<.5){let n;do{n=rnd(10,200);}while(Number.isInteger(Math.sqrt(n)));const k=Math.floor(Math.sqrt(n));
+      const pr=j=>`${j} and ${j+1}`;
+      return Q(`Between which two consecutive whole numbers does √${n} lie?`,pr(k),[pr(k-1),pr(k+1),pr(k-2),pr(k+2)].filter(s=>parseInt(s)>=0),`${k}² = ${k*k} and ${k+1}² = ${(k+1)*(k+1)}, and ${n} is between them.`,()=>pr(rnd(1,14)));}
+    const sq=pick([[0.01,0.1],[0.04,0.2],[0.09,0.3],[0.16,0.4],[0.25,0.5],[0.36,0.6],[0.49,0.7],[0.64,0.8],[0.81,0.9],[0.0004,0.02],[0.0009,0.03],[0.0016,0.04],[0.0025,0.05],[0.0036,0.06],[0.0049,0.07]]);
+    if(Math.random()<.65){const [v,r]=sq;return Q(`What is √${N(v)}?`,N(r),[r*10,r/10,r*100,v/2,r*5].map(N),`${N(r)} × ${N(r)} = ${N(v)}.`,numFill(r,[.1,-.1,.01,.2]));}
+    const cb=pick([[0.001,0.1],[0.008,0.2],[0.027,0.3],[0.064,0.4],[0.125,0.5],[0.216,0.6],[0.343,0.7]]);
+    return Q(`What is ∛${N(cb[0])}?`,N(cb[1]),[cb[1]*10,cb[1]/10,cb[0]/3,cb[1]*3,cb[1]+.1].map(N),`${N(cb[1])} × ${N(cb[1])} × ${N(cb[1])} = ${N(cb[0])}.`,numFill(cb[1],[.1,-.1,.2]));}
+]);
+
+/* ---------------- FRACTIONS ---------------- */
+topic('fractions','Fractions',[
+  ()=>{const d=pick([3,4,5,6,8,10]),n=rnd(1,d-1),k=rnd(2,12),t=d*k,v=n*k;
+    return Q(`What is ${frac(n,d)} of ${t}?`,N(v),[k,t-v,n*t,v+k,v-k].map(N),`${t} ÷ ${d} = ${k}, then × ${n} = ${v}.`,numFill(v,[k,-k,1,-1,2]));},
+  ()=>{let a,b;do{b=rnd(3,9);a=rnd(1,b-1);}while(gcd(a,b)!==1);const k=pick([2,3,4,5,6]);
+    const pool=[];if(k===4)pool.push(frac(2*a,2*b));if(k===6){pool.push(frac(2*a,2*b));pool.push(frac(3*a,3*b));}
+    [[a+1,b],[a,b+1],[b,a],[a,b-1],[a+2,b]].forEach(([n,d])=>{if(d>0&&n!==d&&n*b!==a*d)pool.push(frac(n,d));});
+    return Q(`Write ${frac(k*a,k*b)} in its simplest form.`,frac(a,b),pool,`Divide the top and bottom by ${k}.`,()=>frac(rnd(1,9),rnd(2,12)));}
+],[
+  ()=>{let b,d,a,c;do{b=rnd(2,9);d=rnd(2,9);}while(b===d||gcd(b,d)===Math.max(b,d));
+    a=rnd(1,b-1);c=rnd(1,d-1);const add=Math.random()<.6;
+    let num=add?a*d+c*b:a*d-c*b;if(num<=0){return null;}
+    const den=b*d;const ok=[a+c,add?b+d:Math.abs(b-d)];
+    const pool=[[add?a+c:a-c,add?b+d:b-d],[add?a+c:a-c,b*d],[num+1,den],[num-1,den],[num+den,den]].filter(([n,dd])=>dd>0&&n>0).map(([n,dd])=>F(n,dd));
+    return Q(`Work out ${frac(a,b)} ${add?'+':MINUS} ${frac(c,d)}. Give your answer in its simplest form.`,F(num,den),pool,
+      `Use a common denominator of ${lcm(b,d)}, then simplify.`,()=>F(num+rnd(-3,3),den));},
+  ()=>{let b,d,a,c;do{b=rnd(2,9);d=rnd(2,9);a=rnd(1,b-1);c=rnd(1,d-1);}while(gcd(a,b)!==1||gcd(c,d)!==1||b===d);
+    const num=a*d,den=b*c;
+    const pool=[[a*c,b*d],[b*c,a*d],[a*d,b*d],[a*c,b*c]].map(([n,dd])=>F(n,dd));
+    return Q(`Work out ${frac(a,b)} ÷ ${frac(c,d)}. Give your answer in its simplest form.`,F(num,den),pool,
+      `Flip the second fraction and multiply: ${frac(a,b)} × ${frac(d,c)}.`,()=>F(num+rnd(-3,3)||1,den));}
+]);
+
+/* ---------------- DECIMALS ---------------- */
+topic('decimals','Decimals',[
+  ()=>{const aT=rnd(15,99),bH=rnd(105,499),X=aT*10,add=Math.random()<.6||X<=bH;
+    const A=dec(aT,1),B=dec(bH,2);
+    const r=add?X+bH:X-bH;
+    const pool=[dec(r+10,2),dec(r-10,2),dec(r+1,2),dec(r-1,2),dec(r+100,2)];if(add)pool.push(dec(aT+bH,2));
+    return Q(`What is ${A} ${add?'+':MINUS} ${B}?`,dec(r,2),pool,`Line up the decimal points: ${A}${add?' + ':' − '}${B} = ${dec(r,2)}.`,()=>dec(r+pick([10,-10,1,-1,100]),2));},
+  ()=>{const d=rnd(5,9),c='0.'+d;
+    const pool=['0.'+(d-1)+'9','0.'+(d-2)+rnd(1,9)+rnd(1,9),'0.0'+d+rnd(1,9),'0.'+(d-1)+rnd(6,9)];
+    return Q('Which of these decimals is the <b>largest</b>?',c,pool,`Compare digit by digit from the left: 0.${d} has ${d} tenths, more than any of the others.`,()=>'0.'+rnd(1,d-1)+rnd(1,9)+rnd(1,9));}
+],[
+  ()=>{const i=rnd(2,15),j=rnd(2,9),dp2=pick([1,2]),n=i*j,dp=1+dp2;
+    return Q(`What is ${dec(i,1)} × ${dec(j,dp2)}?`,dec(n,dp),[dec(n,dp-1),dec(n,dp+1),dec(n,dp-2),dec(n,dp+2)],`Work out ${i} × ${j} = ${n}, then put the decimal point back (${dp} decimal places in total).`,()=>dec(n,rnd(1,5)));},
+  ()=>{const k=rnd(2,9),s=pick([1,2]),q=rnd(2,30),dividend=dec(q*k,s),divisor=dec(k,s);
+    return Q(`What is ${dividend} ÷ ${divisor}?`,N(q),[q*10,q/10,q*100,q/100,q+1].map(N),`Multiply both numbers by ${Math.pow(10,s)}: ${N(q*k)} ÷ ${k} = ${q}.`,numFill(q,[1,-1,10,-10]));}
+]);
+
+/* ---------------- PERCENTAGES ---------------- */
+topic('percentages','Percentages',[
+  ()=>{const p=pick([5,10,15,20,25,30,35,40,50,60,75]),n=20*rnd(1,20),v=p*n/100;
+    return Q(`What is ${p}% of ${n}?`,N(v),[n-v,v*2,p*n/10,v*10,v/2,n*p].map(N),`${p}% of ${n} = ${p}/100 × ${n} = ${N(v)}.`,numFill(v,[1,-1,5,-5,10]));},
+  ()=>{const d=pick([4,5,10,20,25,50]),n=rnd(1,d-1),p=100*n/d;
+    return Q(`Write ${frac(n,d)} as a percentage.`,N(p)+'%',[p/10,p*10,100-p,n+d,p+10,p-10].map(v=>N(v)+'%'),`${frac(n,d)} = ${N(p)}/100 = ${N(p)}%.`,()=>N(p+pick([5,-5,10,-10,1,-1]))+'%');}
+],[
+  ()=>{const p=pick([10,20,25,30,40,50]),k=rnd(3,20),orig=20*k,sale=orig*(100-p)/100;
+    return Q(`In a sale, a jacket costs ${GBP(sale)} after a ${p}% reduction. What was the original price?`,GBP(orig),[sale*(100+p)/100,sale+p,sale*100/(100+p),orig+10,orig-10].map(GBP),`${sale} is ${100-p}% of the original price, so ÷ ${100-p} × 100 gives ${orig}.`,()=>GBP(orig+pick([10,-10,20,-20,5])));},
+  ()=>{const p=pick([10,20,25,30,40,50]),old=20*rnd(1,10),nw=old*(100+p)/100,diff=nw-old;
+    return Q(`The price of a bag rises from ${GBP(old)} to ${GBP(nw)}. What is the percentage increase?`,p+'%',[(diff/nw*100).toFixed(1).replace(/\.0$/,'')+'%',diff+'%',(p+10)+'%',(p-5)+'%',(nw-old+p)+'%'],`Increase = ${GBP(diff)}. ${GBP(diff)} ÷ ${GBP(old)} × 100 = ${p}%. Divide by the <b>original</b>.`,()=>(p+pick([5,-5,10,-10]))+'%');},
+  ()=>{const [A,p]=pick([[200,10],[100,20],[400,5],[1000,10],[500,20],[600,10],[800,5],[300,20]]),v=A*Math.pow(1+p/100,2);
+    return Q(`${GBP(A)} is invested for 2 years at ${p}% compound interest per year. How much is it worth after 2 years?`,GBP(v),[A*(1+2*p/100),A*(1+p/100),A*Math.pow(1+p/100,3),A+2*p].map(GBP),`Multiply by ${clean(1+p/100)} twice: ${GBP(A)} × ${clean(1+p/100)} × ${clean(1+p/100)} = ${GBP(v)}.`,()=>GBP(v+pick([2,-2,5,-5,10])));}
+]);
+
+/* ---------------- SIGNIFICANT FIGURES ---------------- */
+topic('sf','Significant figures',[
+  ()=>{let x,sf;
+    if(Math.random()<.5){const dg=rnd(4,6);do{x=rnd(Math.pow(10,dg-1),Math.pow(10,dg)-1);}while(x%10===0||x%10===5);sf=rnd(1,2);}
+    else{do{x=rnd(1000,99999)/Math.pow(10,rnd(1,3));}while(Math.round(x*1000)%5===0);sf=rnd(2,3);}
+    const c=sfRound(x,sf),xs=x>=1000?commaFixed(String(x)):String(x);
+    return Q(`Round ${xs} to ${sf} significant figure${sf>1?'s':''}.`,c,[sfRound(x,sf,'t'),sfRound(x,sf+1),sf>1?sfRound(x,sf-1):sfRound(x,sf+2)],`Count ${sf} significant figure${sf>1?'s':''} from the first non-zero digit, then look at the next digit to decide whether to round up.`,()=>sfRound(x,rnd(1,4)));}
+],[
+  ()=>{if(Math.random()<.6){let d;do{d=rnd(1000,9999);}while(d%10===0||d%10===5);const z=rnd(1,3),x=d/Math.pow(10,4+z),sf=rnd(2,3);
+      const xs=x.toFixed(4+z);
+      return Q(`Round ${xs} to ${sf} significant figures.`,sfRound(x,sf),[sfRound(x,sf,'t'),sfRound(x,sf+1),sfRound(x,sf-1),x.toFixed(sf)],`Leading zeros do not count. The first significant figure is the first non-zero digit.`,()=>sfRound(x,rnd(1,5)));}
+    const L=[['0.00450',3],['3.040',4],['0.0305',3],['20.50',4],['0.0070',2],['1.0020',5],['0.01',1],['6.02',3],['0.4050',4],['900.5',4],['0.0802',3],['10.01',4]];
+    const [s,c]=pick(L);
+    return Q(`How many significant figures does ${s} have?`,c,[c+1,c-1,c+2,c-2,s.length-1],`Leading zeros do not count, but zeros between or after other digits (after the decimal point) do.`,()=>rnd(1,6));}
+]);
+
+/* ---------------- DECIMAL PLACES ---------------- */
+topic('dp','Decimal places',[
+  ()=>{let n;do{n=rnd(10001,99999);}while(n%10===0||n%10===5);const k=rnd(1,2),v=Math.round(n/Math.pow(10,4-k)),t=Math.floor(n/Math.pow(10,4-k));
+    const pool=[fixedStr(t,k),fixedStr(Math.round(n/Math.pow(10,4-k-1)),k+1),k===1?String(Math.round(n/10000)):fixedStr(Math.round(n/100),1)];
+    return Q(`Round ${fixedStr(n,4)} to ${k} decimal place${k>1?'s':''}.`,fixedStr(v,k),pool,`Look at the digit after the ${k===1?'1st':'2nd'} decimal place to decide whether to round up or stay.`,()=>fixedStr(v+pick([1,-1,2,-2,10]),k));}
+],[
+  ()=>{if(Math.random()<.6){const I=rnd(1,19),k=pick([1,2]),r=k===2?rnd(9951,9999):rnd(9501,9999),n=I*10000+r;
+      const c=fixedStr((I+1)*Math.pow(10,k),k),tr=fixedStr(Math.floor(n/Math.pow(10,4-k)),k);
+      return Q(`Round ${fixedStr(n,4)} to ${k} decimal place${k>1?'s':''}.`,c,[tr,fixedStr(I*Math.pow(10,k),k),k===2?`${I+1}.01`:`${I}.9`+'0',`${I}.${k===2?'10':'1'}`,fixedStr((I+1)*Math.pow(10,k)+1,k)],`The digits round up, and the carry changes the digits before them. Keep the zeros to show the accuracy.`,()=>fixedStr((I+1)*Math.pow(10,k)+pick([1,-1,-10,10]),k));}
+    const t=rnd(20,99),pool=[],c=pick([-4,-3,-2,-1,0,1,2,3,4]);
+    const val=x=>(x/100).toFixed(2);
+    [-9,-8,-7,-6,6,7,8,9].forEach(k=>pool.push(val(t*10+k)));
+    return Q(`Which of these numbers is <b>${(t/10).toFixed(1)}</b> when rounded to 1 decimal place?`,val(t*10+c),pool,`${val(t*10-5)} up to just below ${val(t*10+5)} all round to ${(t/10).toFixed(1)}.`,()=>val(t*10+pick([6,-6,7,-7])));}
+]);
+
+/* ---------------- ESTIMATION ---------------- */
+topic('estimation','Estimation',[
+  ()=>{if(Math.random()<.6){let a,b;do{a=rnd(12,98);b=rnd(12,98);}while(a%10===0||b%10===0);
+      const ra=Math.round(a/10)*10,rb=Math.round(b/10)*10,c=ra*rb;
+      return Q(`Estimate ${a} × ${b} by rounding each number to 1 significant figure.`,N(c),[ra*b,a*rb,c*10,c/10,a*b,ra+rb].map(N),`${a} ≈ ${ra} and ${b} ≈ ${rb}, so ${ra} × ${rb} = ${N(c)}.`,numFill(c,[ra,-ra,rb,-rb,100,-100]));}
+    const [A,B]=pick([[600,30],[800,40],[400,20],[900,30],[300,50],[200,40],[800,20],[500,50],[600,20],[400,50],[800,50],[600,50],[2000,40],[4000,50]]);
+    const a=A+rnd(-4,4)*(A>=1000?10:5),b=B+rnd(-4,4);
+    if(a===A&&b===B)return null;
+    const c=A/B;
+    return Q(`Estimate ${a} ÷ ${b} by rounding each number to 1 significant figure.`,N(c),[c*10,c/10,c+10,c-10,A/b].map(N),`${a} ≈ ${A} and ${b} ≈ ${B}, so ${A} ÷ ${B} = ${N(c)}.`,numFill(c,[1,-1,2,5,10]));}
+],[
+  ()=>{const t=pick([[0.1,[0.11,0.14]],[0.2,[0.16,0.24]],[0.5,[0.46,0.54]]]),rc=t[0];
+    const c=rnd(Math.round(t[1][0]*100),Math.round(t[1][1]*100))/100,aT=rnd(31,98),a=aT/10;
+    const b=pick([rnd(21,98),rnd(201,989)]);
+    const ra=Math.round(a),rb=sfNum(b,1),res=clean(ra*rb/rc);
+    if(sfNum(c,1)!==rc||ra===0)return null;
+    return Q(`Estimate the value of (${N(a)} × ${N(b)}) ÷ ${N(c)} by rounding each number to 1 significant figure.`,N(res),[res*10,res/10,res*2,clean(ra*rb*rc),ra*rb].map(N),`${N(a)} ≈ ${ra}, ${N(b)} ≈ ${N(rb)}, ${N(c)} ≈ ${rc}. So ${ra} × ${N(rb)} ÷ ${rc} = ${N(res)}.`,numFill(res,[res/10,-res/10,res,-res/2]));}
+]);
+
+/* ---------------- STANDARD FORM ---------------- */
+topic('stdform','Standard form',[
+  ()=>{const mT=rnd(11,99),e=rnd(3,7);if(mT%10===0)return null;const m=mT/10,ord=mT*Math.pow(10,e-1);
+    if(Math.random()<.5)return Q(`Write ${N(ord)} in standard form.`,stdForm(m,e),[stdForm(m,e+1),stdForm(m,e-1),`${N(mT)} × 10<sup>${e-1}</sup>`,stdForm(m/10,e+1),stdForm(m,e+2)],`Move the decimal point to make a number between 1 and 10: ${N(m)}. You moved it ${e} places, so × 10<sup>${e}</sup>.`,()=>stdForm(m,rnd(2,9)));
+    return Q(`Write ${stdForm(m,e)} as an ordinary number.`,N(ord),[ord*10,ord/10,ord*100,ord/100,ord+e].map(N),`10<sup>${e}</sup> = ${N(Math.pow(10,e))}, so ${N(m)} × ${N(Math.pow(10,e))} = ${N(ord)}.`,numFill(ord,[ord,-ord/2,ord*9]));}
+],[
+  ()=>{const t=rnd(1,4);
+    if(t===1){const mT=Math.random()<.3?rnd(1,9)*10:rnd(11,99),e=rnd(2,6);const m=mT/10;
+      const dp=e+1,s=String(mT).padStart(dp+1,'0');let ds=s.slice(0,s.length-dp)+'.'+s.slice(s.length-dp);ds=ds.replace(/0+$/,'').replace(/\.$/,'');
+      return Q(`Write ${ds} in standard form.`,stdForm(m,-e),[stdForm(m,e),stdForm(m,-e-1),stdForm(m,-e+1),stdForm(m*10,-e-1),stdForm(m/10,-e+1)],`Move the decimal point ${e} places to the right to get ${N(m)}, so the power of 10 is −${e}.`,()=>stdForm(m,-rnd(2,9)));}
+    if(t===2){const a=rnd(2,9),b=rnd(2,9),m=rnd(2,8),n=rnd(2,8),p=a*b;if(p<10)return null;
+      return Q(`Work out (${a} × 10<sup>${m}</sup>) × (${b} × 10<sup>${n}</sup>). Give your answer in standard form.`,stdForm(p/10,m+n+1),[`${p} × 10<sup>${m+n}</sup>`,stdForm(p/10,m+n),stdForm(p/10,m*n),stdForm(p,m+n+1),stdForm(p/10,m+n+2)],`${a} × ${b} = ${p}, and 10<sup>${m}</sup> × 10<sup>${n}</sup> = 10<sup>${m+n}</sup>. So ${p} × 10<sup>${m+n}</sup>, which is ${N(p/10)} × 10<sup>${m+n+1}</sup> in standard form.`,()=>stdForm(p/10,rnd(2,20)));}
+    if(t===3){const b=rnd(2,9),q=rnd(2,9),a=b*q,m=rnd(3,9),n=rnd(1,7);
+      return Q(`Work out (${a} × 10<sup>${m}</sup>) ÷ (${b} × 10<sup>${n}</sup>). Give your answer in standard form.`,stdForm(q,m-n),[stdForm(q,m+n),stdForm(q,n-m),stdForm(q,m*n),stdForm(q,m-n+1),stdForm(q,m-n-1)],`${a} ÷ ${b} = ${q}, and 10<sup>${m}</sup> ÷ 10<sup>${n}</sup> = 10<sup>${m-n}</sup>.`,()=>stdForm(q,rnd(-6,12)));}
+    const a=rnd(2,8),b=rnd(2,9),n=rnd(3,8),m=a+b/10;
+    return Q(`Work out (${a} × 10<sup>${n}</sup>) + (${b} × 10<sup>${n-1}</sup>). Give your answer in standard form.`,stdForm(m,n),[stdForm(a+b,n),stdForm(a+b,2*n-1),stdForm(m,n-1),stdForm(m,n+1),stdForm(a+b/100,n)],`Write both as ordinary numbers or as the same power of ten: ${N(a*10)} × 10<sup>${n-1}</sup> + ${b} × 10<sup>${n-1}</sup> = ${N(a*10+b)} × 10<sup>${n-1}</sup> = ${N(m)} × 10<sup>${n}</sup>.`,()=>stdForm(m+pick([1,-1,.1,-.1]),n));}
+]);
+
+/* ---------------- BOUNDS ---------------- */
+topic('bounds','Upper & lower bounds',[
+  ()=>{const it=pick([{u:1,unit:'cm',n:'length',m:()=>rnd(5,40)},{u:10,unit:'g',n:'mass',m:()=>10*rnd(3,30)},{u:0.1,unit:'seconds',n:'time',m:()=>rnd(20,99)/10},{u:100,unit:'m',n:'distance',m:()=>100*rnd(3,30)},{u:1,unit:'kg',n:'mass',m:()=>rnd(5,60)}]);
+    const m=it.m(),up=Math.random()<.5,h=it.u/2,c=up?m+h:m-h,o=up?m-h:m+h;
+    const full=it.u===1?'whole':'';const un=it.u===1?`${it.unit}`:`${N(it.u)} ${it.unit}`;
+    return Q(`A ${it.n} is ${N(m)} ${it.unit}, measured to the nearest ${it.u===1?'1':N(it.u)} ${it.unit}. What is its <b>${up?'upper':'lower'} bound</b>?`,N(c),[o,up?m+it.u:m-it.u,up?m-it.u:m+it.u,up?m+it.u/10:m-it.u/10].map(N),`Half of ${N(it.u)} is ${N(h)}. ${up?'Add':'Subtract'} it ${up?'to':'from'} ${N(m)}.`,numFill(c,[it.u/2,-it.u/2,it.u,-it.u]));}
+],[
+  ()=>{const t=rnd(1,3);
+    if(t===1){const u=pick([1,10,0.1,0.01]),vv=u>=1?u*rnd(2,30):rnd(11,99)*u,h=u/2,dpB=u>=1?(u===10?0:1):(u===0.1?2:3),dpV=u>=1?0:(u===0.1?1:2);
+      const v=vv.toFixed(dpV),lo=(vv-h).toFixed(dpB),hi=(vv+h).toFixed(dpB);
+      const desc=u===1?'the nearest whole number':u===10?'the nearest 10':u===0.1?'1 decimal place':'2 decimal places';
+      const x='<i>x</i>';
+      return Q(`<i>x</i> = ${v} is rounded to ${desc}. Which is the correct error interval for <i>x</i>?`,`${lo} ≤ ${x} < ${hi}`,[`${lo} < ${x} ≤ ${hi}`,`${lo} ≤ ${x} ≤ ${hi}`,`${(vv-u).toFixed(dpB)} ≤ ${x} < ${(vv+u).toFixed(dpB)}`,`${lo} < ${x} < ${hi}`],`Half a unit either side: ${lo} up to, but not including, ${hi}.`);}
+    if(t===2){const a=rnd(4,15),b=rnd(4,15),up=Math.random()<.5;if(a===b)return null;
+      const c=up?(a+.5)*(b+.5):(a-.5)*(b-.5);
+      return Q(`A rectangle has length ${a} cm and width ${b} cm, each measured to the nearest cm. What is the <b>${up?'upper':'lower'} bound</b> for its area?`,N(c)+' cm²',
+        up?[a*b,(a+1)*(b+1),(a+.5)*b,a*(b+.5),(a-.5)*(b-.5)].map(v=>N(v)+' cm²'):[a*b,(a-1)*(b-1),(a-.5)*b,a*(b-.5),(a+.5)*(b+.5)].map(v=>N(v)+' cm²'),
+        `${up?'Upper':'Lower'} bounds: ${N(up?a+.5:a-.5)} cm and ${N(up?b+.5:b-.5)} cm. Multiply them.`,()=>N(c+pick([1,-1,2,-2,5]))+' cm²');}
+    const a=rnd(10,30),b=rnd(3,9),low=Math.random()<.6;
+    const c=low?(a-.5)-(b+.5):(a+.5)-(b-.5);
+    return Q(`<i>a</i> = ${a} and <i>b</i> = ${b}, both to the nearest whole number. What is the <b>${low?'lower':'upper'} bound</b> of <i>a</i> − <i>b</i>?`,N(c),[a-b,low?(a-.5)-(b-.5):(a+.5)-(b+.5),low?(a+.5)-(b-.5):(a-.5)-(b+.5),a-b+(low?-.5:.5)].map(N),`${low?'Smallest':'Biggest'} answer: use the ${low?'lower bound of a and the upper bound of b':'upper bound of a and the lower bound of b'}.`,numFill(c,[1,-1,.5,-.5,2]));}
+]);
+
+/* ---------------- BIDMAS ---------------- */
+topic('bidmas','BIDMAS',[
+  ()=>{const t=rnd(1,5),a=rnd(2,9),b=rnd(2,9),c=rnd(2,9);let q,v,w,x;
+    if(t===1){q=`${a} + ${b} × ${c}`;v=a+b*c;w=[(a+b)*c];x=`Multiply first: ${b} × ${c} = ${b*c}, then add ${a}.`;}
+    else if(t===2){const cc=rnd(1,Math.max(1,Math.min(b-1,8)));q=`${a} × ${b} ${MINUS} ${cc}`;v=a*b-cc;w=[a*(b-cc)];x=`Multiply first, then subtract.`;}
+    else if(t===3){q=`(${a} + ${b}) × ${c}`;v=(a+b)*c;w=[a+b*c];x=`Brackets first: ${a} + ${b} = ${a+b}, then × ${c}.`;}
+    else if(t===4){const bb=rnd(2,6);q=`${a} + ${bb}²`;v=a+bb*bb;w=[(a+bb)*(a+bb),(a+bb)*2];x=`Indices first: ${bb}² = ${bb*bb}, then add ${a}.`;}
+    else{const A=a+b+c;q=`${A} ${MINUS} ${b} + ${c}`;v=A-b+c;w=[A-(b+c)];x=`Work from left to right: ${A} − ${b} = ${A-b}, then + ${c}.`;}
+    return Q(`Work out ${q}`,N(v),[...w,v+1,v-1,v+2,v-2,v+10].map(N),x,numFill(v,[1,-1,2,-2,10]));}
+],[
+  ()=>{const t=rnd(1,5);
+    if(t===1){const b=rnd(2,4),c=rnd(2,4),k=rnd(2,5),a=b*c*k,v=a/b*c;
+      return Q(`Work out ${a} ÷ ${b} × ${c}`,N(v),[k,v+c,v-c,a/(b+c)].map(N),`Same level, so go left to right: ${a} ÷ ${b} = ${a/b}, then × ${c}.`,numFill(v,[b,-b,c,-c,1]));}
+    if(t===2){const b=rnd(2,4),c=rnd(2,4),a=rnd(b*c*c+1,b*c*c+30),v=a-b*c*c;
+      return Q(`Work out ${a} ${MINUS} ${b} × ${c}²`,N(v),[(a-b)*c*c,(a-b*c)*(a-b*c),a-(b*c)*(b*c),(a-b)*c].map(N),`Indices first: ${c}² = ${c*c}. Then multiply: ${b} × ${c*c} = ${b*c*c}. Then subtract.`,numFill(v,[1,-1,b,-b,10]));}
+    if(t===3){const s=pick([4,6,8,10]),a=rnd(1,s-1),b=s-a,c=pick([2,4,5,10].filter(c=>(s*s)%c===0)),d=rnd(1,5),v=s*s/c-d;
+      return Q(`Work out (${a} + ${b})² ÷ ${c} ${MINUS} ${d}`,N(v),[a+b*b/c-d,s*s/(c-d),s*s/c+d,(s*s)/(c*d),s*2/c-d].map(N),`Brackets: ${a} + ${b} = ${s}. Indices: ${s}² = ${s*s}. Then ÷ ${c} = ${s*s/c}, then − ${d}.`,numFill(v,[1,-1,2,-2,3]));}
+    if(t===4){const e=rnd(2,5),k=rnd(2,6),d=e*k,a=rnd(2,9),b=rnd(2,9),c=rnd(2,9),v=a+b*c-k;
+      return Q(`Work out ${a} + ${b} × ${c} ${MINUS} ${d} ÷ ${e}`,N(v),[(a+b)*c-k,a+b*(c-k),(a+b*c-d)/e,v+k,v+2*k].map(N),`Multiply and divide first: ${b} × ${c} = ${b*c} and ${d} ÷ ${e} = ${k}. Then ${a} + ${b*c} − ${k}.`,numFill(v,[1,-1,k,-k]));}
+    const r=rnd(3,12),b=rnd(2,6),c=rnd(2,6),v=r+b*c;
+    return Q(`Work out √${r*r} + ${b} × ${c}`,N(v),[(r+b)*c,r*r+b*c,r+b+c,v-1,v+1].map(N),`Roots first: √${r*r} = ${r}. Then multiply: ${b} × ${c} = ${b*c}. Then add ${r}.`,numFill(v,[1,-1,2,-2,b]));}
+]);
+// === ENGINE END ===
+
+/* ================= GAME / UI ================= */
 const $=id=>document.getElementById(id);
-function fmt(e){return (BigInt(10)**BigInt(e)).toLocaleString('en-GB');}
-function human(s){
-  const m=60,h=3600,d=86400,y=31557600;
-  if(s<m)return s+' second'+(s===1?'':'s');
-  if(s<h)return Math.round(s/m)+' minutes';
-  if(s<d){const hh=Math.floor(s/h),mm=Math.round((s%h)/m);return hh+' hour'+(hh>1?'s':'')+(mm?' '+mm+' min':'');}
-  if(s<y){const dd=s/d;return (dd<10?dd.toFixed(1):Math.round(dd).toLocaleString('en-GB'))+' days';}
-  const yy=s/y;return (yy<10?yy.toFixed(1):Math.round(yy).toLocaleString('en-GB'))+' years';
-}
-function dims(){return MODES[mode].dims;}
-function levelColour(d){return d===0?ROOT:COL[d-1];}
-function pos(i,j,cols,rows){return {x:(i-(cols-1)/2)*P,y:(j-(rows-1)/2)*P};}
-/* scale of the next level's layout when it sits inside a dot of level d */
-function childScale(d){
-  const D=dims(),c=D[d+1][0],r=D[d+1][1];
-  const Rd=d===0?Rroot:R;
-  const hd=Math.hypot((c-1)/2,(r-1)/2);
-  return 0.94*Rd/(P*(hd+0.4));
-}
+const EASY_M=2,HARD_M=5,NQ=12,LET='ABCD';
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+let enabled=new Set(store.get('mil_topics',TOPICS.map(t=>t.id)));
+let showEx=store.get('mil_explain',true);
+let secs=store.get('mil_secs',30);
+let G=null,timer=null;
+const FRIENDS=['Priya','Callum','Megan','Ollie','Amira','Dylan','Hannah','Jamal','Chloe','Rhys'];
 
-function resize(){
-  const r=cv.getBoundingClientRect();
-  dpr=Math.min(window.devicePixelRatio||1,3);
-  cw=r.width;ch=r.height;
-  cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);
+function genQuestion(t,level){
+  const gens=t[level];
+  for(let tries=0;tries<60;tries++){const b=build(pick(gens)());if(b)return b;}
+  return null;
 }
-window.addEventListener('resize',resize);
-
-function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
-const FONT='system-ui,"Segoe UI",Arial,sans-serif';
-function label(x,y,Rr,text){
-  ctx.font='bold 100px '+FONT;
-  const w=ctx.measureText(text).width;
-  const fs=100*(1.55*Rr)/w;
-  ctx.font='bold '+fs+'px '+FONT;
-  ctx.fillStyle='#12183a';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(text,x,y+fs*0.04);
-}
-function drawDot(x,y,Rd,colour,isRoot){
-  ctx.fillStyle=colour;circle(x,y,Rd);
-  if(isRoot){
-    ctx.strokeStyle='#a9b4ee';ctx.lineWidth=Rd*0.035;
-    ctx.beginPath();ctx.arc(x,y,Rd*0.985,0,Math.PI*2);ctx.stroke();
-    label(x,y,Rd,MODES[mode].word);
-  }else{
-    ctx.fillStyle='rgba(255,255,255,.22)';circle(x-Rd*.28,y-Rd*.3,Rd*.38);
-  }
-}
-
-function drawFrame(now){
-  requestAnimationFrame(drawFrame);
-  if(!cw)return;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.fillStyle=BG;ctx.fillRect(0,0,cw,ch);
-  S=Math.min(cw,ch)*0.94;P=S/10;R=P*0.4;Rroot=S*0.27;
-
-  let baseD=path.length,dot=null,t=0,u=0;
-  if(anim){
-    u=Math.min(1,(now-anim.t0)/anim.dur);
-    if(u>=1){
-      if(anim.dir>0)path.push(anim.dot);else path.pop();
-      const cb=anim.onDone;anim=null;baseD=path.length;update();
-      if(cb)setTimeout(cb,380);
-    }else{
-      baseD=anim.dir>0?path.length:path.length-1;
-      dot=anim.dot;
-      const e=0.5-0.5*Math.cos(Math.PI*u);
-      t=anim.dir>0?e:1-e;
+function newGame(mode){
+  const ids=TOPICS.filter(t=>enabled.has(t.id));
+  const qs=[];const used=new Set();let bag=[];
+  for(let i=0;i<NQ;i++){
+    const level=i%2===0?'easy':'hard';
+    let q=null;
+    for(let tries=0;tries<30&&!q;tries++){
+      if(!bag.length)bag=shuffle(ids);
+      const t=bag.pop();const b=genQuestion(t,level);
+      if(b&&!used.has(b.q)){q=b;q.topic=t.name;used.add(b.q);}
     }
+    if(!q){const t=pick(ids);q=genQuestion(t,level);q.topic=t.name;}
+    q.level=level;q.mult=level==='easy'?EASY_M:HARD_M;qs.push(q);
   }
-  const D=dims();
-  const cols=D[baseD][0],rows=D[baseD][1];
-  const isRoot=baseD===0;
-  const Rd=isRoot?Rroot:R;
-  const K=dot?1/childScale(baseD):1;
-  const z=dot?Math.pow(K,t):1;
-  const f=dot?(z-1)/(K-1):0;
-  const o=dot?pos(dot.i,dot.j,cols,rows):{x:0,y:0};
+  G={mode,qs,i:0,score:1,res:[],shown:1,life:{fifty:true,cls:true,friend:true},hidden:new Set(),
+     phase:'ask',ticks:[],answered:false,revealed:false,t:0,paused:false,last:0};
+}
+function bestPossible(from){let s=G.score;for(let j=from;j<NQ;j++)s*=G.qs[j].mult;return s;}
 
-  ctx.save();
-  ctx.translate(cw/2,ch/2);ctx.scale(z,z);ctx.translate(-o.x*f,-o.y*f);
-
-  const colour=levelColour(baseD);
-  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
-    if(dot&&dot.i===i&&dot.j===j)continue;
-    const p=pos(i,j,cols,rows);
-    drawDot(p.x,p.y,Rd,colour,isRoot);
+function renderLadder(){
+  const L=$('ladder');L.innerHTML='';
+  for(let n=NQ;n>=1;n--){
+    const q=G.qs[n-1];const d=document.createElement('div');
+    d.className='rung '+q.level;
+    const r=G.res[n-1];
+    if(r===true)d.classList.add('right');else if(r===false)d.classList.add('wrong');
+    else if(n-1===G.i)d.classList.add('now');
+    d.innerHTML=`<span class="no">${n}</span><span class="m">×${q.mult}</span><span class="lv">${q.level==='easy'?'Easy':'Hard'}</span>`;
+    L.appendChild(d);
   }
-  // hover ring
-  if(!anim&&hover&&hover.i<cols&&hover.j<rows){
-    const p=pos(hover.i,hover.j,cols,rows);
-    ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3;
-    ctx.beginPath();ctx.arc(p.x,p.y,Rd*(isRoot?1.04:1.18),0,Math.PI*2);ctx.stroke();
+}
+function setScore(to){
+  const from=G.shown;G.shown=to;const el=$('score');const t0=performance.now(),dur=650;
+  function step(t){const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);
+    el.textContent=Math.round(from+(to-from)*e).toLocaleString('en-GB');if(k<1)requestAnimationFrame(step);}
+  requestAnimationFrame(step);
+}
+function setMode(mode){document.body.classList.toggle('m-class',mode==='class');document.body.classList.toggle('m-play',mode==='play');}
+
+function showQuestion(){
+  const q=G.qs[G.i];G.answered=false;G.revealed=false;G.hidden=new Set();
+  $('qn').textContent=`${G.i+1} / ${NQ}`;
+  const tag=$('qtag');tag.className='tag '+q.level;tag.textContent=(q.level==='easy'?'Easy':'Hard')+' ×'+q.mult;
+  $('topic').textContent=q.topic;
+  $('qcard').innerHTML=q.q;
+  const o=$('opts');o.innerHTML='';
+  q.opts.forEach((t,i)=>{
+    const b=document.createElement('button');b.className='opt';b.dataset.i=i;
+    b.innerHTML=`<span class="l">${LET[i]}</span><span class="t">${t}</span>`;
+    b.onclick=()=>answer(i);o.appendChild(b);
+  });
+  renderLadder();
+  if(G.mode==='play'){
+    $('fb').className='card hide';$('msg').innerHTML='<span class="ex">Tap an answer, or use a lifeline.</span>';
+    $('bestv').textContent=bestPossible(G.i).toLocaleString('en-GB');
+    updateLife();
+  }else if(G.phase==='ask')classAsk();
+  else markSetup();
+}
+
+/* ---------- interactive mode ---------- */
+function answer(i){
+  if(G.mode!=='play'||G.answered||G.hidden.has(i))return;G.answered=true;
+  const q=G.qs[G.i],ok=i===q.ans;
+  q.picked=i;G.res[G.i]=ok;
+  document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;
+    if(j===q.ans)b.classList.add('right');else if(j===i)b.classList.add('bad');else b.classList.add('dim');});
+  if(ok)G.score*=q.mult;
+  setScore(G.score);
+  $('bestv').textContent=bestPossible(G.i+1).toLocaleString('en-GB');
+  const last=G.i===NQ-1;
+  $('msg').innerHTML=(ok?`<b class="good">Correct! ×${q.mult}</b>`:`<b class="no">Not this time: ×1, so you keep ${G.score.toLocaleString('en-GB')}</b>`)+
+    (showEx&&q.x?`<span class="ex">${q.x}</span>`:'');
+  $('next').textContent=last?'See result':'Next →';
+  $('fb').className='card';
+  updateLife();renderLadder();
+}
+function updateLife(){
+  const on=G.mode==='play'&&!G.answered;
+  $('lf50').disabled=!on||!G.life.fifty;
+  $('lfCls').disabled=!on||!G.life.cls;
+  $('lfFr').disabled=!on||!G.life.friend;
+}
+const activeOpts=()=>[0,1,2,3].filter(i=>!G.hidden.has(i));
+function fifty(){
+  if(G.answered||!G.life.fifty)return;G.life.fifty=false;
+  const q=G.qs[G.i];
+  const rem=shuffle([0,1,2,3].filter(i=>i!==q.ans&&!G.hidden.has(i))).slice(0,2);
+  const btns=document.querySelectorAll('.opt');
+  rem.forEach(i=>{G.hidden.add(i);btns[i].classList.add('gone');});
+  $('msg').innerHTML='<b>50:50</b> <span class="ex">Two wrong answers have been removed.</span>';
+  updateLife();
+}
+function askClass(){
+  if(G.answered||!G.life.cls)return;G.life.cls=false;
+  const q=G.qs[G.i],act=activeOpts(),wrongs=act.filter(i=>i!==q.ans);
+  const easy=q.level==='easy';
+  const leadWrong=Math.random()<(easy?.08:.2);
+  let pc=easy?rnd(55,82):rnd(32,58);
+  if(leadWrong)pc=wrongs.length===1?rnd(38,46):rnd(22,34);
+  const w=wrongs.map(()=>Math.random()+.2);if(leadWrong)w[0]+=3;
+  const rest=100-pc,sum=w.reduce((a,b)=>a+b,0);
+  const vals=w.map(x=>Math.round(rest*x/sum));
+  vals[0]+=rest-vals.reduce((a,b)=>a+b,0);
+  const pct={};pct[q.ans]=pc;wrongs.forEach((i,k)=>pct[i]=vals[k]);
+  const btns=document.querySelectorAll('.opt');
+  act.forEach(i=>{
+    const bar=document.createElement('span');bar.className='bar';bar.style.width='0%';
+    const pe=document.createElement('span');pe.className='pct';pe.textContent=pct[i]+'%';
+    btns[i].prepend(bar);btns[i].appendChild(pe);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.width=pct[i]+'%';}));
+  });
+  $('msg').innerHTML='<b>Ask the Class</b> <span class="ex">The class has voted.</span>';
+  updateLife();
+}
+function askFriend(){
+  if(G.answered||!G.life.friend)return;G.life.friend=false;
+  const q=G.qs[G.i],act=activeOpts();
+  const right=Math.random()<(q.level==='easy'?.88:.65);
+  const choice=right?q.ans:pick(act.filter(i=>i!==q.ans));
+  const sure=Math.random()<(right?.7:.5),L=LET[choice];
+  const say=sure?pick([`I'm pretty sure it's ${L}.`,`It's ${L}, no doubt.`,`That's ${L}. I did one just like it.`])
+                :pick([`Hmm… I think it might be ${L}, but I wouldn't bet on it.`,`I'd go for ${L}, but I'm not certain.`,`Tricky! I'm leaning towards ${L}.`]);
+  $('msg').innerHTML=`<b>${pick(FRIENDS)}:</b> <span class="ex" style="display:inline;color:var(--ink);font-size:3vmin">“${say}”</span>`;
+  updateLife();
+}
+
+/* ---------- class mode ---------- */
+function setTimerUI(state){
+  const c=$('timerCard');c.classList.toggle('marking',state==='mark');
+  if(state!=='ask'){c.classList.remove('low','paused');}
+}
+function classAsk(){
+  G.phase='ask';setTimerUI('ask');
+  G.t=secs*1000;G.paused=false;G.last=performance.now();$('tpause').textContent='Pause';
+  $('tlab').textContent='Time left';
+  $('fb').className='card hide';
+  $('msg').innerHTML='<b>Write your answer: A, B, C or D.</b> <span class="ex">We will mark them together at the end.</span>';
+  clearInterval(timer);timer=setInterval(tick,100);updateTimer();
+}
+function updateTimer(){
+  const s=Math.ceil(G.t/1000);$('tnum').textContent=s;
+  $('tfill').style.width=(G.t/(secs*1000)*100)+'%';
+  $('timerCard').classList.toggle('low',G.t>0&&s<=5);
+}
+function tick(){
+  const now=performance.now(),d=now-G.last;G.last=now;
+  if(G.paused||G.phase!=='ask')return;
+  G.t-=d;
+  if(G.t<=0){G.t=0;updateTimer();clearInterval(timer);const at=G.i;
+    setTimeout(()=>{if(G.phase==='ask'&&G.i===at)classNext();},700);return;}
+  updateTimer();
+}
+function togglePause(){
+  if(G.phase!=='ask')return;
+  G.paused=!G.paused;G.last=performance.now();
+  $('tpause').textContent=G.paused?'Resume':'Pause';
+  $('timerCard').classList.toggle('paused',G.paused);
+}
+function classNext(){
+  clearInterval(timer);
+  if(G.i===NQ-1){G.phase='mark';G.i=0;}else G.i++;
+  showQuestion();
+}
+function markSetup(){
+  setTimerUI('mark');$('tlab').textContent='Class game';$('tnum').textContent='Marking time';
+  $('fb').className='card';
+  $('msg').innerHTML='<b>Marking:</b> <span class="ex">have your answers ready, then reveal the answer.</span>';
+  $('next').textContent='Show answer';
+}
+function reveal(){
+  G.revealed=true;const q=G.qs[G.i];
+  document.querySelectorAll('.opt').forEach((b,j)=>{b.classList.add(j===q.ans?'right':'dim');});
+  $('msg').innerHTML=`<b class="good">The answer is ${LET[q.ans]}</b> <span class="ex">Worth ×${q.mult} if you got it right.${showEx&&q.x?' '+q.x:''}</span>`;
+  $('next').textContent=G.i===NQ-1?'Finish':'Next →';
+}
+
+/* ---------- shared ---------- */
+function next(){
+  if(G.mode==='play'){
+    if(!G.answered)return;
+    if(G.i===NQ-1){showEnd();return;}
+    G.i++;showQuestion();
+  }else if(G.phase==='mark'){
+    if(!G.revealed)reveal();
+    else if(G.i===NQ-1)showEnd();
+    else{G.i++;showQuestion();}
   }
-  // leaf flash
-  if(flash&&!anim){
-    const age=(now-flash.t0)/1100;
-    if(age<1){
-      const p=pos(flash.i,flash.j,cols,rows);
-      ctx.strokeStyle='rgba(255,255,255,'+(1-age)+')';ctx.lineWidth=3;
-      ctx.beginPath();ctx.arc(p.x,p.y,R*(1.1+age*.9),0,Math.PI*2);ctx.stroke();
-      ctx.fillStyle='rgba(20,20,30,'+(1-age)+')';
-      ctx.font='bold '+Math.round(R*1.1)+'px '+FONT;ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('1',p.x,p.y+R*.05);
-    }else flash=null;
+}
+function rankFor(s){
+  if(s>=1000000)return '🏆 MILLIONAIRE! A perfect round';
+  if(s>=100000)return 'Hundred-thousandaire';
+  if(s>=10000)return 'Ten-thousandaire';
+  if(s>=1000)return 'Thousandaire';
+  if(s>=100)return 'Hundredaire';
+  return 'Keep practising';
+}
+function showEnd(){
+  show('end');const cls=G.mode==='class';
+  $('endlab').textContent=cls?'Marking complete':'Final score';
+  $('review').className=cls?'tick':'';
+  if(cls){G.ticks=[];renderClassEnd();}
+  else{
+    $('final').textContent=G.score.toLocaleString('en-GB');
+    $('rank').textContent=rankFor(G.score);
+    const c=G.res.filter(Boolean).length;
+    $('endStats').innerHTML=`${c} out of ${NQ} correct. The maximum possible is 1,000,000.`;
+    const r=$('review');r.innerHTML='';
+    G.qs.forEach((q,i)=>{
+      const d=document.createElement('div');d.className='rv '+(G.res[i]?'r':'w');
+      d.innerHTML=`<span class="n">${i+1}</span><span class="ok">${G.res[i]?'✓':'✗'}</span><span class="q">${q.q}</span><span class="a">${q.opts[q.ans]}</span><span class="mul">×${G.res[i]?q.mult:1}</span>`;
+      r.appendChild(d);
+    });
   }
-  // the tapped dot, opening up to show the next grid
-  if(dot){
-    const p=pos(dot.i,dot.j,cols,rows);
-    drawDot(p.x,p.y,Rd,colour,isRoot);
-    ctx.globalAlpha=Math.min(1,t*5);
-    ctx.fillStyle=BG;circle(p.x,p.y,Rd*0.99);
-    ctx.globalAlpha=1;
-    ctx.strokeStyle=colour;ctx.lineWidth=Rd*0.07;
-    ctx.beginPath();ctx.arc(p.x,p.y,Rd,0,Math.PI*2);ctx.stroke();
-    const s=1/K,sp=P*s,r2=0.4*sp,cc=levelColour(baseD+1);
-    const c2=D[baseD+1][0],rw2=D[baseD+1][1];
-    ctx.globalAlpha=Math.min(1,t*14);
-    ctx.fillStyle=cc;
-    for(let cj=0;cj<rw2;cj++)for(let ci=0;ci<c2;ci++){
-      circle(p.x+(ci-(c2-1)/2)*sp,p.y+(cj-(rw2-1)/2)*sp,r2);
-    }
-    ctx.globalAlpha=1;
-  }
-  ctx.restore();
+  $('end').scrollTop=0;
 }
-
-function cellAt(ev){
-  const r=cv.getBoundingClientRect();
-  const lx=ev.clientX-r.left-cw/2,ly=ev.clientY-r.top-ch/2;
-  if(path.length===0)return Math.hypot(lx,ly)<=Rroot?{i:0,j:0}:null;
-  const D=dims()[path.length],cols=D[0],rows=D[1];
-  const fi=lx/P+cols/2,fj=ly/P+rows/2;
-  const i=Math.floor(fi),j=Math.floor(fj);
-  if(i<0||j<0||i>=cols||j>=rows)return null;
-  const p=pos(i,j,cols,rows);
-  if(Math.hypot(lx-p.x,ly-p.y)>P*0.52)return null;
-  return {i,j};
-}
-cv.addEventListener('pointermove',e=>{hover=anim?null:cellAt(e);});
-cv.addEventListener('pointerleave',()=>{hover=null;});
-cv.addEventListener('pointerdown',e=>{
-  e.preventDefault();
-  if(anim)return;
-  autoToken++;
-  const c=cellAt(e);if(!c)return;
-  tap(c);
-});
-
-function tap(c){
-  const N=dims().length;
-  if(path.length>=N-1){flash={i:c.i,j:c.j,t0:performance.now()};return;}
-  startAnim(1,c,null);
-}
-function dur(){return +$('speed').value;}
-function startAnim(dir,dot,onDone){
-  if(anim)return;
-  if(dir<0)dot=path[path.length-1];
-  anim={dir,dot,t0:performance.now(),dur:dur(),onDone};
-  hover=null;update();
-}
-
-/* controls */
-function back(){if(anim||!path.length)return;autoToken++;startAnim(-1,null,null);}
-function toStart(){
-  if(anim||!path.length)return;
-  const tok=++autoToken;
-  (function step(){
-    if(tok!==autoToken||!path.length)return;
-    startAnim(-1,null,()=>{if(tok===autoToken)step();});
-  })();
-}
-function dive(){
-  if(anim)return;
-  const tok=++autoToken;
-  (function step(){
-    if(tok!==autoToken)return;
-    const N=dims().length;
-    if(path.length>=N-1)return;
-    const D=dims()[path.length];
-    const c={i:Math.floor(Math.random()*D[0]),j:Math.floor(Math.random()*D[1])};
-    startAnim(1,c,()=>{if(tok===autoToken)step();});
-  })();
-}
-$('back').onclick=back;$('start').onclick=toStart;$('dive').onclick=dive;
-document.addEventListener('keydown',e=>{if(e.key==='Backspace'||e.key==='Escape'){e.preventDefault();back();}});
-document.querySelectorAll('#modes button').forEach(b=>{
-  b.onclick=()=>{
-    autoToken++;anim=null;path=[];flash=null;hover=null;
-    mode=b.dataset.m;
-    document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x===b));
-    update();
-  };
-});
-
-/* keep long numbers on one line by shrinking the text to fit its box */
-function fitNumbers(){
-  ['screenTot','worth'].forEach(id=>{
-    const el=$(id);
-    el.style.fontSize='';
-    let size=parseFloat(getComputedStyle(el).fontSize);
-    while(el.scrollWidth>el.clientWidth+1&&size>11){size-=1;el.style.fontSize=size+'px';}
+function renderClassEnd(){
+  const sc=G.qs.reduce((s,q,i)=>s*(G.ticks[i]?q.mult:1),1);
+  $('final').textContent=sc.toLocaleString('en-GB');
+  $('rank').textContent=G.ticks.some(Boolean)?rankFor(sc):'Tap the questions you got right';
+  $('endStats').innerHTML='Start on 1 and multiply by <b>×2</b> (easy) or <b>×5</b> (hard) for every question you got right. The maximum possible is 1,000,000.';
+  const r=$('review');r.innerHTML='';
+  G.qs.forEach((q,i)=>{
+    const on=!!G.ticks[i];
+    const d=document.createElement('div');d.className='rv'+(on?' t r':'');
+    d.innerHTML=`<span class="n">${i+1}</span><span class="ok">${on?'✓':'○'}</span><span class="q">${q.q}</span><span class="a">${LET[q.ans]}: ${q.opts[q.ans]}</span><span class="mul">×${on?q.mult:1}</span>`;
+    d.onclick=()=>{G.ticks[i]=!G.ticks[i];renderClassEnd();};
+    r.appendChild(d);
   });
 }
-window.addEventListener('resize',fitNumbers);
-
-function update(){
-  const m=MODES[mode],D=m.dims,N=D.length,d=path.length;
-  // ce[k] = log10 of how many dots are on screen k; v[k] = log10 of the value of one dot on screen k
-  const ce=D.map(x=>Math.round(Math.log10(x[0]*x[1])));
-  const v=[];
-  for(let k=0;k<N;k++){let s=0;for(let j=k+1;j<N;j++)s+=ce[j];v.push(s);}
-  const T=v[0];
-  const valE=v[d];
-  const totE=d===0?T:v[d-1];
-  $('title').textContent=m.title;document.title=m.title;
-  // pips
-  const pips=$('pips');pips.innerHTML='';
-  for(let i=0;i<N;i++){
-    const s=document.createElement('div');
-    s.className='pip'+(i===d?' on':(i<d?' done':''));
-    s.style.borderColor=levelColour(i);
-    if(i<=d)s.style.background=levelColour(i);
-    pips.appendChild(s);
-  }
-  $('scr').textContent='Screen '+(d+1)+' of '+N+' – '+(d===0?'one circle':CNAME[d-1]+' dots');
-  $('screenTot').textContent=fmt(totE);
-  $('screenName').textContent=NAMES[totE];
-  $('worthLab').textContent=d===0?'The single circle is worth':'Each '+CNAME[d-1]+' dot is worth';
-  $('worth').textContent=fmt(valE);
-  $('worthName').textContent=NAMES[valE];
-  $('time').textContent=human(Math.pow(10,totE));
-  let h;
-  if(d===0)h='Tap the circle to see what '+m.word.toLowerCase()+' is made of.';
-  else if(d<N-1)h='Each dot is made of 100 smaller dots. Tap one to keep going.';
-  else h='Every dot here is just 1. All '+fmt(T)+' ('+NAMES[T]+') is made of '+fmt(T-2)+' screens like this one.';
-  $('hint').textContent=h;
-  fitNumbers();
-  const busy=!!anim;
-  $('back').disabled=busy||d===0;
-  $('start').disabled=busy||d===0;
-  $('dive').disabled=busy||d===N-1;
+function show(id){clearInterval(timer);['title','game','end'].forEach(s=>$(s).classList.toggle('on',s===id));}
+function start(mode){
+  if(!enabled.size){openSettings();return;}
+  newGame(mode);setMode(mode);
+  $('score').textContent='1';G.shown=1;
+  show('game');showQuestion();
 }
 
-resize();update();requestAnimationFrame(drawFrame);
-new ResizeObserver(resize).observe(cv);
-})();
+/* ---------- settings ---------- */
+function buildSettings(){
+  const g=$('tgrid');g.innerHTML='';
+  TOPICS.forEach(t=>{
+    const l=document.createElement('label');l.className='tg'+(enabled.has(t.id)?'':' off');
+    const c=document.createElement('input');c.type='checkbox';c.checked=enabled.has(t.id);
+    c.onchange=()=>{if(c.checked)enabled.add(t.id);else enabled.delete(t.id);l.classList.toggle('off',!c.checked);saveSet();};
+    l.appendChild(c);l.appendChild(document.createTextNode(t.name));g.appendChild(l);
+  });
+  $('showEx').checked=showEx;$('secsSel').value=String(secs);
+}
+function saveSet(){store.set('mil_topics',[...enabled]);$('warn').textContent=enabled.size?'':'Tick at least one topic to play.';}
+function openSettings(){buildSettings();saveSet();$('settings').classList.add('on');}
+function closeSettings(){if(!enabled.size){$('warn').textContent='Tick at least one topic to play.';return;}$('settings').classList.remove('on');}
+
+$('modeSecs').textContent=secs;
+$('play').onclick=()=>start('play');
+$('playClass').onclick=()=>start('class');
+$('again').onclick=()=>start(G.mode);
+$('toTitle').onclick=()=>show('title');
+$('quit').onclick=()=>show('title');
+$('openSet').onclick=openSettings;$('closeSet').onclick=()=>{closeSettings();$('modeSecs').textContent=secs;};
+$('allOn').onclick=()=>{TOPICS.forEach(t=>enabled.add(t.id));buildSettings();saveSet();};
+$('allOff').onclick=()=>{enabled.clear();buildSettings();saveSet();};
+$('showEx').onchange=e=>{showEx=e.target.checked;store.set('mil_explain',showEx);};
+$('secsSel').onchange=e=>{secs=parseInt(e.target.value,10);store.set('mil_secs',secs);$('modeSecs').textContent=secs;};
+$('next').onclick=next;
+$('lf50').onclick=fifty;$('lfCls').onclick=askClass;$('lfFr').onclick=askFriend;
+$('tpause').onclick=togglePause;$('tskip').onclick=()=>{if(G.phase==='ask')classNext();};
+document.addEventListener('click',()=>{const a=document.activeElement;if(a&&a.tagName==='BUTTON')a.blur();});
+document.addEventListener('keydown',e=>{
+  if($('settings').classList.contains('on')||!$('game').classList.contains('on'))return;
+  const k=e.key.toLowerCase();
+  if(G.mode==='play'){
+    const idx={a:0,b:1,c:2,d:3,'1':0,'2':1,'3':2,'4':3}[k];
+    if(idx!==undefined&&!G.answered){answer(idx);e.preventDefault();}
+    else if((k==='enter'||k===' '||k==='arrowright')&&G.answered){next();e.preventDefault();}
+  }else if(G.phase==='ask'){
+    if(k===' '){togglePause();e.preventDefault();}
+    else if(k==='enter'||k==='arrowright'){classNext();e.preventDefault();}
+  }else if(k==='enter'||k===' '||k==='arrowright'){next();e.preventDefault();}
+});
+
 </script>
 </body>
 </html>
