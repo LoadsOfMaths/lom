@@ -106,6 +106,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 sup{font-size:.62em;line-height:0}
 #qcard i,.opt i{font-family:Georgia,serif}
 .ov{text-decoration:overline;text-decoration-thickness:.09em}
+.rcb{display:none} body.rec-bar .rcb{display:inline} body.rec-bar .rcd{display:none}
+.dt{position:relative;display:inline-block;line-height:1}
+.dt::before{content:"";position:absolute;left:50%;top:-.04em;width:.11em;height:.11em;border-radius:50%;background:currentColor;transform:translateX(-50%)}
+#undo{white-space:nowrap}
 
 
 /* ---------- modes + lifelines + timer ---------- */
@@ -200,7 +204,8 @@ sup{font-size:.62em;line-height:0}
   <div class="modes">
     <div class="mode"><h3>Interactive</h3>
       <p>Game-show style: tap your answer and watch the score climb. Three lifelines: <b>50:50</b>, <b>Ask the Class</b> and <b>Ask a Friend</b>.</p>
-      <button class="big sm" id="play">Play</button></div>
+      <button class="big sm" id="play">Play</button>
+      <button class="ghost tiny" id="lifeTog"></button></div>
     <div class="mode"><h3>Class game</h3>
       <p>Hands-free: each question is on the board for <b><span id="modeSecs">30</span> seconds</b>. Students write their answers, then you mark together at the end.</p>
       <button class="big sm" id="playClass">Start class game</button></div>
@@ -237,7 +242,7 @@ sup{font-size:.62em;line-height:0}
     </div>
     <div id="qcard" class="card"></div>
     <div id="opts"></div>
-    <div id="fb" class="card hide"><div class="msg" id="msg"></div><button class="big" id="next">Next →</button></div>
+    <div id="fb" class="card hide"><div class="msg" id="msg"></div><button class="ghost small" id="undo" style="display:none">Undo vote</button><button class="big" id="next">Next →</button></div>
   </div>
 </div>
 
@@ -267,6 +272,10 @@ sup{font-size:.62em;line-height:0}
     </div>
     <div class="srow"><label class="tg">Class game: seconds per question
       <select id="secsSel"><option>15</option><option>20</option><option>30</option><option>45</option><option>60</option><option>90</option></select></label></div>
+    <div class="srow"><label class="tg">Interactive lifelines (Ask the Class / Ask a Friend)
+      <select id="lifeSel"><option value="sim">Simulated (computer answers)</option><option value="live">Live (real class and friend)</option></select></label>
+      <label class="tg">Recurring decimals
+      <select id="recSel"><option value="dot">Dots (0.1&#775;2&#775;)</option><option value="bar">Bar (0.<span class="ov">12</span>)</option></select></label></div>
     <div id="warn"></div>
     <div class="srow"><button class="big" id="closeSet" style="font-size:3.4vmin;padding:1vmin 5vmin">Done</button></div>
   </div>
@@ -287,6 +296,11 @@ const sup=(b,e)=>`${b}<sup>${String(e).replace('-',MINUS)}</sup>`;
 const frac=(n,d)=>`<span class="fr"><span>${n}</span><span>${d}</span></span>`;
 const simp=(n,d)=>{const g=gcd(Math.abs(n),Math.abs(d))||1;return [n/g,d/g];};
 const fs=(n,d)=>{[n,d]=simp(n,d);return d===1?String(n):frac(n,d);};
+// recurring decimal 0.<pre><block recurring>: both dot and bar notation are written; CSS shows the one chosen in Settings
+function rc(pre,s){
+  const dots=s.length===1?`<span class="dt">${s}</span>`:`<span class="dt">${s[0]}</span>${s.slice(1,-1)}<span class="dt">${s[s.length-1]}</span>`;
+  return `<span class="rcd">0.${pre}${dots}</span><span class="rcb">0.${pre}<span class="ov">${s}</span></span>`;
+}
 function F(n,d){[n,d]=simp(n,d);if(d===1)return N(n);if(n>d){const w=Math.floor(n/d),r=n-w*d;return `<span class="mx">${w}${frac(r,d)}</span>`;}return frac(n,d);}
 const dec=(n,dp)=>N(n/Math.pow(10,dp));
 const fixedStr=(n,dp)=>(n/Math.pow(10,dp)).toFixed(dp);
@@ -470,7 +484,7 @@ topic('fractions','Fractions',[
   ()=>{const two=Math.random()<.6;let r;
     if(two){do{r=rnd(1,98);}while(r%11===0);}else r=rnd(1,8);
     const s=two?String(r).padStart(2,'0'):String(r),den=two?99:9,[sn,sd]=simp(r,den);
-    const rec=t=>`0.<span class="ov">${t}</span>`;
+    const rec=t=>rc('',t);
     const rev=two?parseInt(s[1]+s[0],10):r+1;
     const how=sn===r?'':` = ${fs(r,den)}`;
     if(Math.random()<.5){
@@ -479,8 +493,8 @@ topic('fractions','Fractions',[
         [fs(r,100),fs(r,two?90:10),fs(rev,den),fs(r,999),fs(r+1,den),fs(r,two?98:99)],
         `${two?'Two digits repeat, so the denominator is 99':'One digit repeats, so the denominator is 9'}: ${frac(r,den)}${how}.`,
         ()=>fs(rnd(1,98),99));}
-    const pool=two?[rec(String(rev).padStart(2,'0')),rec(String(r+1).padStart(2,'0')),`0.${s[0]}<span class="ov">${s[1]}</span>`,`0.${s}`,rec(String(Math.max(1,r-1)).padStart(2,'0'))]
-                  :[rec(String(r+1)),`0.${r}`,`0.0<span class="ov">${r}</span>`,rec(String(r*2>9?r+2:r*2)+''),rec(String(r+2))];
+    const pool=two?[rec(String(rev).padStart(2,'0')),rec(String(r+1).padStart(2,'0')),rc(s[0],s[1]),`0.${s}`,rec(String(Math.max(1,r-1)).padStart(2,'0'))]
+                  :[rec(String(r+1)),`0.${r}`,rc('0',String(r)),rec(String(r*2>9?r+2:r*2)+''),rec(String(r+2))];
     return Q(`Write ${fs(sn,sd)} as a recurring decimal.`,rec(s),pool,
       `${fs(sn,sd)} = ${frac(r,den)}, and ${r} ÷ ${den} = ${'0.'+s.repeat(two?3:5)}…`,
       ()=>rec(two?String(rnd(1,98)).padStart(2,'0'):String(rnd(1,9))));}
@@ -779,6 +793,9 @@ let enabled=new Set(store.get('mil_topics',TOPICS.map(t=>t.id)));
  store.set('mil_known',[...known]);store.set('mil_topics',[...enabled]);}
 let showEx=store.get('mil_explain',true);
 let secs=store.get('mil_secs',30);
+let liveLife=store.get('mil_live',false);
+let recMode=store.get('mil_rec','dot');
+document.body.classList.toggle('rec-bar',recMode==='bar');
 let G=null,timer=null;
 const FRIENDS=['Priya','Callum','Megan','Ollie','Amira','Dylan','Hannah','Jamal','Chloe','Rhys'];
 
@@ -828,6 +845,7 @@ function setMode(mode){document.body.classList.toggle('m-class',mode==='class');
 
 function showQuestion(){
   const q=G.qs[G.i];G.answered=false;G.revealed=false;G.hidden=new Set();
+  G.tally=false;clearInterval(G.frT);$('undo').style.display='none';
   $('qn').textContent=`${G.i+1} / ${NQ}`;
   const tag=$('qtag');tag.className='tag '+q.level;tag.textContent=(q.level==='easy'?'Easy':'Hard')+' ×'+q.mult;
   $('topic').textContent=q.topic;
@@ -849,7 +867,9 @@ function showQuestion(){
 
 /* ---------- interactive mode ---------- */
 function answer(i){
-  if(G.mode!=='play'||G.answered||G.hidden.has(i))return;G.answered=true;
+  if(G.mode!=='play'||G.answered||G.hidden.has(i))return;
+  if(G.tally){vote(i);return;}
+  G.answered=true;clearInterval(G.frT);
   const q=G.qs[G.i],ok=i===q.ans;
   q.picked=i;G.res[G.i]=ok;
   document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;
@@ -865,7 +885,7 @@ function answer(i){
   updateLife();renderLadder();
 }
 function updateLife(){
-  const on=G.mode==='play'&&!G.answered;
+  const on=G.mode==='play'&&!G.answered&&!G.tally;
   $('lf50').disabled=!on||!G.life.fifty;
   $('lfCls').disabled=!on||!G.life.cls;
   $('lfFr').disabled=!on||!G.life.friend;
@@ -880,8 +900,52 @@ function fifty(){
   $('msg').innerHTML='<b>50:50</b> <span class="ex">Two wrong answers have been removed.</span>';
   updateLife();
 }
+function showBars(act,pct){
+  const btns=document.querySelectorAll('.opt');
+  act.forEach(i=>{
+    btns[i].querySelectorAll('.pct,.bar').forEach(e=>e.remove());
+    const bar=document.createElement('span');bar.className='bar';bar.style.width='0%';
+    const pe=document.createElement('span');pe.className='pct';pe.textContent=pct[i]+'%';
+    btns[i].prepend(bar);btns[i].appendChild(pe);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.width=pct[i]+'%';}));
+  });
+}
+/* live Ask the Class: tap an answer for each raised hand, then show the results */
+function vote(i){G.votes[i]++;G.voteOrder.push(i);drawVotes();}
+function undoVote(){if(!G.tally||!G.voteOrder.length)return;G.votes[G.voteOrder.pop()]--;drawVotes();}
+function drawVotes(){
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    let pe=b.querySelector('.pct');if(!pe){pe=document.createElement('span');pe.className='pct';b.appendChild(pe);}
+    pe.textContent=G.votes[i]||'';
+  });
+  $('vtot').textContent=G.voteOrder.length?`${G.voteOrder.length} vote${G.voteOrder.length>1?'s':''} so far`:'';
+}
+function askClassLive(){
+  G.tally=true;G.votes=[0,0,0,0];G.voteOrder=[];
+  $('msg').innerHTML='<b>Ask the Class</b> <span class="ex">Hands up for each answer, and tap that answer for every hand raised (or press A to D). <span id="vtot"></span></span>';
+  $('next').textContent='Show results';$('undo').style.display='';$('fb').className='card';
+}
+function finishTally(){
+  const act=activeOpts(),tot=act.reduce((s,i)=>s+G.votes[i],0);
+  G.tally=false;$('undo').style.display='none';$('next').textContent='Next →';$('fb').className='card hide';
+  document.querySelectorAll('.opt .pct').forEach(e=>e.remove());
+  if(!tot){$('msg').innerHTML='<b>Ask the Class</b> <span class="ex">No votes were counted.</span>';updateLife();return;}
+  const pct={};act.forEach(i=>pct[i]=Math.round(100*G.votes[i]/tot));
+  const big=act.reduce((a,b)=>G.votes[b]>G.votes[a]?b:a,act[0]);
+  pct[big]+=100-act.reduce((s,i)=>s+pct[i],0);
+  showBars(act,pct);
+  $('msg').innerHTML=`<b>Ask the Class</b> <span class="ex">${tot} vote${tot>1?'s':''} counted.</span>`;
+  updateLife();
+}
+function askFriendLive(){
+  let t=30;
+  const draw=()=>{$('msg').innerHTML=`<b>Ask a Friend</b> <span class="ex">Choose a friend to help. Read the question aloud: <b style="color:var(--gold)">${t>0?t+' seconds left':'time is up!'}</b></span>`;};
+  draw();clearInterval(G.frT);
+  G.frT=setInterval(()=>{t--;draw();if(t<=0)clearInterval(G.frT);},1000);
+}
 function askClass(){
   if(G.answered||!G.life.cls)return;G.life.cls=false;
+  if(liveLife){askClassLive();updateLife();return;}
   const q=G.qs[G.i],act=activeOpts(),wrongs=act.filter(i=>i!==q.ans);
   const easy=q.level==='easy';
   const leadWrong=Math.random()<(easy?.08:.2);
@@ -892,18 +956,13 @@ function askClass(){
   const vals=w.map(x=>Math.round(rest*x/sum));
   vals[0]+=rest-vals.reduce((a,b)=>a+b,0);
   const pct={};pct[q.ans]=pc;wrongs.forEach((i,k)=>pct[i]=vals[k]);
-  const btns=document.querySelectorAll('.opt');
-  act.forEach(i=>{
-    const bar=document.createElement('span');bar.className='bar';bar.style.width='0%';
-    const pe=document.createElement('span');pe.className='pct';pe.textContent=pct[i]+'%';
-    btns[i].prepend(bar);btns[i].appendChild(pe);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.width=pct[i]+'%';}));
-  });
+  showBars(act,pct);
   $('msg').innerHTML='<b>Ask the Class</b> <span class="ex">The class has voted.</span>';
   updateLife();
 }
 function askFriend(){
   if(G.answered||!G.life.friend)return;G.life.friend=false;
+  if(liveLife){askFriendLive();updateLife();return;}
   const q=G.qs[G.i],act=activeOpts();
   const right=Math.random()<(q.level==='easy'?.88:.65);
   const choice=right?q.ans:pick(act.filter(i=>i!==q.ans));
@@ -967,6 +1026,7 @@ function reveal(){
 /* ---------- shared ---------- */
 function next(){
   if(G.mode==='play'){
+    if(G.tally){finishTally();return;}
     if(!G.answered)return;
     if(G.i===NQ-1){showEnd();return;}
     G.i++;showQuestion();
@@ -1017,7 +1077,7 @@ function renderClassEnd(){
     r.appendChild(d);
   });
 }
-function show(id){clearInterval(timer);['title','game','end'].forEach(s=>$(s).classList.toggle('on',s===id));}
+function show(id){clearInterval(timer);if(G)clearInterval(G.frT);['title','game','end'].forEach(s=>$(s).classList.toggle('on',s===id));}
 function start(mode){
   if(!enabled.size){openSettings();return;}
   newGame(mode);setMode(mode);
@@ -1034,7 +1094,7 @@ function buildSettings(){
     c.onchange=()=>{if(c.checked)enabled.add(t.id);else enabled.delete(t.id);l.classList.toggle('off',!c.checked);saveSet();};
     l.appendChild(c);l.appendChild(document.createTextNode(t.name));g.appendChild(l);
   });
-  $('showEx').checked=showEx;$('secsSel').value=String(secs);
+  $('showEx').checked=showEx;$('secsSel').value=String(secs);$('lifeSel').value=liveLife?'live':'sim';$('recSel').value=recMode;
 }
 function saveSet(){store.set('mil_topics',[...enabled]);$('warn').textContent=enabled.size?'':'Tick at least one topic to play.';}
 function openSettings(){buildSettings();saveSet();$('settings').classList.add('on');}
@@ -1051,7 +1111,12 @@ $('allOn').onclick=()=>{TOPICS.forEach(t=>enabled.add(t.id));buildSettings();sav
 $('allOff').onclick=()=>{enabled.clear();buildSettings();saveSet();};
 $('showEx').onchange=e=>{showEx=e.target.checked;store.set('mil_explain',showEx);};
 $('secsSel').onchange=e=>{secs=parseInt(e.target.value,10);store.set('mil_secs',secs);$('modeSecs').textContent=secs;};
-$('next').onclick=next;
+$('next').onclick=next;$('undo').onclick=undoVote;
+function syncLife(){$('lifeTog').textContent='Lifelines: '+(liveLife?'Live':'Simulated')+' (change)';}
+function setLife(v){liveLife=v;store.set('mil_live',v);$('lifeSel').value=v?'live':'sim';syncLife();}
+$('lifeSel').onchange=e=>setLife(e.target.value==='live');
+$('lifeTog').onclick=()=>setLife(!liveLife);syncLife();
+$('recSel').onchange=e=>{recMode=e.target.value;store.set('mil_rec',recMode);document.body.classList.toggle('rec-bar',recMode==='bar');};
 $('lf50').onclick=fifty;$('lfCls').onclick=askClass;$('lfFr').onclick=askFriend;
 $('tpause').onclick=togglePause;$('tskip').onclick=()=>{if(G.phase==='ask')classNext();};
 document.addEventListener('click',()=>{const a=document.activeElement;if(a&&a.tagName==='BUTTON')a.blur();});
@@ -1061,7 +1126,8 @@ document.addEventListener('keydown',e=>{
   if(G.mode==='play'){
     const idx={a:0,b:1,c:2,d:3,'1':0,'2':1,'3':2,'4':3}[k];
     if(idx!==undefined&&!G.answered){answer(idx);e.preventDefault();}
-    else if((k==='enter'||k===' '||k==='arrowright')&&G.answered){next();e.preventDefault();}
+    else if((k==='enter'||k===' '||k==='arrowright')&&(G.answered||G.tally)){next();e.preventDefault();}
+    else if(k==='backspace'&&G.tally){undoVote();e.preventDefault();}
   }else if(G.phase==='ask'){
     if(k===' '){togglePause();e.preventDefault();}
     else if(k==='enter'||k==='arrowright'){classNext();e.preventDefault();}
