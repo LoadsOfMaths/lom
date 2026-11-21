@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>About Time – Telling the Time</title>
+<style>
+:root{--navy:#14304a;--ink:#1d2733;--bg:#f4f0e6;--card:#fff;--accent:#d9822b;--good:#2e8b57;--bad:#c0392b;--line:#d8d0be}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:18px}
+header{background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:8px 18px;flex-wrap:wrap}
+header h1{margin:0;font-size:28px;letter-spacing:.5px}
+header h1 span{color:#f6c453}
+header .logo{font-family:"Super Bouncer","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;background:#fff;border-radius:999px;padding:5px 14px;font-size:clamp(.8rem,1.6vw,1.05rem);box-shadow:0 2px 5px rgba(0,0,0,.25);white-space:nowrap}
+header .logo i{font-style:normal;color:#8a8f98}header .logo .o{color:#F47B3F}header .logo .b{color:#3F73B8}
+body.nologo header .logo{display:none}
+header .sub{opacity:.75;font-size:14px}
+nav{display:flex;gap:6px;margin-left:auto}
+nav button,.gear{font:inherit;font-size:17px;font-weight:700;padding:8px 18px;border-radius:8px;border:2px solid rgba(255,255,255,.35);background:transparent;color:#fff;cursor:pointer}
+nav button.on{background:#f6c453;color:#14304a;border-color:#f6c453}
+.gear{padding:8px 12px}
+.view{padding:12px 18px 24px;max-width:1500px;margin:0 auto}
+[hidden]{display:none!important}
+button{font-family:inherit}
+.stagebar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.stagebar button{flex:1;min-width:120px;padding:9px 8px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;line-height:1.2}
+.stagebar button small{display:block;font-weight:400;opacity:.7;font-size:12px}
+.stagebar button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tgrid{display:grid;grid-template-columns:minmax(300px,1fr) minmax(320px,1fr);gap:18px;align-items:start}
+@media(max-width:900px){.tgrid{grid-template-columns:1fr}}
+.clockcol{border-radius:18px;padding:14px;text-align:center;border:2px solid var(--line)}
+.clockcol .clk.big{width:100%;max-width:min(620px,76vh);height:auto;touch-action:none;display:block;margin:0 auto}
+.elapsed{min-height:30px;margin-top:6px;font-weight:700;font-size:19px}
+.elapsed a{font-size:13px;font-weight:400;margin-left:8px;cursor:pointer;text-decoration:underline}
+.panel{background:#fff;border-radius:18px;border:2px solid var(--line);padding:16px 18px}
+.panel h2{margin:0 0 6px;font-size:23px;color:var(--navy)}
+.panel ul{margin:6px 0 10px;padding-left:22px;line-height:1.4;font-size:17px}
+.readouts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.read{background:#f7f3e8;border:2px solid var(--line);border-radius:12px;padding:8px 12px;min-height:84px;cursor:default}
+.read.hidden{cursor:pointer;background:#e6e1d2}
+.read .lab{font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:.65}
+.read .val{font-size:26px;font-weight:700;margin-top:2px;line-height:1.15}
+.read .val small{font-size:.55em;margin-left:2px}
+.read .note{font-size:13px;opacity:.7}
+.read.hidden .val{color:#999}
+.hint{background:#fff6dd;border-left:5px solid var(--accent);padding:8px 12px;border-radius:6px;font-size:16px;margin-bottom:10px;min-height:44px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font-size:17px;font-weight:700;padding:8px 16px;border-radius:10px;border:2px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer}
+.btn.alt{background:#fff;color:var(--navy)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.big{font-size:22px;padding:12px 28px}
+.chip{font-size:15px;padding:6px 12px;border-radius:20px;border:2px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
+.chip.on{background:#fbe3bd;border-color:var(--accent);font-weight:700}
+select,input[type=text]{font:inherit;font-size:16px;padding:6px 8px;border-radius:8px;border:2px solid var(--line)}
+input[type=text]{width:90px}
+.sep{width:100%;height:0}
+.plaque{display:inline-block;padding:5px 18px;border-radius:6px;font-weight:700;letter-spacing:1px;margin-bottom:8px;font-size:17px}
+.hit{cursor:grab;pointer-events:stroke}
+/* themes */
+.th-clockmaker{background:#e8d6ac}.th-clockmaker .plaque{background:#5a3a1a;color:#f5dfa0;font-family:Georgia,serif;border:2px solid #b8893a}
+.th-railway{background:#dde5ef}.th-railway .plaque{background:#0b2c5f;color:#fff;border:3px solid #fff;box-shadow:0 0 0 2px #0b2c5f}
+.th-board{background:#10151c;color:#ffb000}.th-board .plaque{background:#05070a;color:#ffb000;font-family:"Courier New",monospace;border:2px solid #444}
+.th-school{background:#ecf2dc}.th-school .plaque{background:#fff7c2;color:#1c3d7a;border:2px solid #1c3d7a}
+.th-bus{background:#e3ecfb}.th-bus .plaque{background:#1b4f9c;color:#fff;border-radius:20px}
+.th-board .elapsed{color:#ffb000}
+/* practise */
+.card{background:#fff;border:2px solid var(--line);border-radius:16px;padding:16px 20px;margin-bottom:14px}
+.card h3{margin:0 0 8px;color:var(--navy)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+.row .lbl{font-weight:700;min-width:130px}
+.warn{color:var(--bad);font-weight:700;min-height:22px}
+.qwrap{border-radius:18px;padding:14px 18px;border:2px solid var(--line)}
+.qhead{display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px}
+.ctx{font-style:italic;opacity:.8;margin:2px 0 6px}
+.qmain{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0 12px}
+.qbox .clk{width:min(300px,38vh);height:auto}
+.qtext{font-size:26px;font-weight:700;max-width:420px}
+.qbox .txt{font-size:36px;font-weight:700;padding:14px 22px;border-radius:14px;background:rgba(255,255,255,.7);border:2px solid var(--line)}
+.dig{font-family:"Courier New",monospace;font-weight:700;font-size:44px;padding:8px 20px;border-radius:12px;display:inline-block;background:#1c1c1c;color:#ffb000;letter-spacing:2px}
+.dig small{font-size:.5em;margin-left:3px}
+.qbox .dig{font-size:56px}
+.th-clockmaker .dig{background:#3a2810;color:#f5dfa0}
+.th-railway .dig{background:#0b0b0b;color:#fff}
+.th-school .dig{background:#fff;color:#1c3d7a;border:3px solid #1c3d7a;font-family:"Trebuchet MS",sans-serif}
+.th-bus .dig{background:#fff;color:#1b4f9c;border:3px solid #1b4f9c;font-family:"Trebuchet MS",sans-serif}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.opts{grid-template-columns:1fr}}
+.opt{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;border:3px solid var(--line);background:#fff;cursor:pointer;text-align:left;font-size:26px;font-weight:700;color:var(--ink);min-height:70px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .let{background:var(--navy);color:#fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+.opt .rep{flex:1;display:flex;justify-content:center}
+.opt .rep .clk{width:min(190px,24vh);height:auto}
+.opt.good{border-color:var(--good);background:#dff3e6}
+.opt.bad{border-color:var(--bad);background:#fbe0dc}
+.opt:disabled{cursor:default}
+.th-board .qbox .txt{background:#05070a;border-color:#444;color:#ffb000;font-family:"Courier New",monospace}
+.th-board .qtext,.th-board .qhead,.th-board .ctx{color:#ffb000}
+.opt .rep .clk{width:min(210px,27vh)}
+.th-board .opt{background:#0b0f14;color:#ffb000;border-color:#333}.th-board .opt .let{background:#ffb000;color:#000}
+.th-board .opt.good{background:#0c3a1e;border-color:#3ddc84}.th-board .opt.bad{background:#451512;border-color:#ff6b5e}
+.fb{margin-top:12px;padding:10px 14px;border-radius:12px;font-size:18px;display:none}
+.fb.show{display:block}
+.fb.ok{background:#dff3e6;border:2px solid var(--good);color:#12432a}
+.fb.no{background:#fbe0dc;border:2px solid var(--bad);color:#5a1710}
+.fb b{font-size:20px}
+.next{margin-top:10px}
+.big-score{font-size:60px;font-weight:700;color:var(--navy)}
+.miss li{margin:4px 0}
+/* settings */
+#ov{position:fixed;inset:0;background:rgba(10,20,30,.55);display:flex;align-items:center;justify-content:center;z-index:20}
+#ov .box{background:#fff;border-radius:16px;padding:20px 26px;max-width:560px;width:92%;max-height:92vh;overflow:auto}
+#ov h2{margin:0 0 10px;color:var(--navy)}
+</style>
+</head>
+<body>
+<header>
+  <h1>About <span>Time</span></h1>
+  <span class="sub">Telling the time on an analogue clock</span>
+  <div class="logo"><i>www.</i><span class="o">loads</span><i>of</i><span class="b">maths</span><i>.co.uk</i></div>
+  <nav>
+    <button id="navT" class="on">Teach it</button>
+    <button id="navP">Practise it</button>
+    <button class="gear" id="gear" title="Settings">⚙ Settings</button>
+  </nav>
+</header>
+
+<section id="teach" class="view">
+  <div class="stagebar" id="stagebar"></div>
+  <div class="tgrid">
+    <div class="clockcol th-railway" id="tcol">
+      <div class="plaque" id="tplaque"></div>
+      <svg id="tclock" class="clk big" viewBox="-128 -128 256 256"></svg>
+      <div class="elapsed" id="telapsed"></div>
+    </div>
+    <div class="panel">
+      <h2 id="thead"></h2>
+      <ul id="tpoints"></ul>
+      <div class="readouts" id="treads"></div>
+      <div class="hint" id="thint"></div>
+      <div class="controls">
+        <button class="btn" id="bPlay">▶ Play</button>
+        <select id="sSpeed" title="Speed">
+          <option value="1">Real time</option>
+          <option value="10">10× faster</option>
+          <option value="60">1 minute every second</option>
+          <option value="600">1 hour every 6 seconds</option>
+        </select>
+        <button class="btn alt" id="bBack"></button>
+        <button class="btn alt" id="bFwd"></button>
+        <button class="btn alt" id="bNew">New time</button>
+        <span><input type="text" id="tIn" placeholder="e.g. 3:45pm" aria-label="Set time"> <button class="btn alt" id="bSet">Set</button></span>
+        <span class="sep"></span>
+        <button class="chip" id="cAsk">Ask first</button>
+        <button class="chip" id="cWedge">Hour journey</button>
+        <button class="chip" id="cShade">Past / To</button>
+        <button class="chip" id="cRing">Minute numbers</button>
+        <button class="chip" id="cRoman">Roman numerals</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="practise" class="view" hidden>
+  <div id="psetup">
+    <div class="card">
+      <h3>Set up your practice</h3>
+      <div class="row"><span class="lbl">Level</span><span id="pLevels"></span></div>
+      <div class="row"><span class="lbl"></span><button class="chip" id="pMix">Mix in easier levels</button></div>
+      <div id="pFormats">
+        <div class="row"><span class="lbl">Question shows</span><span id="pQ"></span></div>
+        <div class="row"><span class="lbl">Answers are</span><span id="pA"></span></div>
+      </div>
+      <div class="row"><span class="lbl">Questions</span><span id="pCount"></span></div>
+      <div class="warn" id="pWarn"></div>
+      <button class="btn big" id="pStart">Start</button>
+    </div>
+  </div>
+  <div id="pquiz" hidden>
+    <div class="qwrap" id="qwrap">
+      <div class="qhead"><span id="qnum"></span><span id="qscore"></span></div>
+      <div class="plaque" id="qplaque"></div>
+      <div class="ctx" id="qctx"></div>
+      <div class="qmain"><div class="qbox" id="qbox"></div><div class="qtext" id="qtext"></div></div>
+      <div class="opts" id="qopts"></div>
+      <div class="fb" id="qfb"></div>
+      <button class="btn big next" id="qnext" hidden>Next ▶</button>
+    </div>
+  </div>
+  <div id="pres" hidden>
+    <div class="card" style="text-align:center">
+      <h3>Finished!</h3>
+      <div class="big-score" id="rScore"></div>
+      <div id="rMsg"></div>
+      <div id="rMiss" style="text-align:left;margin-top:10px"></div>
+      <div class="row" style="justify-content:center;margin-top:12px">
+        <button class="btn big" id="rAgain">Go again</button>
+        <button class="btn big alt" id="rSetup">Change settings</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="ov" hidden>
+  <div class="box">
+    <h2>Settings</h2>
+    <div class="row"><span class="lbl">Time format</span><span id="sFmt"></span></div>
+    <div class="row"><span class="lbl">Clock numbers</span><span id="sNum"></span></div>
+    <div class="row"><span class="lbl">Minute numbers</span><span id="sRing"></span></div>
+    <div class="row"><span class="lbl">Past / To shading</span><span id="sShade"></span></div>
+    <div class="row"><span class="lbl">Theme</span><span id="sTheme"></span></div>
+    <div class="row"><span class="lbl">Logo</span><span id="sLogo"></span></div>
+    <p style="font-size:14px;opacity:.7;margin:10px 0">Minute numbers and Past / To shading also apply to the clocks in Practise.</p>
+    <button class="btn" id="sClose">Done</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var rand=function(n){return Math.floor(Math.random()*n)};
+var pick=function(a){return a[rand(a.length)]};
+var pad=function(n){return String(n).padStart(2,'0')};
+var cap=function(s){return s.charAt(0).toUpperCase()+s.slice(1)};
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=rand(i+1),t=a[i];a[i]=a[j];a[j]=t}return a}
+var NAME=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+var ONES=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+function numWord(n){if(n<20)return ONES[n];var t=['','','twenty','thirty','forty','fifty'][Math.floor(n/10)];return n%10?t+'-'+ONES[n%10]:t}
+var ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+
+/* ---------- settings ---------- */
+var S={fmt:'12',roman:false,ring:false,shade:false,theme:'mixed',logo:true};
+try{var sv=JSON.parse(localStorage.getItem('aboutTimeSettings')||'{}');for(var k in sv)if(k in S)S[k]=sv[k]}catch(e){}
+function saveS(){try{localStorage.setItem('aboutTimeSettings',JSON.stringify(S))}catch(e){}}
+
+/* ---------- themes ---------- */
+var THEMES={
+ clockmaker:{label:"The Clockmaker's Workshop",ctx:'The clockmaker has set the workshop clock.',face:'#fbf3dd',bezel:'#b8893a',bezel2:'#7a5518',num:'#3a2810',hand:'#2a1b0a',sec:'#a3201a',tick:'#3a2810',font:'Georgia,"Times New Roman",serif',range:[8,18]},
+ railway:{label:'Platform 3',ctx:'Look up at the station clock.',face:'#ffffff',bezel:'#111',bezel2:'#444',num:'#111',hand:'#111',sec:'#d4281c',tick:'#111',font:'Arial,Helvetica,sans-serif',range:[5,23]},
+ board:{label:'Departures',ctx:'Check the departures board.',face:'#10151c',bezel:'#39424f',bezel2:'#1b222b',num:'#ffb000',hand:'#ffb000',sec:'#ff5a4d',tick:'#ffb000',font:'"Courier New",monospace',range:[6,22]},
+ school:{label:'Timetable',ctx:'Check the school timetable.',face:'#fffef6',bezel:'#5b6770',bezel2:'#3c464e',num:'#111',hand:'#111',sec:'#d4281c',tick:'#111',font:'"Trebuchet MS",Arial,sans-serif',range:[8,15]},
+ bus:{label:'Bus Stop B · Route 42',ctx:'Check the bus timetable.',face:'#f5f8ff',bezel:'#1b4f9c',bezel2:'#123668',num:'#12305e',hand:'#12305e',sec:'#d4281c',tick:'#12305e',font:'"Trebuchet MS",Arial,sans-serif',range:[6,21]}
+};
+var THEME_KEYS=Object.keys(THEMES);
+function chooseTheme(){return S.theme==='mixed'?pick(THEME_KEYS):S.theme}
+
+/* ---------- time helpers ---------- */
+function words(h24,m){
+ var h12=h24%12||12,nx=h12%12+1,w,r;
+ if(m===0)w=NAME[h12]+" o'clock";
+ else if(m===15)w='quarter past '+NAME[h12];
+ else if(m===30)w='half past '+NAME[h12];
+ else if(m===45)w='quarter to '+NAME[nx];
+ else if(m<30)w=(m%5===0?numWord(m)+' past ':numWord(m)+(m===1?' minute':' minutes')+' past ')+NAME[h12];
+ else{r=60-m;w=(r%5===0?numWord(r)+' to ':numWord(r)+(r===1?' minute':' minutes')+' to ')+NAME[nx]}
+ return cap(w);
+}
+function digS(h24,m,s){
+ var ss=(s==null)?'':':'+pad(s);
+ if(S.fmt==='24')return{t:pad(h24)+':'+pad(m)+ss,ap:''};
+ return{t:(h24%12||12)+':'+pad(m)+ss,ap:h24<12?'am':'pm'};
+}
+function digHTML(h24,m,s){var d=digS(h24,m,s);return d.t+(d.ap?'<small>'+d.ap+'</small>':'')}
+function digText(h24,m,s){var d=digS(h24,m,s);return d.t+d.ap}
+function dayPart(h){return h>=5&&h<12?'morning':h>=12&&h<17?'afternoon':h>=17&&h<21?'evening':'night'}
+function explain(h24,m){
+ var h12=h24%12||12,nx=h12%12+1,hn=NAME[h12],nn=NAME[nx],pos=m%5===0?' The minute hand points to the '+(m/5||12)+', which is '+m+' minutes.':'';
+ if(m===0)return "The minute hand points straight up at the 12, so it is an o'clock time. The hour hand is exactly on the "+h12+'.';
+ if(m===15)return 'The minute hand points to the 3: a quarter of the way round, so 15 minutes past. The hour hand has just passed the '+h12+'.';
+ if(m===30)return 'The minute hand points to the 6: half an hour has passed. The hour hand is halfway between the '+h12+' and the '+nx+'.';
+ if(m===45)return 'The minute hand points to the 9: three quarters of the way round, so 15 minutes to go until '+nx+" o'clock. The hour hand has not reached the "+nx+' yet, so we say quarter to '+nn+'.';
+ if(m<30)return m+' minutes have passed since '+h12+" o'clock."+pos+' The hour hand has just passed the '+h12+', so the hour is '+hn+'.';
+ return m+' minutes have passed, so there are only '+(60-m)+' minutes to go until '+nx+" o'clock."+pos+' The hour hand has not reached the '+nx+' yet, so we say '+(60-m)+' to '+nn+'.';
+}
+
+/* ---------- clock drawing ---------- */
+function polar(a,r){var t=a*Math.PI/180;return[r*Math.sin(t),-r*Math.cos(t)]}
+function f2(x){return x.toFixed(2)}
+function wedgePath(a0,a1,r){var p0=polar(a0,r),p1=polar(a1,r);return'M0 0 L'+f2(p0[0])+' '+f2(p0[1])+' A'+r+' '+r+' 0 '+((a1-a0)>180?1:0)+' 1 '+f2(p1[0])+' '+f2(p1[1])+' Z'}
+function clockInner(o){
+ var th=THEMES[o.theme],T=o.T,hA=(T/43200*360)%360,mA=(T/3600*360)%360,sA=(T%60)*6,s='',i,p,a;
+ s+='<circle r="110" fill="'+th.bezel+'"/><circle r="103.5" fill="'+th.bezel2+'"/><circle r="101" fill="'+th.face+'"/>';
+ if(o.shade){
+  s+='<path d="M0 0 L0 -100 A100 100 0 0 1 0 100 Z" fill="rgba(46,160,90,.17)"/><path d="M0 0 L0 100 A100 100 0 0 1 0 -100 Z" fill="rgba(230,126,34,.17)"/>';
+  s+='<text x="40" y="-34" font-size="9" fill="'+th.num+'" opacity=".55" text-anchor="middle" font-family="'+th.font+'">PAST</text><text x="-40" y="-34" font-size="9" fill="'+th.num+'" opacity=".55" text-anchor="middle" font-family="'+th.font+'">TO</text>';
+ }
+ if(o.wedge){
+  var k=Math.floor((T/3600)%12),a0=k*30;
+  s+='<path d="'+wedgePath(a0,a0+30,66)+'" fill="rgba(255,200,0,.2)" stroke="rgba(200,120,0,.55)" stroke-width="1"/>';
+  if(hA>a0+0.01)s+='<path d="'+wedgePath(a0,hA,66)+'" fill="rgba(255,160,0,.45)"/>';
+ }
+ for(i=0;i<60;i++){
+  var major=i%5===0;
+  if(o.ticks!=='minutes'&&!major)continue;
+  a=i*6;var r1=100,r2=major?(o.ticks==='minutes'?91:92):96;
+  var q1=polar(a,r1),q2=polar(a,r2);
+  s+='<line x1="'+f2(q1[0])+'" y1="'+f2(q1[1])+'" x2="'+f2(q2[0])+'" y2="'+f2(q2[1])+'" stroke="'+th.tick+'" stroke-width="'+(major?2.6:1)+'" stroke-linecap="round"/>';
+ }
+ for(i=1;i<=12;i++){
+  p=polar(i*30,76);
+  s+='<text x="'+f2(p[0])+'" y="'+f2(p[1])+'" text-anchor="middle" dominant-baseline="central" font-size="'+(S.roman?15:21)+'" font-weight="700" fill="'+th.num+'" font-family="'+th.font+'">'+(S.roman?ROMAN[i]:i)+'</text>';
+ }
+ if(S.ring){
+  for(i=1;i<=12;i++){p=polar(i*30,119);s+='<text x="'+f2(p[0])+'" y="'+f2(p[1])+'" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#555" font-family="Arial,sans-serif">'+(i*5)+'</text>'}
+ }
+ var hit=function(h,len){return o.drag===h?'<line class="hit" data-hand="'+h+'" x1="0" y1="10" x2="0" y2="-'+len+'" stroke="rgba(0,0,0,0.001)" stroke-width="26" stroke-linecap="round"/>':''};
+ s+='<g transform="rotate('+f2(hA)+')"><polygon points="0,-54 5.5,-14 3.5,10 -3.5,10 -5.5,-14" fill="'+th.hand+'" stroke="'+th.face+'" stroke-width=".8"/>'+hit('hour',58)+'</g>';
+ if(o.min)s+='<g transform="rotate('+f2(mA)+')"><polygon points="0,-84 3.4,-14 2.6,13 -2.6,13 -3.4,-14" fill="'+th.hand+'" stroke="'+th.face+'" stroke-width=".8"/>'+hit('min',86)+'</g>';
+ if(o.sec)s+='<g transform="rotate('+f2(sA)+')"><line x1="0" y1="22" x2="0" y2="-92" stroke="'+th.sec+'" stroke-width="1.6"/><circle cx="0" cy="-70" r="4" fill="'+th.sec+'"/></g>';
+ s+='<circle r="5.5" fill="'+(o.sec?th.sec:th.hand)+'"/><circle r="1.8" fill="'+th.face+'"/>';
+ return s;
+}
+function clockSVG(o,cls){return'<svg viewBox="-128 -128 256 256" class="clk '+(cls||'')+'" xmlns="http://www.w3.org/2000/svg">'+clockInner(o)+'</svg>'}
+
+/* ---------- teach ---------- */
+var ST=[
+ {n:'Hour hand',sub:'one hand only',snap:300,ticks:'hours',min:false,sec:false,wedge:true,speed:600,step:'5 min',
+  title:'One hand: the hour hand',
+  pts:['The hour hand takes one whole hour to travel from one number to the next. Press Play and watch an hour pass.','Drag the hand. When it is exactly on a number, it is an o’clock time.','The hour is the last number the hand has passed, even when it is nearly at the next one.','Ask the class first: where is the hand? What hour is it? Then reveal.']},
+ {n:'Minute hand',sub:'o’clock & half past',snap:1800,ticks:'hours',min:true,sec:false,wedge:true,speed:600,step:'30 min',
+  title:'Adding the minute hand',
+  pts:['The long minute hand makes one full turn while the hour hand moves from one number to the next.','Minute hand on the 12: o’clock. Minute hand on the 6: half past, with the hour hand halfway between two numbers.','The minute hand helps us read the hour hand more exactly.']},
+ {n:'Quarters',sub:'quarter past & to',snap:900,ticks:'hours',min:true,sec:false,wedge:false,speed:600,step:'15 min',
+  title:'Quarters of an hour',
+  pts:['Minute hand on the 3: a quarter of the way round, so quarter past.','Minute hand on the 9: three quarters of the way round, so quarter to the next hour.','At quarter to, the hour hand is nearly at the next number, but we say “to” the next hour. Try Past / To shading.']},
+ {n:'Five minutes',sub:'counting in fives',snap:300,ticks:'minutes',min:true,sec:false,wedge:false,speed:60,step:'5 min',
+  title:'Five-minute intervals',
+  pts:['Each number on the clock is 5 minutes more than the last: count in fives round the face. Try the minute numbers.','Right side (12 to 6): “past”, counting the minutes since the hour. Left side (6 to 12): “to”, counting the minutes still to go.','Twenty-five past and twenty-five to are mirror images of each other.']},
+ {n:'One minute',sub:'every minute',snap:60,ticks:'minutes',min:true,sec:false,wedge:false,speed:60,step:'1 min',
+  title:'Single minutes',
+  pts:['Between two numbers there are 5 small marks. Each one is 1 minute: count on from the last number.','To find the minutes “to” the next hour, count on to the next number or work out 60 minus the minutes.']},
+ {n:'Seconds',sub:'extension',snap:60,ticks:'minutes',min:true,sec:true,wedge:false,speed:1,step:'1 min',
+  title:'The second hand',
+  pts:['The thin red hand is the second hand. It makes one full turn in 1 minute (60 seconds).','Each time it completes a turn, the minute hand moves on 1 minute.','Digital times with seconds look like 3:45:20.']}
+];
+var T0=Date.UTC?0:0;
+var teach={stage:1,T:15*3600+0,playing:false,speed:600,theme:'railway',reveal:true,ask:false,wedge:true,elapsed:0};
+var raf=0,lastTs=0,drag=null;
+var tclock=$('#tclock');
+function setH(el,h){if(el._h!==h){el._h=h;el.innerHTML=h}}
+function norm(T){return((T%86400)+86400)%86400}
+function stageCfg(){return ST[teach.stage-1]}
+function randomTime(stage){
+ var h=rand(24),m,s=0;
+ if(stage===1)m=pick([0,15,30,45]);
+ else if(stage===2)m=pick([0,30]);
+ else if(stage===3)m=pick([0,15,30,45]);
+ else if(stage===4)m=5*rand(12);
+ else m=rand(60);
+ if(stage===6)s=rand(60);
+ return h*3600+m*60+s;
+}
+function fmtElapsed(sec,showSec){
+ sec=Math.floor(sec);var h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60,p=[];
+ if(h)p.push(h+(h===1?' hour':' hours'));
+ if(m)p.push(m+(m===1?' minute':' minutes'));
+ if(showSec&&(s||!p.length))p.push(s+(s===1?' second':' seconds'));
+ return p.length?p.join(' '):'0 minutes';
+}
+function hourDescription(h12,mi){
+ var hn=h12,nn=h12%12+1;
+ if(mi===0)return'Exactly on the '+hn;
+ if(mi<10)return'Just past the '+hn;
+ if(mi<25)return'A little way past the '+hn;
+ if(mi<35)return'Halfway between the '+hn+' and the '+nn;
+ if(mi<50)return'More than halfway to the '+nn;
+ return'Nearly at the '+nn;
+}
+function setThemeFromSettings(){teach.theme=chooseTheme()}
+function renderTeach(){
+ var st=stageCfg(),T=teach.T,h24=Math.floor(T/3600)%24,m=Math.floor(T/60)%60,sec=Math.floor(T%60);
+ tclock.innerHTML=clockInner({T:T,min:st.min,sec:st.sec,ticks:st.ticks,theme:teach.theme,wedge:teach.wedge&&teach.stage<=3,shade:S.shade&&teach.stage>=3,drag:teach.stage===1?'hour':'min'});
+ $('#tcol').className='clockcol th-'+teach.theme;
+ setH($('#tplaque'),THEMES[teach.theme].label);
+ setH($('#thead'),'Stage '+teach.stage+': '+st.title);
+ setH($('#tpoints'),st.pts.map(function(p){return'<li>'+p+'</li>'}).join(''));
+ var h12=h24%12||12,reads,hintTxt='';
+ if(teach.stage===1){
+  var hide=!teach.reveal;
+  reads=[['The hour hand',hourDescription(h12,m),''],['The time',m===0?h12+" o’clock":'After '+h12+" o’clock, but not yet "+(h12%12+1)+" o’clock",'']];
+  hintTxt=m===0?'The hand is exactly on the '+h12+', so it is '+h12+" o’clock.":'The hand has passed the '+h12+' but has not reached the '+(h12%12+1)+', so the hour is still '+h12+'.';
+  if(hide)hintTxt='What hour is it? Look at where the hour hand is.';
+ }else{
+  var note=(m===0&&h24%12===0)?(h24===12?'noon':'midnight'):dayPart(h24);
+  reads=[['In words',words(h24,m),note],['Digital',digHTML(h24,m,teach.stage===6?sec:null),'']];
+  hintTxt=teach.reveal?explain(h24,m):'Read the clock first, then reveal the answer.';
+ }
+ setH($('#thint'),hintTxt);
+ setH($('#treads'),reads.map(function(r,i){
+  return'<div class="read'+(teach.reveal?'':' hidden')+'" data-r="'+i+'"><div class="lab">'+r[0]+'</div><div class="val">'+(teach.reveal?r[1]:'?')+'</div><div class="note">'+(teach.reveal?r[2]:'click to reveal')+'</div></div>';
+ }).join(''));
+ setH($('#bPlay'),teach.playing?'⏸ Pause':'▶ Play');
+ setH($('#bBack'),'− '+st.step);
+ setH($('#bFwd'),'+ '+st.step);
+ $('#sSpeed').value=String(teach.speed);
+ $('#cAsk').classList.toggle('on',teach.ask);
+ $('#cWedge').classList.toggle('on',teach.wedge);
+ $('#cWedge').hidden=teach.stage>3;
+ $('#cShade').classList.toggle('on',S.shade);
+ $('#cShade').hidden=teach.stage<3;
+ $('#cRing').classList.toggle('on',S.ring);
+ $('#cRoman').classList.toggle('on',S.roman);
+ var el=$('#telapsed'),eh=teach.elapsed>=1?'Time passed: '+fmtElapsed(teach.elapsed,teach.stage===6)+' <a id="elReset">reset</a>':'';
+ if(el._h!==eh){el._h=eh;el.innerHTML=eh;var rs=$('#elReset');if(rs)rs.onclick=function(){teach.elapsed=0;renderTeach()}}
+}
+function buildStagebar(){
+ $('#stagebar').innerHTML=ST.map(function(s,i){return'<button data-s="'+(i+1)+'" class="'+(teach.stage===i+1?'on':'')+'">'+(i+1)+'. '+s.n+'<small>'+s.sub+'</small></button>'}).join('');
+}
+function setStage(n){
+ stopPlay(true);teach.stage=n;var st=stageCfg();teach.speed=st.speed;teach.elapsed=0;
+ teach.T=randomTime(n);teach.reveal=!teach.ask;buildStagebar();setThemeFromSettings();renderTeach();
+}
+function startPlay(){
+ if(teach.playing)return;teach.playing=true;lastTs=0;raf=requestAnimationFrame(tick);renderTeach();
+}
+function stopPlay(skipRender){
+ if(!teach.playing)return;teach.playing=false;cancelAnimationFrame(raf);
+ var st=stageCfg();if(st.snap>1&&teach.stage<6)teach.T=norm(Math.round(teach.T/st.snap)*st.snap);
+ if(teach.stage===6)teach.T=norm(teach.T);
+ if(!skipRender)renderTeach();
+}
+function tick(ts){
+ if(!teach.playing)return;
+ if(!lastTs)lastTs=ts;var dt=Math.min((ts-lastTs)/1000,0.1);lastTs=ts;
+ teach.T=norm(teach.T+dt*teach.speed);teach.elapsed+=dt*teach.speed;
+ renderTeach();raf=requestAnimationFrame(tick);
+}
+function stepBy(dir){
+ stopPlay(true);var st=stageCfg();
+ teach.T=norm(Math.round(teach.T/st.snap)*st.snap+dir*st.snap);
+ if(teach.stage===6)teach.T=Math.floor(teach.T/60)*60;
+ renderTeach();
+}
+function parseTime(str){
+ str=str.trim().toLowerCase().replace(/\s+/g,'');
+ var m=str.match(/^(\d{1,2})[:.h](\d{2})(am|pm)?$/);
+ if(!m){m=str.match(/^(\d{1,2})(am|pm)$/);if(m)m=[m[0],m[1],'00',m[2]];else return null}
+ var h=+m[1],mi=+m[2];if(mi>59)return null;
+ if(m[3]){if(h<1||h>12)return null;if(m[3]==='am'&&h===12)h=0;if(m[3]==='pm'&&h<12)h+=12}else if(h>23)return null;
+ return h*3600+mi*60;
+}
+/* dragging */
+function pointerAngle(e){
+ var r=tclock.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+ var a=Math.atan2(e.clientX-cx,-(e.clientY-cy))*180/Math.PI;return a<0?a+360:a;
+}
+tclock.addEventListener('pointerdown',function(e){
+ var h=e.target.getAttribute&&e.target.getAttribute('data-hand');if(!h)return;
+ stopPlay(true);var a=pointerAngle(e);
+ drag={h:h,total:h==='hour'?(Math.floor(teach.T/60)%720):(teach.T/60),last:h==='hour'?a/360*720:a/6};
+ if(h==='hour')drag.total=teach.T/60;
+ try{tclock.setPointerCapture(e.pointerId)}catch(x){}
+ e.preventDefault();
+});
+tclock.addEventListener('pointermove',function(e){
+ if(!drag)return;var a=pointerAngle(e),span=drag.h==='hour'?720:60,raw=drag.h==='hour'?a/360*720:a/6;
+ var d=raw-drag.last;if(d>span/2)d-=span;if(d<-span/2)d+=span;
+ drag.total+=d;drag.last=raw;
+ var stepMin=stageCfg().snap/60;if(drag.h==='hour')stepMin=5;
+ var snapped=Math.round(drag.total/stepMin)*stepMin;
+ teach.T=norm(snapped*60);renderTeach();
+});
+function endDrag(){drag=null}
+tclock.addEventListener('pointerup',endDrag);
+tclock.addEventListener('pointercancel',endDrag);
+
+/* teach wiring */
+$('#stagebar').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setStage(+b.getAttribute('data-s'))});
+$('#bPlay').onclick=function(){teach.playing?stopPlay():startPlay()};
+$('#sSpeed').onchange=function(){teach.speed=+this.value};
+$('#bBack').onclick=function(){stepBy(-1)};
+$('#bFwd').onclick=function(){stepBy(1)};
+$('#bNew').onclick=function(){stopPlay(true);teach.T=randomTime(teach.stage);teach.elapsed=0;teach.reveal=!teach.ask;setThemeFromSettings();renderTeach()};
+$('#bSet').onclick=setFromInput;
+$('#tIn').addEventListener('keydown',function(e){if(e.key==='Enter')setFromInput()});
+function setFromInput(){
+ var t=parseTime($('#tIn').value);
+ if(t==null){$('#tIn').style.borderColor='#c0392b';return}
+ $('#tIn').style.borderColor='';stopPlay(true);teach.T=t;teach.elapsed=0;renderTeach();
+}
+$('#cAsk').onclick=function(){teach.ask=!teach.ask;teach.reveal=!teach.ask;renderTeach()};
+$('#cWedge').onclick=function(){teach.wedge=!teach.wedge;renderTeach()};
+$('#cShade').onclick=function(){S.shade=!S.shade;saveS();renderTeach()};
+$('#cRing').onclick=function(){S.ring=!S.ring;saveS();refreshAll()};
+$('#cRoman').onclick=function(){S.roman=!S.roman;saveS();refreshAll()};
+$('#treads').addEventListener('click',function(){if(!teach.reveal){teach.reveal=true;renderTeach()}});
+document.addEventListener('keydown',function(e){
+ if(e.target.tagName==='INPUT')return;
+ if(!$('#teach').hidden){
+  if(e.key==='ArrowRight'){stepBy(1);e.preventDefault()}
+  else if(e.key==='ArrowLeft'){stepBy(-1);e.preventDefault()}
+  else if(e.key===' '){teach.playing?stopPlay():startPlay();e.preventDefault()}
+  else if(e.key==='Enter'&&!teach.reveal){teach.reveal=true;renderTeach()}
+ }else if(!$('#pquiz').hidden){
+  var k=e.key.toUpperCase(),idx='ABCD'.indexOf(k);if(idx<0&&'1234'.indexOf(k)>=0)idx='1234'.indexOf(k);
+  if(idx>=0&&P.cur&&idx<P.cur.opts.length)answer(idx);
+  else if((e.key==='Enter'||e.key===' ')&&P.locked){nextQ();e.preventDefault()}
+ }
+});
+
+/* ---------- practise ---------- */
+var LEVELS=[
+ {n:'1',sub:'Hour hand'},{n:'2',sub:'O’clock & half past'},{n:'3',sub:'Quarters'},{n:'4',sub:'Five minutes'},{n:'5',sub:'One minute'}
+];
+var P={level:2,mix:false,q:{clock:true,words:true,digital:true},a:{clock:true,words:true,digital:true},count:10,i:0,score:0,cur:null,missed:[],locked:false,lastT:-1};
+var KINDS=[['clock','Clock face'],['words','Words'],['digital','Digital']];
+function chipRow(el,items,isOn,onClick){
+ el.innerHTML=items.map(function(it){return'<button class="chip'+(isOn(it[0])?' on':'')+'" data-k="'+it[0]+'">'+it[1]+'</button>'}).join(' ');
+ el.onclick=function(e){var b=e.target.closest('button');if(b){onClick(b.getAttribute('data-k'));buildSetup()}};
+}
+function pairs(){var r=[];KINDS.forEach(function(q){KINDS.forEach(function(a){if(q[0]!==a[0]&&P.q[q[0]]&&P.a[a[0]])r.push([q[0],a[0]])})});return r}
+function buildSetup(){
+ chipRow($('#pLevels'),LEVELS.map(function(l){return[l.n,l.n+'. '+l.sub]}),function(k){return+k===P.level},function(k){P.level=+k});
+ $('#pMix').classList.toggle('on',P.mix);$('#pMix').hidden=P.level<3;
+ $('#pFormats').hidden=P.level===1;
+ chipRow($('#pQ'),KINDS,function(k){return P.q[k]},function(k){P.q[k]=!P.q[k]});
+ chipRow($('#pA'),KINDS,function(k){return P.a[k]},function(k){P.a[k]=!P.a[k]});
+ chipRow($('#pCount'),[['10','10'],['20','20']],function(k){return+k===P.count},function(k){P.count=+k});
+ var ok=P.level===1||pairs().length>0;
+ $('#pWarn').textContent=ok?'':'Choose at least one question type and one different answer type.';
+ $('#pStart').disabled=!ok;
+}
+$('#pMix').onclick=function(){P.mix=!P.mix;buildSetup()};
+$('#pStart').onclick=function(){P.i=0;P.score=0;P.missed=[];P.lastT=-1;show('pquiz');nextQ()};
+$('#rAgain').onclick=function(){P.i=0;P.score=0;P.missed=[];show('pquiz');nextQ()};
+$('#rSetup').onclick=function(){show('psetup')};
+function show(id){['psetup','pquiz','pres'].forEach(function(x){$('#'+x).hidden=x!==id})}
+
+var HINTS={
+ hour:'Check the hour: it is the last number the hour hand has passed.',
+ mirror:'That is the mirror image. Check which side of the clock the hands are on.',
+ tofix:'Is the minute hand on the “past” side (right) or the “to” side (left)?',
+ halfswap:'Check the minute hand: 12 means o’clock and 6 means half past.',
+ swap:'Those hands have been swapped. The short, fat hand shows the hour.',
+ minnum:'The number the minute hand points to is not the number of minutes. Count in fives.',
+ digits:'Those digits are the wrong way round.',
+ off:'Count the minutes again carefully.',
+ other:'Look at both hands again.'
+};
+function distractors(base,L){
+ var hi=Math.floor(base/60),m=base%60,cand=[];
+ function add(mm,tag,w){mm=((mm%720)+720)%720;if(mm!==base)cand.push({mm:mm,tag:tag,w:w})}
+ add(base+60,'hour',m>30?5:3);add(base-60,'hour',m>30?2:3);
+ if(L>=2)add(720-base,'mirror',2);
+ if(m!==0&&m!==30)add(hi*60+60-m,'tofix',3);
+ if(L===2)add(hi*60+(m?0:30),'halfswap',3);
+ if(L>=3){add(base+15,'off',2);add(base-15,'off',2)}
+ if(L>=3&&m%5===0)add(((m/5)%12)*60+hi*5,'swap',2);
+ if(L===4){add(base+5,'off',3);add(base-5,'off',3);if(m>=10&&m%5===0)add(hi*60+m/5,'minnum',4)}
+ if(L===5){add(base+1,'off',3);add(base-1,'off',3);add(base+2,'off',1);add(base-2,'off',1);add(base+10,'off',1);
+  if(m>=10){var sw=(m%10)*10+Math.floor(m/10);if(sw<60&&sw!==m)add(hi*60+sw,'digits',3);}
+  if(m%5===0||true){add(hi*60+(m%10)*5%60,'off',1)}}
+ var chosen=[],seen={};seen[base]=1;
+ var pool=cand.slice();
+ while(chosen.length<3&&pool.length){
+  var tot=pool.reduce(function(a,c){return a+c.w},0),r=Math.random()*tot,j=0;
+  for(;j<pool.length;j++){r-=pool[j].w;if(r<=0)break}
+  if(j>=pool.length)j=pool.length-1;
+  var c=pool.splice(j,1)[0];
+  if(!seen[c.mm]){seen[c.mm]=1;chosen.push(c)}
+ }
+ var guard=0;
+ while(chosen.length<3&&guard++<50){
+  var d=pick([5,10,15,30,45,60,90,-5,-10,-15,-30,-45,-60,-90]),mm=(((base+d)%720)+720)%720;
+  if(!seen[mm]){seen[mm]=1;chosen.push({mm:mm,tag:'other',w:1})}
+ }
+ return chosen;
+}
+function stmt(hi,f){
+ var hn=hi||12,nn=(hi+1)%12||12;
+ if(f===0)return'Exactly on the '+hn;
+ if(f===15)return'A little past the '+hn;
+ if(f===30)return'Halfway between the '+hn+' and the '+nn;
+ return'Nearly at the '+nn;
+}
+function makeQ1(th){
+ var hi,f,t,tries=0;
+ do{hi=rand(12);f=pick([0,15,30,45]);t=hi*60+f}while(t===P.lastT&&tries++<20);
+ P.lastT=t;
+ var cand=[[hi+1,f],[hi-1,f],[hi,f===0?30:0],[hi,f===45?15:45],[hi,f===15?30:15],[(12-hi)%12,f]];
+ var opts=[{hi:hi,f:f,ok:true}],seen={};seen[hi*60+f]=1;
+ shuffle(cand).forEach(function(c){var h=((c[0]%12)+12)%12,k=h*60+c[1];if(opts.length<4&&!seen[k]){seen[k]=1;opts.push({hi:h,f:c[1],tag:'hour'})}});
+ shuffle(opts);
+ var forward=Math.random()<.5;
+ return{L:1,th:th,hi:hi,f:f,qk:forward?'hhclock':'hhtext',ak:forward?'hhtext':'hhclock',opts:opts,correct:opts.findIndex(function(o){return o.ok}),
+  summary:stmt(hi,f),
+  expl:(f===0?'The hour hand is exactly on the '+(hi||12)+', so it is '+(hi||12)+" o’clock.":f===15?'The hand has just passed the '+(hi||12)+', so it is a little after '+(hi||12)+" o’clock.":f===30?'The hand is halfway between the '+(hi||12)+' and the '+((hi+1)%12||12)+'.':'The hand is nearly at the '+((hi+1)%12||12)+', but it has not reached it yet, so the hour is still '+(hi||12)+'.')};
+}
+function makeQ(){
+ var th=chooseTheme();
+ if(P.level===1)return makeQ1(th);
+ var L=(P.mix&&P.level>2)?2+rand(P.level-1):P.level,tr=THEMES[th],h24,m,t,tries=0;
+ do{
+  h24=tr.range[0]+rand(tr.range[1]-tr.range[0]+1);
+  m=L===2?pick([0,30]):L===3?pick([0,15,30,45]):L===4?5*rand(12):rand(60);
+  t=h24*60+m;
+ }while(t===P.lastT&&tries++<20);
+ P.lastT=t;
+ var pr=pick(pairs()),half=h24>=12?12:0,base=(h24%12)*60+m;
+ var ds=distractors(base,L);
+ var opts=[{h24:h24,m:m,ok:true}].concat(ds.map(function(d){return{h24:half+Math.floor(d.mm/60),m:d.mm%60,tag:d.tag}}));
+ shuffle(opts);
+ return{L:L,th:th,h24:h24,m:m,qk:pr[0],ak:pr[1],opts:opts,correct:opts.findIndex(function(o){return o.ok}),
+  summary:words(h24,m)+' ('+digText(h24,m)+')',expl:explain(h24,m)};
+}
+function rep(kind,q,t,big){
+ var L=q.L;
+ if(kind==='hhclock')return clockSVG({T:t.hi*3600+t.f*60,min:false,ticks:'hours',theme:q.th,shade:false},big?'big':'');
+ if(kind==='hhtext')return'<div class="txt">'+stmt(t.hi,t.f)+'</div>';
+ if(kind==='clock')return clockSVG({T:t.h24*3600+t.m*60,min:true,ticks:L>=4?'minutes':'hours',theme:q.th,shade:S.shade},big?'big':'');
+ if(kind==='words')return'<div class="txt">'+words(t.h24,t.m)+'</div>';
+ return'<div class="dig">'+digHTML(t.h24,t.m)+'</div>';
+}
+var curQ=null;
+function renderQ(){
+ var q=P.cur;curQ=q;
+ $('#qwrap').className='qwrap th-'+q.th;
+ $('#qplaque').textContent=THEMES[q.th].label;
+ $('#qctx').textContent=THEMES[q.th].ctx;
+ $('#qnum').textContent='Question '+(P.i)+' of '+P.count;
+ $('#qscore').textContent='Score: '+P.score;
+ var qt=q.L===1?q:{L:q.L,th:q.th};
+ $('#qbox').innerHTML=rep(q.qk,q,q,true);
+ var prompt;
+ if(q.L===1)prompt=q.ak==='hhtext'?'Which sentence describes where the hour hand is?':'Which clock matches this sentence?';
+ else{
+  var an={clock:'clock face',words:'time in words',digital:'digital time'}[q.ak];
+  prompt=q.qk==='clock'?'What time does the clock show? Find the matching '+an+'.':'Which '+an+' shows the same time?';
+  if(q.ak==='digital'||(q.qk==='digital'&&false))prompt+=' (It is in the '+dayPart(q.h24)+'.)';
+  if(q.ak==='clock'&&q.qk!=='clock')prompt='Which clock shows this time?';
+ }
+ $('#qtext').textContent=prompt;
+ $('#qopts').innerHTML=q.opts.map(function(o,i){
+  return'<button class="opt" data-i="'+i+'"><span class="let">'+'ABCD'[i]+'</span><span class="rep">'+rep(q.ak,q,o,false)+'</span></button>';
+ }).join('');
+ var fb=$('#qfb');
+ if(P.locked){fb.className='fb show '+fb.getAttribute('data-r');}else{fb.className='fb';fb.textContent=''}
+}
+function nextQ(){
+ if(P.i>=P.count){finish();return}
+ P.i++;P.locked=false;P.cur=makeQ();
+ $('#qnext').hidden=true;
+ var fb=$('#qfb');fb.className='fb';fb.textContent='';
+ renderQ();
+}
+function answer(i){
+ if(P.locked)return;P.locked=true;
+ var q=P.cur,ok=i===q.correct;
+ if(ok)P.score++;else P.missed.push(q.summary);
+ var btns=document.querySelectorAll('#qopts .opt');
+ btns.forEach(function(b,j){b.disabled=true;if(j===q.correct)b.classList.add('good');else if(j===i)b.classList.add('bad')});
+ var fb=$('#qfb'),tag=q.opts[i].tag;
+ var html=ok?'<b>Correct!</b> ':'<b>Not quite.</b> '+(HINTS[tag]||HINTS.other)+' ';
+ if(!ok)html+='<br>The answer is: <b>'+q.summary+'</b>.';
+ html+='<br>'+q.expl;
+ fb.innerHTML=html;fb.className='fb show '+(ok?'ok':'no');fb.setAttribute('data-r',ok?'ok':'no');
+ $('#qscore').textContent='Score: '+P.score;
+ $('#qnext').hidden=false;$('#qnext').textContent=P.i>=P.count?'See results ▶':'Next ▶';
+ $('#qnext').focus();
+}
+$('#qopts').addEventListener('click',function(e){var b=e.target.closest('.opt');if(b)answer(+b.getAttribute('data-i'))});
+$('#qnext').onclick=nextQ;
+function finish(){
+ show('pres');
+ $('#rScore').textContent=P.score+' / '+P.count;
+ var pc=P.score/P.count;
+ $('#rMsg').textContent=pc===1?'Perfect score. Well done!':pc>=.8?'Excellent work.':pc>=.5?'Good effort. Keep practising.':'Keep going. Try the Teach it section again.';
+ $('#rMiss').innerHTML=P.missed.length?'<b>Times to look at again:</b><ul class="miss">'+P.missed.map(function(x){return'<li>'+x+'</li>'}).join('')+'</ul>':'';
+}
+
+/* ---------- settings overlay ---------- */
+function radios(el,items,cur,set){
+ el.innerHTML=items.map(function(it){return'<button class="chip'+(cur===it[0]?' on':'')+'" data-k="'+it[0]+'">'+it[1]+'</button>'}).join(' ');
+ el.onclick=function(e){var b=e.target.closest('button');if(!b)return;set(b.getAttribute('data-k'));saveS();buildSettings();refreshAll()};
+}
+function buildSettings(){
+ radios($('#sFmt'),[['12','12-hour (am / pm)'],['24','24-hour']],S.fmt,function(k){S.fmt=k});
+ radios($('#sNum'),[['a','1 – 12'],['r','Roman numerals']],S.roman?'r':'a',function(k){S.roman=k==='r'});
+ radios($('#sRing'),[['off','Off'],['on','On']],S.ring?'on':'off',function(k){S.ring=k==='on'});
+ radios($('#sShade'),[['off','Off'],['on','On']],S.shade?'on':'off',function(k){S.shade=k==='on'});
+ radios($('#sLogo'),[['on','On'],['off','Off']],S.logo?'on':'off',function(k){S.logo=k==='on'});
+ radios($('#sTheme'),[['mixed','Mixed collage']].concat(THEME_KEYS.map(function(k){return[k,THEMES[k].label]})),S.theme,function(k){S.theme=k;setThemeFromSettings()});
+}
+$('#gear').onclick=function(){buildSettings();$('#ov').hidden=false};
+$('#sClose').onclick=function(){$('#ov').hidden=true};
+$('#ov').addEventListener('click',function(e){if(e.target.id==='ov')$('#ov').hidden=true});
+function refreshAll(){
+ document.body.classList.toggle('nologo',!S.logo);
+ renderTeach();
+ if(!$('#pquiz').hidden&&P.cur){
+  var wasLocked=P.locked,fb=$('#qfb'),html=fb.innerHTML,cls=fb.className,sel=[].map.call(document.querySelectorAll('#qopts .opt'),function(b){return b.className});
+  renderQ();
+  if(wasLocked){
+   fb.innerHTML=html;fb.className=cls;
+   document.querySelectorAll('#qopts .opt').forEach(function(b,i){b.className=sel[i];b.disabled=true});
+  }
+ }
+}
+
+/* ---------- navigation ---------- */
+function view(v){
+ var t=v==='teach';$('#teach').hidden=!t;$('#practise').hidden=t;
+ $('#navT').classList.toggle('on',t);$('#navP').classList.toggle('on',!t);
+ if(t)renderTeach();else{stopPlay(true);if($('#pquiz').hidden&&$('#pres').hidden)buildSetup()}
+}
+$('#navT').onclick=function(){view('teach')};
+$('#navP').onclick=function(){view('practise')};
+
+document.body.classList.toggle('nologo',!S.logo);
+setThemeFromSettings();
+teach.T=randomTime(1);
+buildStagebar();renderTeach();buildSetup();
+})();
+</script>
+</body>
+</html>
