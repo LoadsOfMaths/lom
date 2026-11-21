@@ -81,6 +81,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Venn Diagrams | `venn-diagrams/` |
 | Whack-A-Prime | `whack-a-prime/` |
 | Whale Watching | `whale-watching/` |
+| What's Left? | `whats-left/` |
 | Who Am I? | `who-am-i/` |
 | Word Wizard | `word-wizard/` |
 | X-Factor | `x-factor/` |

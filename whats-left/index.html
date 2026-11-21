@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What's Left?</title>
+<style>
+:root{
+  --bg:#0e2a40; --panel:#173a55; --panel2:#1d4a6b; --ink:#ffffff; --muted:#a9c4d8;
+  --c1:#ff5a7a; --c2:#3cc8f0; --c3:#ffb400; --c4:#b48cff; --left:#4fe38a; --cell:#fbfdff; --cellink:#10263a;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(1200px 700px at 20% -10%,#1b4d70 0%,var(--bg) 60%);color:var(--ink);
+  font-family:"Trebuchet MS","Segoe UI",Verdana,sans-serif;overflow:hidden}
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;gap:1.2vh;padding:1.6vh 2vw}
+button{font:inherit;color:inherit;cursor:pointer;border:0}
+
+header{display:flex;align-items:center;gap:2vw;flex:0 0 auto}
+.title{flex:1;min-width:0}
+h1{margin:0;font-size:clamp(26px,6vh,64px);line-height:1;letter-spacing:.5px}
+h1 span{color:var(--left)}
+.tag{margin:.4vh 0 0;color:var(--muted);font-size:clamp(12px,2.1vh,22px)}
+#timer{font-size:clamp(20px,4.4vh,48px);font-weight:700;font-variant-numeric:tabular-nums;color:var(--c3);min-width:4ch;text-align:right}
+#timer.out{color:var(--c1)}
+.hbtns{display:flex;gap:1vw}
+.btn{background:var(--panel2);padding:1.2vh 1.6vw;border-radius:1.2vh;font-size:clamp(13px,2.3vh,24px);font-weight:700;border:2px solid #2f6a94}
+.btn:hover{background:#25608a}
+.btn:disabled{opacity:.45;cursor:default}
+
+#rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2vw;flex:0 0 auto}
+.rule{cursor:pointer;user-select:none;background:var(--panel);border-radius:1.6vh;padding:1.2vh 1.2vw;display:flex;align-items:center;gap:1vw;
+  border:.5vh solid transparent;transition:.3s}
+.rule .badge{flex:0 0 auto;width:clamp(30px,6.4vh,70px);height:clamp(30px,6.4vh,70px);border-radius:50%;display:grid;place-items:center;
+  font-weight:800;font-size:clamp(16px,3.6vh,40px);color:#10263a}
+.rule .txt{font-size:clamp(17px,4.2vh,48px);font-weight:700;line-height:1.1}
+.rule .cnt{display:block;font-size:clamp(11px,1.9vh,20px);font-weight:400;color:var(--muted);margin-top:.4vh;min-height:1.2em}
+.rule.r0 .badge{background:var(--c1)} .rule.r1 .badge{background:var(--c2)} .rule.r2 .badge{background:var(--c3)} .rule.r3 .badge{background:var(--c4)}
+.rule.on.r0{border-color:var(--c1)} .rule.on.r1{border-color:var(--c2)} .rule.on.r2{border-color:var(--c3)} .rule.on.r3{border-color:var(--c4)}
+.rule.on{transform:scale(1.03);background:var(--panel2)}
+.rule.hl{box-shadow:0 0 0 .7vh var(--col);background:var(--panel2)}
+.rule.r0{--col:var(--c1)} .rule.r1{--col:var(--c2)} .rule.r2{--col:var(--c3)} .rule.r3{--col:var(--c4)}
+
+#board{flex:1 1 0;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:1.2vmin}
+.cell{container-type:size;position:relative;display:grid;place-items:center;background:var(--cell);color:var(--cellink);
+  border-radius:1.6vmin;box-shadow:0 .5vmin 0 rgba(0,0,0,.25);transition:background .4s,box-shadow .4s,transform .4s}
+.cell .num{font-weight:800;font-size:min(62cqh,calc(88cqw / var(--w)));line-height:1;transition:opacity .4s}
+.xm{position:absolute;inset:var(--in,7%);opacity:0;transform:scale(.3);transition:opacity .35s,transform .35s cubic-bezier(.3,1.6,.5,1);pointer-events:none;
+  background:
+   linear-gradient(to top right,transparent calc(50% - .5vmin),var(--c) calc(50% - .5vmin),var(--c) calc(50% + .5vmin),transparent calc(50% + .5vmin)),
+   linear-gradient(to bottom right,transparent calc(50% - .5vmin),var(--c) calc(50% - .5vmin),var(--c) calc(50% + .5vmin),transparent calc(50% + .5vmin))}
+.xm.on{opacity:1;transform:scale(1)}
+.pips{position:absolute;top:6%;left:6%;display:flex;gap:2%;pointer-events:none}
+.pip{width:min(18cqh,14cqw);height:min(18cqh,14cqw);border-radius:50%;display:grid;place-items:center;
+  font-size:min(11cqh,9cqw);font-weight:800;color:#10263a;background:var(--c);opacity:0;transition:opacity .4s}
+.pip.on{opacity:1}
+.c0{--c:var(--c1)} .c1{--c:var(--c2)} .c2{--c:var(--c3)} .c3{--c:var(--c4)}
+.cell.crossed .num{opacity:.28}
+.cell.crossed{background:#dfe9f1}
+.cell.left{background:#e8fff1;box-shadow:0 0 0 .8vmin var(--left),0 .5vmin 0 rgba(0,0,0,.25);transform:scale(1.03)}
+
+#status{flex:0 0 auto;min-height:12vh;background:var(--panel);border-radius:1.6vh;padding:1.2vh 1.6vw;display:flex;align-items:center;gap:2vw}
+#msg{flex:1;min-width:0;font-size:clamp(14px,2.8vh,30px);line-height:1.25}
+#msg small{display:block;color:var(--muted);font-size:.72em;margin-top:.5vh;word-break:break-word}
+#total{flex:0 0 auto;text-align:center;display:none}
+#total .lab{font-size:clamp(11px,2vh,20px);letter-spacing:.2em;text-transform:uppercase;color:var(--left);font-weight:700}
+#total .val{font-size:clamp(34px,9vh,100px);font-weight:900;line-height:1;color:var(--left);animation:pop .6s cubic-bezier(.3,1.7,.5,1)}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+
+#ctl{display:flex;justify-content:center;gap:2vw;flex:0 0 auto}
+#ctl .btn{font-size:clamp(15px,3.2vh,34px);padding:1.2vh 2.6vw}
+#bNext{background:#1f9d5b;border-color:#3fd081;min-width:22vw}
+#bNext:hover{background:#25b36a}
+
+dialog{border:0;border-radius:2vh;background:#12324a;color:#fff;max-width:min(900px,94vw);width:100%;max-height:92vh;padding:0;font-size:16px}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.dlg{padding:20px 24px;overflow:auto;max-height:90vh}
+.dlg h2{margin:0 0 12px;font-size:24px}
+.dlg h3{margin:16px 0 6px;font-size:16px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:2px solid #2f6a94;border-radius:20px;padding:5px 12px;cursor:pointer;user-select:none}
+.chip input{accent-color:#4fe38a}
+.chip:has(input:checked){background:#1f6e4a;border-color:#4fe38a}
+.lv{padding:8px 16px;border-radius:10px;background:var(--panel);border:2px solid #2f6a94;font-weight:700}
+.lv.sel{background:#1f6e4a;border-color:#4fe38a}
+select,input[type=number]{font:inherit;padding:6px 8px;border-radius:8px;border:2px solid #2f6a94;background:#0b2234;color:#fff}
+.dlg .foot{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+.hint{color:var(--muted);font-size:14px;margin:4px 0}
+
+@media (max-aspect-ratio:1/1){
+  #rules{gap:1.5vw}
+  .rule{padding:1vh 1.5vw;flex-direction:column;text-align:center;gap:.6vh}
+  .rule .badge{width:5vh;height:5vh;font-size:2.8vh}
+  .rule .txt{font-size:clamp(13px,2.4vh,26px)} .rule .cnt{display:none}
+  h1{font-size:clamp(24px,4.6vh,48px)}
+  .btn{padding:1vh 3vw} #ctl .btn{padding:1.2vh 5vw}
+  #status{flex-direction:column;align-items:stretch;gap:.6vh;min-height:14vh}
+  #bNext{min-width:0;flex:1}
+  .tag{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="title"><h1 id="h1">What's <span>Left?</span></h1><p class="tag">Copy the grid. Cross out. Add up what's left. (Tap a rule to highlight its numbers.)</p></div>
+    <div id="timer"></div>
+    <div class="hbtns"><button class="btn" id="bNew">New puzzle</button><button class="btn" id="bSet">Settings</button></div>
+  </header>
+  <section id="rules"></section>
+  <main id="board"></main>
+  <section id="status"><div id="msg"></div><div id="total"><div class="lab">Secret total</div><div class="val" id="tv"></div></div></section>
+  <footer id="ctl"><button class="btn" id="bBack">&#9664; Back</button><button class="btn" id="bNext"></button></footer>
+</div>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script id="logic">
+/* ---------- pure logic (also tested in Node) ---------- */
+function isPrime(n){if(n<2)return false;for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true}
+var ALL=[],byId={};
+(function(){
+  const add=(id,label,group,f)=>{const r={id,label,group,f};ALL.push(r);byId[id]=r};
+  for(let k=2;k<=12;k++)add('m'+k,'Multiples of '+k,'Multiples of',n=>n%k===0);
+  [12,18,20,24,30,36,40,42,48,60,72,80,90,100].forEach(m=>add('f'+m,'Factors of '+m,'Factors of',n=>m%n===0));
+  const sq=new Set(),cu=new Set(),tr=new Set(),fb=new Set();
+  for(let i=1;i<=30;i++){sq.add(i*i);cu.add(i*i*i);tr.add(i*(i+1)/2)}
+  let a=1,b=2;while(a<2000){fb.add(a);[a,b]=[b,a+b]}
+  add('prime','Prime numbers','Number types',isPrime);
+  add('sq','Square numbers','Number types',n=>sq.has(n));
+  add('cube','Cube numbers','Number types',n=>cu.has(n));
+  add('tri','Triangular numbers','Number types',n=>tr.has(n));
+  add('fib','Fibonacci numbers','Number types',n=>fb.has(n));
+  add('odd','Odd numbers','Number types',n=>n%2===1);
+  add('even','Even numbers','Number types',n=>n%2===0);
+})();
+var LEVELS={
+  easy:{name:'Easy',max:30,ids:['m2','m3','m4','m5','m10','f12','f18','f20','f24','f30','prime','sq','odd','even']},
+  medium:{name:'Medium',max:60,ids:['m3','m4','m5','m6','m7','m8','m9','f24','f30','f36','f40','f48','f60','prime','sq','cube','tri','odd']},
+  hard:{name:'Hard',max:100,ids:['m3','m4','m6','m7','m8','m9','m11','m12','f36','f48','f60','f72','f80','f90','f100','prime','sq','cube','tri','fib']}
+};
+function rnd(n){return Math.floor(Math.random()*n)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function sample(a,k){return shuffle(a.slice()).slice(0,k)}
+
+/* o = {max, ids:[...], manual:null | [ids], k:3|4 rules, total:20|12 cells} -> {rules, cells:[{n,first}]} or null */
+function gen(o){
+  const k=o.k||3,T=o.total||20;
+  const range=[];for(let i=1;i<=o.max;i++)range.push(i);
+  const pool=o.ids.map(i=>byId[i]).filter(Boolean);
+  if(!o.manual&&pool.length<k)return null;
+  const cmax=T>=20?5:3;
+  for(let relax=0;relax<2;relax++){
+    const cmin=relax?1:2;
+    const rmin=Math.max(relax?2:3,Math.round(T*(relax?0.2:0.3))),rmax=Math.round(T*0.6);
+    for(let at=0;at<1500;at++){
+      const rules=o.manual?o.manual.slice(0,k).map(i=>byId[i]):sample(pool,k);
+      const sets=rules.map(r=>range.filter(r.f));
+      if(!o.manual&&!relax){
+        let bad=false;
+        for(let i=0;i<k&&!bad;i++)for(let j=i+1;j<k;j++){
+          const A=new Set(sets[i]),B=new Set(sets[j]);
+          if(sets[i].filter(x=>!B.has(x)).length<2||sets[j].filter(x=>!A.has(x)).length<2){bad=true;break}
+        }
+        if(bad)continue;
+      }
+      const first=n=>{for(let i=0;i<k;i++)if(rules[i].f(n))return i;return -1};
+      const A=rules.map(()=>[]),N=[];
+      range.forEach(n=>{const f=first(n);if(f<0)N.push(n);else A[f].push(n)});
+      if(A.some(x=>x.length<cmin))continue;
+      const c=A.map(x=>Math.min(x.length,cmin+rnd(cmax-cmin+1)));
+      const sum=c.reduce((a,b)=>a+b,0);
+      const r=T-sum;
+      if(r<rmin||r>rmax||N.length<r)continue;
+      const cells=[];
+      for(let i=0;i<k;i++)sample(A[i],c[i]).forEach(n=>cells.push({n,first:i}));
+      sample(N,r).forEach(n=>cells.push({n,first:-1}));
+      return {rules,cells:shuffle(cells)};
+    }
+  }
+  return null;
+}
+function remaining(cells,stage){ /* cells not yet crossed after `stage` rules */
+  return cells.filter(c=>c.first<0||c.first>=stage);
+}
+</script>
+
+<script>
+/* ---------- app ---------- */
+const TITLE="What's Left?";
+const KEY='whatsLeft.settings.v1';
+let S={level:'medium',max:60,on:LEVELS.medium.ids.slice(),manual:false,pick:['m3','prime','f60','even'],cols:5,rows:4,nrules:3,timer:0,running:true};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&Array.isArray(s.on))S=Object.assign(S,s)}catch(e){}
+while(S.pick.length<4)S.pick.push(['m3','prime','f60','even'][S.pick.length]);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+const $=id=>document.getElementById(id);
+let P=null,stage=0,tId=null,tLeft=0,H=new Set();
+
+function stopTimer(){if(tId){clearInterval(tId);tId=null}}
+function drawT(){const el=$('timer');if(!S.timer){el.textContent='';return}
+  if(tLeft<=0){el.textContent="Time's up";el.className='out';return}
+  el.className='';el.textContent=Math.floor(tLeft/60)+':'+String(tLeft%60).padStart(2,'0')}
+function startTimer(){stopTimer();if(!S.timer){drawT();return}
+  tLeft=S.timer*60;drawT();tId=setInterval(()=>{tLeft--;drawT();if(tLeft<=0)stopTimer()},1000)}
+
+function newPuzzle(){
+  stage=0;H=new Set();
+  const max=Math.max(30,Math.min(999,parseInt(S.max)||60));
+  P=gen({max,ids:S.on,manual:S.manual?S.pick.slice(0,S.nrules):null,k:S.nrules,total:S.cols*S.rows});
+  startTimer();
+  if(P)P.cells.forEach(c=>{c.m=P.rules.map((r,i)=>r.f(c.n)?i:-1).filter(i=>i>=0)});
+  if(!P){stopTimer();$('rules').innerHTML='';$('board').innerHTML='';
+    $('msg').textContent="Couldn't build a grid with those settings. Try ticking more rules, or raise the largest number.";
+    $('total').style.display='none';$('bNext').textContent='Settings';$('bNext').disabled=false;$('bBack').disabled=true;return}
+  build();render();
+}
+
+function build(){
+  $('rules').style.gridTemplateColumns=`repeat(${P.rules.length},minmax(0,1fr))`;
+  $('board').style.gridTemplateColumns=`repeat(${S.cols},minmax(0,1fr))`;$('board').style.gridTemplateRows=`repeat(${S.rows},minmax(0,1fr))`;
+  $('rules').innerHTML=P.rules.map((r,i)=>`<div class="rule r${i}" id="rule${i}"><div class="badge">${i+1}</div><div class="txt">${r.label}<span class="cnt" id="cnt${i}"></span></div></div>`).join('');
+  $('board').innerHTML=P.cells.map((c,i)=>{
+    const w=Math.max(2,String(c.n).length)*0.62;
+    return `<div class="cell" id="cell${i}" style="--w:${w}"><div class="pips">${c.m.map(r=>`<div class="pip c${r}" data-r="${r}">${r+1}</div>`).join('')}</div><div class="num">${c.n}</div>${c.m.map((r,j)=>`<div class="xm c${r}" data-r="${r}" style="--in:${5+j*9}%"></div>`).join('')}</div>`}).join('');
+  P.rules.forEach((r,i)=>{const el=$('rule'+i);el.title='Click to highlight its numbers';el.onclick=()=>{if(H.has(i))H.delete(i);else H.add(i);render()}});
+}
+
+function nextLabel(){const K=P.rules.length;return stage<K?`Cross out Rule ${stage+1} ▶`:stage===K?'Reveal the Secret Total ▶':'New puzzle'}
+function render(){
+  if(!P)return;
+  const cells=P.cells,K=P.rules.length;
+  cells.forEach((c,i)=>{
+    const el=$('cell'+i);
+    el.classList.toggle('crossed',c.first>=0&&stage>=c.first+1);
+    el.classList.toggle('left',stage>=K&&c.first<0);
+    el.querySelectorAll('.xm,.pip').forEach(x=>x.classList.toggle('on',stage>=(+x.dataset.r)+1));
+    const hl=c.m.filter(r=>H.has(r));
+    el.style.boxShadow=hl.length?hl.map((r,j)=>`0 0 0 ${(j+1)*0.8}vmin var(--c${r+1})`).join(',')+',0 .5vmin 0 rgba(0,0,0,.25)':'';
+    el.style.zIndex=hl.length?2:'';
+  });
+  P.rules.forEach((r,i)=>{
+    const crossedNow=cells.filter(c=>c.first===i).length;
+    $('rule'+i).classList.toggle('on',stage===i+1);
+    $('rule'+i).classList.toggle('hl',H.has(i));
+    $('cnt'+i).textContent=stage>=i+1?`Crossed out ${crossedNow} more number${crossedNow===1?'':'s'}`:'';
+  });
+  const left=remaining(cells,stage),sum=left.reduce((a,c)=>a+c.n,0);
+  let msg='';
+  $('total').style.display='none';
+  if(stage===0){msg='Copy the grid. Cross out every number that fits <b>at least one</b> rule. Then add up the numbers that are left.'}
+  else if(stage<K){
+    const r=P.rules[stage-1];
+    msg=`Rule ${stage}: <b>${r.label}</b> crossed out.`;
+    if(S.running)msg+=`<small>${left.length} numbers left. They add up to ${sum}.</small>`;
+    else msg+=`<small>${left.length} numbers left.</small>`;
+  }
+  else if(stage===K){msg=`All ${K===4?'four':'three'} rules are crossed out. <b>${left.length} numbers</b> are left. What do they add up to?`}
+  else{
+    msg=`The numbers left: <small>${left.map(c=>c.n).join(' + ')} = ${sum}</small>`;
+    $('total').style.display='block';$('tv').textContent=sum;
+    $('tv').style.animation='none';void $('tv').offsetWidth;$('tv').style.animation='';
+  }
+  $('msg').innerHTML=msg;
+  $('bNext').textContent=nextLabel();$('bNext').disabled=false;
+  $('bBack').disabled=stage===0;
+  if(stage>=1)stopTimer();
+}
+function next(){
+  if(!P){openSettings();return}
+  if(stage===P.rules.length+1){newPuzzle();return}
+  stage++;render();
+}
+function back(){if(P&&stage>0){stage--;render()}}
+
+/* ---------- settings ---------- */
+function groupHTML(g){
+  return `<h3>${g}</h3><div class="row">`+ALL.filter(r=>r.group===g).map(r=>
+    `<label class="chip"><input type="checkbox" data-id="${r.id}" ${S.on.includes(r.id)?'checked':''}>${r.label.replace(/^(Multiples of |Factors of )/,'')}</label>`).join('')+'</div>';
+}
+function selHTML(i){
+  return `<select data-pick="${i}">`+['Multiples of','Factors of','Number types'].map(g=>
+    `<optgroup label="${g}">`+ALL.filter(r=>r.group===g).map(r=>`<option value="${r.id}" ${S.pick[i]===r.id?'selected':''}>${r.label}</option>`).join('')+'</optgroup>').join('')+'</select>';
+}
+function readForm(){
+  const d=$('dlg');
+  S.on=[...d.querySelectorAll('[data-id]')].filter(x=>x.checked).map(x=>x.dataset.id);
+  S.max=Math.max(30,Math.min(999,parseInt($('sMax').value)||60));
+  S.manual=$('sManual').checked;
+  [0,1,2,3].forEach(i=>{const s=d.querySelector(`[data-pick="${i}"]`);if(s)S.pick[i]=s.value});
+  S.running=$('sRun').checked;S.timer=parseInt($('sTimer').value)||0;
+}
+function openSettings(){
+  $('dlgBody').innerHTML=`
+  <h2>Settings</h2>
+  <h3>Level (sets the rules and the largest number)</h3>
+  <div class="row">${Object.keys(LEVELS).map(k=>`<button class="lv ${S.level===k?'sel':''}" data-lv="${k}">${LEVELS[k].name}</button>`).join('')}</div>
+  <h3>Grid size</h3>
+  <div class="row"><button class="lv ${S.cols===5?'sel':''}" data-grid="5">5 × 4 (20 numbers)</button><button class="lv ${S.cols===4?'sel':''}" data-grid="4">4 × 3 (12 numbers)</button></div>
+  <h3>Number of rules</h3>
+  <div class="row"><button class="lv ${S.nrules===3?'sel':''}" data-nr="3">3 rules</button><button class="lv ${S.nrules===4?'sel':''}" data-nr="4">4 rules</button></div>
+  <h3>Largest number in the grid</h3>
+  <div class="row"><input type="number" id="sMax" min="30" max="999" value="${S.max}"><span class="hint">Between 30 and 999. Numbers in the grid are never repeated.</span></div>
+  <h3>Rules that can appear (tick the ones you want)</h3>
+  <p class="hint">"Multiples of" and "Factors of" are listed by number: ticking 6 under Multiples means "Multiples of 6" can appear.</p>
+  ${groupHTML('Multiples of')}${groupHTML('Factors of')}${groupHTML('Number types')}
+  <h3>Choose the three rules myself</h3>
+  <label class="chip"><input type="checkbox" id="sManual" ${S.manual?'checked':''}>Use these three rules every time</label>
+  <div class="row" style="margin-top:8px">${selHTML(0)}${selHTML(1)}${selHTML(2)}${S.nrules===4?selHTML(3):''}</div>
+  <h3>Other options</h3>
+  <div class="row">
+    <label class="chip"><input type="checkbox" id="sRun" ${S.running?'checked':''}>Show the running total after each rule</label>
+    <label>Timer <select id="sTimer">${[0,1,2,3,5,10].map(m=>`<option value="${m}" ${S.timer===m?'selected':''}>${m?m+' min':'Off'}</option>`).join('')}</select></label>
+  </div>
+  <div class="foot"><button class="btn" id="sCancel">Cancel</button><button class="btn" id="sGo" style="background:#1f9d5b;border-color:#3fd081">Save and make a new puzzle</button></div>`;
+  const d=$('dlg');
+  d.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.lv;S.level=k;S.max=LEVELS[k].max;S.on=LEVELS[k].ids.slice();openSettings()});
+  d.querySelectorAll('[data-grid]').forEach(b=>b.onclick=()=>{readForm();S.cols=+b.dataset.grid;S.rows=S.cols===5?4:3;openSettings()});
+  d.querySelectorAll('[data-nr]').forEach(b=>b.onclick=()=>{readForm();S.nrules=+b.dataset.nr;openSettings()});
+  $('sCancel').onclick=()=>d.close();
+  $('sGo').onclick=()=>{
+    readForm();
+    save();d.close();newPuzzle();
+  };
+  if(!d.open)d.showModal();
+}
+
+$('bNew').onclick=newPuzzle;
+$('bSet').onclick=openSettings;
+$('bNext').onclick=next;
+$('bBack').onclick=back;
+document.addEventListener('keydown',e=>{
+  if($('dlg').open)return;
+  const t=e.target.tagName;if(t==='BUTTON'||t==='SELECT'||t==='INPUT')return;
+  if(e.key===' '||e.key==='Enter'||e.key==='ArrowRight'){e.preventDefault();next()}
+  else if(e.key==='ArrowLeft'){back()}
+  else if(e.key==='n'||e.key==='N'){newPuzzle()}
+});
+document.title=TITLE;
+newPuzzle();
+</script>
+</body>
+</html>
