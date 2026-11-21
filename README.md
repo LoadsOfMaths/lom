@@ -49,6 +49,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Lucky Duck | `lucky-duck/` |
 | Maze Munch Maths | `maze-munch-maths/` |
 | Millionaire | `millionaire/` |
+| Mind Reader | `mind-reader/` |
 | Not There | `not-there/` |
 | Nul Points! | `nul-points/` |
 | Number Forensics | `number-forensics/` |
