@@ -13,6 +13,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Block Shift | `block-shift/` |
 | Bouncer | `bouncer/` |
 | Brain Gym | `brain-gym/` |
+| Bubble Pop | `bubble-pop/` |
 | Calendar Countdown | `calendar-countdown/` |
 | Can You Predict the Future? | `predict-the-future/` |
 | Chocolate Biscuits | `chocolate-biscuits/` |
