@@ -31,6 +31,8 @@ button{font-family:inherit}
 @media(max-width:900px){.tgrid{grid-template-columns:1fr}}
 .clockcol{border-radius:18px;padding:14px;text-align:center;border:2px solid var(--line)}
 .clockcol .clk.big{width:100%;max-width:min(620px,76vh);height:auto;touch-action:none;display:block;margin:0 auto}
+.draghint{min-height:24px;margin-top:4px;font-size:16px;font-weight:700;color:#c25a1c}
+.th-board .draghint{color:#ffb000}
 .elapsed{min-height:30px;margin-top:6px;font-weight:700;font-size:19px}
 .elapsed a{font-size:13px;font-weight:400;margin-left:8px;cursor:pointer;text-decoration:underline}
 .panel{background:#fff;border-radius:18px;border:2px solid var(--line);padding:16px 18px}
@@ -131,6 +133,7 @@ input[type=text]{width:90px}
     <div class="clockcol th-railway" id="tcol">
       <div class="plaque" id="tplaque"></div>
       <svg id="tclock" class="clk big" viewBox="-128 -128 256 256"></svg>
+      <div class="draghint" id="tdrag"></div>
       <div class="elapsed" id="telapsed"></div>
     </div>
     <div class="panel">
@@ -304,7 +307,8 @@ function clockInner(o){
  if(S.ring){
   for(i=1;i<=12;i++){p=polar(i*30,119);s+='<text x="'+f2(p[0])+'" y="'+f2(p[1])+'" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#555" font-family="Arial,sans-serif">'+(i*5)+'</text>'}
  }
- var hit=function(h,len){return o.drag===h?'<line class="hit" data-hand="'+h+'" x1="0" y1="10" x2="0" y2="-'+len+'" stroke="rgba(0,0,0,0.001)" stroke-width="26" stroke-linecap="round"/>':''};
+ var cue=function(h){return o.cue===h?'<circle cx="0" cy="-'+(h==='hour'?54:84)+'" r="9" fill="rgba(244,123,63,.25)" stroke="#F47B3F" stroke-width="3"><animate attributeName="r" values="8;17;8" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.25;1" dur="1.5s" repeatCount="indefinite"/></circle>':''};
+ var hit=function(h,len){return cue(h)+(o.drag===h?'<line class="hit" data-hand="'+h+'" x1="0" y1="10" x2="0" y2="-'+len+'" stroke="rgba(0,0,0,0.001)" stroke-width="26" stroke-linecap="round"/>':'')};
  s+='<g transform="rotate('+f2(hA)+')"><polygon points="0,-54 5.5,-14 3.5,10 -3.5,10 -5.5,-14" fill="'+th.hand+'" stroke="'+th.face+'" stroke-width=".8"/>'+hit('hour',58)+'</g>';
  if(o.min)s+='<g transform="rotate('+f2(mA)+')"><polygon points="0,-84 3.4,-14 2.6,13 -2.6,13 -3.4,-14" fill="'+th.hand+'" stroke="'+th.face+'" stroke-width=".8"/>'+hit('min',86)+'</g>';
  if(o.sec)s+='<g transform="rotate('+f2(sA)+')"><line x1="0" y1="22" x2="0" y2="-92" stroke="'+th.sec+'" stroke-width="1.6"/><circle cx="0" cy="-70" r="4" fill="'+th.sec+'"/></g>';
@@ -335,7 +339,7 @@ var ST=[
   pts:['The thin red hand is the second hand. It makes one full turn in 1 minute (60 seconds).','Each time it completes a turn, the minute hand moves on 1 minute.','Digital times with seconds look like 3:45:20.']}
 ];
 var T0=Date.UTC?0:0;
-var teach={stage:1,T:15*3600+0,playing:false,speed:600,theme:'railway',reveal:true,ask:false,wedge:true,elapsed:0};
+var teach={cued:{},stage:1,T:15*3600+0,playing:false,speed:600,theme:'railway',reveal:true,ask:false,wedge:true,elapsed:0};
 var raf=0,lastTs=0,drag=null;
 var tclock=$('#tclock');
 function setH(el,h){if(el._h!==h){el._h=h;el.innerHTML=h}}
@@ -370,7 +374,8 @@ function hourDescription(h12,mi){
 function setThemeFromSettings(){teach.theme=chooseTheme()}
 function renderTeach(){
  var st=stageCfg(),T=teach.T,h24=Math.floor(T/3600)%24,m=Math.floor(T/60)%60,sec=Math.floor(T%60);
- tclock.innerHTML=clockInner({T:T,min:st.min,sec:st.sec,ticks:st.ticks,theme:teach.theme,wedge:teach.wedge&&teach.stage<=3,shade:S.shade&&teach.stage>=3,drag:teach.stage===1?'hour':'min'});
+ tclock.innerHTML=clockInner({T:T,min:st.min,sec:st.sec,ticks:st.ticks,theme:teach.theme,wedge:teach.wedge&&teach.stage<=3,shade:S.shade&&teach.stage>=3,drag:teach.stage===1?'hour':'min',cue:(!teach.playing&&!teach.cued[teach.stage])?(teach.stage===1?'hour':'min'):null});
+ setH($('#tdrag'),(!teach.playing&&!teach.cued[teach.stage])?'Drag the glowing hand to change the time':'');
  $('#tcol').className='clockcol th-'+teach.theme;
  setH($('#tplaque'),THEMES[teach.theme].label);
  setH($('#thead'),'Stage '+teach.stage+': '+st.title);
@@ -447,7 +452,7 @@ function pointerAngle(e){
 }
 tclock.addEventListener('pointerdown',function(e){
  var h=e.target.getAttribute&&e.target.getAttribute('data-hand');if(!h)return;
- stopPlay(true);var a=pointerAngle(e);
+ stopPlay(true);teach.cued[teach.stage]=true;var a=pointerAngle(e);
  drag={h:h,total:h==='hour'?(Math.floor(teach.T/60)%720):(teach.T/60),last:h==='hour'?a/360*720:a/6};
  if(h==='hour')drag.total=teach.T/60;
  try{tclock.setPointerCapture(e.pointerId)}catch(x){}
