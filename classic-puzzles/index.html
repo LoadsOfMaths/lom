@@ -584,7 +584,8 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .crSvg .arm.act{stroke:#ffb84a}
 .crSvg .arm.up{stroke:#5ed08a}
 .crSvg .bd{stroke:#7fb1e3;stroke-width:8;stroke-linecap:round;fill:none}
-.crSvg .hd{fill:#f2d9b8;stroke:#0e2339;stroke-width:3}
+.crSvg .hd{stroke:#0e2339;stroke-width:3}
+.crSvg .hand{stroke:#0e2339;stroke-width:2.5}
 .crSvg g.pp{cursor:pointer}
 .crSvg .hl{fill:rgba(255,184,74,.22);stroke:#ffb84a;stroke-width:3}
 .crSvg .no{fill:rgba(232,96,79,.25)}
@@ -6357,6 +6358,7 @@ function crWhy(s,p,n){
   for(let i=0;i<p-1;i++)if(!((s>>i)&1))return `${L(p)} can’t move yet: everyone further to the left than ${L(p-1)} must have their arm up, but ${L(i)} has it down.`;
   return '';
 }
+const CR_TONES=['#f6d7b8','#8d5524','#e0ac69','#5c3a21','#c68642','#ffdbac'];
 function crDraw(host,n,s,st){
   const ns='http://www.w3.org/2000/svg',mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
   const W=Math.max(n,2)*92,svg=mk('svg',{viewBox:`0 0 ${W} 200`,class:'crSvg'});
@@ -6364,10 +6366,13 @@ function crDraw(host,n,s,st){
     const slot=n-1-i,cx=46+slot*92,up=(s>>i)&1;
     const g=mk('g',{class:'pp'});
     if(st.hint===i)g.append(mk('rect',{x:cx-40,y:6,width:80,height:150,rx:14,class:'hl'}));
-    g.append(mk('circle',{cx,cy:40,r:16,class:'hd'}));
+    const tone=CR_TONES[i%CR_TONES.length];
+    g.append(mk('circle',{cx,cy:40,r:16,class:'hd',style:'fill:'+tone}));
     g.append(mk('path',{d:`M${cx} 56 L${cx} 112 M${cx} 112 L${cx-14} 148 M${cx} 112 L${cx+14} 148`,class:'bd'}));
-    g.append(mk('path',{d:`M${cx} 72 L${cx-22} 104`,class:'arm'}));
-    g.append(mk('path',{d:up?`M${cx} 72 L${cx+38} 24`:`M${cx} 72 L${cx+22} 104`,class:'arm act'+(up?' up':'')}));
+    g.append(mk('path',{d:`M${cx} 72 L${cx-20} 100`,class:'arm'}));
+    g.append(mk('circle',{cx:cx-22,cy:106,r:8,class:'hand',style:'fill:'+tone}));
+    g.append(mk('path',{d:up?`M${cx} 72 L${cx+28} 64 L${cx+28} 34`:`M${cx} 72 L${cx+20} 100`,class:'arm act'+(up?' up':'')}));
+    g.append(mk('circle',up?{cx:cx+28,cy:24,r:10,class:'hand',style:'fill:'+tone}:{cx:cx+22,cy:106,r:8,class:'hand',style:'fill:'+tone}));
     const t=mk('text',{x:cx,y:176,'font-size':20});t.textContent=crLetter(i,n);g.append(t);
     if(i===0){const f=mk('text',{x:cx,y:194,class:'sm'});f.textContent='free end';g.append(f);}
     g.addEventListener('click',()=>st.tap&&st.tap(i));
