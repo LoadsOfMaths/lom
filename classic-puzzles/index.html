@@ -250,6 +250,20 @@ svg.mc{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:man
 .hcol.goal .hflag{display:block}
 .hdisk{position:relative;z-index:2;height:var(--dh);border-radius:calc(var(--dh)/2);margin-top:2px;display:flex;align-items:center;justify-content:center;font-weight:700;color:rgba(0,0,0,.65);font-size:calc(var(--dh)*.55);box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),inset 0 3px 0 rgba(255,255,255,.3),0 3px 5px rgba(0,0,0,.35);transition:transform .15s}
 .hdisk.lift{transform:translateY(calc(var(--dh)*-.7));box-shadow:0 0 0 4px #fff,0 0 20px 5px var(--accent)}
+.pg{max-width:560px;margin:0 auto;padding:6px}
+.pgcount{text-align:center;color:var(--muted,#9fb3c8);margin-bottom:4px;font-size:1.05rem}
+.pgcount strong{color:var(--accent);font-size:1.3rem}
+svg.pgs{width:100%;max-height:62vh;display:block;touch-action:manipulation}
+.pgbd{fill:#6b4423}
+.pgh{fill:#2c1a0c;stroke:#1a0e05;stroke-width:2}
+.pgp{fill:#e9a63a;stroke:#9a5f10;stroke-width:2}
+.pgsh{fill:rgba(255,255,255,.55)}
+.pgz{fill:transparent;cursor:pointer}
+.pgc.sel .pgp{fill:#ffd36b;stroke:#fff;stroke-width:4}
+.pgc.tg .pgh{stroke:var(--good);stroke-width:5;stroke-dasharray:7 5}
+.pgc.hf .pgp{stroke:var(--good);stroke-width:5}
+.pgc.ht .pgh{stroke:#7ab7ff;stroke-width:5}
+.pgfl{fill:#ffd36b;opacity:.7;font-size:22px;text-anchor:middle}
 svg.chess{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
 .chess .sq{cursor:pointer}
 .chess .lt{fill:#e8d9b5}.chess .dk{fill:#9a6b3f}
@@ -3076,7 +3090,136 @@ function hanoiLevel(n){
 const HANOI={id:'hanoi',icon:'🗼',title:'Tower of Hanoi',blurb:'Move the whole stack to another pillar, never putting a big disk on a small one.',
   levels:[3,4,5,6,7].map(n=>({name:n+' disks',make:()=>hanoiLevel(n)}))};
 
-const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
+/* ---------- PEG SOLITAIRE ---------- */
+function pegBoard(kind){
+  const cells=[],idx={};
+  if(kind==='tri'){
+    for(let r=0;r<5;r++)for(let c=0;c<=r;c++){idx[r+','+c]=cells.length;cells.push({r,c,x:(c-r/2)*54+2.5*54+14,y:r*47+34,name:`row ${r+1}, place ${c+1}`});}
+  }else{
+    const rows=['..###..','..###..','#######','#######','#######','..###..','..###..'];
+    rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch==='#'){idx[x+','+y]=cells.length;cells.push({r:y,c:x,x:x*54+40,y:y*54+40,name:`row ${y+1}, column ${x+1}`});}}));
+  }
+  const dirs=kind==='tri'?[[0,1],[1,0],[1,1]]:[[0,1],[1,0]];
+  const J=[];
+  cells.forEach((a,i)=>dirs.forEach(([dr,dc])=>{
+    const b=idx[kind==='tri'?(a.r+dr)+','+(a.c+dc):(a.c+dc)+','+(a.r+dr)];
+    const c=idx[kind==='tri'?(a.r+2*dr)+','+(a.c+2*dc):(a.c+2*dc)+','+(a.r+2*dr)];
+    if(b!=null&&c!=null){J.push([i,b,c]);J.push([c,b,i]);}
+  }));
+  const W=kind==='tri'?5*54+28:7*54+20,H=kind==='tri'?4*47+68:7*54+20;
+  return {cells,idx,J,W,H,at:kind==='tri'?(r,c)=>idx[r+','+c]:(x,y)=>idx[x+','+y]};
+}
+const PG_BOARDS={tri:pegBoard('tri'),cross:pegBoard('cross')};
+function pegLevel(kind,emptyAt,finishAt,intro){
+  const B=PG_BOARDS[kind],N=B.cells.length;
+  const empty=B.at(emptyAt[0],emptyAt[1]);
+  const finish=finishAt?B.at(finishAt[0],finishAt[1]):-1;
+  const start=B.cells.map((_,i)=>i===empty?'0':'1').join('');
+  const ones=s=>{let n=0;for(let i=0;i<N;i++)if(s.charCodeAt(i)===49)n++;return n;};
+  const isGoal=s=>ones(s)===1&&(finish<0||s[finish]==='1');
+  const mk=(s,[a,b,c])=>{const t=s.split('');t[a]='0';t[b]='0';t[c]='1';return {kind:'jump',a,b,c,to:t.join(''),
+    label:`Jump the peg at ${B.cells[a].name} over the peg at ${B.cells[b].name} into the hole at ${B.cells[c].name}`};};
+  const def={
+    scoreLabel:'Moves',unit:'moves',start,
+    key:s=>s,isGoal,
+    moves(s){const out=[];for(const j of B.J)if(s[j[0]]==='1'&&s[j[1]]==='1'&&s[j[2]]==='0')out.push(mk(s,j));return out;},
+    solver(s0){
+      const dead=new Set(),raw=[];let nodes=0;
+      const dfs=s=>{
+        if(isGoal(s))return true;
+        if(dead.has(s)||nodes>900000)return false;
+        nodes++;
+        for(const j of B.J){
+          if(s[j[0]]==='1'&&s[j[1]]==='1'&&s[j[2]]==='0'){
+            const t=s.split('');t[j[0]]='0';t[j[1]]='0';t[j[2]]='1';
+            raw.push(j);if(dfs(t.join('')))return true;raw.pop();
+          }
+        }
+        dead.add(s);return false;
+      };
+      if(!dfs(s0))return {path:null,cost:null,states:[]};
+      const path=[];let s=s0;raw.forEach(j=>{const m=mk(s,j);path.push(m);s=m.to;});
+      return {path,cost:path.length,states:[]};
+    },
+    impossible:()=>'No way to finish from here.',
+    noHint:'💡 I can’t find a way to finish from this position. Try Undo a few times, or press Reset.',
+    brief:(kind==='tri'
+      ?`Fifteen holes in a triangle, <strong>14 pegs</strong> and one empty hole. Jump a peg <strong>over a neighbouring peg</strong> into an empty hole, in a straight line along any of the three directions. The peg you jump over is <strong>taken off</strong>. Can you finish with <strong>just one peg</strong>?`
+      :`Thirty-three holes in a cross, <strong>32 pegs</strong> and one empty hole. Jump a peg <strong>over a neighbouring peg</strong> into an empty hole, <strong>straight along a row or column</strong> (no diagonals). The peg you jump over is <strong>taken off</strong>. Can you finish with <strong>just one peg</strong>${finish>=0?', in the <strong>centre</strong> hole':''}?`)
+      +` Tap a peg, then tap the hole it should jump to.`,
+    maths:`<p>Every jump takes exactly one peg off the board, so starting with ${N-1} pegs, finishing with one peg <em>always</em> takes exactly <strong>${N-2} jumps</strong>. There is no "fewest moves" here: the challenge is to find a route that never gets stuck.</p>
+<p>${kind==='tri'?'On the 15-hole triangle there are many solutions, but most random play gets stuck with 3 or 4 pegs left. Try working <em>backwards</em>: the last jump must end with one peg, so what must the board look like one move before?'
+      :'This is the traditional board. Starting with the centre empty, a famous result says that if you do finish with one peg, it must end in the <strong>centre</strong>. A good tip is to clear pegs from the edges while keeping the pegs together, and to avoid leaving lone pegs far from the rest.'}</p>
+<p>Peg solitaire has been played since at least the 1600s, and the cross-shaped board was popular at the court of Louis XIV of France.</p>`,
+    mount(stage,S){
+      let sel=-1;
+      const wrap=el('div',{class:'pg'});
+      const cnt=el('div',{class:'pgcount'});
+      const holder=el('div');
+      wrap.append(cnt,holder);stage.append(wrap);
+      let hint=null;
+      function draw(s){
+        const tg=new Set();
+        if(sel>=0)S.moves().forEach(m=>{if(m.a===sel)tg.add(m.c);});
+        let g=`<svg class="pgs" viewBox="0 0 ${B.W+(kind==='tri'?0:0)} ${B.H}" role="img" aria-label="Peg solitaire board">`;
+        B.cells.forEach(c=>g+=`<circle cx="${c.x}" cy="${c.y}" r="31" class="pgbd"/>`);
+        B.cells.forEach((c,i)=>{
+          const peg=s[i]==='1';
+          const cls=['pgc'];if(i===sel)cls.push('sel');if(tg.has(i))cls.push('tg');
+          if(hint&&i===hint.a)cls.push('hf');if(hint&&i===hint.c)cls.push('ht');
+          if(i===finish)cls.push('fin');
+          g+=`<g class="${cls.join(' ')}" data-i="${i}"><circle cx="${c.x}" cy="${c.y}" r="24" class="pgh"/>`
+            +(i===finish&&!peg?`<text x="${c.x}" y="${c.y+6}" class="pgfl">★</text>`:'')
+            +(peg?`<circle cx="${c.x}" cy="${c.y}" r="21" class="pgp"/><circle cx="${c.x-6}" cy="${c.y-7}" r="6" class="pgsh"/>`:'')
+            +`<circle cx="${c.x}" cy="${c.y}" r="30" class="pgz"/></g>`;
+        });
+        holder.innerHTML=g+'</svg>';
+        const n=ones(s);
+        cnt.innerHTML=`Pegs left: <strong>${n}</strong>`;
+      }
+      holder.addEventListener('click',e=>{
+        const g=e.target.closest('[data-i]');if(!g)return;
+        tap(+g.dataset.i);
+      });
+      function tap(i){
+        if(S.busy)return;
+        const s=S.state;
+        if(sel>=0){
+          const m=S.moves().find(x=>x.a===sel&&x.c===i);
+          if(m){sel=-1;hint=null;S.play(m);return;}
+        }
+        if(s[i]==='1'){
+          if(i===sel){sel=-1;draw(s);return;}
+          if(!S.moves().some(x=>x.a===i)){S.say('That peg has nowhere to jump.','bad');sel=-1;draw(s);return;}
+          S.say('');sel=i;hint=null;draw(s);return;
+        }
+        sel=-1;S.say('A peg must jump over a neighbouring peg into an empty hole.','bad');draw(s);
+      }
+      return {
+        update(s){
+          sel=-1;hint=null;draw(s);
+          if(!def.isGoal(s)&&!def.moves(s).length){
+            const n=ones(s);
+            S.say(`No more jumps are possible — ${n} pegs left. Press Undo to go back a move, or Reset to start again.`,'bad');
+          }
+        },
+        highlight(m){hint=m;sel=-1;draw(S.state);},
+        clear(){hint=null;}
+      };
+    }
+  };
+  return def;
+}
+const PEGS={id:'pegs',icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs over each other, taking them off, to leave just one.',
+  levels:[
+    {name:'Triangle: top empty',make:()=>pegLevel('tri',[0,0])},
+    {name:'Triangle: middle empty',make:()=>pegLevel('tri',[2,1])},
+    {name:'Triangle: corner empty',make:()=>pegLevel('tri',[4,0])},
+    {name:'Cross: other start',make:()=>pegLevel('cross',[2,2])},
+    {name:'Cross: classic',make:()=>pegLevel('cross',[3,3],[3,3])}
+  ]};
+
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Weights and Measures',items:[JUGS,COLSORT,COINS]},
@@ -3086,7 +3229,7 @@ const GROUPS=[
     CHESS,
     KNIGHT,
     MUTILATED]},
-  {title:'Movement',items:[CARPARK,SWAP,HANOI,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
+  {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS]},
   {title:'Investigations',items:[
     {soon:1,icon:'✉️',title:'Stamps',blurb:'Which postage can you make with just two stamps?'},
     {soon:1,icon:'➕',title:'Consecutives',blurb:'Which numbers are sums of consecutive integers?'},
@@ -3273,7 +3416,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
