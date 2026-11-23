@@ -2418,11 +2418,11 @@ function csLevel(nc){
       const ns='http://www.w3.org/2000/svg';
       const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
       const n=g.start.length,perRow=n>5?Math.ceil(n/2):n,rows=Math.ceil(n/perRow);
-      const W=54,GAP=26,U=38,H=CS_CAP*U,RH=H+64,PADX=20;
-      const vw=perRow*(W+GAP)-GAP+2*PADX,vh=rows*RH+10;
+      const W=50,GAP=24,U=34,H=CS_CAP*U,RH=H+64,PADX=75,TOP=75;
+      const vw=perRow*(W+GAP)-GAP+2*PADX,vh=rows*RH+10+TOP;
       const svg=mk('svg',{viewBox:`0 0 ${vw} ${vh}`,class:'cs'});
-      svg.style.maxWidth=Math.min(560,perRow*86+40)+'px';
-      const pos=i=>{const r=Math.floor(i/perRow),c=i%perRow,inRow=Math.min(perRow,n-r*perRow);const off=(perRow-inRow)*(W+GAP)/2;return {x:PADX+off+c*(W+GAP),y:r*RH+34};};
+      svg.style.maxWidth=Math.min(620,vw*1.25)+'px';
+      const pos=i=>{const r=Math.floor(i/perRow),c=i%perRow,inRow=Math.min(perRow,n-r*perRow);const off=(perRow-inRow)*(W+GAP)/2;return {x:PADX+off+c*(W+GAP),y:r*RH+34+TOP};};
       let cur=g.start.map(t=>t.slice()),hist=[],sel=-1,busy=false,solved=false,demoing=false,demoTok=0,moves=0,hA=-1,hB=-1,init=true;
       const SHAPE=`M0,0 V${H-W/2+2} A${W/2},${W/2} 0 0 0 ${W},${H-W/2+2} V0 Z`;
       /* sample points inside the tube, used to keep the water level flat when the tube tilts */
