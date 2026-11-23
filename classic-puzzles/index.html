@@ -1198,7 +1198,7 @@ function shapeLevel(spec){
   const N=spec.N;
   const minLen=Math.min(...lat.polys.map(p=>p.length));
   const noBig=s=>{for(const p of lat.polys){if(p.length>minLen&&p.every(e=>s[e]))return false;}return true;};
-  const goalCount=s=>latCount(lat,s)===N&&!latLoose(lat,s)&&(!spec.same||noBig(s));
+  const goalCount=s=>latCount(lat,s)===N&&!latLoose(lat,s)&&(!spec.same||noBig(s))&&(!spec.apart||s.reduce((x,y)=>x+y,0)===minLen*N);
   let tkeys=null,targets=null;
   if(mode==='transform'&&G){
     targets=[graphState(lat,G.target)];tkeys=new Set(targets.map(t=>t.join('')));
@@ -1391,6 +1391,9 @@ const SH_SQUARES=[
 const SH_TAKE=[
   {mode:'remove',type:'sq',k:1,N:3,fig:shGrid(2,2),maths:SH_M_TAKE},
   {mode:'remove',type:'sq',k:2,N:2,fig:shGrid(2,2),maths:SH_M_TAKE},
+  {mode:'remove',type:'sq',k:5,N:3,apart:true,fig:shGrid(3,2),
+    brief:'This grid of <strong>17 matches</strong> is 3 squares wide and 2 squares high. Take away <strong>5 matches</strong> to leave exactly <strong>3 squares</strong> that touch each other only at their <strong>corners</strong>. No two squares may share a match, and there must be no spare matches.',
+    maths:`<p>Three squares that do not share any matches need 3 × 4 = 12 matches. The grid has 17, so exactly 5 must be taken away. That is why this puzzle is about <em>which</em> squares to keep, not just how many matches to remove.</p><p>Two squares share a match when they are next to each other (side by side or one above the other). So the three squares you keep must be chosen so that no two are neighbours. Colour the six squares like a chessboard: the squares of one colour only ever touch each other at corners. Keeping the three squares of the same colour is the answer, and there are two ways to do it.</p><p>Notice that the 6 squares can never give you more than 3 squares that are all separate. Try to prove why.</p>`},
   {mode:'remove',type:'sq',k:2,N:3,same:true,fig:shGrid(2,2),
     brief:'This grid of <strong>12 matches</strong> hides five squares. Take away <strong>2 matches</strong> to leave exactly <strong>3 squares</strong>, all the <em>same size</em>, with no spare matches sticking out. Which matches belong to the big square? Tap a match to take it away.',
     maths:`<p>The big square is made from the 8 matches round the outside, so to get rid of it you must take away an <em>outside</em> match. But an outside match on its own leaves a spare match sticking out, because each corner match belongs to only one small square.</p><p>The clever idea is to take away <em>both</em> outside matches of one corner. That removes the big square and the small square in that corner together, and leaves three small squares that are all the same size. By symmetry, any of the four corners works.</p><p>Compare this with taking away just one match to leave 3 squares: that works by removing a match from the middle, which leaves two small squares and the big one, so the squares are not all the same size.</p>`},
@@ -2064,7 +2067,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
