@@ -468,6 +468,20 @@ svg.rlSvg{display:block;width:100%;margin:8px auto;touch-action:manipulation;use
 .rlLens button.dup{background:rgba(255,122,122,.3);border-color:var(--bad)}
 .rlLens button.hint{box-shadow:0 0 0 4px var(--good)}
 /* ===/CSS:golomb=== */
+/* ===CSS:pcubes=== */
+.pcWrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start}
+.pcWrap>div{flex:1 1 280px;max-width:480px;text-align:center}
+svg.pcSvg{display:block;width:100%;margin:4px auto;max-height:340px}
+.pcSvg .fc{stroke:#0e2339;stroke-width:1.5}
+.pcLay{display:grid;gap:3px;justify-content:center;margin:6px auto}
+.pcLay i{display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;color:#1b1206;border-radius:4px;background:#cdd9e6;width:var(--cs);height:var(--cs);font-size:calc(var(--cs)*.45)}
+.pcLay i.c0{background:#dfe8f1;color:#4b5a6b}.pcLay i.c1{background:#f2d95c}.pcLay i.c2{background:#f2a24a}.pcLay i.c3{background:#e8604f}.pcLay i.c4{background:#b583e0}
+.pcLay.plain i{background:#8fb8e0;color:transparent}
+.pcKey{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:.8rem;color:var(--mute);margin:4px 0}
+.pcKey span::before{content:"";display:inline-block;width:.9em;height:.9em;border-radius:3px;margin-right:4px;vertical-align:-1px;background:var(--k)}
+.pcInputs{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;margin:8px 0}
+.pcInputs .stStep span{min-width:7em;text-align:right}
+/* ===/CSS:pcubes=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -4912,6 +4926,181 @@ shuffleLevels(GOLOMB);
 INV_LIST.push(GOLOMB);
 INV_API.golomb={glSparseBest,glGolombBest,glDiffs,rulerLevel};
 /* ===/JS:golomb=== */
+/* ===JS:pcubes=== */
+function pcCounts(l,w,h){
+  const c=[0,0,0,0,0,0,0];
+  for(let i=0;i<l;i++)for(let j=0;j<w;j++)for(let k=0;k<h;k++){
+    c[(i===0)+(i===l-1)+(j===0)+(j===w-1)+(k===0)+(k===h-1)]++;
+  }
+  return c;
+}
+function pcFaces(i,j,k,l,w,h){return (i===0)+(i===l-1)+(j===0)+(j===w-1)+(k===0)+(k===h-1);}
+function pcMaths(l,w,h,generic){
+  const e=generic?'<em>l</em>':l,f=generic?'<em>w</em>':w,g=generic?'<em>h</em>':h;
+  const c=generic?null:pcCounts(l,w,h);
+  return `<p>Think about <strong>where each cube sits</strong>. For a cuboid that is at least 2 cubes long in every direction:</p>
+<ul><li><strong>3 painted faces: the corners.</strong> A cuboid has 8 corners, so there are always <strong>8</strong> of these.</li>
+<li><strong>2 painted faces: the edges, without their corner cubes.</strong> The 12 edges come in 3 sets of 4, so there are <strong>4(<em>l</em> − 2) + 4(<em>w</em> − 2) + 4(<em>h</em> − 2)</strong> of these.</li>
+<li><strong>1 painted face: the middles of the faces.</strong> The 6 faces come in 3 pairs, so there are <strong>2(<em>l</em> − 2)(<em>w</em> − 2) + 2(<em>l</em> − 2)(<em>h</em> − 2) + 2(<em>w</em> − 2)(<em>h</em> − 2)</strong> of these.</li>
+<li><strong>0 painted faces: the inside.</strong> Peel off one layer of cubes all the way round and what is left is a cuboid that is 2 cubes shorter in each direction: <strong>(<em>l</em> − 2)(<em>w</em> − 2)(<em>h</em> − 2)</strong>.</li></ul>
+${c?`<p>For the ${l} × ${w} × ${h} cuboid: 3 faces → 8; 2 faces → ${c[2]}; 1 face → ${c[1]}; 0 faces → ${c[0]}. Check: 8 + ${c[2]} + ${c[1]} + ${c[0]} = ${8+c[2]+c[1]+c[0]}, which is ${l} × ${w} × ${h} = ${l*w*h}, the total number of cubes.</p>`:`<p>A good check is that all the counts must add up to the total number of cubes, <em>l</em> × <em>w</em> × <em>h</em>.</p>`}
+<p>For an <em>n</em> × <em>n</em> × <em>n</em> cube the counts are 8, 12(<em>n</em> − 2), 6(<em>n</em> − 2)<sup>2</sup> and (<em>n</em> − 2)<sup>3</sup>: a linear, a square and a cube pattern.</p>
+<p>If a side is only 1 cube thick, things change: a cube can then have paint on both of its faces in that direction, and some cubes get 4, 5 or even 6 painted faces. That is why the table in the explore tab has a column for “4 or more”.</p>`;
+}
+function pcDraw(host,l,w,h){
+  const ns='http://www.w3.org/2000/svg';
+  const mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const dxu=0.5,dyu=0.34;
+  const s=Math.min(260/(l+dxu*w),200/(h+dyu*w),38);
+  const W=l*s+dxu*w*s+20,H=h*s+dyu*w*s+20;
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,class:'pcSvg'});
+  const ox=10,oy=H-10;
+  const P=(x,y,z)=>[ox+x*s+z*dxu*s,oy-y*s-z*dyu*s];
+  const poly=(pts,fill)=>svg.append(mk('polygon',{points:pts.map(p=>p.join(',')).join(' '),fill,class:'fc'}));
+  for(let i=0;i<l;i++)for(let j=0;j<h;j++)poly([P(i,j,0),P(i+1,j,0),P(i+1,j+1,0),P(i,j+1,0)],'#7fb1e3');
+  for(let k=0;k<w;k++)for(let j=0;j<h;j++)poly([P(l,j,k),P(l,j,k+1),P(l,j+1,k+1),P(l,j+1,k)],'#5f93c9');
+  for(let i=0;i<l;i++)for(let k=0;k<w;k++)poly([P(i,h,k),P(i+1,h,k),P(i+1,h,k+1),P(i,h,k+1)],'#9cc6ef');
+  host.replaceChildren(svg);
+}
+function pcLayer(host,l,w,h,layer,colour){
+  /* layer = slice number along the w direction; grid l across, h up */
+  const cs=Math.max(20,Math.min(40,Math.floor(300/Math.max(l,h))));
+  const g=el('div',{class:'pcLay'+(colour?'':' plain'),style:`--cs:${cs}px;grid-template-columns:repeat(${l},${cs}px)`});
+  for(let j=h-1;j>=0;j--)for(let i=0;i<l;i++){
+    const n=pcFaces(i,layer,j,l,w,h);
+    g.append(el('i',{class:'c'+Math.min(4,n)},colour?String(n):''));
+  }
+  host.replaceChildren(g);
+}
+function paintedLevel(mode,a0,b0,c0,extra){
+  const def={
+    custom:true,
+    brief:mode==='predict'
+      ?`A cuboid <strong>${a0} × ${b0} × ${c0}</strong> is built from small wooden cubes. The whole outside is painted, then the cuboid is broken up into the small cubes again. <strong>How many small cubes have 0, 1, 2 or 3 painted faces?</strong> Set your four answers, then press Check. Use the slices on the right to look inside.`
+      :mode==='explore'
+      ?`Build cuboids of different sizes with the − and + buttons. The table counts the small cubes with each number of painted faces. Can you find a rule for each column? Try cubes, then cuboids that are not cubes.`
+      :`${extra.text} Set the three sides of a cuboid with − and +, then press Check.`,
+    get maths(){return pcMaths(a0,b0,c0,mode!=='predict');},
+    mount(stage,S){
+      let l=a0,w=b0,h=c0,guess=[0,0,0,0],solved=false,demoing=false,tok=0,tick=null,layer=0,colour=false,hintN=0,log=[],init=true;
+      const picHost=el('div'),layHost=el('div'),layLab=el('div',{class:'hsInfo'}),tblBox=el('div'),inputs=el('div',{class:'pcInputs'});
+      const stp=(t,f,lb)=>el('button',{class:'mini',onclick:f,'aria-label':lb},t);
+      const bCol=el('button',{class:'btn',onclick:()=>{colour=!colour;draw();}},'Colour the cubes');
+      const key=el('div',{class:'pcKey'},el('span',{style:'--k:#dfe8f1'},'0 faces'),el('span',{style:'--k:#f2d95c'},'1'),el('span',{style:'--k:#f2a24a'},'2'),el('span',{style:'--k:#e8604f'},'3'),el('span',{style:'--k:#b583e0'},'4+'));
+      const lb=el('b',null,String(layer+1));
+      const layBar=el('div',{class:'stStep',style:'justify-content:center'},el('span',null,'Slice'),stp('−',()=>setLayer(layer-1),'Previous slice'),lb,stp('+',()=>setLayer(layer+1),'Next slice'),bCol);
+      stage.append(el('div',{class:'pcWrap'},el('div',null,picHost),el('div',null,layBar,layLab,layHost,key)),inputs,tblBox);
+      const dimEls={};
+      const minD=mode==='predict'?l:(mode==='explore'?1:2),maxD=mode==='target'?10:8;
+      function dimRow(nm,get,set){const v=el('b',null,String(get()));dimEls[nm]=v;return el('div',{class:'stStep'},el('span',null,nm),stp('−',()=>set(-1),'Fewer'),v,stp('+',()=>set(1),'More'));}
+      if(mode!=='predict'){
+        inputs.append(dimRow('Length',()=>l,d=>chg(d,0,0)),dimRow('Width',()=>w,d=>chg(0,d,0)),dimRow('Height',()=>h,d=>chg(0,0,d)));
+      }
+      let gEls=[];
+      if(mode==='predict'){
+        [0,1,2,3].forEach(i=>{const v=el('b',null,'0');gEls[i]=v;inputs.append(el('div',{class:'stStep'},el('span',null,i+(i===1?' painted face':' painted faces')),stp('−',()=>setG(i,-1),'Less'),v,stp('+',()=>setG(i,1),'More')));});
+      }
+      if(mode!=='explore')inputs.append(el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      function setG(i,d){if(demoing||solved)return;guess[i]=Math.max(0,Math.min(999,guess[i]+d));gEls[i].textContent=guess[i];}
+      function setLayer(k){layer=Math.max(0,Math.min(w-1,k));draw();}
+      function chg(dl,dw,dh){
+        if(demoing||solved)return;
+        l=Math.max(minD,Math.min(maxD,l+dl));w=Math.max(minD,Math.min(maxD,w+dw));h=Math.max(minD,Math.min(maxD,h+dh));
+        if(l===1&&w===1&&h===1){l=dl?2:l;w=dw?2:w;h=dh?2:h;}
+        layer=Math.min(layer,w-1);
+        if(mode==='explore')record();
+        S.say('');draw();
+      }
+      function record(){
+        const c=pcCounts(l,w,h);
+        log=log.filter(r=>!(r[0]===l&&r[1]===w&&r[2]===h));log.unshift([l,w,h,c]);log=log.slice(0,12);
+        tblBox.innerHTML=`<table class="mt"><tr><th>Length</th><th>Width</th><th>Height</th><th>0 faces</th><th>1 face</th><th>2 faces</th><th>3 faces</th><th>4 or more</th></tr>${log.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3][0]}</td><td>${r[3][1]}</td><td>${r[3][2]}</td><td>${r[3][3]}</td><td>${r[3][4]+r[3][5]+r[3][6]}</td></tr>`).join('')}</table>`;
+      }
+      function draw(){
+        pcDraw(picHost,l,w,h);
+        pcLayer(layHost,l,w,h,layer,colour);
+        lb.textContent=layer+1;
+        layLab.textContent=`Slice ${layer+1} of ${w}${colour?'. The number in each cube is its painted faces.':''}`;
+        bCol.textContent=colour?'Hide colours':'Colour the cubes';
+        Object.entries(dimEls).forEach(([k,v])=>{v.textContent=k==='Length'?l:k==='Width'?w:h;});
+        if(!init)S.refresh();
+      }
+      function check(){
+        if(demoing||solved)return;
+        if(mode==='predict'){
+          const c=pcCounts(l,w,h),want=[c[0],c[1],c[2],c[3]],bad=want.map((v,i)=>guess[i]===v?-1:i).filter(i=>i>=0);
+          if(!bad.length){solved=true;colour=true;draw();S.win(`🎉 All correct: 0 faces → ${c[0]}, 1 face → ${c[1]}, 2 faces → ${c[2]}, 3 faces → ${c[3]}. The total is ${c[0]+c[1]+c[2]+c[3]}, which is ${l} × ${w} × ${h}.`);}
+          else S.say(`Not quite. ${bad.length===4?'None of the four are right yet.':`${4-bad.length} of the four are right.`} Check your answers for ${bad.map(i=>i+(i===1?' face':' faces')).join(' and ')}. Do your four answers add up to ${l*w*h}?`,'bad');
+          return;
+        }
+        const c=pcCounts(l,w,h),v=extra.val(c);
+        if(extra.test(c)){solved=true;colour=true;draw();S.win(`🎉 A ${l} × ${w} × ${h} cuboid works: ${c[0]} cubes with 0 faces, ${c[1]} with 1, ${c[2]} with 2 and ${c[3]} with 3.`);}
+        else S.say(`A ${l} × ${w} × ${h} cuboid has ${v}. ${extra.miss}`,'bad');
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        l=a0;w=b0;h=c0;guess=[0,0,0,0];solved=false;hintN=0;layer=0;colour=false;log=[];tblBox.innerHTML='';
+        gEls.forEach(v=>v.textContent='0');
+        if(mode==='explore')record();
+        S.say('');draw();
+      }
+      function hint(){
+        if(demoing||solved)return;
+        if(mode==='predict'){
+          S.say(hintN===0?'💡 Use the slices. Colour the cubes and look at where the 3s, 2s and 1s are. Where are the 3-faced cubes in a cuboid?':hintN===1?'💡 Corners have 3 painted faces. Edge cubes between corners have 2. Cubes in the middle of a face have 1. The inside cubes form a smaller cuboid.':'💡 The inside is a cuboid that is 2 shorter in each direction: it is ('+(l-2)+' × '+(w-2)+' × '+(h-2)+').','info');hintN++;return;
+        }
+        if(mode==='explore'){S.say('💡 Try 3 × 3 × 3, 4 × 4 × 4, 5 × 5 × 5. Which columns stay the same, and which grow?','info');return;}
+        S.say(hintN===0?extra.hint1:extra.hint2,'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        if(mode==='explore'){
+          const sizes=[[2,2,2],[3,3,3],[4,4,4],[5,5,5],[2,3,4],[3,4,5]];let k=0;
+          tick=setInterval(()=>{
+            if(my!==tok){clearInterval(tick);return;}
+            if(k>=sizes.length){clearInterval(tick);tick=null;demoing=false;S.say('Look at each column of the table. Press Reset to start again.','info');S.revealMaths();S.refresh();return;}
+            [l,w,h]=sizes[k++];layer=0;colour=true;record();draw();
+          },1500);return;
+        }
+        if(mode==='target'){const t=extra.sol;[l,w,h]=t;}
+        colour=true;layer=0;let k=0;
+        draw();
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          k++;
+          if(k<w){layer=k;draw();S.say(`Slice ${layer+1}: the numbers show how many painted faces each cube has.`,'info');}
+          else{clearInterval(tick);tick=null;demoing=false;solved=true;const c=pcCounts(l,w,h);
+            if(mode==='predict'){guess=[c[0],c[1],c[2],c[3]];gEls.forEach((v,i)=>v.textContent=guess[i]);}
+            S.say(`0 faces: ${c[0]}. 1 face: ${c[1]}. 2 faces: ${c[2]}. 3 faces: ${c[3]}. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();}
+        },1100);
+        S.say('Watch the slices, one at a time.','info');
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='explore'?`Cuboids tried: ${log.length}`:`Total cubes: ${l*w*h}`})};
+    }
+  };
+  return def;
+}
+function pcSearch(test){for(let a=2;a<=10;a++)for(let b=a;b<=10;b++)for(let c=b;c<=10;c++)if(test(pcCounts(a,b,c)))return [a,b,c];return null;}
+const PC_TARGETS=[
+  {text:'Find a cuboid where <strong>exactly 8 of the small cubes have no paint at all</strong>.',test:c=>c[0]===8,val:c=>c[0]+' cubes with no paint',miss:'You need exactly 8 with no paint. Remember the unpainted cubes form a smaller cuboid inside.',hint1:'💡 The unpainted cubes form a cuboid that is 2 shorter in every direction. What cuboid has volume 8?',hint2:'💡 Try 4 × 4 × 4: the inside is 2 × 2 × 2.'},
+  {text:'Find a cuboid where <strong>exactly 6 of the small cubes have just one painted face</strong>.',test:c=>c[1]===6,val:c=>c[1]+' cubes with one painted face',miss:'You need exactly 6 with one painted face.',hint1:'💡 Each face has a flat middle area of cubes with one painted face. A cube has 6 faces.',hint2:'💡 Try 3 × 3 × 3: each face has just one middle cube.'},
+  {text:'Find a cuboid where <strong>exactly 24 of the small cubes have two painted faces</strong>.',test:c=>c[2]===24,val:c=>c[2]+' cubes with two painted faces',miss:'You need exactly 24 with two painted faces. The edges give 4(l − 2) + 4(w − 2) + 4(h − 2).',hint1:'💡 Cubes with two painted faces are along the edges, not counting the corners. How many edges are there?',hint2:'💡 For a cube each edge has n − 2 of them and there are 12 edges. Try a cube, then a cuboid.'},
+  {text:'Find a cuboid where <strong>the number of cubes with no paint is equal to the number of cubes with two painted faces</strong>.',test:c=>c[0]>0&&c[0]===c[2],val:c=>c[0]+' unpainted cubes and '+c[2]+' with two painted faces',miss:'The two numbers must be equal, and bigger than zero.',hint1:'💡 Try a few cubes first. The unpainted count grows much faster than the edge count.',hint2:'💡 For an n × n × n cube, (n − 2)³ = 12(n − 2). What does (n − 2)² have to be?'}
+];
+PC_TARGETS.forEach(t=>{t.sol=pcSearch(t.test);});
+const PAINTED={id:'painted-cubes',icon:'🧊',title:'Painted Cubes',blurb:'Paint a cuboid built from small cubes, then break it up: how many cubes have 0, 1, 2 or 3 painted faces?',
+  levels:[
+    {name:'Count the cubes',count:5,make:p=>paintedLevel('predict',...[[3,3,3],[4,4,4],[2,3,4],[3,4,5],[5,5,5]][p])},
+    {name:'Find the rule',make:()=>paintedLevel('explore',3,3,3)},
+    {name:'Which cuboid?',count:PC_TARGETS.filter(t=>t.sol).length,make:p=>paintedLevel('target',2,2,2,PC_TARGETS.filter(t=>t.sol)[p])}
+  ]};
+shuffleLevels(PAINTED);
+INV_LIST.push(PAINTED);
+INV_API.painted={pcCounts,PC_TARGETS};
+/* ===/JS:pcubes=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -4935,7 +5124,8 @@ const GROUPS=[
     PICK,
     GOLD,
     CTILES,
-    GOLOMB]}
+    GOLOMB,
+    PAINTED]}
 ];
 
 /* ---------- home ---------- */
