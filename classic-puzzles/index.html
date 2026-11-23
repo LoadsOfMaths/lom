@@ -507,6 +507,34 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .hpNums button.on{border-color:#ffb84a;background:#2a3a52}
 .hpNums button.ok{border-color:#5ed08a}.hpNums button.no{border-color:#e8604f}
 /* ===/CSS:happy=== */
+/* ===CSS:magic=== */
+.msBoard{display:grid;gap:3px;justify-content:center;margin:8px auto;--cs:48px}
+.msBoard>*{display:flex;align-items:center;justify-content:center;border-radius:6px;font-weight:800;font-size:calc(var(--cs)*.42);width:var(--cs);height:var(--cs);box-sizing:border-box;user-select:none}
+.msBoard .c{background:#cdd9e6;color:#12263c;border:2px solid transparent;cursor:pointer;font:inherit;font-weight:800;font-size:calc(var(--cs)*.42)}
+.msBoard .c.g{background:#a9bfd6}
+.msBoard .c.sel{border-color:#ffb84a}
+.msBoard .c.hl{background:#ffe08a}
+.msBoard .c.fl{background:#f2a24a}
+.msBoard .c.last{box-shadow:0 0 0 3px #5ed08a inset}
+.msBoard .c.q0{background:#cfe3f7}.msBoard .c.q1{background:#f7e3c2}.msBoard .c.q2{background:#d9f0d2}.msBoard .c.q3{background:#f3d0d0}
+.msBoard .sm{background:#1b3a5c;color:#cdd9e6;font-size:calc(var(--cs)*.36)}
+.msBoard .sm.ok{background:#1f6b44;color:#fff}.msBoard .sm.no{background:#8a2f2f;color:#fff}
+.msBoard .d{background:#f6f1e4;color:#12263c;border:2px solid #0e2339;cursor:pointer;gap:0;padding:0;overflow:hidden}
+.msBoard .d.sel{border-color:#ffb84a;box-shadow:0 0 0 2px #ffb84a}
+.msBoard .d span{flex:1;display:flex;align-items:center;justify-content:center;height:100%;font-size:calc(var(--cs)*.45)}
+.msBoard .d.h span+span{border-left:2px solid #0e2339}
+.msBoard .d.v{flex-direction:column}.msBoard .d.v span+span{border-top:2px solid #0e2339}
+.msBoard .d.empty span{color:#b7b2a2}
+.msBoard>.d{width:auto;height:auto}
+.msChips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:4px 0}
+.msChips span{background:#1b3a5c;border-radius:10px;padding:3px 10px;font-weight:700}
+.msChips span.ok{background:#1f6b44}.msChips span.no{background:#8a2f2f}
+.msTray{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.msTray button{font:inherit;font-weight:800;font-size:1.3rem;min-width:2.6em;padding:8px 6px;border-radius:12px;border:2px solid var(--line);background:#16283f;color:inherit;cursor:pointer}
+.msTray button.on{border-color:#ffb84a;background:#2a3a52}
+.msTray button.used{opacity:.3}
+.msTray.dm button{font-size:1rem;min-width:3.2em;padding:5px 4px}
+/* ===/CSS:magic=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -5473,6 +5501,281 @@ shuffleLevels(HAPPY);
 INV_LIST.push(HAPPY);
 INV_API.happy={hapIs,hapChain,hapList,HAP_SETS,HAP_FIND,HAP_TARGETS};
 /* ===/JS:happy=== */
+/* ===JS:magic=== */
+function msConst(n){return n*(n*n+1)/2;}
+function msLines(g,n){
+  const L=[];
+  for(let r=0;r<n;r++)L.push(Array.from({length:n},(_,c)=>r*n+c));
+  for(let c=0;c<n;c++)L.push(Array.from({length:n},(_,r)=>r*n+c));
+  L.push(Array.from({length:n},(_,i)=>i*n+i));
+  L.push(Array.from({length:n},(_,i)=>i*n+(n-1-i)));
+  return L.map(cells=>{const full=cells.every(i=>g[i]>0);return {cells,full,sum:cells.reduce((a,i)=>a+(g[i]||0),0)};});
+}
+function msIsMagic(g,n){
+  if(g.length!==n*n)return false;
+  const seen=new Set(g);if(seen.size!==n*n||g.some(v=>!(v>=1&&v<=n*n)))return false;
+  const k=msConst(n);return msLines(g,n).every(l=>l.sum===k);
+}
+function msOdd(n){
+  const g=Array(n*n).fill(0);let r=0,c=(n-1)/2;g[r*n+c]=1;
+  for(let k=2;k<=n*n;k++){let nr=(r-1+n)%n,nc=(c+1)%n;if(g[nr*n+nc]){nr=(r+1)%n;nc=c;}r=nr;c=nc;g[r*n+c]=k;}
+  return g;
+}
+function msNextOdd(g,n,k,last){
+  if(k===1)return {cell:(n-1)/2,blocked:false};
+  const lr=Math.floor(last/n),lc=last%n,ur=(lr-1+n)%n,uc=(lc+1)%n;
+  if(g[ur*n+uc])return {cell:((lr+1)%n)*n+lc,blocked:true,tried:ur*n+uc};
+  return {cell:ur*n+uc,blocked:false};
+}
+function msFlipCell(r,c){return r%4===c%4||(r%4)+(c%4)===3;}
+function msDoubly(n){return Array.from({length:n*n},(_,i)=>{const r=Math.floor(i/n),c=i%n,v=i+1;return msFlipCell(r,c)?n*n+1-v:v;});}
+function msSingly(n){
+  const m=n/2,k=(m-1)/2,A=msOdd(m),g=Array(n*n).fill(0),st=[];
+  const put=(r0,c0,add)=>{for(let r=0;r<m;r++)for(let c=0;c<m;c++)g[(r0+r)*n+c0+c]=A[r*m+c]+add;};
+  const snap=(hl,msg)=>st.push({g:g.slice(),hl:new Set(hl),msg});
+  snap([],`Split the ${n} × ${n} square into four ${m} × ${m} quadrants: <strong>A</strong> top left, <strong>C</strong> top right, <strong>D</strong> bottom left and <strong>B</strong> bottom right.`);
+  put(0,0,0);snap([],`Fill <strong>A</strong> with a ${m} × ${m} magic square using 1 to ${m*m}. (Use the odd-order method.)`);
+  put(m,m,m*m);snap([],`Fill <strong>B</strong> with the same pattern, adding ${m*m} to every number, so it uses ${m*m+1} to ${2*m*m}.`);
+  put(0,m,2*m*m);snap([],`Fill <strong>C</strong> with the same pattern plus ${2*m*m}, so it uses ${2*m*m+1} to ${3*m*m}.`);
+  put(m,0,3*m*m);snap([],`Fill <strong>D</strong> with the same pattern plus ${3*m*m}, so it uses ${3*m*m+1} to ${4*m*m}. The four quadrants are magic, but the whole square is not yet.`);
+  let hl=[];const sw=(i,j)=>{const t=g[i];g[i]=g[j];g[j]=t;hl.push(i,j);};
+  const mid=(m-1)/2;
+  for(let r=0;r<m;r++)for(let c=0;c<k;c++){const cc=r===mid?c+1:c;sw(r*n+cc,(r+m)*n+cc);}
+  snap(hl,`Swap the left ${k} column${k>1?'s':''} of <strong>A</strong> with the same cells of <strong>D</strong>. The exception: in the middle row of A, start one column in, not at the edge.`);
+  if(k>1){hl=[];for(let r=0;r<m;r++)for(let c=m-(k-1);c<m;c++)sw(r*n+m+c,(r+m)*n+m+c);snap(hl,`Now swap the right ${k-1} column${k>2?'s':''} of <strong>C</strong> with the same cells of <strong>B</strong>.`);}
+  snap([],`Finished! Every row, column and diagonal now adds up to <strong>${msConst(n)}</strong>.`);
+  return st;
+}
+const MS_LOSHU=[[2,7,6,9,5,1,4,3,8]];
+function msLoShu(){
+  const base=[[2,7,6],[9,5,1],[4,3,8]],out=[];
+  let b=base;
+  const rot=m=>m[0].map((_,c)=>m.map(r=>r[c]).reverse());
+  const refl=m=>m.map(r=>r.slice().reverse());
+  for(let f=0;f<2;f++){let m=f?refl(base):base;for(let i=0;i<4;i++){out.push(m.flat());m=rot(m);}}
+  return out;
+}
+const MS_3=msLoShu();
+const MS_DOM={
+  4:{n:4,til:[[0,0,1,0],[0,1,1,1],[0,2,1,2],[0,3,1,3],[2,0,3,0],[2,1,3,1],[2,2,3,2],[2,3,3,3]],sol:[[0,0],[0,3],[2,1],[3,1],[4,1],[0,2],[1,1],[0,1]]},
+  6:{n:6,til:[[0,0,1,0],[0,1,1,1],[0,2,0,3],[0,4,1,4],[0,5,1,5],[1,2,1,3],[2,0,3,0],[2,1,3,1],[2,2,3,2],[2,3,3,3],[2,4,2,5],[3,4,3,5],[4,0,4,1],[4,2,4,3],[4,4,4,5],[5,0,5,1],[5,2,5,3],[5,4,5,5]],sol:[[0,0],[0,1],[0,3],[6,0],[6,2],[6,6],[0,4],[3,4],[5,1],[2,2],[1,4],[3,1],[6,1],[2,1],[5,0],[5,6],[1,1],[0,2]]}
+};
+function msDomGrid(D,vals){const g=Array(D.n*D.n).fill(0),filled=Array(D.n*D.n).fill(false);D.til.forEach((t,i)=>{const v=vals[i];if(!v)return;g[t[0]*D.n+t[1]]=v[0]+1;g[t[2]*D.n+t[3]]=v[1]+1;});return g;}
+/* domino values stored +1 in grid so that 0 pips counts as filled; sums subtract */
+function msDomLines(D,vals){const g=msDomGrid(D,vals),L=msLines(g,D.n);return L.map(l=>({cells:l.cells,full:l.full,sum:l.sum-(l.full?D.n:l.cells.filter(i=>g[i]>0).length)}));}
+function msDomOk(D,vals){if(vals.some(v=>!v))return false;const keys=new Set(vals.map(v=>Math.min(...v)+'-'+Math.max(...v)));if(keys.size!==vals.length)return false;const L=msDomLines(D,vals);return L.every(l=>l.sum===L[0].sum);}
+function msMaths(){return `<p><strong>What is a magic square?</strong> An <em>n</em> × <em>n</em> grid containing the numbers 1 to <em>n</em><sup>2</sup> once each, in which every row, every column and both long diagonals add up to the same <strong>magic constant</strong>. The numbers 1 to <em>n</em><sup>2</sup> add up to <em>n</em><sup>2</sup>(<em>n</em><sup>2</sup> + 1)/2, and that total is shared between <em>n</em> rows, so the constant is <strong><em>n</em>(<em>n</em><sup>2</sup> + 1)/2</strong>: 15 for a 3 × 3, 34 for 4 × 4, 65 for 5 × 5, 111 for 6 × 6, 175 for 7 × 7 and 260 for 8 × 8. There is no 2 × 2 magic square.</p>
+<p><strong>The 3 × 3 square.</strong> The centre must be 5. Add the four lines through the centre (middle row, middle column and both diagonals): that counts every number once plus the centre three extra times, so 45 + 3 × centre = 4 × 15 = 60, which gives centre = 5. The pairs 1 + 9, 2 + 8, 3 + 7, 4 + 6 then go on opposite sides of the 5. The even numbers sit in the corners and the odd numbers in the middles of the sides. There is really only one 3 × 3 magic square: rotating and reflecting it gives 8 versions. It appears in ancient Chinese legend as the <em>Lo Shu</em> square.</p>
+<p><strong>Any odd order: the Siamese method.</strong> Put 1 in the middle of the top row. Then keep moving <em>up one and right one</em>, wrapping round at the edges, writing the next number each time. If the square you reach is already full, drop <em>down one</em> from the number you have just written instead. It works for every odd order (3, 5, 7, 9, …) and was brought to Europe from Siam by De la Loubère in the 1680s.</p>
+<p><strong>Orders divisible by 4: 4, 8, 12, …</strong> Write 1 to <em>n</em><sup>2</sup> in order, then replace every number <em>x</em> that lies on a diagonal of one of the 4 × 4 blocks by <em>n</em><sup>2</sup> + 1 − <em>x</em>. Pairs that add to <em>n</em><sup>2</sup> + 1 balance each other out in every line. Dürer’s famous 4 × 4 square in <em>Melencolia I</em> (1514) has 15 and 14 side by side in the bottom row, a date hidden in the magic.</p>
+<p><strong>Orders 6, 10, 14, …: the Strachey (LUX) method.</strong> Orders that are twice an odd number are the trickiest. Build four quadrants from an odd magic square of half the size (adding 0, <em>m</em><sup>2</sup>, 2<em>m</em><sup>2</sup>, 3<em>m</em><sup>2</sup> in the order A, B, C, D), then swap a few columns between the quadrants to repair the row and diagonal totals. The 4 × 4 case has 880 essentially different squares and the 5 × 5 has 275,305,224, so the number of magic squares explodes very quickly.</p>
+<p><strong>Domino magic squares.</strong> A double-six set has 28 dominoes (from 0|0 to 6|6) and 168 spots in all. Choose some of them, lay them flat so they tile an <em>n</em> × <em>n</em> square, and count the spots in each square as a number from 0 to 6. The challenge is to make every row, column and both diagonals total the same. You can only use each domino once, but you may turn any domino round. It can be done with 8 dominoes on a 4 × 4 board and with 18 dominoes on a 6 × 6 board. Because the numbers aren’t 1 to <em>n</em><sup>2</sup> any more this is a different, looser kind of magic square, but the same ideas of balancing apply.</p>`;}
+function msLevel(mode,cfg){
+  const def={custom:true,
+    brief:mode==='build'?`Place the digits <strong>1 to 9</strong> in the 3 × 3 square so that every row, every column and both diagonals add up to <strong>15</strong>. Tap a digit, then tap a square. Tap a filled square to take its digit back.${cfg.givens&&Object.keys(cfg.givens).length?' The darker squares are already filled in.':''}`
+      :mode==='odd'?`Build a ${cfg.n} × ${cfg.n} magic square with the <strong>Siamese method</strong>. Put 1 in the middle of the top row. For each next number, move <strong>up one and right one</strong> (wrapping round the edges). If that square is full, go <strong>down one</strong> from the last number instead. Tap where each number goes.`
+      :mode==='even4'?`The numbers 1 to ${cfg.n*cfg.n} are written in order. Tap squares to swap a number <em>x</em> for <strong>${cfg.n*cfg.n+1} − <em>x</em></strong> and make the whole ${cfg.n} × ${cfg.n} square magic. Which squares need changing?`
+      :mode==='singly'?`Follow the <strong>Strachey method</strong> to make a ${cfg.n} × ${cfg.n} magic square. Press <strong>Next step</strong> to move through it. Use Undo to step back.`
+      :`Lay out dominoes from a double-six set on the ${cfg.n} × ${cfg.n} board so that <strong>every row, column and both diagonals have the same total</strong> of spots. Each domino can be used once only. Tap a place on the board, then tap a domino to put it there. Use Flip to turn it round.`,
+    get maths(){return msMaths();},
+    mount(stage,S){
+      const n=cfg.n,cs=Math.max(24,Math.min(56,Math.floor(320/(n+1)))),K=msConst(n);
+      let g=Array(n*n).fill(0),solved=false,demoing=false,tok=0,tick=null,hint=0,init=true,hist=[];
+      let selDigit=0,last=-1,k=1,st=0,steps=null,orig=null,showHl=false;
+      let slots=null,selSlot=0,sol=null;
+      const info=el('div',{class:'hsInfo',style:'text-align:center'}),board=el('div',{class:'msBoard',style:`--cs:${cs}px`}),chips=el('div',{class:'msChips'}),tray=el('div',{class:'msTray'+(mode==='domino'?' dm':'')}),acts=el('div',{class:'pcInputs'});
+      stage.append(info,board,chips,tray,acts);
+      const given=cfg.givens||{};
+      const snap=()=>hist.push(JSON.stringify({g,last,k,st,slots,selSlot}));
+      const lock=()=>demoing||solved;
+      function restore(s){const o=JSON.parse(s);g=o.g;last=o.last;k=o.k;st=o.st;slots=o.slots;selSlot=o.selSlot;}
+      function sums(){
+        const L=msLines(g,n);
+        const full=L.filter(l=>l.full);const ref=mode==='domino'?null:K;
+        return {L,ref};
+      }
+      function lineClass(l,ref){if(!l.full)return '';return l.sum===ref?' ok':' no';}
+      function drawBoard(){
+        if(mode==='domino'){drawDomino();return;}
+        const {L,ref}=sums();
+        board.style.gridTemplateColumns=`repeat(${n+1},${cs}px)`;board.replaceChildren();
+        for(let r=0;r<n;r++){
+          for(let c=0;c<n;c++){
+            const i=r*n+c,v=g[i];
+            let cls='c';
+            if(mode==='build'&&given[i])cls+=' g';
+            if(mode==='build'&&selDigit===0&&false)cls+='';
+            if(mode==='odd'&&i===last)cls+=' last';
+            if(mode==='even4'){const r0=r%4===c%4||(r%4)+(c%4)===3;if(v!==i+1)cls+=' fl';else if(showHl&&r0)cls+=' hl';}
+            if(mode==='singly'){const q=(r<n/2?0:2)+(c<n/2?0:1);const mm=n/2;const qi=(r<mm&&c<mm)?0:(r<mm?2:(c<mm?3:1));cls+=' q'+qi;if(steps[st].hl.has(i))cls+=' fl';}
+            const b=el('button',{class:cls,onclick:()=>tap(i),'aria-label':'Square '+(i+1)},v?String(v):'');
+            board.append(b);
+          }
+          const l=L[r];board.append(el('div',{class:'sm'+lineClass(l,ref)},l.full?String(l.sum):'·'));
+        }
+        for(let c=0;c<n;c++){const l=L[n+c];board.append(el('div',{class:'sm'+lineClass(l,ref)},l.full?String(l.sum):'·'));}
+        board.append(el('div',{class:'sm'+lineClass(L[2*n],ref)},L[2*n].full?String(L[2*n].sum):'↘'));
+        chips.replaceChildren(el('span',{class:lineClass(L[2*n+1],ref).trim()},'↙ diagonal: '+(L[2*n+1].full?L[2*n+1].sum:'·')),el('span',null,`Target: ${K}`));
+        if(mode==='singly')chips.append(...[['A','#cfe3f7'],['C','#d9f0d2'],['D','#f3d0d0'],['B','#f7e3c2']].map(([t,c])=>el('span',{style:`background:${c};color:#12263c`},t)));
+      }
+      function drawDomino(){
+        const D=MS_DOM[n],L=msDomLines(D,slots);
+        const ref=(L.find(l=>l.full)||{}).sum;
+        board.style.gridTemplateColumns=`repeat(${n+1},${cs}px)`;board.style.gridTemplateRows=`repeat(${n+1},${cs}px)`;board.replaceChildren();
+        D.til.forEach((t,i)=>{
+          const horiz=t[0]===t[2],v=slots[i];
+          const d=el('div',{class:'d '+(horiz?'h':'v')+(selSlot===i?' sel':'')+(v?'':' empty'),onclick:()=>{if(lock())return;selSlot=i;draw();},role:'button','aria-label':'Domino place '+(i+1)},el('span',null,v?String(v[0]):'·'),el('span',null,v?String(v[1]):'·'));
+          d.style.gridRow=`${t[0]+1} / span ${horiz?1:2}`;d.style.gridColumn=`${t[1]+1} / span ${horiz?2:1}`;
+          board.append(d);
+        });
+        const mkSum=(l,row,col,txt)=>{const e=el('div',{class:'sm'+(l.full&&ref!==undefined?(l.sum===ref?' ok':' no'):'')},l.full?String(l.sum):txt);e.style.gridRow=row;e.style.gridColumn=col;board.append(e);};
+        for(let r=0;r<n;r++)mkSum(L[r],r+1,n+1,'·');
+        for(let c=0;c<n;c++)mkSum(L[n+c],n+1,c+1,'·');
+        mkSum(L[2*n],n+1,n+1,'↘');
+        chips.replaceChildren(el('span',{class:L[2*n+1].full&&ref!==undefined?(L[2*n+1].sum===ref?'ok':'no'):''},'↙ diagonal: '+(L[2*n+1].full?L[2*n+1].sum:'·')),el('span',null,'Placed: '+slots.filter(Boolean).length+' of '+D.til.length));
+      }
+      function drawTray(){
+        tray.replaceChildren();
+        if(mode==='build'){for(let d=1;d<=9;d++){const used=g.includes(d);tray.append(el('button',{class:(selDigit===d?'on ':'')+(used?'used':''),onclick:()=>{if(lock())return;selDigit=selDigit===d?0:d;draw();}},String(d)));}}
+        if(mode==='domino'){
+          const usedKeys=new Set(slots.filter(Boolean).map(v=>Math.min(...v)+'-'+Math.max(...v)));
+          for(let a=0;a<=6;a++)for(let b=a;b<=6;b++){const key=a+'-'+b,u=usedKeys.has(key);tray.append(el('button',{class:u?'used':'',onclick:()=>placeDom(a,b)},a+'|'+b));}
+        }
+      }
+      function drawActs(){
+        acts.replaceChildren();
+        if(mode==='singly')acts.append(el('button',{class:'btn primary',onclick:()=>nextStep()},st<steps.length-1?'Next step ▶':'Finished'));
+        if(mode==='domino')acts.append(el('button',{class:'btn',onclick:()=>flipDom()},'⇄ Flip'),el('button',{class:'btn',onclick:()=>clearDom()},'✕ Clear'));
+      }
+      function drawInfo(){
+        if(mode==='odd')info.innerHTML=k>n*n?'All placed!':`Next: <strong>${k}</strong>${k===1?': start in the middle of the top row.':`: up and right of ${k-1}; if full, go down one from ${k-1}.`}`;
+        else if(mode==='singly')info.innerHTML=`Step ${st+1} of ${steps.length}. ${steps[st].msg}`;
+        else if(mode==='build')info.textContent=selDigit?`Placing ${selDigit}: tap a square.`:'Tap a digit, then a square.';
+        else if(mode==='even4')info.textContent='Tap a square to swap its number for '+(n*n+1)+' − that number.';
+        else info.textContent='';
+      }
+      function draw(){drawBoard();drawTray();drawActs();drawInfo();if(!init)S.refresh();}
+      function finish(txt){solved=true;draw();S.win(txt);S.revealMaths&&0;}
+      function tap(i){
+        if(lock())return;
+        if(mode==='build'){
+          if(given[i]){S.say('That one is already given.','info');return;}
+          if(selDigit){snap();const j=g.indexOf(selDigit);if(j>=0)g[j]=0;g[i]=selDigit;selDigit=0;}
+          else if(g[i]){snap();g[i]=0;}
+          else return;
+          S.say('');draw();
+          if(msIsMagic(g,3))finish('🎉 Magic! Every row, column and diagonal makes 15. The 5 had to go in the middle, the even numbers in the corners.');
+          else if(g.every(v=>v)){const bad=msLines(g,3).filter(l=>l.sum!==15).length;S.say(`All nine are placed but ${bad} line${bad>1?'s':''} ${bad>1?'don’t':'doesn’t'} make 15. Look at the red totals.`,'bad');}
+        }
+        if(mode==='odd'){
+          if(g[i]){S.say('That square is already full.','bad');return;}
+          const nx=msNextOdd(g,n,k,last);
+          if(i===nx.cell){snap();g[i]=k;last=i;k++;S.say('');draw();if(k>n*n){if(msIsMagic(g,n))finish(`🎉 ${n} × ${n} magic square complete. Every line adds up to ${K}.`);}}
+          else{
+            if(k===1)S.say('Start with 1 in the middle of the top row.','bad');
+            else S.say(nx.blocked?`Not there. Up and right of ${k-1} is already full, so go <strong>down one</strong> from ${k-1}.`.replace(/<\/?strong>/g,''):`Not there. From ${k-1}, go up one and right one (wrapping round the edges).`,'bad');
+          }
+        }
+        if(mode==='even4'){
+          snap();g[i]=n*n+1-g[i];S.say('');draw();
+          if(msIsMagic(g,n))finish(`🎉 Magic! Every line makes ${K}. The changed numbers form the diagonals of each 4 × 4 block.`);
+        }
+      }
+      function nextStep(){
+        if(demoing)return;
+        if(st<steps.length-1){snap();st++;g=steps[st].g.slice();S.say('');draw();if(st===steps.length-1)finish(`🎉 ${n} × ${n} magic square: every line adds up to ${K}.`);}
+      }
+      function placeDom(a,b){
+        if(lock())return;
+        const key=Math.min(a,b)+'-'+Math.max(a,b);
+        if(slots.some(v=>v&&Math.min(...v)+'-'+Math.max(...v)===key)){S.say(`${a}|${b} is already on the board.`,'bad');return;}
+        snap();slots[selSlot]=[a,b];
+        S.say('');draw();checkDom();
+      }
+      function flipDom(){if(lock())return;const v=slots[selSlot];if(!v)return;snap();slots[selSlot]=[v[1],v[0]];draw();checkDom();}
+      function clearDom(){if(lock())return;if(!slots[selSlot])return;snap();slots[selSlot]=null;S.say('');draw();}
+      function checkDom(){
+        const D=MS_DOM[n];
+        if(slots.every(Boolean)){
+          if(msDomOk(D,slots)){const L=msDomLines(D,slots);finish(`🎉 Every row, column and both diagonals add up to ${L[0].sum}, using ${D.til.length} different dominoes.`);}
+          else S.say('The board is full but the totals aren’t all equal. Look at the red totals, then swap or flip some dominoes.','bad');
+        }
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        solved=false;hint=0;hist=[];selDigit=0;last=-1;k=1;st=0;showHl=false;selSlot=0;
+        g=Array(n*n).fill(0);
+        if(mode==='build')Object.entries(given).forEach(([i,v])=>g[+i]=v);
+        if(mode==='even4')g=Array.from({length:n*n},(_,i)=>i+1);
+        if(mode==='singly'){steps=msSingly(n);g=steps[0].g.slice();}
+        if(mode==='domino'){slots=Array(MS_DOM[n].til.length).fill(null);}
+        S.say('');draw();
+      }
+      function undo(){if(demoing||!hist.length)return;if(solved)solved=false;restore(hist.pop());if(mode==='singly')g=steps[st].g.slice();S.say('');draw();}
+      function hintF(){
+        if(lock())return;
+        if(mode==='build'){
+          const H=['Every line must add up to 15. Which square lies on the most lines?','The centre must be 5. It is on four lines, and 5 pairs the others up: 1 + 9, 2 + 8, 3 + 7, 4 + 6.','Put the even numbers (2, 4, 6, 8) in the corners and the odd numbers (1, 3, 7, 9) in the middles of the sides.'];
+          if(hint<3){S.say('💡 '+H[hint],'info');hint++;return;}
+          const fit=MS_3.find(s=>g.every((v,i)=>!v||s[i]===v))||MS_3.find(s=>Object.entries(given).every(([i,v])=>s[i]===v));
+          const i=fit.findIndex((v,j)=>g[j]!==v&&!given[j]);if(i>=0){snap();const j=g.indexOf(fit[i]);if(j>=0&&!given[j])g[j]=0;g[i]=fit[i];S.say(`💡 ${fit[i]} goes in this square.`,'info');draw();if(msIsMagic(g,3))finish('🎉 Magic!');}
+        }
+        if(mode==='odd'){const nx=msNextOdd(g,n,k,last);S.say(k===1?'💡 1 goes in the middle of the top row.':`💡 ${k} goes ${nx.blocked?'down one from '+(k-1)+' because the up-right square is full.':'up one and right one from '+(k-1)+'.'}`,'info');
+          const el0=board.children[(Math.floor(nx.cell/n))*(n+1)+nx.cell%n];if(el0)el0.classList.add('hl');}
+        if(mode==='even4'){if(hint===0){S.say('💡 Look at the diagonals of each 4 × 4 block.','info');hint++;}else{showHl=true;S.say('💡 The highlighted squares are the ones to swap. Tap them.','info');draw();}}
+        if(mode==='singly'){S.say('💡 Press Next step. Take your time to read each instruction.','info');}
+        if(mode==='domino'){
+          const D=MS_DOM[n];
+          if(hint===0){S.say('💡 Every row, column and both diagonals need the same total. Start with small numbers to keep the total low.','info');hint++;return;}
+          const i=D.til.findIndex((t,j)=>!(slots[j]&&slots[j][0]===D.sol[j][0]&&slots[j][1]===D.sol[j][1]));
+          if(i>=0){const key=Math.min(...D.sol[i])+'-'+Math.max(...D.sol[i]);const o=slots.findIndex(v=>v&&Math.min(...v)+'-'+Math.max(...v)===key);snap();if(o>=0&&o!==i)slots[o]=null;slots[i]=D.sol[i].slice();selSlot=i;S.say('💡 One domino placed for you.','info');draw();checkDom();}
+        }
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        let seq=[];
+        if(mode==='build'){const s=MS_3.find(s=>Object.entries(given).every(([i,v])=>s[i]===v));seq=s.map((v,i)=>[i,v]).filter(([i])=>!given[i]);}
+        if(mode==='odd'){const full=msOdd(n);const pos=Array(n*n+1);full.forEach((v,i)=>pos[v]=i);for(let v=1;v<=n*n;v++)seq.push([pos[v],v]);}
+        if(mode==='even4'){const full=msDoubly(n);seq=full.map((v,i)=>[i,v]).filter(([i,v])=>v!==i+1);}
+        if(mode==='singly'){seq=steps.slice(1).map((s,i)=>[i+1]);}
+        if(mode==='domino'){seq=MS_DOM[n].til.map((_,i)=>[i]);}
+        let q=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(q>=seq.length){clearInterval(tick);tick=null;demoing=false;solved=true;S.say('Press Reset to try it yourself.','info');S.revealMaths();draw();S.refresh();return;}
+          const s=seq[q++];
+          if(mode==='build'||mode==='even4'){g[s[0]]=s[1];}
+          if(mode==='odd'){g[s[0]]=s[1];last=s[0];k=s[1]+1;}
+          if(mode==='singly'){st=s[0];g=steps[st].g.slice();}
+          if(mode==='domino'){slots[s[0]]=MS_DOM[n].sol[s[0]].slice();selSlot=s[0];}
+          draw();
+        },mode==='singly'?2600:(mode==='odd'&&n>5?250:600));
+        S.say('Watch.','info');
+      }
+      reset();init=false;
+      return {reset,undo,hint:hintF,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:!demoing&&hist.length>0,reset:true,hint:!demoing&&!solved&&mode!=='singly',show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='odd'?`Placed: ${Math.max(0,k-1)} of ${n*n}`:mode==='build'?`Placed: ${g.filter(v=>v).length} of 9`:mode==='singly'?`Step ${st+1} of ${steps.length}`:mode==='domino'?`Placed: ${slots.filter(Boolean).length} of ${MS_DOM[n].til.length}`:''})};
+    }};
+  return def;
+}
+const MS_BUILD=[{n:3,givens:{}},{n:3,givens:{4:5}},{n:3,givens:{1:9}}];
+const MS_ODD=[3,5,7].map(n=>({n}));
+const MS_EVEN4=[4,8].map(n=>({n}));
+const MS_SING=[6,10].map(n=>({n}));
+const MS_DOMS=[4,6].map(n=>({n}));
+const MAGIC={id:'magic-squares',icon:'🪄',title:'Magic Squares',blurb:'Make every row, column and diagonal add up to the same total, from the 3 × 3 square to dominoes.',
+  levels:[
+    {name:'Build a 3 × 3',count:3,make:p=>msLevel('build',MS_BUILD[p])},
+    {name:'Any odd order',count:3,make:p=>msLevel('odd',MS_ODD[p])},
+    {name:'Orders 4 and 8',count:2,make:p=>msLevel('even4',MS_EVEN4[p])},
+    {name:'Orders 6 and 10',count:2,make:p=>msLevel('singly',MS_SING[p])},
+    {name:'Dominoes',count:2,make:p=>msLevel('domino',MS_DOMS[p])}
+  ]};
+shuffleLevels(MAGIC);
+INV_LIST.push(MAGIC);
+INV_API.magic={msConst,msIsMagic,msOdd,msDoubly,msSingly,msLines,MS_LOSHU,MS_3,MS_DOM,msDomOk,msDomLines};
+/* ===/JS:magic=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -5500,7 +5803,8 @@ const INVESTIGATIONS=[
     GOLOMB,
     PAINTED,
     PYTH,
-    HAPPY];
+    HAPPY,
+    MAGIC];
 
 
 /* ---------- home ---------- */
