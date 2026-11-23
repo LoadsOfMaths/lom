@@ -405,6 +405,21 @@ svg.tsWall{display:block;width:100%;max-width:640px;margin:6px auto;touch-action
 .mbS .f4{fill:#a47d3a;stroke:#6b4f1d;stroke-width:1.5}
 .mbS .tx{font-size:12px;fill:var(--ink)}
 /* ===/CSS:box=== */
+/* ===CSS:pick=== */
+svg.pkG{display:block;width:100%;max-width:440px;margin:6px auto;touch-action:manipulation;user-select:none}
+.pkWrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start}
+.pkSide{flex:1 1 260px;max-width:440px}
+.pkG .dot{fill:rgba(255,255,255,.55)}
+.pkG .hit{fill:transparent;cursor:pointer}
+.pkG .poly{fill:rgba(255,184,77,.22);stroke:var(--accent);stroke-width:3;stroke-linejoin:round}
+.pkG .open{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.pkG .bd{fill:var(--accent);stroke:#2a1a00;stroke-width:1.5}
+.pkG .in{fill:var(--good);stroke:#06301a;stroke-width:1.5}
+.pkG .st{fill:#fff;stroke:var(--accent);stroke-width:3}
+.pkRead{text-align:center;font-size:1.05rem;min-height:3.2em;line-height:1.6}
+.pkRead .b{color:var(--accent);font-weight:800}.pkRead .i{color:var(--good);font-weight:800}
+.pkKey{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:.85rem;color:var(--mute)}
+/* ===/CSS:pick=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -4179,6 +4194,190 @@ shuffleLevels(MAXBOX);
 INV_LIST.push(MAXBOX);
 INV_API.maxbox={mbVol,mbBest,maxBoxLevel};
 /* ===/JS:box=== */
+/* ===JS:pick=== */
+const PK_N=9,PK_U=40,PK_M=20;
+const pkPre=[
+  [[1,1],[5,1],[5,4],[1,4]],
+  [[1,1],[6,1],[3,5]],
+  [[2,1],[6,3],[4,7],[1,5]],
+  [[1,1],[5,1],[5,3],[3,3],[3,6],[1,6]],
+  [[0,3],[3,0],[7,2],[6,6],[2,7]],
+  [[1,1],[3,2],[2,4]]
+];
+function pkGcd(a,b){a=Math.abs(a);b=Math.abs(b);return b?pkGcd(b,a%b):a;}
+function pkArea2(p){let s=0;for(let k=0;k<p.length;k++){const a=p[k],b=p[(k+1)%p.length];s+=a[0]*b[1]-b[0]*a[1];}return Math.abs(s);}
+function pkBoundary(p){const set=new Set();for(let k=0;k<p.length;k++){const a=p[k],b=p[(k+1)%p.length],g=pkGcd(b[0]-a[0],b[1]-a[1]);for(let t=0;t<g;t++)set.add((a[0]+(b[0]-a[0])/g*t)+','+(a[1]+(b[1]-a[1])/g*t));}return set;}
+function pkInside(p,x,y){let c=false;for(let k=0,j=p.length-1;k<p.length;j=k++){const a=p[k],b=p[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
+function pkStats(p){
+  const bd=pkBoundary(p),inn=[];
+  for(let x=0;x<PK_N;x++)for(let y=0;y<PK_N;y++)if(!bd.has(x+','+y)&&pkInside(p,x,y))inn.push([x,y]);
+  return {b:bd.size,i:inn.length,A:pkArea2(p)/2,bd,inn};
+}
+function pkCross(o,a,b){return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);}
+function pkOn(a,b,p){return pkCross(a,b,p)===0&&Math.min(a[0],b[0])<=p[0]&&p[0]<=Math.max(a[0],b[0])&&Math.min(a[1],b[1])<=p[1]&&p[1]<=Math.max(a[1],b[1]);}
+function pkSegHit(a,b,c,d){
+  const d1=Math.sign(pkCross(a,b,c)),d2=Math.sign(pkCross(a,b,d)),d3=Math.sign(pkCross(c,d,a)),d4=Math.sign(pkCross(c,d,b));
+  if(d1*d2<0&&d3*d4<0)return true;
+  return pkOn(a,b,c)||pkOn(a,b,d)||pkOn(c,d,a)||pkOn(c,d,b);
+}
+/* can the segment from path[last] to v be added? closing=true when v is the first vertex */
+function pkCanAdd(path,v,closing){
+  const n=path.length,last=path[n-1];
+  if(!closing&&path.some(q=>q[0]===v[0]&&q[1]===v[1]))return false;
+  for(let k=0;k+1<n;k++){
+    const a=path[k],b=path[k+1];
+    const adjLast=(k===n-2),adjFirst=closing&&k===0;
+    if(adjLast||adjFirst){
+      /* shares one endpoint: reject only if overlapping along the line */
+      const shared=adjLast?last:path[0],other=adjLast?a:b,newEnd=adjLast?v:last;
+      if(pkCross(shared,other,newEnd)===0){
+        const dot=(other[0]-shared[0])*(newEnd[0]-shared[0])+(other[1]-shared[1])*(newEnd[1]-shared[1]);
+        if(dot>0)return false;
+      }
+      continue;
+    }
+    if(pkSegHit(last,v,a,b))return false;
+  }
+  return true;
+}
+const PK_MATHS=`<p><strong>Pick's theorem</strong> says that for any shape drawn by joining dots on a square grid (with straight sides that don't cross), the area is</p>
+<p style="text-align:center"><strong><em>A</em> = <em>i</em> + <em>b</em>/2 − 1</strong></p>
+<p>where <em>i</em> is the number of dots <strong>inside</strong> the shape, and <em>b</em> is the number of dots <strong>on the boundary</strong> (the edges, including the corners). The area is in grid squares.</p>
+<p>Try it on a 4 by 3 rectangle: there are 6 dots inside and 14 on the boundary, so <em>A</em> = 6 + 7 − 1 = 12. ✔ A triangle with <em>i</em> = 0 and <em>b</em> = 3 has area 0 + 1.5 − 1 = ½, the smallest area a triangle on dots can have.</p>
+<p><strong>Why does it work?</strong> It is true for a rectangle, and then for right-angled triangles (half of a rectangle). Any shape can be cut into triangles, and the formula works when two shapes are stuck together along an edge, because the dots on the join are counted correctly. The theorem is named after the Austrian mathematician Georg Pick, who proved it in 1899.</p>
+<p>It only works for shapes whose corners are on dots, and the sides must not cross each other. Count the dots, and the area comes without any measuring.</p>`;
+function pickLevel(mode,idx){
+  const pre=mode==='rule'?pkPre[idx]:null,target=mode==='target'?[3.5,6,7.5,10.5,13][idx]:null;
+  const def={
+    custom:true,
+    brief:mode==='explore'
+      ?`Tap dots to draw a shape, one corner at a time. Tap the first dot again to close it. The app counts the <strong>inside dots</strong> (green), the <strong>boundary dots</strong> (orange) and the <strong>area</strong>. Draw lots of different shapes and look at the table. Is there a rule linking the three numbers?`
+      :mode==='rule'
+      ?`This shape is drawn on a dotty grid. The inside dots are green and the boundary dots are orange. Work out its <strong>area</strong> in grid squares, without counting squares. Set your answer with − and + (halves are allowed), then press Check.`
+      :`Draw a shape on the dots with an area of exactly <strong>${target} grid squares</strong>. Tap dots for the corners and tap the first dot again to close the shape. The corners must be on dots and the sides must not cross.`,
+    maths:PK_MATHS,
+    mount(stage,S){
+      let path=[],closed=false,solved=false,demoing=false,tok=0,tick=null,rows=[],guess=0,hintN=0,init=true;
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+      const size=PK_M*2+PK_U*(PK_N-1);
+      const svg=mk('svg',{viewBox:`0 0 ${size} ${size}`,class:'pkG'});
+      const read=el('div',{class:'pkRead'}),tblBox=el('div'),side=el('div',{class:'pkSide'});
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      const gB=el('b',null,'0');
+      let bNew=null;
+      if(mode==='explore'){bNew=el('button',{class:'btn',onclick:()=>newShape()},'New shape');side.append(read,el('div',{style:'text-align:center'},bNew),tblBox);}
+      else if(mode==='rule'){side.append(read,el('div',{class:'stAns'},el('span',{class:'lbl'},'Area ='),stp('−',()=>setG(guess-0.5),'Less'),gB,stp('+',()=>setG(guess+0.5),'More'),el('span',null,'squares'),el('button',{class:'btn primary',onclick:()=>check()},'Check')));}
+      else side.append(read);
+      stage.append(el('div',{class:'pkWrap'},svg,side),el('div',{class:'pkKey'},el('span',null,'🟠 boundary dot'),el('span',null,'🟢 inside dot')));
+      const X=v=>PK_M+v*PK_U,Y=v=>PK_M+v*PK_U;
+      function setG(g){guess=Math.max(0,Math.min(60,g));gB.textContent=guess;}
+      function draw(){
+        svg.replaceChildren();
+        const st=closed?pkStats(path):null;
+        if(closed)svg.append(mk('polygon',{points:path.map(p=>X(p[0])+','+Y(p[1])).join(' '),class:'poly'}));
+        else if(path.length>1)svg.append(mk('polyline',{points:path.map(p=>X(p[0])+','+Y(p[1])).join(' '),class:'open'}));
+        const inSet=st?new Set(st.inn.map(p=>p[0]+','+p[1])):null;
+        for(let x=0;x<PK_N;x++)for(let y=0;y<PK_N;y++){
+          const k=x+','+y;let cls='dot',r=4.5;
+          if(st&&st.bd.has(k)){cls='bd';r=7;}else if(st&&inSet.has(k)){cls='in';r=7;}
+          svg.append(mk('circle',{cx:X(x),cy:Y(y),r,class:cls}));
+        }
+        if(path.length&&!closed)svg.append(mk('circle',{cx:X(path[0][0]),cy:Y(path[0][1]),r:9,class:'st'}));
+        if(mode!=='rule')for(let x=0;x<PK_N;x++)for(let y=0;y<PK_N;y++){const h=mk('circle',{cx:X(x),cy:Y(y),r:17,class:'hit'});h.addEventListener('click',()=>tap(x,y));svg.append(h);}
+        if(st)read.innerHTML=`Inside dots <span class="i">${st.i}</span> · Boundary dots <span class="b">${st.b}</span><br>Area = <b>${st.A}</b> squares`;
+        else read.innerHTML=mode==='target'?`Target area: <b>${target}</b> squares`:path.length?`Corners so far: ${path.length}`:(mode==='explore'?'Tap a dot to start.':'');
+        if(!init)S.refresh();
+      }
+      function tap(x,y){
+        if(demoing||solved&&mode==='target')return;
+        const v=[x,y];
+        if(closed){newShape();}
+        if(!path.length){path=[v];S.say('');draw();return;}
+        const last=path[path.length-1];
+        if(last[0]===x&&last[1]===y){path.pop();S.say('');draw();return;}
+        if(path.length>=3&&path[0][0]===x&&path[0][1]===y){
+          if(!pkCanAdd(path,v,true)){S.say('That closing line would cross or overlap another side.','bad');return;}
+          if(pkArea2(path)===0){S.say('That shape is flat. Choose corners that make a proper shape.','bad');return;}
+          closed=true;finish();return;
+        }
+        if(!pkCanAdd(path,v,false)){S.say('That line would cross or run along another side. Choose another dot.','bad');return;}
+        path.push(v);S.say('');draw();
+      }
+      function finish(){
+        const st=pkStats(path);
+        if(mode==='explore'){
+          rows.unshift([rows.length?rows[0][0]+1:1,st.i,st.b,st.A]);rows=rows.slice(0,12);
+          tblBox.innerHTML=`<table class="mt"><tr><th>Shape</th><th>Inside i</th><th>Boundary b</th><th>Area</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table>`;
+          S.say(`Area ${st.A}, with ${st.i} inside and ${st.b} on the boundary. Draw another shape!`,'info');
+        }else if(mode==='target'){
+          if(st.A===target){solved=true;draw();S.win(`🎉 Area ${st.A}: ${st.i} inside dots and ${st.b} boundary dots, and ${st.i} + ${st.b}/2 − 1 = ${st.A}.`);return;}
+          S.say(`That shape has area ${st.A}, not ${target}. Tap dots again to start a new shape, or press Undo.`,'bad');
+        }
+        draw();
+      }
+      function newShape(){path=[];closed=false;S.say('');draw();}
+      function check(){
+        if(solved||demoing)return;
+        const st=pkStats(path);
+        if(guess===st.A){solved=true;S.win(`🎉 ${st.i} + ${st.b}/2 − 1 = ${st.A} squares.`);draw();}
+        else S.say(guess<st.A?`The area is bigger than ${guess}.`:`The area is smaller than ${guess}.`,'bad');
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        path=pre?pre.map(p=>p.slice()):[];closed=!!pre;solved=false;hintN=0;rows=[];tblBox.innerHTML='';setG(0);S.say('');draw();
+      }
+      function undo(){
+        if(demoing||mode==='rule'||solved)return;
+        if(closed){closed=false;}else path.pop();
+        S.say('');draw();
+      }
+      function hint(){
+        if(demoing||solved)return;
+        if(mode==='explore'){S.say(hintN===0?'💡 Try rectangles first. Then try shapes with no inside dots at all. Compare the area with the inside and boundary counts.':'💡 Look for a rule using the inside count i and half the boundary count b.','info');hintN++;return;}
+        if(mode==='rule'){const st=pkStats(path);S.say(hintN===0?`💡 Add the inside dots (${st.i}) to half of the boundary dots (${st.b} ÷ 2 = ${st.b/2}). Then subtract 1.`:`💡 ${st.i} + ${st.b/2} − 1 = ${st.A}.`,'info');hintN++;return;}
+        S.say(hintN===0?`💡 Use area = i + b/2 − 1. Try a shape with 4 boundary dots, so the area is i + 1, and no more.`:`💡 For area ${target}, a shape with ${Math.floor(target)===target?`4 boundary dots needs ${target-1} inside dots`:`3 boundary dots needs ${target-0.5} inside dots`}. Or try a rectangle or a right-angled triangle.`,'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        const sh=mode==='explore'?[pkPre[0],pkPre[5],pkPre[1],pkPre[3],pkPre[2]]:mode==='rule'?[pre]:[[[1,1],[1+Math.ceil(target),1],[1,3]],[[1,1],[4,1],[4,1+Math.ceil(target/3)],[1,1+Math.ceil(target/3)]]].slice(0,1);
+        let si=0,vi=0;
+        if(mode==='target'){
+          /* show a valid answer: find a rectangle/triangle with the right area */
+          let found=null;
+          outer:for(let w=1;w<=8&&!found;w++)for(let h=1;h<=8&&!found;h++){if(w*h===target)found=[[0,0],[w,0],[w,h],[0,h]];else if(w*h/2===target)found=[[0,0],[w,0],[0,h]];}
+          if(!found){for(let w=1;w<=8&&!found;w++)for(let h=1;h<=8&&!found;h++)for(let c=1;c<=6&&!found;c++){const q=[[0,0],[w,0],[w,h],[c,h+1]];const a=pkArea2(q)/2;if(a===target&&pkCanAdd([q[0],q[1],q[2]],q[3],false))found=q;}}
+          sh.length=0;if(found)sh.push(found);
+        }
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(si>=sh.length){clearInterval(tick);tick=null;demoing=false;if(mode!=='explore')solved=mode==='target';const st=pkStats(path);
+            S.say(mode==='rule'?`${st.i} + ${st.b}/2 − 1 = ${st.A}. Press Reset to try it yourself!`:mode==='target'?`One answer. Press Reset to try it yourself!`:`Look at the table: area = inside dots + half the boundary dots − 1. Press Reset to try it yourself!`,'info');
+            S.revealMaths();draw();S.refresh();return;}
+          const p=sh[si];
+          if(vi===0){path=[];closed=false;}
+          if(vi<p.length){path.push(p[vi]);vi++;draw();}
+          else{closed=true;if(mode==='explore')finish();else draw();si++;vi=0;if(mode==='explore')setTimeout(()=>{},0);}
+        },mode==='explore'?420:340);
+      }
+      reset();init=false;
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:!demoing&&mode!=='rule'&&!solved&&path.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='explore'?`Shapes drawn: ${rows.length}`:mode==='target'?`Target: ${target}`:''})};
+    }
+  };
+  return def;
+}
+const PICK={id:'pick',icon:'📐',title:'Pick’s Theorem',blurb:'Find the area of a shape on a dotty grid by counting dots.',
+  levels:[
+    {name:'Explore',make:()=>pickLevel('explore',0)},
+    {name:'Find the area',count:6,make:p=>pickLevel('rule',p)},
+    {name:'Draw a shape',count:5,make:p=>pickLevel('target',p)}
+  ]};
+shuffleLevels(PICK);
+INV_LIST.push(PICK);
+INV_API.pick={pkStats,pkCanAdd,pkPre,pickLevel};
+/* ===/JS:pick=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -4199,7 +4398,7 @@ const GROUPS=[
     PHI,
     TILES,
     MAXBOX,
-    {soon:1,icon:'📐',title:'Pick\u2019s Theorem',blurb:'Find the area of a shape on a dotty grid by counting dots.'},
+    PICK,
     {soon:1,icon:'➗',title:'Goldbach\u2019s Conjecture',blurb:'Is every even number the sum of two primes?'},
     {soon:1,icon:'🟥',title:'Coloured Tiles',blurb:'Find every 3 × 3 tile in two colours — and prove you have them all.'},
     {soon:1,icon:'📏',title:'Golomb\u2019s Ruler',blurb:'Fewest marks on a ruler that can still measure every length.'}]}
