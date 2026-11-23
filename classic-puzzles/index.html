@@ -206,6 +206,26 @@ svg.kt{display:block;width:100%;max-width:520px;margin:0 auto;touch-action:manip
 .ktList span{background:rgba(255,255,255,.07);border-radius:6px;padding:2px 6px}
 .ktList span.now{background:var(--accent);color:#1a1200;font-weight:700}
 .ktList small{color:var(--mute);margin-right:3px}.ktList span.now small{color:#4a3500}
+svg.cs{display:block;width:100%;margin:8px auto;touch-action:manipulation;user-select:none}
+.cs .bg{fill:rgba(255,255,255,.05)}
+.cs .out{fill:none;stroke:#b8c4d0;stroke-width:3.5;stroke-linecap:round}
+.cs .tube{cursor:pointer;transition:transform .12s}
+.cs .tube.sel .out{stroke:#fff}
+.cs .tube.fin .out{stroke:var(--good)}
+.cs .tube.hA .out{stroke:var(--good);stroke-width:6}
+.cs .tube.hB .out{stroke:var(--accent);stroke-width:6}
+.cs .tn{font-size:13px;fill:var(--mute);pointer-events:none}
+.cs .stream{stroke-width:8;stroke-linecap:round;pointer-events:none}
+.cs .seg{stroke:rgba(0,0,0,.25);stroke-width:1}
+svg.mc{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
+.mc .sq{cursor:pointer}.mc .lt{fill:#e8d9b5}.mc .dk{fill:#9a6b3f}.mc .hole{fill:#0e2339;cursor:default}
+.mc .db{fill:rgba(255,255,255,.28);stroke:#12263b;stroke-width:3.5;cursor:pointer}
+.mc .dl{stroke:#12263b;stroke-width:3;stroke-linecap:round;pointer-events:none}
+.mc .dom{cursor:pointer}
+.mc .selr{fill:none;stroke:var(--accent);stroke-width:5;pointer-events:none}
+.mc .hintr{fill:none;stroke:var(--good);stroke-width:5;pointer-events:none}
+.mc .leftr{fill:rgba(255,80,80,.25);stroke:#ff5252;stroke-width:5;pointer-events:none}
+.mc .lab{font-size:13px;fill:var(--mute);pointer-events:none}
 svg.chess{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
 .chess .sq{cursor:pointer}
 .chess .lt{fill:#e8d9b5}.chess .dk{fill:#9a6b3f}
@@ -2310,16 +2330,384 @@ const KNIGHT={id:'knight',icon:'♞',title:"Knight's Tour",blurb:'How many squar
     {name:'All 64 squares',make:()=>knightLevel(64)}
   ]};
 
-const PUZZLES={};[JUGS,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK,CHESS,KNIGHT].forEach(p=>PUZZLES[p.id]=p);
+/* ---------- COLOUR SORT (custom) ---------- */
+const CS_CAP=4;
+const CS_COL=['#e53935','#1e88e5','#43a047','#fdd835','#fb8c00','#8e24aa','#00bfa5','#ec407a'];
+const CS_NAME=['red','blue','green','yellow','orange','purple','teal','pink'];
+const csTop=t=>t.length?t[t.length-1]:-1;
+const csRun=t=>{let n=0;const c=csTop(t);for(let i=t.length-1;i>=0&&t[i]===c;i--)n++;return n;};
+const csUniform=t=>t.every(x=>x===t[0]);
+function csMoves(s){
+  const out=[];
+  for(let i=0;i<s.length;i++){
+    const a=s[i];if(!a.length)continue;
+    const c=csTop(a),r=csRun(a),uni=csUniform(a);
+    if(uni&&a.length===CS_CAP)continue;
+    for(let j=0;j<s.length;j++){
+      if(j===i)continue;
+      const b=s[j];
+      if(b.length>=CS_CAP)continue;
+      if(b.length&&csTop(b)!==c)continue;
+      if(!b.length&&uni)continue;
+      out.push({from:i,to:j,n:Math.min(r,CS_CAP-b.length)});
+    }
+  }
+  return out;
+}
+function csApply(s,m){
+  const t=s.map(x=>x.slice()),c=csTop(t[m.from]);
+  for(let k=0;k<m.n;k++){t[m.from].pop();t[m.to].push(c);}
+  return t;
+}
+const csDone=s=>s.every(t=>t.length===0||(t.length===CS_CAP&&csUniform(t)));
+const csKey=s=>s.map(t=>t.join('')).sort().join('|');
+function csH(s){
+  let h=0;const where={};
+  s.forEach((t,i)=>{
+    if(!t.length)return;
+    let runs=1;for(let k=1;k<t.length;k++)if(t[k]!==t[k-1])runs++;
+    h+=runs-1;
+    new Set(t).forEach(c=>{(where[c]=where[c]||new Set()).add(i);});
+  });
+  for(const c in where)h+=where[c].size-1;
+  return h;
+}
+function csSolve(start,limit){
+  limit=limit||60000;
+  if(csDone(start))return [];
+  const heap=[];
+  const push=n=>{heap.push(n);let i=heap.length-1;while(i>0){const p=(i-1)>>1;if(heap[p].f<=heap[i].f)break;[heap[p],heap[i]]=[heap[i],heap[p]];i=p;}};
+  const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let i=0;for(;;){let l=2*i+1,r=l+1,m=i;if(l<heap.length&&heap[l].f<heap[m].f)m=l;if(r<heap.length&&heap[r].f<heap[m].f)m=r;if(m===i)break;[heap[m],heap[i]]=[heap[i],heap[m]];i=m;}}return top;};
+  const seen=new Set([csKey(start)]);
+  push({s:start,g:0,f:csH(start)*2,par:null,m:null});
+  let nodes=0;
+  while(heap.length&&nodes<limit){
+    const cur=pop();nodes++;
+    for(const m of csMoves(cur.s)){
+      const t=csApply(cur.s,m),k=csKey(t);
+      if(seen.has(k))continue;seen.add(k);
+      const nn={s:t,g:cur.g+1,f:cur.g+1+csH(t)*2,par:cur,m};
+      if(csDone(t)){const path=[];for(let x=nn;x.par;x=x.par)path.push(x.m);return path.reverse();}
+      push(nn);
+    }
+  }
+  return null;
+}
+function csGen(nc){
+  for(let tries=0;tries<200;tries++){
+    const units=[];for(let c=0;c<nc;c++)for(let k=0;k<CS_CAP;k++)units.push(c);
+    for(let i=units.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[units[i],units[j]]=[units[j],units[i]];}
+    const s=[];for(let t=0;t<nc;t++)s.push(units.slice(t*CS_CAP,(t+1)*CS_CAP));
+    s.push([],[]);
+    if(s.slice(0,nc).some(csUniform))continue;
+    const sol=csSolve(s,40000);
+    if(sol&&sol.length>=nc)return {start:s,sol};
+  }
+  return null;
+}
+function csLevel(nc){
+  const g=csGen(nc);
+  const def={
+    custom:true,
+    brief:`Tap a tube to pick it up, then tap another tube to pour. You can only pour onto the <strong>same colour</strong>, or into an <strong>empty tube</strong>, and a tube holds just <strong>${CS_CAP}</strong>. Sort the water so every tube holds just <strong>one colour</strong>. Press 🎲 New puzzle for a different one.`,
+    maths:`<p>Every arrangement of the coloured water is a <em>position</em>, and every pour takes you from one position to another. A tube with only one colour is "finished"; the puzzle is to reach a position where every tube is finished or empty.</p>
+<p>Two good ideas help. First, an <strong>empty tube is your workspace</strong>: it accepts any colour, so use it to park a colour that is in the way. Second, <strong>work from the top</strong>: only the top colour of each tube can move, so ask which colour you want to uncover next, and where the colour sitting on top of it can go.</p>
+<p>The number of possible positions grows enormously with each extra colour, so a computer cannot simply look at all of them. Even so, a puzzle like this can be searched by always preferring pours that make the tubes <em>less mixed</em>. That is what the Hint button does. The solution it finds is a good one, but not always the shortest. Can you beat it?</p>`,
+    mount(stage,S){
+      if(!g){stage.append(el('p',null,'Sorry, could not make a puzzle. Press New puzzle.'));return {reset(){},undo(){},hint(){},show(){},ctl:()=>({reset:true})};}
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const n=g.start.length,perRow=n>5?Math.ceil(n/2):n,rows=Math.ceil(n/perRow);
+      const W=54,GAP=26,U=38,H=CS_CAP*U,RH=H+64,PADX=20;
+      const vw=perRow*(W+GAP)-GAP+2*PADX,vh=rows*RH+10;
+      const svg=mk('svg',{viewBox:`0 0 ${vw} ${vh}`,class:'cs'});
+      svg.style.maxWidth=Math.min(560,perRow*86+40)+'px';
+      const pos=i=>{const r=Math.floor(i/perRow),c=i%perRow,inRow=Math.min(perRow,n-r*perRow);const off=(perRow-inRow)*(W+GAP)/2;return {x:PADX+off+c*(W+GAP),y:r*RH+34};};
+      let cur=g.start.map(t=>t.slice()),hist=[],sel=-1,busy=false,solved=false,demoing=false,demoTok=0,moves=0,hA=-1,hB=-1,init=true;
+      const tubes=[];
+      for(let i=0;i<n;i++){
+        const p=pos(i);
+        const grp=mk('g',{class:'tube',transform:`translate(${p.x},${p.y})`});
+        const clip=mk('clipPath',{id:'csc'+i+'_'+(Math.random()*1e6|0)});
+        clip.append(mk('rect',{x:0,y:-40,width:W,height:H+40,rx:W/2-2}));
+        const segs=mk('g',{'clip-path':`url(#${clip.id})`});
+        const outline=mk('path',{d:`M0,0 V${H-W/2+2} A${W/2},${W/2} 0 0 0 ${W},${H-W/2+2} V0`,class:'out'});
+        const num=mk('text',{x:W/2,y:H+22,class:'tn','text-anchor':'middle'});num.textContent=i+1;
+        const hit=mk('rect',{x:-8,y:-30,width:W+16,height:H+60,class:'hit',fill:'transparent'});
+        hit.addEventListener('click',()=>tap(i));
+        grp.append(clip,mk('rect',{x:0,y:-40,width:W,height:H+40,rx:W/2-2,class:'bg'}),segs,outline,num,hit);
+        svg.append(grp);tubes.push({grp,segs});
+      }
+      const stream=mk('line',{class:'stream',visibility:'hidden'});
+      svg.append(stream);
+      stage.append(svg);
+      function draw(){
+        tubes.forEach((T,i)=>{
+          T.segs.replaceChildren();
+          cur[i].forEach((c,k)=>T.segs.append(mk('rect',{x:0,y:H-(k+1)*U,width:W,height:U+0.5,fill:CS_COL[c],class:'seg'})));
+          T.grp.setAttribute('transform',`translate(${pos(i).x},${pos(i).y-(sel===i?18:0)})`);
+          T.grp.classList.toggle('sel',sel===i);
+          T.grp.classList.toggle('hA',hA===i);T.grp.classList.toggle('hB',hB===i);
+          const full=cur[i].length===CS_CAP&&csUniform(cur[i]);T.grp.classList.toggle('fin',full);
+        });
+        if(!init)S.refresh();
+      }
+      const clearHint=()=>{hA=hB=-1;};
+      function legal(i,j){
+        if(i===j||!cur[i].length)return false;
+        const b=cur[j];if(b.length>=CS_CAP)return false;
+        return !b.length||csTop(b)===csTop(cur[i]);
+      }
+      function doPour(i,j,quick,after){
+        const m={from:i,to:j,n:Math.min(csRun(cur[i]),CS_CAP-cur[j].length)};
+        const c=csTop(cur[i]);
+        busy=true;sel=i;draw();
+        const a=pos(i),b=pos(j);
+        stream.setAttribute('x1',a.x+W/2);stream.setAttribute('y1',a.y-18);
+        stream.setAttribute('x2',b.x+W/2);stream.setAttribute('y2',b.y+H-cur[j].length*U);
+        stream.setAttribute('stroke',CS_COL[c]);stream.setAttribute('visibility','visible');
+        setTimeout(()=>{
+          stream.setAttribute('visibility','hidden');
+          cur=csApply(cur,m);sel=-1;busy=false;moves++;draw();
+          if(after)after();
+        },quick?260:380);
+        return m;
+      }
+      function checkWin(){
+        if(csDone(cur)){solved=true;S.win(`🎉 Sorted in ${moves} ${moves===1?'move':'moves'}! Press 🎲 New puzzle for another.`);S.refresh();}
+      }
+      function tap(i){
+        if(busy||demoing||solved)return;
+        clearHint();S.say('');
+        if(sel<0){if(cur[i].length){sel=i;}draw();return;}
+        if(sel===i){sel=-1;draw();return;}
+        if(legal(sel,i)){
+          hist.push({cur:cur.map(t=>t.slice()),moves});
+          doPour(sel,i,false,checkWin);
+        }else{
+          S.say(cur[i].length&&cur[sel].length&&cur[i].length>=CS_CAP&&csTop(cur[i])===csTop(cur[sel])?'That tube is full.':'You can only pour onto the same colour, or into an empty tube.','info');
+          sel=cur[i].length?i:-1;draw();
+        }
+      }
+      function reset(){demoTok++;demoing=false;busy=false;cur=g.start.map(t=>t.slice());hist=[];sel=-1;solved=false;moves=0;clearHint();stream.setAttribute('visibility','hidden');S.say('');draw();}
+      function undo(){if(busy||demoing||!hist.length)return;const h=hist.pop();cur=h.cur;moves=h.moves;sel=-1;solved=false;clearHint();S.say('');draw();}
+      const mtxt=m=>`Pour the ${CS_NAME[csTop(cur[m.from])]} from tube ${m.from+1} into tube ${m.to+1}`;
+      function hint(){
+        if(busy||demoing||solved)return;
+        const p=csSolve(cur,60000);
+        if(!p){S.say('💡 From here there is no way to finish. Press Undo a few times, or Reset.','info');return;}
+        if(!p.length)return;
+        sel=-1;hA=p[0].from;hB=p[0].to;
+        S.say('💡 '+mtxt(p[0])+'.','info');draw();
+      }
+      function show(){
+        if(demoing){demoTok++;demoing=false;busy=false;reset();S.say('Demo stopped.','info');return;}
+        reset();
+        const sol=g.sol;let k=0;demoing=true;const my=++demoTok;S.refresh();
+        const stepf=()=>{
+          if(my!==demoTok)return;
+          if(k>=sol.length){demoing=false;solved=true;S.say(`Sorted in ${sol.length} moves. Press Reset to try it yourself, or 🎲 New puzzle.`,'info');S.revealMaths();S.refresh();return;}
+          const m=sol[k++];
+          S.say(`Step ${k}: ${mtxt(m)}.`,'info');
+          hA=m.from;hB=m.to;draw();
+          setTimeout(()=>{if(my!==demoTok)return;clearHint();doPour(m.from,m.to,true,()=>setTimeout(stepf,350));},500);
+        };
+        setTimeout(stepf,400);
+      }
+      draw();init=false;
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;},
+        ctl:()=>({undo:!busy&&!demoing&&hist.length>0,reset:true,hint:!busy&&!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Moves: ${moves}`})
+      };
+    }
+  };
+  return def;
+}
+const COLSORT={id:'colsort',icon:'🧪',title:'Colour Sort',blurb:'Pour the coloured water until every tube holds just one colour.',
+  levels:[3,4,5,6,8].map(nc=>({name:nc+' colours',random:true,make:()=>csLevel(nc)}))};
+
+/* ---------- MUTILATED CHESSBOARD (custom) ---------- */
+function mcCycle(){
+  /* a closed path through all 64 squares (each step to a neighbouring square) */
+  const c=[];
+  for(let col=0;col<8;col++)c.push(col);
+  for(let r=1;r<8;r++){
+    if(r%2)for(let col=7;col>=1;col--)c.push(r*8+col);
+    else for(let col=1;col<=7;col++)c.push(r*8+col);
+  }
+  for(let r=7;r>=1;r--)c.push(r*8);
+  return c;
+}
+function mcPair(removed){
+  /* cut the cycle at the removed squares and pair up neighbours along each arc */
+  const cyc=mcCycle(),rem=new Set(removed),doms=[],left=[];
+  if(!removed.length){for(let i=0;i<64;i+=2)doms.push([cyc[i],cyc[i+1]]);return {doms,left};}
+  const start=cyc.findIndex(x=>rem.has(x));
+  const order=cyc.slice(start).concat(cyc.slice(0,start));
+  let arc=[];
+  const flush=()=>{for(let i=0;i+1<arc.length;i+=2)doms.push([arc[i],arc[i+1]]);if(arc.length%2)left.push(arc[arc.length-1]);arc=[];};
+  order.forEach(x=>{if(rem.has(x))flush();else arc.push(x);});
+  flush();
+  return {doms,left};
+}
+function mcTile(covered,removed){
+  /* exact cover of the free squares by dominoes (row-major search), or null */
+  const free=new Array(64).fill(1);covered.forEach((v,i)=>{if(v)free[i]=0;});removed.forEach(i=>free[i]=0);
+  let light=0,dark=0;free.forEach((f,i)=>{if(f){((i>>3)+(i&7))%2?dark++:light++;}});
+  if(light!==dark)return null;
+  const out=[];let nodes=0;
+  const rec=from=>{
+    let i=from;while(i<64&&!free[i])i++;
+    if(i===64)return true;
+    if(++nodes>300000)return false;
+    const c=i&7;
+    if(c<7&&free[i+1]){free[i]=free[i+1]=0;out.push([i,i+1]);if(rec(i+2))return true;out.pop();free[i]=free[i+1]=1;}
+    if(i+8<64&&free[i+8]){free[i]=free[i+8]=0;out.push([i,i+8]);if(rec(i+1))return true;out.pop();free[i]=free[i+8]=1;}
+    return false;
+  };
+  return rec(0)?out:null;
+}
+const MC_MATHS_COMMON=`<p>Every domino covers <strong>two neighbouring squares</strong>, and neighbouring squares always have different colours. So every domino covers exactly one light square and one dark square.</p>`;
+function mcLevel(kind){
+  const removed=kind==='full'?[]:kind==='corners'?[0,63]:[0,7];
+  const possible=kind!=='corners';
+  const target=(64-removed.length)/2;
+  const brief={
+    full:'Cover the whole board with <strong>32 dominoes</strong>. Each domino covers two squares that touch along an edge. Tap one square, then a neighbouring square, to place a domino. Tap a domino to take it back.',
+    corners:'Two opposite corners have been cut off. Can you cover the remaining <strong>62 squares</strong> with <strong>31 dominoes</strong>? Tap one square, then a neighbouring square, to place a domino. Tap a domino to take it back.',
+    mixed:'Two corners have been cut off, this time from the same end of the board. Can you cover the remaining <strong>62 squares</strong> with <strong>31 dominoes</strong>? Tap one square, then a neighbouring square, to place a domino. Tap a domino to take it back.'
+  }[kind];
+  const maths={
+    full:MC_MATHS_COMMON+`<p>That is why a board with equally many light and dark squares can be covered. There are 12 988 816 different ways of doing it! Now try the board with two corners removed.</p>`,
+    corners:MC_MATHS_COMMON+`<p>Look at the two cut-off corners: they are the <em>same</em> colour. Removing them leaves 32 squares of one colour but only 30 of the other. Yet 31 dominoes would need 31 squares of each colour. So the job is <strong>impossible</strong> — however cleverly you arrange the dominoes. The best you can do is 30 dominoes, leaving two squares of the same colour uncovered.</p>
+<p>This is a famous example of a <em>proof by invariant</em>: instead of trying every arrangement (there are far too many), we find a quantity that cannot change, and show that the target needs it to be different. The same trick explains why a "magic" board with a different pair of colours removed behaves differently — try the next puzzle.</p>`,
+    mixed:MC_MATHS_COMMON+`<p>This time the two removed squares have <em>different</em> colours, so 31 light and 31 dark squares remain and the colour argument no longer stops us. It turns out that it can always be done: the mathematician Ralph Gomory proved that if you remove <em>any</em> two squares of different colours from an 8 × 8 board, the rest can be covered by dominoes.</p>
+<p>His proof goes round the board along a closed loop that visits every square once. Removing two squares of different colours cuts the loop into two pieces, each with an even number of squares. Dominoes laid end to end along each piece cover everything. Press Show me to see the loop's tiling.</p>`
+  }[kind];
+  const def={
+    custom:true,brief,maths,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg',U=60,M=24;
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const svg=mk('svg',{viewBox:`${-M} 0 ${8*U+M} ${8*U+M}`,class:'mc'});
+      let doms=[],selSq=-1,solved=false,demoing=false,demoTok=0,hintN=0,hintSqs=[],leftSqs=[],init=true;
+      const sqs=[];
+      for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+        const i=r*8+c;
+        const rem=removed.includes(i);
+        const sq=mk('rect',{x:c*U,y:r*U,width:U,height:U,class:rem?'sq hole':'sq '+((r+c)%2?'dk':'lt')});
+        if(!rem)sq.addEventListener('click',()=>tap(i));
+        svg.append(sq);sqs.push(sq);
+      }
+      for(let c=0;c<8;c++){const t=mk('text',{x:c*U+U/2,y:8*U+16,class:'lab','text-anchor':'middle'});t.textContent='abcdefgh'[c];svg.append(t);}
+      for(let r=0;r<8;r++){const t=mk('text',{x:-8,y:r*U+U/2+4,class:'lab','text-anchor':'middle'});t.textContent=8-r;svg.append(t);}
+      const layer=mk('g',{}),over=mk('g',{});
+      svg.append(layer,over);
+      stage.append(svg);
+      const cover=()=>{const a=new Array(64).fill(0);doms.forEach(([x,y])=>{a[x]=1;a[y]=1;});return a;};
+      const cx=i=>(i&7)*U+U/2,cy=i=>(i>>3)*U+U/2;
+      function draw(){
+        layer.replaceChildren();over.replaceChildren();
+        doms.forEach(([a,b],k)=>{
+          const x=Math.min(a&7,b&7)*U+4,y=Math.min(a>>3,b>>3)*U+4,w=(a>>3===b>>3?2:1)*U-8,h=(a>>3===b>>3?1:2)*U-8;
+          const g=mk('g',{class:'dom'});
+          g.append(mk('rect',{x,y,width:w,height:h,rx:9,class:'db'}));
+          g.append(mk('line',{x1:cx(a),y1:cy(a),x2:cx(b),y2:cy(b),class:'dl'}));
+          g.addEventListener('click',()=>{if(!demoing){doms.splice(k,1);selSq=-1;hintSqs=[];solved=false;S.say('');draw();}});
+          layer.append(g);
+        });
+        const ring=(i,cls)=>over.append(mk('rect',{x:(i&7)*U+3,y:(i>>3)*U+3,width:U-6,height:U-6,rx:6,class:cls}));
+        if(selSq>=0)ring(selSq,'selr');
+        hintSqs.forEach(i=>ring(i,'hintr'));
+        leftSqs.forEach(i=>ring(i,'leftr'));
+        if(!init)S.refresh();
+      }
+      function noMoreFit(){
+        const c=cover();
+        for(let i=0;i<64;i++){
+          if(c[i]||removed.includes(i))continue;
+          if((i&7)<7&&!c[i+1]&&!removed.includes(i+1))return false;
+          if(i+8<64&&!c[i+8]&&!removed.includes(i+8))return false;
+        }
+        return true;
+      }
+      function after(){
+        if(doms.length===target&&possible){solved=true;S.win(kind==='full'?'🎉 The whole board is covered by 32 dominoes!':'🎉 All 62 squares covered! Even with two corners missing, it can be done.');return;}
+        if(!possible&&doms.length===target-1){S.say('30 dominoes, with two squares left over. Can you fit a 31st? Press Hint if you are curious.','info');return;}
+        if(noMoreFit()){S.say(`No more dominoes fit. You have placed ${doms.length}. Tap a domino to take it back, or press Undo.`,'info');return;}
+        S.say('');
+      }
+      function tap(i){
+        if(demoing)return;
+        hintSqs=[];leftSqs=[];
+        const c=cover();
+        if(c[i]){const k=doms.findIndex(d=>d.includes(i));doms.splice(k,1);selSq=-1;solved=false;S.say('');draw();return;}
+        if(selSq<0){selSq=i;draw();return;}
+        if(selSq===i){selSq=-1;draw();return;}
+        const a=selSq,adj=(Math.abs(a-i)===8)||(Math.abs(a-i)===1&&(a>>3)===(i>>3));
+        if(adj){doms.push([a,i]);selSq=-1;draw();after();}
+        else{selSq=i;draw();}
+      }
+      function reset(){demoTok++;demoing=false;doms=[];selSq=-1;solved=false;hintN=0;hintSqs=[];leftSqs=[];S.say('');draw();}
+      function undo(){if(demoing||!doms.length)return;doms.pop();selSq=-1;solved=false;hintSqs=[];leftSqs=[];S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        if(possible){
+          const t=mcTile(cover(),removed);
+          if(!t){S.say(doms.length?'💡 With the dominoes where they are, the board cannot be completed. Take one or two back.':'💡 Try laying dominoes in rows.','info');return;}
+          if(!t.length)return;
+          hintSqs=t[0];S.say('💡 A domino on the two ringed squares still lets you finish.','info');draw();return;
+        }
+        const msgs=['💡 Count the light squares and the dark squares that need covering. Are the numbers equal?','💡 Every domino covers one light and one dark square. So 31 dominoes cover 31 light and 31 dark squares.','💡 The two missing corners are both the same colour. So there are 32 squares of one colour but only 30 of the other, and 31 dominoes can never fit. Press Show me to see the best you can do.'];
+        S.say(msgs[Math.min(hintN,2)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){demoTok++;demoing=false;reset();S.say('Demo stopped.','info');return;}
+        reset();
+        const {doms:all,left}=mcPair(removed);
+        demoing=true;const my=++demoTok;S.refresh();
+        let k=0;
+        S.say(possible?'Watch the dominoes go round the board along one long loop…':'Watch: the best possible is 30 dominoes…','info');
+        const stepf=()=>{
+          if(my!==demoTok)return;
+          if(k>=all.length){
+            demoing=false;
+            if(left.length){leftSqs=left;S.say('30 dominoes — and the two ringed squares are left over. They are the same colour, so no domino can ever cover both. 31 dominoes is impossible!','info');}
+            else{solved=true;S.say('Covered! Press Reset to try it yourself.','info');}
+            draw();S.revealMaths();return;
+          }
+          doms.push(all[k++]);draw();setTimeout(stepf,possible?110:130);
+        };
+        setTimeout(stepf,500);
+      }
+      draw();init=false;
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;},
+        ctl:()=>({undo:!demoing&&doms.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Dominoes: ${doms.length} of ${target}`})
+      };
+    }
+  };
+  return def;
+}
+const MUTILATED={id:'mutilated',icon:'🀱',title:'Mutilated Chessboard',blurb:'Cover 62 squares with 31 dominoes. Or can you?',
+  levels:[
+    {name:'Full board',make:()=>mcLevel('full')},
+    {name:'Corners cut off',make:()=>mcLevel('corners')},
+    {name:'Different colours',make:()=>mcLevel('mixed')}
+  ]};
+
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
-  {title:'Pouring',items:[JUGS]},
+  {title:'Pouring',items:[JUGS,COLSORT]},
   {title:'River and bridge crossings',items:[WGC,FOX,BRIDGE]},
   {title:'Matches and coins',items:[MATCHES,COINS,SWAP]},
   {title:'Chess board',items:[
     CHESS,
     KNIGHT,
-    {soon:1,icon:'🀱',title:'Mutilated Chessboard',blurb:'Cover 62 squares with 31 dominoes. Or can you?'}]},
+    MUTILATED]},
   {title:'Movement',items:[CARPARK,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
   {title:'Investigations',items:[
     {soon:1,icon:'✉️',title:'Stamps',blurb:'Which postage can you make with just two stamps?'},
@@ -2506,7 +2894,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
