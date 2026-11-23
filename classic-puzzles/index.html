@@ -188,6 +188,24 @@ svg.matches.shape{margin:4px auto}
 svg.goalSvg{display:block;margin:0 auto}
 .goalSvg .gw{stroke:#e3b778;stroke-width:5;stroke-linecap:round}
 .goalSvg .gh{fill:#c0392b}
+svg.kt{display:block;width:100%;max-width:520px;margin:0 auto;touch-action:manipulation;user-select:none}
+.kt .sq{cursor:pointer}.kt .lt{fill:#e8d9b5}.kt .dk{fill:#9a6b3f}
+.kt .vis{fill:rgba(70,208,138,.35);pointer-events:none}
+.kt .num{font-size:17px;font-weight:700;text-anchor:middle;dominant-baseline:central;fill:#0b2a1a;pointer-events:none}
+.kt .path{fill:none;stroke:#1b8a55;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;opacity:.8}
+.kt .closing{fill:none;stroke:#1b8a55;stroke-width:4;stroke-dasharray:3 9;stroke-linecap:round;pointer-events:none}
+.kt .dot{fill:rgba(255,184,77,.95);stroke:#7a4a00;stroke-width:2;pointer-events:none}
+.kt .knight{font-size:46px;text-anchor:middle;dominant-baseline:central;fill:#101820;stroke:#fff;stroke-width:1.2px;paint-order:stroke;pointer-events:none;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+.kt .ring{fill:none;stroke:var(--good);stroke-width:5;pointer-events:none}
+.kt .lab{font-size:13px;fill:var(--mute);pointer-events:none}
+.ktWrap{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:center}
+.ktBoard{flex:1 1 360px;max-width:540px}
+.ktSide{flex:1 1 170px;max-width:260px;min-width:150px}
+.ktSide h3{margin:0 0 6px;font-size:.9rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.ktList{display:flex;flex-wrap:wrap;gap:4px 6px;max-height:430px;overflow:auto;font-size:.95rem;line-height:1.25}
+.ktList span{background:rgba(255,255,255,.07);border-radius:6px;padding:2px 6px}
+.ktList span.now{background:var(--accent);color:#1a1200;font-weight:700}
+.ktList small{color:var(--mute);margin-right:3px}.ktList span.now small{color:#4a3500}
 svg.chess{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
 .chess .sq{cursor:pointer}
 .chess .lt{fill:#e8d9b5}.chess .dk{fill:#9a6b3f}
@@ -2134,7 +2152,165 @@ const CHESS={id:'chess',icon:'♛',title:'Eight Queens',blurb:'Place eight rooks
     {name:'Eight queens',make:()=>chessLevel('Q')}
   ]};
 
-const PUZZLES={};[JUGS,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK,CHESS].forEach(p=>PUZZLES[p.id]=p);
+/* ---------- KNIGHT'S TOUR (custom) ---------- */
+const KT_D=[[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]];
+const ktNb=i=>{const r=i>>3,c=i&7,o=[];for(const [dr,dc] of KT_D){const a=r+dr,b=c+dc;if(a>=0&&a<8&&b>=0&&b<8)o.push(a*8+b);}return o;};
+const ktName=i=>'abcdefgh'[i&7]+(8-(i>>3));
+let ktClosedCache=null;
+function ktClosed(){
+  if(ktClosedCache)return ktClosedCache;
+  for(let st=0;st<64;st++)for(let v=0;v<16;v++){
+    const used=new Array(64).fill(0),path=[st];used[st]=1;let cur=st;
+    while(path.length<64){
+      let best=-1,bd=99;
+      const nb=ktNb(cur),L=nb.length;
+      for(let k=0;k<L;k++){
+        const n=nb[(v&8?L-1-k:k+v)%L];
+        if(used[n])continue;
+        const d=ktNb(n).filter(x=>!used[x]).length;
+        if(d<bd){bd=d;best=n;}
+      }
+      if(best<0)break;
+      used[best]=1;path.push(best);cur=best;
+    }
+    if(path.length===64&&ktNb(path[63]).includes(st)){ktClosedCache=path;return path;}
+  }
+  return null;
+}
+function ktExtend(path,target){
+  /* squares to add to reach `target` squares in total, or null (Warnsdorff-ordered search, node-limited) */
+  const used=new Array(64).fill(0);path.forEach(i=>used[i]=1);
+  const out=[];let nodes=0;
+  const rec=cur=>{
+    if(path.length+out.length>=target)return true;
+    if(++nodes>300000)return false;
+    const c=ktNb(cur).filter(n=>!used[n]).map(n=>[ktNb(n).filter(x=>!used[x]).length,n]).sort((a,b)=>a[0]-b[0]);
+    for(const [,n] of c){
+      used[n]=1;out.push(n);
+      if(rec(n))return true;
+      used[n]=0;out.pop();
+    }
+    return false;
+  };
+  return rec(path[path.length-1])?out:null;
+}
+const KT_MATHS=`<p>Every move of a knight changes the colour of its square, so the squares you visit go light, dark, light, dark… A tour of all 64 squares therefore ends on a different colour from where it began when the number of squares is even — and a <em>closed</em> tour, which finishes one knight's move from its start, can exist because that last move is just one more colour change.</p>
+<p>The puzzle is very old: it appears in Indian and Arabic chess writing more than a thousand years ago. In 1759 the mathematician <strong>Leonhard Euler</strong> studied it carefully and found closed (also called <em>re-entrant</em>) tours. There are more than 13 trillion different closed tours on an ordinary board.</p>
+<p>The best trick for finding a tour by hand is <strong>Warnsdorff's rule</strong> (1823): always move to the square from which the knight would have the <em>fewest</em> onward moves. That visits the awkward corner and edge squares while they are still reachable, instead of stranding them for later. The 'Hint' button follows this rule, and so does the 'Show me' demo.</p>
+<p>Notice how much harder it gets near the end: the free squares are scattered, and one wrong choice earlier on can leave a square that no knight can ever reach.</p>`;
+function knightLevel(target){
+  const full=target===64;
+  const def={
+    custom:true,
+    brief:full
+      ?'Place the knight on any square, then move it by <strong>knight\'s moves</strong> to a square it has not visited. Can you visit <strong>all 64 squares</strong>, never landing on the same square twice? Tap a square to start, then tap the orange dots to move.'
+      :`Place the knight on any square, then keep moving it by <strong>knight\'s moves</strong> without ever landing on the same square twice. Can you visit <strong>${target} squares</strong>? Tap a square to start, then tap the orange dots to move.`,
+    maths:KT_MATHS,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg',U=60,M=24;
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      let path=[],solved=false,demoing=false,demoTok=0,showDots=true,hintSq=null,init=true,closing=false;
+      const svg=mk('svg',{viewBox:`${-M} 0 ${8*U+M} ${8*U+M}`,class:'kt'});
+      for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+        const i=r*8+c,sq=mk('rect',{x:c*U,y:r*U,width:U,height:U,class:'sq '+((r+c)%2?'dk':'lt')});
+        sq.addEventListener('click',()=>tap(i));svg.append(sq);
+      }
+      for(let c=0;c<8;c++){const t=mk('text',{x:c*U+U/2,y:8*U+16,class:'lab','text-anchor':'middle'});t.textContent='abcdefgh'[c];svg.append(t);}
+      for(let r=0;r<8;r++){const t=mk('text',{x:-8,y:r*U+U/2+4,class:'lab','text-anchor':'middle'});t.textContent=8-r;svg.append(t);}
+      const vis=mk('g',{}),pl=mk('g',{}),dots=mk('g',{}),top=mk('g',{}),ring=mk('rect',{class:'ring',width:U-8,height:U-8,rx:6,visibility:'hidden'});
+      svg.append(vis,pl,dots,top,ring);
+      const list=el('div',{class:'ktList'});
+      const side=el('div',{class:'ktSide'},el('h3',null,'Moves'),list);
+      const optBtn=el('button',{class:'mini',onclick:()=>{showDots=!showDots;draw();}},'');
+      const wrap=el('div',{class:'ktWrap'},el('div',{class:'ktBoard'},svg,el('div',{class:'chessOpt'},optBtn)),side);
+      stage.append(wrap);
+      const cx=i=>(i&7)*U+U/2,cy=i=>(i>>3)*U+U/2;
+      const last=()=>path[path.length-1];
+      const legal=()=>path.length?ktNb(last()).filter(n=>!path.includes(n)):[];
+      function draw(){
+        vis.replaceChildren();pl.replaceChildren();dots.replaceChildren();top.replaceChildren();list.replaceChildren();
+        path.forEach((i,k)=>{
+          vis.append(mk('rect',{x:(i&7)*U,y:(i>>3)*U,width:U,height:U,class:'vis'}));
+          if(k<path.length-1||closing){const t=mk('text',{x:cx(i),y:cy(i)+1,class:'num'});t.textContent=k+1;top.append(t);}
+        });
+        if(path.length>1)pl.append(mk('polyline',{points:path.map(i=>cx(i)+','+cy(i)).join(' '),class:'path'}));
+        if(closing&&path.length===64)pl.append(mk('line',{x1:cx(last()),y1:cy(last()),x2:cx(path[0]),y2:cy(path[0]),class:'closing'}));
+        if(path.length){const t=mk('text',{x:cx(last()),y:cy(last())+2,class:'knight'});t.textContent='♞';top.append(t);}
+        if(showDots&&!demoing)(path.length?legal():[]).forEach(n=>dots.append(mk('circle',{cx:cx(n),cy:cy(n),r:9,class:'dot'})));
+        path.forEach((i,k)=>list.append(el('span',{class:k===path.length-1?'now':''},el('small',null,k+1),ktName(i))));
+        list.scrollTop=list.scrollHeight;
+        optBtn.textContent=showDots?'Hide knight\'s moves':'Show knight\'s moves';
+        if(hintSq===null)ring.setAttribute('visibility','hidden');
+        else{ring.setAttribute('x',(hintSq&7)*U+4);ring.setAttribute('y',(hintSq>>3)*U+4);ring.setAttribute('visibility','visible');}
+        if(!init)S.refresh();
+      }
+      function after(){
+        const n=path.length;
+        if(n>=target&&!solved){
+          solved=true;
+          if(full){
+            const closed=ktNb(last()).includes(path[0]);
+            S.win('🎉 All 64 squares! '+(closed?'And it is a closed tour: the knight is exactly one move from where it began.':'Not a closed tour — the knight is not one move from its start. Can you find one that is?'));
+          }else S.win(`🎉 ${n} squares visited! Keep going to see how far you can get.`);
+        }else if(!legal().length&&n>0){
+          S.say(solved?`🏁 The knight is stuck after ${n} squares. Well done — can you get further?`:`The knight is stuck after ${n} squares. Press Undo to step back, or Reset to start again.`,solved?'good':'info');
+        }else S.say('');
+      }
+      function tap(i){
+        if(demoing)return;
+        hintSq=null;
+        if(!path.length){path=[i];S.say('');draw();return;}
+        if(!legal().includes(i))return;
+        path.push(i);draw();after();
+      }
+      function reset(){demoTok++;demoing=false;closing=false;path=[];solved=false;hintSq=null;S.say('');draw();}
+      function undo(){if(demoing||!path.length)return;path.pop();solved=path.length>=target;hintSq=null;S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        if(!path.length){hintSq=ktClosed()[0];S.say('💡 Start on the ringed square. A tour can be found from there.','info');draw();return;}
+        const ext=ktExtend(path,target);
+        if(!ext){S.say('💡 This route is a dead end — no way of reaching '+target+' squares from here. Press Undo a few times.','info');return;}
+        hintSq=ext[0];
+        S.say('💡 Move to the ringed square. Tip: pick the square that leaves the knight the fewest onward moves.','info');draw();
+      }
+      function show(){
+        if(demoing){demoTok++;demoing=false;reset();S.say('Demo stopped.','info');return;}
+        reset();
+        const tour=ktClosed();
+        demoing=true;const my=++demoTok;S.refresh();
+        let k=0;
+        S.say('Watch the knight. The list shows each square in chess notation…','info');
+        const stepf=()=>{
+          if(my!==demoTok)return;
+          if(k>=target){
+            demoing=false;
+            if(full){closing=true;solved=true;S.say('All 64 squares, and the last move (dotted) lands one knight\'s move from the start: a closed, or re-entrant, tour. Press Reset to try it yourself!','info');}
+            else{solved=true;S.say(`${target} squares, and this route could carry on to all 64. Press Reset to try it yourself!`,'info');}
+            draw();S.revealMaths();return;
+          }
+          path.push(tour[k++]);draw();setTimeout(stepf,full?260:420);
+        };
+        setTimeout(stepf,500);
+      }
+      draw();init=false;
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;},
+        ctl:()=>({undo:!demoing&&path.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Squares visited: ${path.length}`})
+      };
+    }
+  };
+  return def;
+}
+const KNIGHT={id:'knight',icon:'♞',title:"Knight's Tour",blurb:'How many squares can the knight visit without landing on any twice?',
+  levels:[
+    {name:'10 squares',make:()=>knightLevel(10)},
+    {name:'20 squares',make:()=>knightLevel(20)},
+    {name:'30 squares',make:()=>knightLevel(30)},
+    {name:'All 64 squares',make:()=>knightLevel(64)}
+  ]};
+
+const PUZZLES={};[JUGS,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK,CHESS,KNIGHT].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Pouring',items:[JUGS]},
@@ -2142,7 +2318,7 @@ const GROUPS=[
   {title:'Matches and coins',items:[MATCHES,COINS,SWAP]},
   {title:'Chess board',items:[
     CHESS,
-    {soon:1,icon:'♞',title:"Knight's Tour",blurb:'Visit every square exactly once.'},
+    KNIGHT,
     {soon:1,icon:'🀱',title:'Mutilated Chessboard',blurb:'Cover 62 squares with 31 dominoes. Or can you?'}]},
   {title:'Movement',items:[CARPARK,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
   {title:'Investigations',items:[
@@ -2330,7 +2506,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
