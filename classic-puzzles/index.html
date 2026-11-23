@@ -578,6 +578,19 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .pwTbl th{background:#1b3a5c}
 .pwSvg text.ord{fill:#9fb3c8;font-weight:700}
 /* ===/CSS:winner=== */
+/* ===CSS:rings=== */
+.crSvg{display:block;width:100%;max-width:720px;margin:6px auto}
+.crSvg .arm{stroke:#cdd9e6;stroke-width:7;stroke-linecap:round;fill:none}
+.crSvg .arm.act{stroke:#ffb84a}
+.crSvg .arm.up{stroke:#5ed08a}
+.crSvg .bd{stroke:#7fb1e3;stroke-width:8;stroke-linecap:round;fill:none}
+.crSvg .hd{fill:#f2d9b8;stroke:#0e2339;stroke-width:3}
+.crSvg g.pp{cursor:pointer}
+.crSvg .hl{fill:rgba(255,184,74,.22);stroke:#ffb84a;stroke-width:3}
+.crSvg .no{fill:rgba(232,96,79,.25)}
+.crSvg text{text-anchor:middle;font-weight:800;fill:#cdd9e6}
+.crSvg text.sm{font-size:13px;font-weight:600;fill:#9fb3c8}
+/* ===/CSS:rings=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -6331,6 +6344,126 @@ shuffleLevels(WINNER);
 INV_LIST.push(WINNER);
 INV_API.winner={pwOrder,pwWin,pwFormula};
 /* ===/JS:winner=== */
+/* ===JS:rings=== */
+function crLegal(s,p){if(p===0)return true;if((s>>(p-1))&1)return false;const m=(1<<(p-1))-1;return (s&m)===m;}
+function crDist(n){const goal=(1<<n)-1,d=new Map([[goal,0]]),q=[goal];while(q.length){const s=q.shift();for(let p=0;p<n;p++)if(crLegal(s,p)){const t=s^(1<<p);if(!d.has(t)){d.set(t,d.get(s)+1);q.push(t);}}}return d;}
+const CR_D={};
+function crMin(n){if(!CR_D[n])CR_D[n]=crDist(n);return CR_D[n].get(0);}
+function crLetter(i,n){return String.fromCharCode(65+(n-1-i));}
+function crWhy(s,p,n){
+  if(crLegal(s,p))return '';
+  const L=i=>crLetter(i,n);
+  if((s>>(p-1))&1)return `${L(p)} can’t move yet: their neighbour on the left, ${L(p-1)}, has an arm up. It must be down.`;
+  for(let i=0;i<p-1;i++)if(!((s>>i)&1))return `${L(p)} can’t move yet: everyone further to the left than ${L(p-1)} must have their arm up, but ${L(i)} has it down.`;
+  return '';
+}
+function crDraw(host,n,s,st){
+  const ns='http://www.w3.org/2000/svg',mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const W=Math.max(n,2)*92,svg=mk('svg',{viewBox:`0 0 ${W} 200`,class:'crSvg'});
+  for(let i=0;i<n;i++){
+    const slot=n-1-i,cx=46+slot*92,up=(s>>i)&1;
+    const g=mk('g',{class:'pp'});
+    if(st.hint===i)g.append(mk('rect',{x:cx-40,y:6,width:80,height:150,rx:14,class:'hl'}));
+    g.append(mk('circle',{cx,cy:40,r:16,class:'hd'}));
+    g.append(mk('path',{d:`M${cx} 56 L${cx} 112 M${cx} 112 L${cx-14} 148 M${cx} 112 L${cx+14} 148`,class:'bd'}));
+    g.append(mk('path',{d:`M${cx} 72 L${cx-22} 104`,class:'arm'}));
+    g.append(mk('path',{d:up?`M${cx} 72 L${cx+38} 24`:`M${cx} 72 L${cx+22} 104`,class:'arm act'+(up?' up':'')}));
+    const t=mk('text',{x:cx,y:176,'font-size':20});t.textContent=crLetter(i,n);g.append(t);
+    if(i===0){const f=mk('text',{x:cx,y:194,class:'sm'});f.textContent='free end';g.append(f);}
+    g.addEventListener('click',()=>st.tap&&st.tap(i));
+    svg.append(g);
+  }
+  host.replaceChildren(svg);
+}
+function crMaths(){return `<p><strong>The puzzle.</strong> This is the people version of a very old ring puzzle, known in French as <strong><em>baguenaudier</em></strong>, a toy that has been around for centuries. All the arms start down, and the aim is to get them all up. The person at the free end can always move. Anyone else can move only when the person next to them (towards the free end) has their arm down and everyone further towards the free end has their arm up.</p>
+<p><strong>The rules limit your choices.</strong> At any moment at most <strong>two</strong> people are allowed to move: the free person, and one other. One of those two moves just undoes your last move, so you only ever have one sensible choice. The puzzle is really a single path with no branches, and you can’t get lost as long as you never undo the move you have just made.</p>
+<p><strong>How many moves?</strong> The fewest moves to get all arms up for 1, 2, 3, 4, 5, 6, 7, 8, … people are <strong>1, 2, 5, 10, 21, 42, 85, 170, …</strong> Each term is double the one before, plus 1 every other time: 2 × 2 + 1 = 5, then 2 × 5 = 10, then 2 × 10 + 1 = 21.</p>
+<p><strong>Why?</strong> Let <em>J</em>(<em>n</em>) be the fewest moves for <em>n</em> people. To raise the arm of the last person (furthest from the free end) you need the nearer <em>n</em> − 2 people to be up and the next person down. That takes <em>J</em>(<em>n</em> − 2) moves. Then you raise the last arm (1 move). Now put the <em>n</em> − 2 arms back down, by running the same moves in reverse (<em>J</em>(<em>n</em> − 2) moves), and finally raise the other <em>n</em> − 1 people (<em>J</em>(<em>n</em> − 1) moves). So <strong><em>J</em>(<em>n</em>) = <em>J</em>(<em>n</em> − 1) + 2<em>J</em>(<em>n</em> − 2) + 1</strong>. Check: 5 + 2 × 2 + 1 = 10.</p>
+<p><strong>A formula.</strong> <em>J</em>(<em>n</em>) = (2<sup><em>n</em>+1</sup> − 1)/3 when <em>n</em> is odd, and (2<sup><em>n</em>+1</sup> − 2)/3 when <em>n</em> is even. So the count roughly doubles with each extra person: about two thirds of 2<sup><em>n</em></sup>. With 10 people you need 682 moves, and with 20 people over 700,000.</p>
+<p><strong>Binary connection.</strong> Write each arm as a binary digit (1 for up, 0 for down). The sequence of states you pass through is a <strong>Gray code</strong>, a way of counting in binary where only one digit changes at a time. Every one of the 2<sup><em>n</em></sup> possible arrangements of arms turns up exactly once on the full path, which is why the puzzle can never get stuck.</p>`;}
+function ringsLevel(mode,cfg){
+  const n=cfg.n;
+  const def={custom:true,
+    brief:mode==='free'?`${n} people stand in a line, each using one arm, all arms down. <strong>Get every arm up.</strong> Tap a person to move their arm up or down. The free end is on the right of the picture, and everyone is facing you, so that person is on the “left” of the group. Others can only move when the person on their left has their arm <strong>down</strong> and everyone further left has their arm <strong>up</strong>.`
+      :mode==='fewest'?`Same rules, ${n} people. This time get every arm up in the <strong>fewest possible moves</strong>. Moves are counted at the bottom. The free end is on the right of the picture.`
+      :`The table shows the fewest moves needed for 1 to 6 people. <strong>What is the fewest number of moves for ${n} people?</strong> Type your answer and press Check.`,
+    get maths(){return crMaths();},
+    mount(stage,S){
+      let s=0,moves=0,hist=[],solved=false,demoing=false,tok=0,tick=null,hintN=0,hl=-1,init=true;
+      const pic=el('div'),info=el('div',{class:'hsInfo',style:'text-align:center'}),row=el('div',{class:'invRow'}),tbl=el('div',{class:'mrTbl'});
+      const inp=el('input',{type:'text',inputmode:'numeric',class:'invIn','aria-label':'Your answer',autocomplete:'off'});
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+      if(mode==='predict')row.append(inp,el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      stage.append(mode==='predict'?tbl:pic,mode==='predict'?el('div'):info,row);
+      const lock=()=>demoing||solved;
+      const goal=(1<<n)-1;
+      function draw(){
+        if(mode==='predict'){
+          tbl.innerHTML='<table><tr><th>People</th>'+[1,2,3,4,5,6].map(i=>`<td>${i}</td>`).join('')+'<td class="q" style="background:#2a3a52;color:#ffb84a;font-weight:800">'+n+'</td></tr><tr><th>Fewest moves</th>'+[1,2,3,4,5,6].map(i=>`<td><b>${crMin(i)}</b></td>`).join('')+'<td style="background:#2a3a52;color:#ffb84a;font-weight:800">?</td></tr></table>';
+        } else {
+          crDraw(pic,n,s,{hint:hl,tap:i=>move(i)});
+          info.innerHTML=`Moves: <strong>${moves}</strong> &nbsp; Arms up: <strong>${popc(s)}</strong> of ${n}`;
+        }
+        if(!init)S.refresh();
+      }
+      function popc(x){let c=0;while(x){c+=x&1;x>>=1;}return c;}
+      function move(i,quiet){
+        if(lock())return false;
+        if(!crLegal(s,i)){S.say(crWhy(s,i,n),'bad');return false;}
+        hist.push(s);s^=1<<i;moves++;hl=-1;S.say('');draw();
+        if(s===goal){
+          const best=crMin(n);
+          if(mode==='free'){solved=true;draw();S.win(`🎉 All ${n} arms are up after ${moves} moves.${moves===best?' That is the fewest possible!':` The fewest possible is ${best}. Can you do it in fewer?`}`);}
+          else if(moves===best){solved=true;draw();S.win(`🎉 ${best} moves: the fewest possible for ${n} people.`);}
+          else S.say(`All arms are up after ${moves} moves, but it can be done in fewer. Undo and look for a shorter way.`,'info');
+        }
+        return true;
+      }
+      function check(){
+        if(lock())return;
+        const v=parseInt(inp.value.replace(/[, ]/g,''),10);if(isNaN(v)){S.say('Type a whole number.','bad');return;}
+        const w=crMin(n);
+        if(v===w){solved=true;draw();S.win(`🎉 ${w} moves. Each answer is double the one before, with 1 added every other time.`);}
+        else S.say(v<w?'Too small. Look at how each number is made from the one before.':'Too big. Look at how each number is made from the one before.','bad');
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}s=0;moves=0;hist=[];solved=false;hintN=0;hl=-1;inp.value='';S.say('');draw();}
+      function undo(){if(demoing||!hist.length)return;if(solved)solved=false;s=hist.pop();moves=Math.max(0,moves-1);hl=-1;S.say('');draw();}
+      function nextBest(){const d=CR_D[n]||(CR_D[n]=crDist(n)),cur=d.get(s);for(let p=0;p<n;p++)if(crLegal(s,p)&&d.get(s^(1<<p))<cur)return p;return -1;}
+      function hint(){
+        if(lock())return;
+        if(mode==='predict'){S.say(hintN?'💡 Double the last answer, then add 1 on every other term. Try 2 × 21 = 42 and 2 × 42 + 1.':'💡 Look at pairs of neighbouring answers: 1, 2, 5, 10, 21, 42. How is each made from the one before?','info');hintN++;return;}
+        if(hintN===0){S.say('💡 At any moment only two people are allowed to move. One of those moves just undoes your last move, so don’t do it.','info');hintN++;return;}
+        const p=nextBest();if(p>=0){hl=p;S.say(`💡 Try moving ${crLetter(p,n)}.`,'info');draw();}
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();
+        if(mode==='predict'){inp.value=String(crMin(n));solved=true;S.say(`The answer is ${crMin(n)}.`,'info');S.revealMaths();S.refresh();return;}
+        demoing=true;const my=++tok;S.refresh();
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(s===goal){clearInterval(tick);tick=null;demoing=false;solved=true;draw();S.say(`All arms up in ${moves} moves, the fewest possible. Press Reset to try it yourself.`,'info');S.revealMaths();S.refresh();return;}
+          const p=nextBest();hist.push(s);s^=1<<p;moves++;draw();
+        },n>=5?350:700);
+        S.say('Watch.','info');
+      }
+      reset();init=false;
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:!demoing&&hist.length>0&&mode!=='predict',reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='predict'?'':`Moves: ${moves}`})};
+    }};
+  return def;
+}
+const CR_FREE=[2,3,4],CR_FEW=[3,4,5],CR_PRED=[7,8,9,10];
+const RINGS={id:'hands-up',icon:'🙋',title:'Hands Up',blurb:'A line of people, one arm each. Raise every arm, but you can only move when the rules allow. How many moves does it take?',
+  levels:[
+    {name:'Arms up',count:CR_FREE.length,make:p=>ringsLevel('free',{n:CR_FREE[p]})},
+    {name:'Fewest moves',count:CR_FEW.length,make:p=>ringsLevel('fewest',{n:CR_FEW[p]})},
+    {name:'Predict the moves',count:CR_PRED.length,make:p=>ringsLevel('predict',{n:CR_PRED[p]})}
+  ]};
+shuffleLevels(RINGS);
+INV_LIST.push(RINGS);
+INV_API.rings={crLegal,crMin,crDist};
+/* ===/JS:rings=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -6363,7 +6496,8 @@ const INVESTIGATIONS=[
     MOSER,
     KAPREKAR,
     LOCKERS,
-    WINNER];
+    WINNER,
+    RINGS];
 
 
 /* ---------- home ---------- */
