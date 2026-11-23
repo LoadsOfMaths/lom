@@ -449,6 +449,25 @@ svg.pkG{display:block;width:100%;max-width:440px;margin:6px auto;touch-action:ma
 .ctOri .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .ctRule{color:var(--mute);font-size:.85rem;text-align:center;margin:2px 0}
 /* ===/CSS:ctiles=== */
+/* ===CSS:golomb=== */
+svg.rlSvg{display:block;width:100%;margin:8px auto;touch-action:manipulation;user-select:none}
+.rlSvg .body{fill:#e3c27a;stroke:#8a6a2e;stroke-width:2}
+.rlSvg .tk{stroke:#6b4f1d;stroke-width:2}
+.rlSvg .tk.on{stroke:#b3261e;stroke-width:5}
+.rlSvg .nm{font-size:13px;fill:#3b2a0a;text-anchor:middle;font-weight:700;pointer-events:none}
+.rlSvg .nm.on{fill:#b3261e;font-size:15px}
+.rlSvg .hit{fill:transparent;cursor:pointer}
+.rlSvg .hint{fill:none;stroke:var(--good);stroke-width:4;pointer-events:none}
+.rlSvg .ar,.rlSvg .arl{pointer-events:none}
+.rlSvg .ar{stroke:var(--accent);stroke-width:3}
+.rlSvg .arl{font-size:13px;fill:var(--accent);text-anchor:middle;font-weight:700}
+.rlLens{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.rlLens button{min-width:44px;min-height:44px;border-radius:10px;border:2px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;padding:0 6px}
+.rlLens button.yes{background:rgba(70,208,138,.3);border-color:var(--good)}
+.rlLens button.no{opacity:.75}
+.rlLens button.dup{background:rgba(255,122,122,.3);border-color:var(--bad)}
+.rlLens button.hint{box-shadow:0 0 0 4px var(--good)}
+/* ===/CSS:golomb=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -4730,6 +4749,169 @@ const CTILES={id:'coloured-tiles',icon:'🟥',title:'Coloured Tiles',blurb:'Find
 INV_LIST.push(CTILES);
 INV_API.ctiles={ctEnum,cTilesLevel,ctCanon};
 /* ===/JS:ctiles=== */
+/* ===JS:golomb=== */
+/* --- helpers --- */
+function glMeasures(marks){const m=new Map();for(let i=0;i<marks.length;i++)for(let j=i+1;j<marks.length;j++){const d=Math.abs(marks[j]-marks[i]);(m.get(d)||[]).push([marks[i],marks[j]]);if(!m.has(d))m.set(d,[[marks[i],marks[j]]]);else if(m.get(d).length===0)m.get(d).push([marks[i],marks[j]]);}return m;}
+function glDiffs(marks){const m=new Map();for(let i=0;i<marks.length;i++)for(let j=i+1;j<marks.length;j++){const a=Math.min(marks[i],marks[j]),b=Math.max(marks[i],marks[j]),d=b-a;if(!m.has(d))m.set(d,[]);m.get(d).push([a,b]);}return m;}
+function glComplete(marks,L){const d=glDiffs(marks);for(let k=1;k<=L;k++)if(!d.has(k))return false;return true;}
+function glSparseBest(L){
+  for(let m=2;m<=L+1;m++){
+    const need=m-2,pool=[];for(let i=1;i<L;i++)pool.push(i);
+    const pick=[];let found=null;
+    (function rec(s){
+      if(found)return;
+      if(pick.length===need){const marks=[0,...pick,L];if(glComplete(marks,L))found=marks;return;}
+      for(let i=s;i<pool.length;i++){pick.push(pool[i]);rec(i+1);pick.pop();if(found)return;}
+    })(0);
+    if(found)return {m,marks:found};
+  }
+}
+function glGolombBest(n){
+  /* shortest ruler with n marks and all distances different */
+  for(let L=n*(n-1)/2;;L++){
+    let found=null;const pick=[0];
+    (function rec(){
+      if(found)return;
+      if(pick.length===n-1){const marks=[...pick,L];const d=glDiffs(marks);if([...d.values()].every(v=>v.length===1))found=marks;return;}
+      for(let x=pick[pick.length-1]+1;x<L;x++){pick.push(x);const d=glDiffs(pick);if([...d.values()].every(v=>v.length===1))rec();pick.pop();if(found)return;}
+    })();
+    if(found)return {L,marks:found};
+  }
+}
+const GL_MATHS_SPARSE=(L,best)=>`<p>A normal ruler of length ${L} has ${L+1} marks. But you do not need that many: a distance can be measured between <em>any</em> two marks, not just from the zero. With <em>m</em> marks there are <em>m</em>(<em>m</em> − 1) ÷ 2 pairs of marks, and every length from 1 to ${L} needs at least one pair. So <em>m</em>(<em>m</em> − 1) ÷ 2 must be at least ${L}.</p>
+<p>For length ${L} the fewest marks possible is <strong>${best.m}</strong> (including the two ends). One ruler that works is ${best.marks.join(', ')}. Notice how some marks do a lot of work, being used in several different pairs.</p>
+<p>The idea of a ruler with as few marks as possible is much studied. As the length grows, the number of marks needed grows only like the <strong>square root</strong> of the length, so a ruler of length 100 needs far fewer than 100 marks. A ruler where each length can be measured <em>exactly once</em> is called a <strong>perfect ruler</strong>. Only the very short ones exist: 0, 1, 4, 6 is a perfect ruler of length 6.</p>`;
+const GL_MATHS_GOLOMB=(n,best)=>`<p>A ruler in which <strong>every distance between two marks is different</strong> is called a <strong>Golomb ruler</strong>, after the mathematician Solomon Golomb. With <em>n</em> marks there are <em>n</em>(<em>n</em> − 1) ÷ 2 pairs of marks, so there are that many different distances to fit in. For ${n} marks that is ${n*(n-1)/2}, so the ruler must be at least ${n*(n-1)/2} long, because the largest distance is at least as big as the number of different distances.</p>
+<p>The shortest possible Golomb ruler with ${n} marks has length <strong>${best.L}</strong>${best.L===n*(n-1)/2?', exactly meeting that lower bound, so every distance from 1 to '+best.L+' is measured once':', which is longer than the lower bound of '+n*(n-1)/2+' because some distances have to be skipped'}. One example is ${best.marks.join(', ')}.</p>
+<p>Golomb rulers are used in real life, for example in placing the aerials of radio telescopes so that every pair gives a different spacing. Finding the shortest ruler gets very hard as the number of marks grows: the best known rulers with 20 or more marks were found by huge computer searches.</p>`;
+function glRuler(svgHost,L,opts){
+  const ns='http://www.w3.org/2000/svg';
+  const mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const U=Math.min(56,Math.floor(940/L)),W=L*U+60,H=150;
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,class:'rlSvg'});
+  svg.append(mk('rect',{x:10,y:40,width:L*U+40,height:96,rx:6,class:'body'}));
+  const ticks=[];
+  for(let i=0;i<=L;i++){
+    const x=30+i*U;
+    const line=mk('line',{x1:x,y1:40,x2:x,y2:76,class:'tk'});
+    const t=mk('text',{x:x,y:126,class:'nm'});t.textContent=i;
+    const hit=mk('rect',{x:x-Math.max(10,U/2),y:30,width:Math.max(20,U),height:110,class:'hit'});
+    hit.addEventListener('click',()=>opts.tap(i));
+    svg.append(line,t,hit);ticks.push({line,t,x});
+  }
+  const layer=mk('g',{});svg.append(layer);
+  svgHost.append(svg);
+  return {svg,ticks,layer,mk,U,
+    paint(marks,hintAt){ticks.forEach((tk,i)=>{const on=marks.includes(i);tk.line.setAttribute('class','tk'+(on?' on':''));tk.line.setAttribute('y2',on?100:76);tk.t.setAttribute('class','nm'+(on?' on':''));});
+      layer.replaceChildren();if(hintAt!=null){layer.append(mk('circle',{cx:30+hintAt*U,cy:60,r:Math.max(14,U*.45),class:'hint'}));}},
+    arrow(a,b,label){const y=28;layer.append(mk('line',{x1:30+a*U,y1:y,x2:30+b*U,y2:y,class:'ar'}),mk('line',{x1:30+a*U,y1:y-6,x2:30+a*U,y2:y+6,class:'ar'}),mk('line',{x1:30+b*U,y1:y-6,x2:30+b*U,y2:y+6,class:'ar'}));const t=mk('text',{x:(30+a*U+30+b*U)/2,y:y-8,class:'arl'});t.textContent=label;layer.append(t);}};
+}
+function rulerLevel(mode,P){
+  /* mode 'sparse': P=L ; mode 'golomb': P=n marks */
+  const sparse=mode==='sparse';
+  const best=sparse?glSparseBest(P):glGolombBest(P);
+  const L=sparse?P:best.L,n=sparse?null:P;
+  const def={
+    custom:true,
+    brief:sparse
+      ?`A ruler is <strong>${L} cm</strong> long. Its two ends are marked, and you can add more marks by tapping the ruler. A length can be measured between <em>any</em> two marks. Add marks so that <strong>every length from 1 cm to ${L} cm</strong> can be measured, using as <strong>few marks</strong> as you can.`
+      :`Place <strong>${n} marks</strong> on a ruler that is <strong>${L} cm</strong> long, so that <strong>no distance between two marks is the same as any other</strong>. Tap the ruler to add or remove a mark. Lengths measured twice will turn red.`,
+    get maths(){return sparse?GL_MATHS_SPARSE(L,best):GL_MATHS_GOLOMB(n,best);},
+    mount(stage,S){
+      let marks=sparse?[0,L]:[],solved=false,demoing=false,tok=0,tick=null,hintN=0,hintAt=null,selLen=0,init=true;
+      const host=el('div'),lens=el('div',{class:'rlLens'}),info=el('div',{class:'hsInfo'});
+      stage.append(host,info,lens);
+      const R=glRuler(host,L,{tap:i=>tapMark(i)});
+      function tapMark(i){
+        if(demoing||solved)return;
+        if(sparse&&(i===0||i===L)){S.say('The two ends are always marked.','info');return;}
+        const at=marks.indexOf(i);
+        if(at>=0)marks.splice(at,1);
+        else{
+          if(!sparse&&marks.length>=n){S.say(`You already have ${n} marks. Tap a mark to remove it first.`,'info');return;}
+          marks.push(i);marks.sort((a,b)=>a-b);
+        }
+        S.say('');hintAt=null;selLen=0;evaluate();
+      }
+      function evaluate(){
+        const d=glDiffs(marks);
+        if(sparse){
+          const ok=glComplete(marks,L);
+          if(ok&&marks.length===best.m){solved=true;draw();S.win(`🎉 Every length from 1 to ${L} cm can be measured with just ${marks.length} marks. That is the fewest possible!`);return;}
+          if(ok)S.say(`That works with ${marks.length} marks. But it can be done with fewer. Try removing or moving a mark.`,'good');
+        }else{
+          const dup=[...d.values()].some(v=>v.length>1);
+          if(marks.length===n&&!dup){solved=true;draw();S.win(`🎉 All ${n*(n-1)/2} distances are different! ${L===best.L?`And ${L} cm is the shortest possible ruler for ${n} marks.`:''}`);return;}
+          if(marks.length===n&&dup){const k=[...d.entries()].filter(e=>e[1].length>1).map(e=>e[0])[0];S.say(`The distance ${k} cm is measured more than once. Move a mark.`,'info');}
+        }
+        draw();
+      }
+      function draw(){
+        R.paint(marks,hintAt);
+        const d=glDiffs(marks);
+        lens.replaceChildren();
+        for(let k=1;k<=L;k++){
+          const c=d.get(k)?d.get(k).length:0;
+          let cls=sparse?(c?'yes':'no'):(c>1?'dup':c===1?'yes':'no');
+          if(k===hintAt)cls+=' hint';
+          const b=el('button',{class:cls,onclick:()=>showLen(k),'aria-label':k+' centimetres'},String(k));
+          lens.append(b);
+        }
+        if(sparse){const miss=[];for(let k=1;k<=L;k++)if(!d.has(k))miss.push(k);info.textContent=miss.length?`Still to measure: ${miss.join(', ')}`:`Every length can be measured.`;}
+        else info.textContent=`Marks placed: ${marks.length} of ${n}`;
+        if(!init)S.refresh();
+      }
+      function showLen(k){
+        if(demoing)return;
+        const d=glDiffs(marks).get(k);
+        draw();
+        if(!d){S.say(`${k} cm can't be measured yet.`,'info');return;}
+        const [a,b]=d[0];R.arrow(a,b,k+' cm');
+        S.say(d.length>1?`${k} cm is measured ${d.length} times: ${d.map(p=>p[0]+' to '+p[1]).join(' and ')}.`:`${k} cm is the distance from ${a} to ${b}.`,d.length>1&&!sparse?'bad':'info');
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}marks=sparse?[0,L]:[];solved=false;hintN=0;hintAt=null;S.say('');draw();}
+      function undo(){if(demoing||solved)return;if(sparse){const x=marks.filter(m=>m!==0&&m!==L);if(!x.length)return;marks=marks.filter(m=>m!==x[x.length-1]);}else marks.pop();S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        if(sparse){
+          const d=glDiffs(marks),miss=[];for(let k=1;k<=L;k++)if(!d.has(k))miss.push(k);
+          if(!miss.length){S.say(`💡 That works, but there is a ruler with fewer marks. A mark that is used in several pairs does the most work. Try removing a mark and see which lengths are lost.`,'info');return;}
+          hintAt=miss[0];
+          if(hintN===0)S.say(`💡 ${miss[0]} cm can't be measured yet. Which new mark would make a pair that is ${miss[0]} cm apart?`,'info');
+          else{const extra=best.marks.find(m=>!marks.includes(m));S.say(`💡 Try adding a mark at ${extra} cm.`,'info');hintAt=extra;}
+          hintN++;draw();
+        }else{
+          S.say(hintN===0?`💡 With ${n} marks there are ${n*(n-1)/2} distances. Start with marks at 0 and 1, so the distance 1 is used. Where can the next mark go?`:`💡 The marks of one solution include ${best.marks.slice(0,Math.ceil(n/2)).join(', ')}… (you can finish the rest).`,'info');hintN++;
+        }
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        if(!sparse)marks=[];
+        const seq=best.marks.filter(m=>sparse?(m!==0&&m!==L):true);let k=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(k>=seq.length){clearInterval(tick);tick=null;demoing=false;solved=true;draw();
+            S.say(sparse?`One ruler with the fewest marks: ${best.marks.join(', ')}. Press Reset to try it yourself!`:`One answer: ${best.marks.join(', ')}. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;}
+          marks.push(seq[k++]);marks.sort((a,b)=>a-b);draw();
+        },700);
+      }
+      reset();init=false;
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:!demoing&&!solved&&(sparse?marks.length>2:marks.length>0),reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Marks: ${marks.length}`})};
+    }
+  };
+  return def;
+}
+const GOLOMB={id:'golomb',icon:'📏',title:'Golomb’s Ruler',blurb:'Fewest marks on a ruler that can still measure every length.',
+  levels:[
+    {name:'Measure every length',count:5,make:p=>rulerLevel('sparse',[6,9,10,13,17][p])},
+    {name:'No length twice',count:3,make:p=>rulerLevel('golomb',[4,5,6][p])}
+  ]};
+shuffleLevels(GOLOMB);
+INV_LIST.push(GOLOMB);
+INV_API.golomb={glSparseBest,glGolombBest,glDiffs,rulerLevel};
+/* ===/JS:golomb=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -4753,7 +4935,7 @@ const GROUPS=[
     PICK,
     GOLD,
     CTILES,
-    {soon:1,icon:'📏',title:'Golomb\u2019s Ruler',blurb:'Fewest marks on a ruler that can still measure every length.'}]}
+    GOLOMB]}
 ];
 
 /* ---------- home ---------- */
