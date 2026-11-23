@@ -535,6 +535,24 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .msTray button.used{opacity:.3}
 .msTray.dm button{font-size:1rem;min-width:3.2em;padding:5px 4px}
 /* ===/CSS:magic=== */
+/* ===CSS:moser=== */
+.invIn{font:inherit;font-size:1.5rem;font-weight:800;width:6.5em;text-align:center;padding:8px;border-radius:12px;border:2px solid var(--line);background:#16283f;color:inherit}
+.invRow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin:8px 0}
+.mrCv{display:block;margin:6px auto;max-width:100%;border-radius:12px;background:#fff}
+.mrTbl{overflow-x:auto;text-align:center}
+.mrTbl table{margin:6px auto;border-collapse:collapse}
+.mrTbl td,.mrTbl th{border:1px solid var(--line);padding:3px 9px;text-align:center;min-width:2.2em}
+.mrTbl th{background:#1b3a5c}
+.mrTbl td.q{background:#2a3a52;color:#ffb84a;font-weight:800}
+/* ===/CSS:moser=== */
+/* ===CSS:kaprekar=== */
+.kpLine{font-size:1.3rem;line-height:1.9;text-align:center}
+.kpLine b{font-weight:800}
+.kpLine .fin{color:#5ed08a;font-weight:800}
+.kpBox{display:inline-block;text-align:left;margin:6px auto}
+.kpFound{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.kpFound span{background:#1b3a5c;border:1px solid var(--line);border-radius:10px;padding:3px 10px;font-weight:700}
+/* ===/CSS:kaprekar=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -5776,6 +5794,270 @@ shuffleLevels(MAGIC);
 INV_LIST.push(MAGIC);
 INV_API.magic={msConst,msIsMagic,msOdd,msDoubly,msSingly,msLines,MS_LOSHU,MS_3,MS_DOM,msDomOk,msDomLines};
 /* ===/JS:magic=== */
+/* ===JS:moser=== */
+function mrC(n,k){if(k<0||k>n)return 0;let r=1;for(let i=1;i<=k;i++)r=r*(n-k+i)/i;return Math.round(r);}
+function mrRegions(n){return mrC(n,4)+mrC(n,2)+1;}
+function mrPts(n){const a=[];for(let i=0;i<n;i++)a.push(2*Math.PI*(i+0.3*Math.sin(i*2.399+n*0.7))/n+0.11);return a.map(t=>[Math.cos(t),Math.sin(t)]);}
+function mrCrossings(n){
+  const P=mrPts(n),pts=[];
+  const ch=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)ch.push([i,j]);
+  for(let x=0;x<ch.length;x++)for(let y=x+1;y<ch.length;y++){
+    const [a,b]=ch[x],[c,d]=ch[y];if(a===c||a===d||b===c||b===d)continue;
+    const p=P[a],q=P[b],r=P[c],s=P[d];
+    const d1=[q[0]-p[0],q[1]-p[1]],d2=[s[0]-r[0],s[1]-r[1]],den=d1[0]*d2[1]-d1[1]*d2[0];
+    if(Math.abs(den)<1e-12)continue;
+    const t=((r[0]-p[0])*d2[1]-(r[1]-p[1])*d2[0])/den,u=((r[0]-p[0])*d1[1]-(r[1]-p[1])*d1[0])/den;
+    if(t>1e-9&&t<1-1e-9&&u>1e-9&&u<1-1e-9)pts.push([p[0]+t*d1[0],p[1]+t*d1[1]]);
+  }
+  return pts;
+}
+function mrDraw(host,n,label){
+  const W=Math.min(host.clientWidth||520,520)||520,R=W/2-8,cv=el('canvas',{class:'mrCv',width:W*2,height:W*2,style:`width:${W}px;height:${W}px`});
+  const ctx=cv.getContext('2d',{willReadFrequently:true}),Z=W*2,C=Z/2,r=R*2;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,Z,Z);
+  ctx.strokeStyle='#000';ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(C,C,r,0,7);ctx.stroke();
+  const P=mrPts(n).map(p=>[C+p[0]*r,C+p[1]*r]);
+  ctx.beginPath();for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){ctx.moveTo(...P[i]);ctx.lineTo(...P[j]);}ctx.stroke();
+  ctx.fillStyle='#d33';P.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],7,0,7);ctx.fill();});
+  host.replaceChildren(cv);
+  cv._fill=()=>{
+    const id=ctx.getImageData(0,0,Z,Z),d=id.data,lab=new Int32Array(Z*Z),cent=[];let cnt=0;
+    const white=i=>d[i*4]>200&&d[i*4+1]>200&&d[i*4+2]>200;
+    const q=new Int32Array(Z*Z);
+    for(let s=0;s<Z*Z;s++){
+      if(lab[s]||!white(s))continue;
+      const x0=s%Z,y0=(s-x0)/Z;if((x0-C)**2+(y0-C)**2>(r-3)**2)continue;
+      cnt++;let h=0,t=0,sx=0,sy=0,sz=0;q[t++]=s;lab[s]=cnt;
+      while(h<t){const p=q[h++],x=p%Z,y=(p-x)/Z;sx+=x;sy+=y;sz++;
+        for(const nb of [p-1,p+1,p-Z,p+Z]){if(nb<0||nb>=Z*Z||lab[nb]||!white(nb))continue;const nx=nb%Z,ny=(nb-nx)/Z;if((nx-C)**2+(ny-C)**2>(r-3)**2)continue;lab[nb]=cnt;q[t++]=nb;}}
+      cent.push([sx/sz,sy/sz,sz]);
+    }
+    const col=[];for(let i=1;i<=cnt;i++){const h=(i*137.5)%360;col[i]=`hsl(${h},70%,${72+((i*7)%14)}%)`;}
+    const rgb=col.map(c=>{const t=document.createElement('canvas').getContext('2d');t.fillStyle=c;t.fillRect(0,0,1,1);return t.getImageData(0,0,1,1).data;});
+    for(let i=0;i<Z*Z;i++)if(lab[i]){const c=rgb[lab[i]];d[i*4]=c[0];d[i*4+1]=c[1];d[i*4+2]=c[2];}
+    ctx.putImageData(id,0,0);
+    if(label&&cnt<=60){ctx.fillStyle='#000';ctx.font=`bold ${Math.round(Z/26)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';cent.forEach((c,i)=>ctx.fillText(String(i+1),c[0],c[1]));}
+    return cnt;
+  };
+  return cv;
+}
+function mrDiffTable(upTo,extra){
+  const v=[];for(let n=1;n<=upTo;n++)v.push(mrRegions(n));
+  const rows=[v];for(let k=0;k<4;k++){const p=rows[k],r=[];for(let i=1;i<p.length;i++)r.push(p[i]-p[i-1]);rows.push(r);}
+  const nm=['Regions','1st differences','2nd differences','3rd differences','4th differences'];
+  let h='<table><tr><th>Points</th>'+v.map((_,i)=>`<th>${i+1}</th>`).join('')+(extra?`<th>${upTo+1}…</th>`:'')+'</tr>';
+  rows.forEach((r,k)=>{h+=`<tr><th>${nm[k]}</th>`+Array.from({length:upTo},(_,i)=>{const j=i-k;return `<td>${j>=0&&j<r.length?r[j]:''}</td>`;}).join('')+(extra?'<td class="q">?</td>':'')+'</tr>';});
+  return h+'</table>';
+}
+function mrMaths(){return `<p><strong>The problem.</strong> Put <em>n</em> points on a circle and join every pair with a straight line. Into how many regions is the circle divided? With 1, 2, 3, 4 and 5 points you get 1, 2, 4, 8 and 16 regions. It looks like doubling each time, so you would expect 32 for six points. But the answer is <strong>31</strong>. This is <strong>Moser’s circle problem</strong>, and it is a classic warning that a pattern that works for a few cases is not a proof.</p>
+<p><strong>The numbers.</strong> 1, 2, 4, 8, 16, 31, 57, 99, 163, 256, 386, 562, … The points have to be placed so that no three lines cross at the same point (a regular hexagon, for example, has three diagonals meeting at the centre, giving 30 regions, not 31).</p>
+<p><strong>Why the difference table works.</strong> The differences of the differences keep going until, after four rows, you reach a constant row of 1s. A sequence whose 4th differences are constant is given by a polynomial of degree 4. For this one the formula is <strong>regions = C(<em>n</em>, 4) + C(<em>n</em>, 2) + 1</strong>, where C(<em>n</em>, <em>k</em>) means “<em>n</em> choose <em>k</em>”.</p>
+<p><strong>Why that formula?</strong> Every region is bounded by lines and points. Start with 1 region. Each line adds one region, plus one more for every point where it crosses a line already drawn. There are C(<em>n</em>, 2) lines and every set of 4 points makes exactly one crossing inside the circle (the two diagonals of the quadrilateral they form), so there are C(<em>n</em>, 4) crossings. That gives 1 + C(<em>n</em>, 2) + C(<em>n</em>, 4) regions. For <em>n</em> = 6 that is 1 + 15 + 15 = 31.</p>
+<p>The formula also equals the sum of the first five entries of row <em>n</em> − 1 of Pascal’s triangle: 1 + 5 + 10 + 10 + 5 = 31 for <em>n</em> = 6.</p>`;}
+function moserLevel(mode,cfg){
+  const def={custom:true,
+    brief:mode==='count'?`${cfg.n} points are marked on a circle and every pair is joined by a straight line. <strong>How many regions is the circle cut into?</strong> Count carefully, enter your answer and press Check.`
+      :mode==='explore'?'Choose the number of points on the circle with + and −. Every pair is joined. How many regions are made? Look at the table of results as it builds up. Can you spot the pattern, and does it keep going?'
+      :`The table shows the number of regions for 1 to 8 points, with the differences underneath. Use the pattern to <strong>predict the number of regions for ${cfg.n} points</strong>. Type your answer and press Check.`,
+    get maths(){return mrMaths();},
+    mount(stage,S){
+      let n=cfg.n||3,solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true,log=[],cv=null;
+      const pic=el('div',{class:'mrWrap'}),tbl=el('div',{class:'mrTbl'}),row=el('div',{class:'invRow'});
+      const inp=el('input',{type:'text',inputmode:'numeric',class:'invIn','aria-label':'Your answer',autocomplete:'off'});
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+      const nb=el('b',null,String(n));
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      if(mode==='explore')row.append(el('div',{class:'stStep'},el('span',null,'Points'),stp('−',()=>mv(-1),'Fewer'),nb,stp('+',()=>mv(1),'More')));
+      if(mode!=='explore')row.append(inp,el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      stage.append(mode==='predict'?tbl:el('div'),mode==='predict'?el('div'):pic,row,mode==='explore'?tbl:el('div'));
+      const lock=()=>demoing||solved;
+      function mv(d){if(lock())return;n=Math.max(1,Math.min(10,n+d));draw();}
+      function draw(){
+        if(mode==='predict'){tbl.innerHTML=mrDiffTable(8,true);}
+        else{
+          cv=mrDraw(pic,n,true);
+          if(mode==='explore'){
+            const R=mrRegions(n);nb.textContent=n;
+            cv._fill();
+            if(!log.some(x=>x[0]===n))log.push([n,R]);log.sort((a,b)=>a[0]-b[0]);
+            tbl.innerHTML='<table><tr><th>Points</th>'+log.map(x=>`<td>${x[0]}</td>`).join('')+'</tr><tr><th>Regions</th>'+log.map(x=>`<td><b>${x[1]}</b></td>`).join('')+'</tr></table>';
+            if(n===6&&!demoing)S.say('31, not 32! Does the doubling pattern fail?','info');
+            else if(!demoing)S.say(`${n} point${n>1?'s':''}: ${R} region${R>1?'s':''}.`,'info');
+          }
+        }
+        if(!init)S.refresh();
+      }
+      function check(){
+        if(lock())return;
+        const v=parseInt(inp.value.replace(/[, ]/g,''),10);
+        if(isNaN(v)){S.say('Type a whole number first.','bad');return;}
+        const want=mrRegions(cfg.n);
+        if(v===want){
+          solved=true;
+          if(mode==='count'){const c=cv._fill();}
+          S.win(mode==='count'?`🎉 ${want} regions. They are numbered in the picture.`:`🎉 ${want}! You found the pattern: C(${cfg.n}, 4) + C(${cfg.n}, 2) + 1 = ${mrC(cfg.n,4)} + ${mrC(cfg.n,2)} + 1.`);
+          draw();
+        }else S.say(mode==='count'?(v<want?'Too few. Have you counted the small regions near the edge?':'Too many. Make sure no region is counted twice.'):(v<want?'Too small. Keep extending each row of differences.':'Too big. Check that you extended the differences correctly.'),'bad');
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}solved=false;hintN=0;inp.value='';n=cfg.n||1;if(mode==='explore'){n=1;log=[];}S.say('');draw();}
+      function hint(){
+        if(lock())return;
+        const H={count:['💡 Count in an organised way: perhaps the regions touching the circle, then the ones in the middle.','💡 The answer is a bit less than you’d guess from doubling. Try an easier case first.'],
+          explore:['💡 Try every number from 1 to 7 and look at the results.','💡 Doubling works at first. Does it carry on?'],
+          predict:['💡 Work out the differences row by row. Keep going until you reach a row that is all 1s.','💡 Extend the row of 1s, then work back up: each row’s next value is the last value plus the next value in the row below.']}[mode];
+        S.say(H[Math.min(hintN,1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();
+        if(mode==='explore'){demoing=true;const my=++tok;S.refresh();let k=1;tick=setInterval(()=>{if(my!==tok){clearInterval(tick);return;}if(k>8){clearInterval(tick);tick=null;demoing=false;S.say('The numbers go 1, 2, 4, 8, 16, 31, 57, 99. Press Reset to start again.','info');S.revealMaths();S.refresh();return;}n=k++;draw();},1800);return;}
+        inp.value=String(mrRegions(cfg.n));
+        if(mode==='count'){cv._fill();}
+        S.say(mode==='count'?`The regions are coloured and numbered. There are ${mrRegions(cfg.n)}.`:`The answer is ${mrRegions(cfg.n)}. Press Reset to try another.`,'info');solved=true;S.revealMaths();S.refresh();
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='explore'?`Points: ${n}`:''})};
+    }};
+  return def;
+}
+const MOSER={id:'regions-in-a-circle',icon:'🥧',title:'Regions in a Circle',blurb:'Join points on a circle with straight lines. How many regions? It starts 1, 2, 4, 8, 16… but what comes next?',
+  levels:[
+    {name:'Count the regions',count:4,make:p=>moserLevel('count',{n:[3,4,5,6][p]})},
+    {name:'Explore',make:()=>moserLevel('explore',{})},
+    {name:'Predict the next',count:4,make:p=>moserLevel('predict',{n:[9,10,11,12][p]})}
+  ]};
+shuffleLevels(MOSER);
+INV_LIST.push(MOSER);
+INV_API.moser={mrRegions,mrCrossings,mrC,mrPts};
+/* ===/JS:moser=== */
+/* ===JS:kaprekar=== */
+function kpPad(n,d){return String(n).padStart(d,'0');}
+function kpBig(n,d){return parseInt(kpPad(n,d).split('').sort().reverse().join(''),10);}
+function kpSmall(n,d){return parseInt(kpPad(n,d).split('').sort().join(''),10);}
+function kpStep(n,d){return kpBig(n,d)-kpSmall(n,d);}
+function kpRep(n,d){return new Set(kpPad(n,d)).size===1;}
+function kpChain(n,d){const c=[n],seen=new Set([n]);while(true){const m=kpStep(c[c.length-1],d);if(m===c[c.length-1]||seen.has(m)){c.push(m);break;}seen.add(m);c.push(m);}return c;}
+function kpSteps(n,d){const t=d===4?6174:495,c=kpChain(n,d);const i=c.indexOf(t);return i;}
+function kpLine(n,d){const b=kpBig(n,d),s=kpSmall(n,d);return `${kpPad(b,d)} − ${kpPad(s,d)} = <b>${b-s}</b>`;}
+function kpHtml(n,d){
+  const c=kpChain(n,d),t=d===4?6174:495;let h=`<div>Start: <b>${kpPad(n,d)}</b></div>`;
+  for(let i=0;i<c.length-1;i++){
+    const cur=c[i];
+    if(i>0&&cur===c[i-1]){break;}
+    h+=`<div>${kpPad(cur,d)}: ${kpLine(cur,d)}</div>`;
+    if(c[i+1]===cur||c[i+1]===0)break;
+    if(cur===t)break;
+  }
+  const k=c.indexOf(t);
+  h+=k>=0?`<div class="fin">Reached ${t} after ${k} step${k===1?'':'s'}. It stays there for ever.</div>`:`<div class="fin">The routine gives 0 and stops.</div>`;
+  return h;
+}
+function kpMaths(){return `<p><strong>The routine.</strong> Take a 4-digit number whose digits are not all the same. Arrange its digits to make the <strong>biggest</strong> number you can and the <strong>smallest</strong> number you can (use leading zeros if you need them), then subtract. Repeat with the answer. For 3524: 5432 − 2345 = 3087, then 8730 − 0378 = 8352, then 8532 − 2358 = <strong>6174</strong>.</p>
+<p><strong>Kaprekar’s constant.</strong> Every 4-digit number (apart from those with four identical digits, which give 0) ends up at <strong>6174</strong> in at most <strong>7 steps</strong>. Once you are at 6174 you stay there: 7641 − 1467 = 6174. The Indian mathematician D. R. Kaprekar discovered this in 1949, and it can be checked for all the numbers by computer.</p>
+<p><strong>Why do the answers always look similar?</strong> Rearranging digits never changes a number’s remainder when you divide by 9, so the biggest and smallest arrangements leave the same remainder and their difference is a multiple of 9. All the numbers in a chain are multiples of 9 apart from the starting number.</p>
+<p><strong>Other lengths.</strong> With <strong>3 digits</strong> the same routine ends at <strong>495</strong> (954 − 459 = 495). With 2 digits there is no single end point: the numbers fall into a loop 9 → 81 → 63 → 27 → 45 → 9. With 5 digits, and most other lengths, there are several loops and no single constant. With 6 digits there are two fixed points, 549945 and 631764.</p>`;}
+function kapLevel(mode,cfg){
+  const d=cfg.d||4,t=d===4?6174:495;
+  const def={custom:true,
+    brief:mode==='follow'?`Here is a routine. Make the <strong>biggest</strong> number from the digits, then the <strong>smallest</strong>, and subtract. Do it again with the answer. <strong>Work out each subtraction</strong> and type the answer. Where does it end up?`
+      :mode==='explore'?`Type any ${d}-digit number (don’t use the same digit ${d} times) and press Go, or press 🎲 for a random one. The routine is worked out for you. Where does every number end up? Try lots of different numbers.`
+      :`${cfg.text} Type a ${d}-digit number and press Check.`,
+    get maths(){return kpMaths();},
+    mount(stage,S){
+      let cur=cfg.start,chain=[],solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true,tried=[];
+      const out=el('div',{class:'kpLine'}),inp=el('input',{type:'text',inputmode:'numeric',maxlength:String(d),class:'invIn','aria-label':'Your answer',autocomplete:'off'}),row=el('div',{class:'invRow'}),fnd=el('div',{class:'kpFound'});
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+      if(mode==='follow')row.append(el('span',null,''),inp,el('button',{class:'btn primary',onclick:()=>go()},'Check'));
+      if(mode==='explore')row.append(inp,el('button',{class:'btn primary',onclick:()=>go()},'Go'),el('button',{class:'btn',onclick:()=>rnd()},'🎲 Random'));
+      if(mode==='target')row.append(inp,el('button',{class:'btn primary',onclick:()=>go()},'Check'));
+      stage.append(el('div',{style:'text-align:center'},el('div',{class:'kpBox'},out)),row,fnd);
+      const lock=()=>demoing||solved;
+      function parse(){const s=inp.value.trim();if(!/^\d+$/.test(s)||s.length>d){S.say(`Type a ${d}-digit number.`,'bad');return null;}return parseInt(s,10);}
+      function rnd(){if(lock())return;let n;do{n=Math.floor(Math.random()*(Math.pow(10,d)-Math.pow(10,d-1)))+Math.pow(10,d-1);}while(kpRep(n,d));inp.value=String(n);go();}
+      function go(){
+        if(lock())return;
+        const v=parse();if(v===null)return;
+        if(mode==='follow'){
+          const c=chain[chain.length-1],want=kpStep(c,d);
+          if(v===want){chain.push(want);inp.value='';S.say('');if(want===t){solved=true;draw();S.win(`🎉 You reached ${t}, and the routine will keep giving ${t}. It took ${chain.length-1} steps.`);return;}draw();}
+          else S.say(`Not quite. ${kpPad(kpBig(c,d),d)} − ${kpPad(kpSmall(c,d),d)} isn’t ${v}. Take care when the smallest number starts with 0.`,'bad');
+        }
+        if(mode==='explore'){
+          if(kpRep(v,d)&&true){}
+          cur=v;draw();
+          const s=kpSteps(v,d);
+          if(!tried.some(x=>x[0]===v)){tried.push([v,s]);}
+          renderTried();
+          S.say(kpRep(v,d)?'All the digits are the same, so the routine gives 0 straight away.':`${kpPad(v,d)} reaches ${t} in ${s} step${s===1?'':'s'}.`,'info');
+        }
+        if(mode==='target'){
+          cur=v;draw();
+          if(cfg.test(v,d)){solved=true;S.win(`🎉 ${kpPad(v,d)} works. ${cfg.after(v)}`);}
+          else S.say(`${kpPad(v,d)} doesn’t fit. ${cfg.miss}`,'bad');
+        }
+      }
+      function renderTried(){fnd.replaceChildren(...tried.map(x=>el('span',null,`${kpPad(x[0],d)} → ${x[1]}`)));}
+      function draw(){
+        if(mode==='follow'){
+          const c=chain[chain.length-1];
+          out.innerHTML=chain.map((x,i)=>i<chain.length-1?`<div>${kpPad(x,d)}: ${kpLine(x,d).replace(/<b>(\d+)<\/b>/,'$1')}</div>`:'').join('')+`<div>Now take <b>${kpPad(c,d)}</b>: ${kpPad(kpBig(c,d),d)} − ${kpPad(kpSmall(c,d),d)} = ${solved?'':'?'}</div>`;
+          if(solved)out.innerHTML=chain.map((x,i)=>i<chain.length-1?`<div>${kpPad(x,d)}: ${kpLine(x,d).replace(/<b>(\d+)<\/b>/,'$1')}</div>`:`<div class="fin">${kpPad(x,d)}: the routine gives ${t} again, so it stops here.</div>`).join('');
+        }
+        else if(mode==='explore'||mode==='target'){out.innerHTML=cur?kpHtml(cur,d):'';}
+        if(!init)S.refresh();
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}solved=false;hintN=0;inp.value='';chain=[cfg.start];cur=mode==='explore'?cfg.start:null;tried=[];if(mode==='explore'){inp.value='';cur=null;}S.say('');renderTried();draw();}
+      function hint(){
+        if(lock())return;
+        const H={follow:['💡 Write the digits in order from largest to smallest, then smallest to largest. Put a 0 at the front of the smaller one if you need it.','💡 Subtract carefully, column by column.'],
+          explore:['💡 Try your birthday year, a phone number, or numbers like 1000 and 2111.','💡 Which numbers take the longest to reach 6174?'],
+          target:[cfg.hint1,cfg.hint2]}[mode];
+        S.say(H[Math.min(hintN,1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        let seq=mode==='follow'?kpChain(cfg.start,d).slice(0,-0):mode==='explore'?(d===4?[3524,1000,2111,9831]:[352,100,211,983]):[cfg.sol];
+        let k=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(mode==='follow'){
+            const full=kpChain(cfg.start,d);
+            if(k>=full.length||(chain.length>0&&chain[chain.length-1]===t)){clearInterval(tick);tick=null;demoing=false;solved=true;draw();S.say(`It reaches ${t}. Press Reset to try it yourself.`,'info');S.revealMaths();S.refresh();return;}
+            if(k>0)chain.push(full[k]);k++;draw();return;
+          }
+          if(k>=seq.length){clearInterval(tick);tick=null;demoing=false;if(mode==='target')solved=true;S.say('Press Reset to start again.','info');S.revealMaths();S.refresh();return;}
+          cur=seq[k++];if(mode==='explore'){tried.push([cur,kpSteps(cur,d)]);renderTried();}
+          draw();
+        },1500);
+        S.say('Watch.','info');
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='follow'?`Steps: ${Math.max(0,chain.length-1)}`:mode==='explore'?`Numbers tried: ${tried.length}`:''})};
+    }};
+  return def;
+}
+const KP_START=[3524,2111,9831,6329];
+const kpFindN=(f)=>{for(let n=1000;n<=9999;n++)if(!kpRep(n,4)&&f(n))return n;return null;};
+const KP_TARGETS=[
+  {text:'Find a 4-digit number (other than 6174) that reaches <strong>6174 in exactly 1 step</strong>.',test:(n,d)=>n!==6174&&kpSteps(n,4)===1,after:n=>'The routine gives 6174 immediately.',miss:'It must give 6174 after one subtraction.',hint1:'💡 Work backwards: which number minus its reverse-sorted partner gives 6174? Try 8532 and 2358.',hint2:'💡 Try 8532.',sol:null},
+  {text:'Find a 4-digit number that needs <strong>7 steps</strong>, the most any number can need.',test:(n,d)=>kpSteps(n,4)===7,after:n=>'That is the longest possible.',miss:'It must take exactly 7 steps to reach 6174.',hint1:'💡 Numbers with lots of repeated digits, like 1000 or 2111, tend to take longer.',hint2:'💡 Try 3141, or numbers starting 1, 0, 0.',sol:null},
+  {text:'Find a 4-digit number whose routine gives <strong>0</strong> straight away.',test:(n,d)=>kpRep(n,4)&&n>0,after:n=>'All four digits are the same, so big − small = 0.',miss:'What do the digits of the number look like if the biggest and the smallest arrangement are the same?',hint1:'💡 When is the biggest number you can make from the digits the same as the smallest?',hint2:'💡 Try 3333.',sol:3333},
+  {text:'Find a 4-digit number whose <strong>first subtraction gives a 3-digit answer</strong> (so a leading zero appears).',test:(n,d)=>!kpRep(n,4)&&kpStep(n,4)<1000,after:n=>'The subtraction left fewer than four digits.',miss:'Its first answer must be less than 1000.',hint1:'💡 You want the biggest and smallest arrangements to be close together, with digits that are nearly equal.',hint2:'💡 Try 2111: 2111 − 1112 = 999.',sol:2111}
+].map(t=>{if(t.sol===null)t.sol=kpFindN(n=>t.test(n,4));return t;});
+const KAPREKAR={id:'kaprekar',icon:'🧮',title:'Kaprekar’s Constant',blurb:'Biggest minus smallest from the same four digits. Do it again and again. Where do you end up?',
+  levels:[
+    {name:'Follow the routine',count:KP_START.length,make:p=>kapLevel('follow',{start:KP_START[p],d:4})},
+    {name:'Explore',count:2,make:p=>kapLevel('explore',{d:[4,3][p],start:null})},
+    {name:'Which number?',count:KP_TARGETS.length,make:p=>kapLevel('target',Object.assign({d:4},KP_TARGETS[p]))}
+  ]};
+shuffleLevels(KAPREKAR);
+INV_LIST.push(KAPREKAR);
+INV_API.kap={kpStep,kpChain,kpSteps,KP_START,KP_TARGETS,kpBig,kpSmall};
+/* ===/JS:kaprekar=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -5804,7 +6086,9 @@ const INVESTIGATIONS=[
     PAINTED,
     PYTH,
     HAPPY,
-    MAGIC];
+    MAGIC,
+    MOSER,
+    KAPREKAR];
 
 
 /* ---------- home ---------- */
