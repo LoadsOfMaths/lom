@@ -482,6 +482,17 @@ svg.pcSvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .pcInputs{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;margin:8px 0}
 .pcInputs .stStep span{min-width:7em;text-align:right}
 /* ===/CSS:pcubes=== */
+/* ===CSS:pyth=== */
+svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
+.pySvg text{font-weight:800;fill:#0e2339;text-anchor:middle;dominant-baseline:middle}
+.pyFound{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.pyFound span{background:#1b3a5c;border:1px solid var(--line);border-radius:10px;padding:4px 10px;font-weight:800}
+.pyCards{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.pyCard{flex:1 1 200px;max-width:260px;border:2px solid var(--line);border-radius:14px;padding:6px 8px;text-align:center;cursor:pointer;background:#16283f;color:inherit;font:inherit}
+.pyCard.on{border-color:#ffb84a;background:#2a3a52}
+.pyCard.ok{border-color:#5ed08a}.pyCard.no{border-color:#e8604f}
+.pyCard .dg{font-size:.85rem;color:var(--mute);min-height:2.4em}
+/* ===/CSS:pyth=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -5101,6 +5112,217 @@ shuffleLevels(PAINTED);
 INV_LIST.push(PAINTED);
 INV_API.painted={pcCounts,PC_TARGETS};
 /* ===/JS:pcubes=== */
+/* ===JS:pyth=== */
+function pySq(n){const r=Math.round(Math.sqrt(n));return r*r===n;}
+function pyTriples(lo,hi){const r=[];for(let a=lo;a<=hi;a++)for(let b=a+1;b<=(a*a-1)/2;b++)if(pySq(a*a+b*b))r.push([a,b,Math.round(Math.sqrt(a*a+b*b))]);return r;}
+function pyQuads(m){const r=[];for(let a=1;a<=m;a++)for(let b=a;b<=m;b++)for(let c=b;c<=m;c++){const s=a*a+b*b+c*c;if(pySq(s))r.push([a,b,c,Math.round(Math.sqrt(s))]);}return r;}
+const PY_BRICKS=[[44,117,240],[240,252,275],[85,132,720],[140,480,693]];
+function pyIsBrick(e){const[a,b,c]=e;return pySq(a*a+b*b)&&pySq(a*a+c*c)&&pySq(b*b+c*c);}
+function pyMaths(){return `<p><strong>Pythagoras’ theorem</strong> says that in a right-angled triangle with shorter sides <em>a</em> and <em>b</em> and hypotenuse <em>c</em>, <em>a</em><sup>2</sup> + <em>b</em><sup>2</sup> = <em>c</em><sup>2</sup>. A set of whole numbers that works is a <strong>Pythagorean triple</strong>, such as (3, 4, 5), (5, 12, 13), (8, 15, 17) or (7, 24, 25).</p>
+<p><strong>Multiples and primitive triples.</strong> Doubling (3, 4, 5) gives (6, 8, 10), which is similar but not new. A triple with no common factor is called <strong>primitive</strong>. Every triple is a multiple of a primitive one.</p>
+<p><strong>Euclid’s formula.</strong> For whole numbers <em>m</em> &gt; <em>n</em> ≥ 1, take <em>a</em> = <em>m</em><sup>2</sup> − <em>n</em><sup>2</sup>, <em>b</em> = 2<em>mn</em>, <em>c</em> = <em>m</em><sup>2</sup> + <em>n</em><sup>2</sup>. This always works, because (<em>m</em><sup>2</sup> − <em>n</em><sup>2</sup>)<sup>2</sup> + (2<em>mn</em>)<sup>2</sup> = (<em>m</em><sup>2</sup> + <em>n</em><sup>2</sup>)<sup>2</sup>. It gives every primitive triple exactly once when <em>m</em> and <em>n</em> have no common factor and are not both odd. For example <em>m</em> = 2, <em>n</em> = 1 gives (3, 4, 5) and <em>m</em> = 3, <em>n</em> = 2 gives (5, 12, 13).</p>
+<p><strong>Patterns.</strong> In any triple, one of the shorter sides is a multiple of 3, one of the shorter sides is a multiple of 4, and one of the three numbers is a multiple of 5. So <em>abc</em> is always a multiple of 60.</p>
+<p><strong>Into three dimensions.</strong> A cuboid with edges <em>a</em>, <em>b</em>, <em>c</em> has a space diagonal <em>d</em> with <em>a</em><sup>2</sup> + <em>b</em><sup>2</sup> + <em>c</em><sup>2</sup> = <em>d</em><sup>2</sup>, because you use Pythagoras twice: once across a face, once up through the box. Whole-number solutions include (1, 2, 2, 3), (2, 3, 6, 7) and (4, 4, 7, 9).</p>
+<p><strong>Euler’s brick.</strong> Can all three <em>face</em> diagonals be whole numbers at once? Yes: the smallest such cuboid has edges <strong>44, 117, 240</strong>, with face diagonals 125, 244 and 267. This is an <strong>Euler brick</strong>. The next ones include (240, 252, 275) and (85, 132, 720). A way to make bricks from a Pythagorean triple (<em>u</em>, <em>v</em>, <em>w</em>) is the edges <em>u</em>(4<em>v</em><sup>2</sup> − <em>w</em><sup>2</sup>), <em>v</em>(4<em>u</em><sup>2</sup> − <em>w</em><sup>2</sup>) and 4<em>uvw</em>. Try (3, 4, 5).</p>
+<p>The space diagonal of the 44, 117, 240 brick is √73225, which is <em>not</em> a whole number. A <strong>perfect cuboid</strong> would have whole-number edges, face diagonals and space diagonal. Nobody has found one, and nobody has proved that none exists. It is an open problem.</p>`;}
+function pyTri(host,a,b){
+  const c=Math.sqrt(a*a+b*b),ns='http://www.w3.org/2000/svg';
+  const mk=(t,at)=>{const e=document.createElementNS(ns,t);for(const k in at)e.setAttribute(k,at[k]);return e;};
+  const x0=-b,x1=a+b,y0=-a,y1=b+a,pad=Math.max(a,b)*.05+.5,m=Math.max(x1-x0,y1-y0),fs=m*.05;
+  const svg=mk('svg',{viewBox:`${x0-pad} ${-(y1+pad)} ${x1-x0+2*pad} ${y1-y0+2*pad+fs*1.6}`,class:'pySvg'});
+  const P=(x,y)=>x+','+(-y);
+  const sqr=(pts,f)=>svg.append(mk('polygon',{points:pts.map(p=>P(...p)).join(' '),fill:f,stroke:'#0e2339','stroke-width':m*.008}));
+  sqr([[0,0],[a,0],[a,-a],[0,-a]],'#7fb1e3');
+  sqr([[0,0],[0,b],[-b,b],[-b,0]],'#f2d95c');
+  sqr([[a,0],[0,b],[b,b+a],[a+b,a]],'#f2a24a');
+  sqr([[0,0],[a,0],[0,b]],'#e8604f');
+  const t=(x,y,s,f)=>{const e=mk('text',{x,y:-y,'font-size':fs});if(f)e.style.fill=f;e.textContent=s;svg.append(e);};
+  t(a/2,-a-fs*.9,'a² = '+a*a,'#cdd9e6');t(-b/2,b/2,'b² = '+b*b);t(a/2+b/2,b/2+a/2,'c² = '+(a*a+b*b));
+    host.replaceChildren(svg);
+}
+function pyBox(host,e,diag){
+  const ns='http://www.w3.org/2000/svg',mk=(t,at)=>{const x=document.createElementNS(ns,t);for(const k in at)x.setAttribute(k,at[k]);return x;};
+  const[a,b,c]=e,M=Math.max(a,b,c),sc=190/M,X=a*sc,Y=c*sc,Z=b*sc*.55,dx=Z*.9,dy=Z*.6;
+  const W=X+dx+20,H=Y+dy+20,svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,class:'pySvg'});
+  const P=(x,y,z)=>[10+x*sc+z*sc*.55*.9,H-10-y*sc-z*sc*.55*.6];
+  const poly=(p,f)=>svg.append(mk('polygon',{points:p.map(q=>q.join(',')).join(' '),fill:f,stroke:'#0e2339','stroke-width':1.5}));
+  poly([P(0,0,0),P(a,0,0),P(a,c,0),P(0,c,0)],'#7fb1e3');
+  poly([P(a,0,0),P(a,0,b),P(a,c,b),P(a,c,0)],'#5f93c9');
+  poly([P(0,c,0),P(a,c,0),P(a,c,b),P(0,c,b)],'#9cc6ef');
+  const ln=(p,q,col)=>svg.append(mk('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:col,'stroke-width':2.5,'stroke-dasharray':'6 3'}));
+  if(diag==='space')ln(P(0,0,0),P(a,c,b),'#e8604f');
+  if(diag==='faces'){ln(P(0,0,0),P(a,c,0),'#e8604f');ln(P(a,0,0),P(a,c,b),'#f2d95c');ln(P(0,c,0),P(a,c,b),'#5ed08a');}
+  host.replaceChildren(svg);
+}
+function pyLevel(mode,cfg){
+  const NUM=(v,id)=>v;
+  const def={custom:true,
+    brief:mode==='explore'?'Choose the two shorter sides <em>a</em> and <em>b</em> of a right-angled triangle with + and −. The squares on the sides have areas <em>a</em>², <em>b</em>² and <em>c</em>². Is the hypotenuse <em>c</em> ever a whole number? Collect as many triples as you can.'
+      :mode==='find'?`Find every Pythagorean triple whose <strong>shorter side <em>a</em> is from ${cfg.lo} to ${cfg.hi}</strong>, with <em>a</em> &lt; <em>b</em> and <em>c</em> the hypotenuse. Set <em>a</em> and <em>b</em>, then press Add. There are <strong>${cfg.sol.length}</strong> to find.`
+      :mode==='euclid'?`Euclid’s formula turns two numbers <em>m</em> &gt; <em>n</em> into a triple. Find <em>m</em> and <em>n</em> so that the <strong>hypotenuse is ${cfg.t}</strong>.`
+      :mode==='quad'?`A cuboid has edges <em>a</em> ≤ <em>b</em> ≤ <em>c</em>, each at most ${cfg.m}. Find every cuboid whose <strong>space diagonal is a whole number</strong>. There are <strong>${cfg.sol.length}</strong>. Set the edges and press Add.`
+      :'Which of these cuboids are <strong>Euler bricks</strong>: all three face diagonals are whole numbers? Tap the bricks, then press Check. Work out the diagonals with Pythagoras.',
+    get maths(){return pyMaths();},
+    mount(stage,S){
+      let a=3,b=4,c=5,m=2,n=1,found=[],solved=false,demoing=false,tok=0,tick=null,hintN=0,sel=new Set(),init=true,msg='';
+      const pic=el('div'),inputs=el('div',{class:'pcInputs'}),info=el('div',{class:'hsInfo'}),fbox=el('div',{class:'pyFound'}),cards=el('div',{class:'pyCards'});
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      const vals={};
+      const row=(nm,get,set,lo,hi)=>{const v=el('b',null,String(get()));vals[nm]=()=>{v.textContent=get();};return el('div',{class:'stStep'},el('span',null,nm),stp('−',()=>set(-1),'Less'),v,stp('+',()=>set(1),'More'));};
+      const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+      const bmax=mode==='explore'?40:80;
+      if(mode==='explore'||mode==='find'){
+        inputs.append(row('a',()=>a,d=>{if(lock())return;a=clamp(a+d,1,mode==='find'?cfg.hi:40);draw();},1,40),row('b',()=>b,d=>{if(lock())return;b=clamp(b+d,1,bmax);draw();},1,bmax));
+        inputs.append(el('button',{class:'mini',onclick:()=>{if(lock())return;b=clamp(b-10,1,bmax);draw();}},'b −10'),el('button',{class:'mini',onclick:()=>{if(lock())return;b=clamp(b+10,1,bmax);draw();}},'b +10'));
+      }
+      if(mode==='quad'){
+        inputs.append(row('a',()=>a,d=>{if(lock())return;a=clamp(a+d,1,cfg.m);draw();}),row('b',()=>b,d=>{if(lock())return;b=clamp(b+d,1,cfg.m);draw();}),row('c',()=>c,d=>{if(lock())return;c=clamp(c+d,1,cfg.m);draw();}));
+      }
+      if(mode==='euclid'){
+        inputs.append(row('m',()=>m,d=>{if(lock())return;m=clamp(m+d,2,12);if(n>=m)n=m-1;draw();}),row('n',()=>n,d=>{if(lock())return;n=clamp(n+d,1,m-1);draw();}));
+      }
+      if(mode==='find'||mode==='quad')inputs.append(el('button',{class:'btn primary',onclick:()=>add()},'Add'));
+      if(mode==='euclid'||mode==='brick')inputs.append(el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      if(mode==='brick'){
+        cfg.set.forEach((e,i)=>{
+          const dg=el('div',{class:'dg'},'Edges '+e.join(', ')),ph=el('div'),card=el('button',{class:'pyCard',onclick:()=>{if(lock())return;sel.has(i)?sel.delete(i):sel.add(i);draw();}},ph,el('b',null,e.join(' × ')),dg);
+          card._ph=ph;card._dg=dg;card._e=e;cards.append(card);
+        });
+      }
+      stage.append(mode==='brick'?cards:el('div',{class:'pcWrap'},el('div',null,pic),el('div',null,info,fbox)),mode==='brick'?el('div'):inputs,mode==='brick'?inputs:el('div'),info.parentNode?el('div'):el('div'));
+      if(mode==='brick')stage.append(info,fbox);
+      function lock(){return demoing||solved;}
+      function draw(){
+        if(mode==='explore'||mode==='find'){
+          pyTri(pic,a,b);const s=a*a+b*b,r=Math.sqrt(s),ok=pySq(s);
+          info.innerHTML=`<em>a</em>² + <em>b</em>² = ${a*a} + ${b*b} = <strong>${s}</strong><br>${ok?`<strong>c = ${r}</strong>: a Pythagorean triple! (${a}, ${b}, ${r})`:`<em>c</em> = √${s} ≈ ${r.toFixed(3)}: not a whole number`}`;
+          if(mode==='explore'&&ok&&a<=b&&!found.some(f=>f[0]===a&&f[1]===b)){found.push([a,b,r]);}
+          if(mode==='explore'&&ok&&a>b&&!found.some(f=>f[0]===b&&f[1]===a)){found.push([b,a,r]);}
+          renderFound();
+        }
+        if(mode==='quad'){
+          pyBox(pic,[a,b,c],'space');const s=a*a+b*b+c*c,ok=pySq(s);
+          info.innerHTML=`<em>a</em>² + <em>b</em>² + <em>c</em>² = ${a*a} + ${b*b} + ${c*c} = <strong>${s}</strong><br>${ok?`<strong>d = ${Math.sqrt(s)}</strong>: a whole number!`:`<em>d</em> = √${s} ≈ ${Math.sqrt(s).toFixed(3)}`}`;
+          renderFound();
+        }
+        if(mode==='euclid'){
+          const A=m*m-n*n,B=2*m*n,C=m*m+n*n;pyTri(pic,Math.min(A,B),Math.max(A,B));
+          info.innerHTML=`<em>a</em> = ${m}² − ${n}² = ${A}<br><em>b</em> = 2 × ${m} × ${n} = ${B}<br><em>c</em> = ${m}² + ${n}² = <strong>${C}</strong><br>Check: ${A*A} + ${B*B} = ${C*C}${C===cfg.t?' ✔':''}`;
+        }
+        if(mode==='brick'){
+          [...cards.children].forEach((cd,i)=>{
+            cd.className='pyCard'+(sel.has(i)?' on':'')+(solved?(pyIsBrick(cd._e)?' ok':' no'):'');
+            pyBox(cd._ph,cd._e,solved?'faces':'');
+            const[x,y,z]=cd._e;
+            cd._dg.innerHTML=solved?`${Math.sqrt(x*x+y*y).toFixed(2).replace(/\.00$/,'')}, ${Math.sqrt(x*x+z*z).toFixed(2).replace(/\.00$/,'')}, ${Math.sqrt(y*y+z*z).toFixed(2).replace(/\.00$/,'')}`:'';
+          });
+          info.textContent=sel.size?`Chosen: ${sel.size}`:'';
+        }
+        Object.values(vals).forEach(f=>f());
+        if(!init)S.refresh();
+      }
+      function renderFound(){
+        const lst=mode==='explore'?found:found;
+        fbox.replaceChildren(...lst.map(f=>el('span',null,'('+f.join(', ')+')')));
+      }
+      function add(){
+        if(lock())return;
+        if(mode==='find'){
+          const lo=Math.min(a,b),hi=Math.max(a,b),cc=Math.sqrt(lo*lo+hi*hi);
+          if(!pySq(lo*lo+hi*hi)){S.say(`${a}² + ${b}² = ${a*a+b*b}, which is not a square number.`,'bad');return;}
+          if(lo<cfg.lo||lo>cfg.hi){S.say(`That works, but the shorter side must be from ${cfg.lo} to ${cfg.hi}.`,'bad');return;}
+          if(found.some(f=>f[0]===lo&&f[1]===hi)){S.say('You have that one already.','info');return;}
+          found.push([lo,hi,cc]);found.sort((x,y)=>x[0]-y[0]||x[1]-y[1]);
+          if(found.length===cfg.sol.length){solved=true;renderFound();S.win(`🎉 All ${cfg.sol.length} found. Notice the multiples such as (6, 8, 10) and (9, 12, 15) of (3, 4, 5).`);}
+          else S.say(`✔ (${lo}, ${hi}, ${cc}). ${found.length} of ${cfg.sol.length} found.`,'good');
+          renderFound();S.refresh();
+        }
+        if(mode==='quad'){
+          const e=[a,b,c].sort((x,y)=>x-y),s=e[0]**2+e[1]**2+e[2]**2;
+          if(!pySq(s)){S.say(`${e[0]}² + ${e[1]}² + ${e[2]}² = ${s}, which is not a square number.`,'bad');return;}
+          if(found.some(f=>f[0]===e[0]&&f[1]===e[1]&&f[2]===e[2])){S.say('You have that one already.','info');return;}
+          found.push([...e,Math.sqrt(s)]);found.sort((x,y)=>x[3]-y[3]||x[0]-y[0]);
+          if(found.length===cfg.sol.length){solved=true;renderFound();S.win(`🎉 All ${cfg.sol.length} found. Each is a Pythagorean triple hiding inside another: for (2, 3, 6, 7), 2² + 3² = 13, then 13 + 6² = 49.`);}
+          else S.say(`✔ ${e.join(', ')} with space diagonal ${Math.sqrt(s)}. ${found.length} of ${cfg.sol.length} found.`,'good');
+          renderFound();S.refresh();
+        }
+      }
+      function check(){
+        if(lock())return;
+        if(mode==='euclid'){
+          if(m*m+n*n===cfg.t){solved=true;draw();S.win(`🎉 m = ${m}, n = ${n} gives the triple (${m*m-n*n}, ${2*m*n}, ${m*m+n*n}).`);}
+          else S.say(`With m = ${m} and n = ${n} the hypotenuse is ${m*m+n*n}, not ${cfg.t}. You need m² + n² = ${cfg.t}.`,'bad');
+        }
+        if(mode==='brick'){
+          const want=new Set(cfg.set.map((e,i)=>pyIsBrick(e)?i:-1).filter(i=>i>=0));
+          const same=want.size===sel.size&&[...want].every(i=>sel.has(i));
+          if(same){solved=true;draw();S.win('🎉 Correct. The coloured dashed lines are the three face diagonals; the numbers show their lengths.');}
+          else S.say('Not quite. For each cuboid work out all three of a²+b², a²+c² and b²+c², and see whether each is a square number.','bad');
+        }
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        solved=false;found=[];sel=new Set();hintN=0;
+        if(mode==='explore'||mode==='find'){a=3;b=4;if(mode==='find'&&a<cfg.lo)a=cfg.lo;}
+        if(mode==='quad'){a=1;b=2;c=2;}
+        if(mode==='euclid'){m=2;n=1;}
+        S.say('');draw();
+      }
+      function hint(){
+        if(lock())return;
+        const H={explore:['💡 Try (3, 4), (5, 12), (8, 15) and (7, 24). What do you notice about the squares?','💡 Try multiples: if (3, 4, 5) works, what about (6, 8, 10)?'],
+          find:['💡 Start with the famous ones: 3, 4, 5 and 5, 12, 13. Then look for multiples of them.','💡 Remember a < b. For a = 7 the other side is 24. For a = 8 try 6 or 15.'],
+          euclid:['💡 You need m² + n² to equal the target. List some square numbers and see which pairs add up.','💡 Both m and n are small, less than 10.'],
+          quad:['💡 Start with a small cuboid like 1, 2, 2. Then try even numbers and multiples of the ones you find.','💡 If one works, doubling every edge works too.'],
+          brick:['💡 For each cuboid check the three face diagonals one at a time. Stop as soon as one is not a whole number.','💡 Look for the pair whose a² + b² is a square, then test the others.']}[mode];
+        S.say(H[Math.min(hintN,1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        let seq=[];
+        if(mode==='explore')seq=[[3,4],[5,12],[8,15],[7,24],[4,5]];
+        if(mode==='find')seq=cfg.sol.map(t=>[t[0],t[1]]);
+        if(mode==='quad')seq=cfg.sol.map(t=>[t[0],t[1],t[2]]);
+        if(mode==='euclid'){const sol=cfg.solMN;seq=[[sol[0],sol[1]]];}
+        if(mode==='brick'){
+          cfg.set.forEach((e,i)=>{if(pyIsBrick(e))sel.add(i);});solved=true;draw();demoing=false;S.say('The bricks have all three face diagonals whole. Press Reset to try again.','info');S.revealMaths();S.refresh();return;
+        }
+        let k=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(k>=seq.length){clearInterval(tick);tick=null;demoing=false;if(mode==='explore'){S.say('Press Reset to start again.','info');}else{solved=true;if(mode==='euclid')S.say(`m = ${m}, n = ${n}.`,'info');else S.say('Press Reset to try it yourself.','info');}S.revealMaths();draw();S.refresh();return;}
+          const t=seq[k++];
+          if(mode==='explore'||mode==='find'){a=t[0];b=t[1];}
+          if(mode==='quad'){a=t[0];b=t[1];c=t[2];}
+          if(mode==='euclid'){m=t[0];n=t[1];}
+          if(mode==='find'||mode==='quad'){const e=mode==='find'?[a,b]:[a,b,c];found.push(mode==='find'?[a,b,Math.sqrt(a*a+b*b)]:[a,b,c,Math.sqrt(a*a+b*b+c*c)]);}
+          draw();
+        },1300);
+        S.say('Watch.','info');
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:(mode==='find'||mode==='quad')?`Found: ${found.length} of ${cfg.sol.length}`:mode==='explore'?`Triples found: ${found.length}`:''})};
+    }};
+  return def;
+}
+const PY_FIND=[[1,10],[1,13],[11,20]].map(([lo,hi])=>({lo,hi,sol:pyTriples(lo,hi)}));
+const PY_QUAD=[7,9,12].map(m=>({m,sol:pyQuads(m)}));
+const PY_EUC=[13,25,29,41,65,85].map(t=>{let s=null;for(let m=2;m<=12&&!s;m++)for(let n=1;n<m;n++)if(m*m+n*n===t){s=[m,n];break;}return {t,solMN:s};}).filter(x=>x.solMN);
+const PY_BRICK=[[[44,117,240],[7,24,45],[3,4,12],[5,12,16]],[[8,15,36],[240,252,275],[9,12,35],[6,8,15]],[[7,24,70],[5,12,35],[85,132,720],[44,117,244]],[[140,480,693],[8,15,112],[7,24,32],[9,12,16]]].map(set=>({set}));
+const PYTH={id:'pythagorean-triples',icon:'📐',title:'Pythagorean Triples',blurb:'Find whole numbers with a² + b² = c², then take the idea into three dimensions and meet Euler’s brick.',
+  levels:[
+    {name:'Explore',make:()=>pyLevel('explore',{})},
+    {name:'Find them all',count:PY_FIND.length,make:p=>pyLevel('find',PY_FIND[p])},
+    {name:'Euclid’s formula',count:PY_EUC.length,make:p=>pyLevel('euclid',PY_EUC[p])},
+    {name:'Space diagonals',count:PY_QUAD.length,make:p=>pyLevel('quad',PY_QUAD[p])},
+    {name:'Euler’s brick',count:PY_BRICK.length,make:p=>pyLevel('brick',PY_BRICK[p])}
+  ]};
+shuffleLevels(PYTH);
+INV_LIST.push(PYTH);
+INV_API.pyth={pyTriples,pyQuads,pyIsBrick,PY_FIND,PY_QUAD,PY_EUC,PY_BRICK};
+/* ===/JS:pyth=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -5125,7 +5347,8 @@ const GROUPS=[
     GOLD,
     CTILES,
     GOLOMB,
-    PAINTED]}
+    PAINTED,
+    PYTH]}
 ];
 
 /* ---------- home ---------- */
