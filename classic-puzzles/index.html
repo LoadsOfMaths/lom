@@ -1194,11 +1194,13 @@ function shapeLevel(spec){
     for(const n of [lat.edges[e].u,lat.edges[e].v]){const p=lat.pos(n),y=Y(n);if(p.x<x0-pad-eps||p.x>x1+pad+eps||y<y0-padY-eps||y>y1+padY+eps)ok=0;}
     lat.allowed[e]=removeMode?start[e]:ok;
   }
+  if(spec.slots){const A=latState(lat,spec.slots,dx,dy);lat.allowed=A.map((v,e)=>(v||start[e])?1:0);}
   const word=type==='sq'?'square':'triangle',words=word+'s';
   const N=spec.N;
+  const goalKeys=spec.goals?new Set(spec.goals.map(g=>latState(lat,g,dx,dy).join(''))):null;
   const minLen=Math.min(...lat.polys.map(p=>p.length));
   const noBig=s=>{for(const p of lat.polys){if(p.length>minLen&&p.every(e=>s[e]))return false;}return true;};
-  const goalCount=s=>latCount(lat,s)===N&&!latLoose(lat,s)&&(!spec.same||noBig(s))&&(!spec.apart||s.reduce((x,y)=>x+y,0)===minLen*N);
+  const goalCount=s=>goalKeys?goalKeys.has(s.join('')):latCount(lat,s)===N&&!latLoose(lat,s)&&(!spec.same||noBig(s))&&(!spec.apart||s.reduce((x,y)=>x+y,0)===minLen*N);
   let tkeys=null,targets=null;
   if(mode==='transform'&&G){
     targets=[graphState(lat,G.target)];tkeys=new Set(targets.map(t=>t.join('')));
@@ -1344,7 +1346,7 @@ function shapeLevel(spec){
           g.classList.toggle('hintTo',!!hintMove&&hintMove.dest===e);
         });
         svg.classList.toggle('carrying',sel!==null);
-        if(mode!=='transform'){
+        if(mode!=='transform'&&!spec.noCount){
           const c=latCount(lat,s),loose=latLoose(lat,s);
           const cw=Math.abs(c)===1?word:words;
           cnt.innerHTML=`${type==='sq'?'Squares':'Triangles'} you can find: <strong>${c}</strong>`+(mode==='none'?'':` &nbsp;·&nbsp; aim: ${N}`)+(loose&&mode!=='none'?` &nbsp;·&nbsp; <span class="warn">spare matches</span>`:'');
@@ -1388,6 +1390,19 @@ const SH_SQUARES=[
     brief:'This grid of <strong>12 matches</strong> hides five squares. Do not move any matches. Instead <strong>add 2 more matches</strong> to make exactly <strong>9 squares</strong>. The two new matches must be laid as a <strong>plus sign inside one of the small squares</strong>.',
     maths:SH_M_HALF(9)}
 ];
+const SH_CUT=(()=>{
+  const slots=[],T=3;
+  for(let b=0;b<=T;b++)for(let a=0;a+b<=T;a++){
+    if(a+1+b<=T)slots.push([a,b,a+1,b]);
+    if(a+b+1<=T)slots.push([a,b,a,b+1]);
+    if(a-1>=0&&a-1+b+1<=T)slots.push([a,b,a-1,b+1]);
+  }
+  const outline=[[0,0,1,0],[1,0,2,0],[2,0,3,0],[0,0,0,1],[0,1,0,2],[0,2,0,3],[3,0,2,1],[2,1,1,2],[1,2,0,3]];
+  const A=[[1,1,2,1],[1,1,0,2],[1,0,1,1]],B=[[1,1,1,2],[0,1,1,1],[2,0,1,1]];
+  return [{mode:'add',type:'tri',k:3,pad:0,noCount:true,fig:outline,slots,goals:[outline.concat(A),outline.concat(B)],
+    brief:'A triangle has sides <strong>3 matches</strong> long, so it is made from <strong>9 matches</strong>. Add <strong>3 more matches</strong> to cut it into <strong>3 pieces</strong> that are all exactly the same size and shape. The new matches must lie inside the triangle.',
+    maths:`<p>A triangle with sides 3 matches long is made of 3 × 3 = <strong>9</strong> small triangles, because tripling the sides multiplies the area by 9. Three equal pieces must therefore have 9 ÷ 3 = <strong>3</strong> small triangles each.</p><p>Three small triangles in a row make an isosceles <em>trapezium</em>. The big triangle has <em>rotational symmetry of order 3</em>, which means it looks the same after a turn of 120°. Because of this, the three pieces can be the same trapezium turned through 120° and 240° about the centre.</p><p>That centre is the only point inside the triangle where the matches meet. The three new matches run from it to the edge, a third of a turn apart. Try both ways round: each makes three identical pieces, but one is the mirror image of the other.</p>`}];
+})();
 const SH_TRI=[
   {mode:'relocate',type:'tri',k:2,N:3,
     fig:[[0,0,1,0],[1,0,2,0],[0,0,0,1],[0,1,0,2],[2,0,1,1],[1,1,0,2],[0,1,1,1]],
@@ -1870,6 +1885,7 @@ const MATCHES={id:'matches',icon:'🔥',title:'Matchsticks',blurb:'Fix wrong sum
     {tab:'sums',name:'Move 2 matches',count:MATCH2.length,make:p=>matchLevel(MATCH2[p],2)},
     {tab:'shapes',name:'Make squares',count:SH_SQUARES.length,make:p=>shapeLevel(SH_SQUARES[p])},
     {tab:'shapes',name:'Make triangles',count:SH_TRI.length,make:p=>shapeLevel(SH_TRI[p])},
+    {tab:'shapes',name:'Equal pieces',count:SH_CUT.length,make:p=>shapeLevel(SH_CUT[p])},
     {tab:'shapes',name:'Take away',count:SH_TAKE.length,make:p=>shapeLevel(SH_TAKE[p])},
     {tab:'shapes',name:'Cherry in the glass',make:()=>cherryLevel()},
     {tab:'shapes',name:'The chair',make:()=>shapeLevel(SH_CHAIR)},
@@ -2085,7 +2101,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
