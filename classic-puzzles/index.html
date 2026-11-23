@@ -420,6 +420,15 @@ svg.pkG{display:block;width:100%;max-width:440px;margin:6px auto;touch-action:ma
 .pkRead .b{color:var(--accent);font-weight:800}.pkRead .i{color:var(--good);font-weight:800}
 .pkKey{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:.85rem;color:var(--mute)}
 /* ===/CSS:pick=== */
+/* ===CSS:gold=== */
+.gbSlots{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;font-size:1.5rem;font-weight:800;margin:6px 0}
+.gbSlot{min-width:70px;min-height:56px;border-radius:12px;border:3px dashed var(--line);background:rgba(255,255,255,.05);color:var(--ink);font:inherit;font-weight:800;font-size:1.5rem;cursor:pointer}
+.gbSlot.full{border-style:solid;border-color:var(--accent)}
+.gbSlot.good{border-color:var(--good);background:rgba(70,208,138,.25)}
+.gbFound{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0;min-height:2.2em}
+.gbFound span{background:rgba(70,208,138,.22);border:2px solid var(--good);border-radius:999px;padding:2px 12px;font-weight:700}
+.gbC1{background:rgba(70,208,138,.14)}.gbC2{background:rgba(70,208,138,.28)}.gbC3{background:rgba(70,208,138,.45)}.gbC4{background:rgba(70,208,138,.65)}
+/* ===/CSS:gold=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -4378,6 +4387,149 @@ shuffleLevels(PICK);
 INV_LIST.push(PICK);
 INV_API.pick={pkStats,pkCanAdd,pkPre,pickLevel};
 /* ===/JS:pick=== */
+/* ===JS:gold=== */
+function gbPrime(n){if(n<2)return false;for(let d=2;d*d<=n;d++)if(n%d===0)return false;return true;}
+function gbPairs(n){const r=[];for(let p=2;p<=n/2;p++)if(gbPrime(p)&&gbPrime(n-p))r.push([p,n-p]);return r;}
+const GB_MATHS=`<p>In 1742 a mathematician called <strong>Christian Goldbach</strong> wrote to Euler suggesting that <strong>every even number bigger than 2 is the sum of two prime numbers</strong>. This is <strong>Goldbach's conjecture</strong>. Nobody has ever found an even number that fails, and computers have checked every even number up to about 4 000 000 000 000 000 000. But nobody has been able to <em>prove</em> that it is always true. It is one of the oldest unsolved problems in maths.</p>
+<p>A few things to notice. The only even prime is 2, so apart from 4 = 2 + 2 the two primes are both odd, and odd + odd is always even. That explains why the conjecture is about even numbers. As the even number gets bigger, it usually has <em>more</em> pairs of primes, not fewer, which makes a counterexample seem less and less likely. Plotting the number of pairs for each even number gives a shape that mathematicians call <strong>Goldbach's comet</strong>.</p>
+<p>The numbers on the upper branches of the comet are multiples of 6, then multiples of 3. They have more pairs because they have fewer small prime factors to get in the way. A related result, that every odd number above 5 is the sum of <em>three</em> primes, was proved in 2013 by Harald Helfgott. The two-prime version is still open.</p>`;
+function goldLevel(mode,T){
+  const pairs=gbPairs(T);
+  const def={
+    custom:true,
+    brief:mode==='one'
+      ?`Write <strong>${T}</strong> as the sum of <strong>two prime numbers</strong>. Tap two numbers on the grid. Remember that a prime number has exactly two factors, 1 and itself, so 1 is not prime, and 9 is not prime because 9 = 3 × 3.`
+      :`<strong>${T}</strong> can be written as the sum of two prime numbers in more than one way. Find <strong>all</strong> the ways. Tap two numbers on the grid each time. (3 + 17 and 17 + 3 count as the same way.)`,
+    maths:GB_MATHS,
+    mount(stage,S){
+      let a=null,b=null,found=[],solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true,wrong=false;
+      const slots=el('div',{class:'gbSlots'}),foundBox=el('div',{class:'gbFound'}),grid=el('div',{class:'stGrid'});
+      stage.append(slots,foundBox,grid);
+      const key=(p,q)=>Math.min(p,q)+'+'+Math.max(p,q);
+      function draw(good){
+        const sum=(a!=null&&b!=null)?a+b:null;
+        const sl=(v,which)=>el('button',{class:'gbSlot'+(v!=null?' full':'')+(good?' good':''),'aria-label':'Slot',onclick:()=>{if(demoing||solved)return;if(which==='a')a=null;else b=null;wrong=false;S.say('');draw();}},v!=null?String(v):'?');
+        slots.replaceChildren(sl(a,'a'),el('span',null,'+'),sl(b,'b'),el('span',null,'='),el('span',{style:'min-width:2.4em;text-align:center;color:'+(sum==null?'var(--mute)':sum===T?'var(--good)':'var(--bad)')},sum==null?'?':String(sum)),el('span',{style:'color:var(--mute);font-size:1.1rem'},`(target ${T})`));
+        foundBox.replaceChildren(...(mode==='all'?found.map(f=>el('span',null,f[0]+' + '+f[1])):[]));
+        grid.replaceChildren();
+        for(let k=2;k<=T-2;k++){
+          const sel=(a===k||b===k);
+          grid.append(el('button',{class:'stCell'+(sel?' pick':''),onclick:()=>tap(k),'aria-label':String(k)},el('b',null,String(k))));
+        }
+        if(!init)S.refresh();
+      }
+      function tap(k){
+        if(demoing||solved)return;
+        if(wrong){a=null;b=null;wrong=false;}
+        if(!gbPrime(k)){
+          let f=2;while(k%f)f++;
+          S.say(k===1?'1 is not prime.':`${k} isn't prime: ${f} × ${k/f} = ${k}.`,'bad');return;
+        }
+        if(a==null)a=k;else if(b==null)b=k;else{S.say('Both slots are full. Tap a slot to empty it.','info');return;}
+        S.say('');
+        if(a!=null&&b!=null)evaluate();else draw();
+      }
+      function evaluate(){
+        const sum=a+b;
+        if(sum!==T){wrong=true;S.say(`${a} + ${b} = ${sum}, which is ${sum>T?'too big':'too small'}. You need ${T}.`,'bad');draw();return;}
+        const kk=key(a,b);
+        if(mode==='one'){solved=true;draw(true);S.win(`🎉 ${a} + ${b} = ${T}, and both are prime! ${T} has ${pairs.length} way${pairs.length>1?'s':''} of being made this way: ${pairs.map(p=>p[0]+' + '+p[1]).join(', ')}.`);return;}
+        if(found.some(f=>key(f[0],f[1])===kk)){S.say(`You already found ${Math.min(a,b)} + ${Math.max(a,b)}. Find another way.`,'info');wrong=true;draw();return;}
+        found.push([Math.min(a,b),Math.max(a,b)]);found.sort((x,y)=>x[0]-y[0]);
+        const done=found.length===pairs.length;
+        a=null;b=null;
+        if(done){solved=true;draw();S.win(`🎉 That is all ${pairs.length} ways: ${found.map(f=>f[0]+' + '+f[1]).join(', ')}.`);return;}
+        S.say(`✔ Found one! That is ${found.length} so far. Are there more?`,'good');draw();
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}a=null;b=null;found=[];solved=false;hintN=0;wrong=false;S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        const rem=pairs.filter(p=>!found.some(f=>key(f[0],f[1])===key(p[0],p[1])));
+        const p=rem[0];
+        S.say(hintN===0?`💡 Try starting with a small prime: 2, 3, 5, 7… What would the other number have to be? Is it prime?`:hintN===1?`💡 One way uses the prime ${p[0]}.`:`💡 ${p[0]} + ${p[1]} = ${T}.`,'info');hintN=Math.min(2,hintN+1);
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        const list=mode==='one'?[pairs[0]]:pairs;let k=0,ph=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(k>=list.length){clearInterval(tick);tick=null;demoing=false;solved=true;a=null;b=null;draw();S.say(mode==='one'?`${list[0][0]} + ${list[0][1]} = ${T}. Press Reset to try it yourself!`:`All ${pairs.length} ways found. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;}
+          const p=list[k];
+          if(ph===0){a=p[0];b=null;draw();S.say(`Try ${p[0]}...`,'info');ph=1;}
+          else if(ph===1){b=p[1];draw(true);S.say(`${p[0]} + ${p[1]} = ${T}, and both are prime!`,'good');ph=2;}
+          else{found.push(p);a=null;b=null;draw();k++;ph=0;}
+        },800);
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='all'?`Found: ${found.length}`:''})};
+    }
+  };
+  return def;
+}
+function goldComet(N){
+  const evens=[];for(let n=4;n<=N;n+=2)evens.push(n);
+  const cnt=n=>gbPairs(n).length,mx=Math.max(...evens.map(cnt)),best=evens.filter(n=>cnt(n)===mx);
+  const def={
+    custom:true,
+    brief:`Every even number from 4 up to ${N} is on the chart. Tap a number to see how many different ways it is the sum of two primes. Which even number up to ${N} can be made in the <strong>most</strong> ways? Set your answer with − and +, then press Check.`,
+    maths:GB_MATHS,
+    mount(stage,S){
+      let seen=new Set(),sel=0,guess=4,solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true;
+      const grid=el('div',{class:'stGrid'}),info=el('div',{class:'hsInfo'}),gB=el('b',null,'4');
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      stage.append(grid,info,el('div',{class:'stAns'},el('span',{class:'lbl'},'Most ways:'),stp('−',()=>setG(guess-2),'Less'),gB,stp('+',()=>setG(guess+2),'More'),el('button',{class:'btn primary',onclick:()=>check()},'Check')));
+      function setG(g){guess=Math.max(4,Math.min(N,g));gB.textContent=guess;}
+      function draw(){
+        grid.replaceChildren();
+        evens.forEach(n=>{
+          const c=cnt(n),s=seen.has(n);
+          grid.append(el('button',{class:'stCell'+(s?' gbC'+Math.min(4,Math.ceil(c/3)):'')+(n===sel?' sel':'')+(solved&&best.includes(n)?' top':''),onclick:()=>tap(n)},el('b',null,String(n)),s?el('small',null,c+(c===1?' way':' ways')):null));
+        });
+        info.textContent=sel&&seen.has(sel)?`${sel} = ${gbPairs(sel).map(p=>p[0]+' + '+p[1]).join(',  ')}`:'';
+        if(!init)S.refresh();
+      }
+      function tap(n){if(demoing)return;sel=n;seen.add(n);setG(n);S.say('');draw();}
+      function check(){
+        if(demoing||solved)return;
+        if(best.includes(guess)){solved=true;draw();S.win(`🎉 ${guess} can be made in ${mx} different ways. ${best.length>1?`(${best.join(' and ')} tie for the most.)`:'No other even number up to '+N+' beats it.'}`);}
+        else{
+          const c=cnt(guess);
+          S.say(`${guess} has ${c} way${c===1?'':'s'}. Another number has more. Try tapping more numbers.`,'bad');
+        }
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}seen=new Set();sel=0;solved=false;hintN=0;setG(4);S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        S.say(hintN===0?'💡 Compare the numbers you have tapped. Which ones are multiples of 6, or of 3? Look at how many ways they have.':'💡 Numbers with lots of small factors, like multiples of 6 and 30, tend to have the most pairs. Try 60, 84 and 90.','info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();let k=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(k>=evens.length){clearInterval(tick);tick=null;demoing=false;solved=true;setG(best[0]);sel=best[0];draw();S.say(`${best.join(' and ')} ${best.length>1?'have':'has'} the most ways (${mx}). The numbers that are multiples of 6 stand out. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;}
+          sel=evens[k];seen.add(sel);draw();k++;
+        },90);
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Numbers tried: ${seen.size}`})};
+    }
+  };
+  return def;
+}
+const GOLD={id:'goldbach',icon:'➗',title:'Goldbach’s Conjecture',blurb:'Is every even number the sum of two primes?',
+  levels:[
+    {name:'Find a pair',count:6,make:p=>goldLevel('one',[10,16,24,30,44,60][p])},
+    {name:'Find every pair',count:4,make:p=>goldLevel('all',[20,30,40,50][p])},
+    {name:'Which has the most?',make:()=>goldComet(100)}
+  ]};
+shuffleLevels(GOLD);
+INV_LIST.push(GOLD);
+INV_API.gold={gbPairs,gbPrime,goldLevel,goldComet};
+/* ===/JS:gold=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -4399,7 +4551,7 @@ const GROUPS=[
     TILES,
     MAXBOX,
     PICK,
-    {soon:1,icon:'➗',title:'Goldbach\u2019s Conjecture',blurb:'Is every even number the sum of two primes?'},
+    GOLD,
     {soon:1,icon:'🟥',title:'Coloured Tiles',blurb:'Find every 3 × 3 tile in two colours — and prove you have them all.'},
     {soon:1,icon:'📏',title:'Golomb\u2019s Ruler',blurb:'Fewest marks on a ruler that can still measure every length.'}]}
 ];
