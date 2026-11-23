@@ -58,8 +58,11 @@ for c in C:
     note=[]
     note.append(f"Starts with {c['c0']} {squares(L)}{'' if c['c0']==1 else 's'}")
     if c['lateral']: note.append("tilted answer")
+    if st&mask([i for i,k in enumerate(L.ekind) if k=='dia']): note.append("tilted square in the start")
     if c['nclass']>1: note.append(f"{c['nclass']} different answers")
-    rows.append(f'''<div class="row" data-id="{c['id']}"><div class="id">{c['id']}<small>{c['lat']}</small></div>
+    dm=mask([i for i,k in enumerate(L.ekind) if k=='dia'])
+    tilt=1 if (st&dm) else 0
+    rows.append(f'''<div class="row" data-id="{c['id']}" data-tilt="{tilt}"><div class="id">{c['id']}<small>{c['lat']}</small></div>
 <div class="pic">{start_svg}</div>
 <div class="txt"><p>{text(c)}</p><p class="meta">{' · '.join(note)}</p></div>
 <div class="pic sol">{sol_svg}</div>

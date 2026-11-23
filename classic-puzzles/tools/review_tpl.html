@@ -9,6 +9,7 @@ header h1{font-size:1.05rem;margin:0 8px 0 0}
 button{font:inherit;padding:7px 12px;border:1px solid #b8c2cc;border-radius:8px;background:#fff;cursor:pointer}
 button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
 #count{margin-left:auto;font-weight:600}
+.tg{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}.sw.sm{width:42px;height:24px;flex:none}.sw.sm span:before{width:18px;height:18px;left:3px;top:3px}.sw.sm input:checked+span:before{transform:translateX(18px)}
 .filters{display:flex;gap:6px;flex-wrap:wrap;width:100%}
 .filters button.on{background:#e8f1f8;border-color:var(--acc)}
 .legend{font-size:.85rem;color:var(--mut);padding:8px 14px}
@@ -30,6 +31,7 @@ main{padding:8px 10px 60px;max-width:1150px;margin:auto}
 <header><h1>Candidates (%%N%%)</h1>
 <button id="all">Select all</button><button id="none">Select none</button>
 <button class="pri" id="copy">Copy chosen IDs</button><button id="dl">Download chosen (JSON)</button>
+<label class="tg"><span class="sw sm"><input type="checkbox" id="notilt"><span></span></span> Hide puzzles that start with a tilted square</label>
 <span id="count"></span>
 <div class="filters" id="filters"></div></header>
 <div class="legend">Left: the starting picture. Middle: the instructions. Right: one answer — <i style="background:#2e9e5b"></i>new match, <i style="background:repeating-linear-gradient(90deg,#c0392b 0 4px,transparent 4px 8px)"></i>match taken away.</div>
@@ -44,7 +46,7 @@ function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){
 function save(a){try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){}}
 function chosen(){return rows.filter(function(r){return r.querySelector('input').checked}).map(function(r){return r.dataset.id})}
 function refresh(){var c=chosen();rows.forEach(function(r){r.classList.toggle('sel',r.querySelector('input').checked)});
- document.getElementById('count').textContent=c.length+' chosen of '+rows.length;save(c)}
+ var vis=rows.filter(function(r){return r.style.display!=='none'}).length;document.getElementById('count').textContent=c.length+' chosen · showing '+vis+' of '+rows.length;save(c)}
 var saved=load();rows.forEach(function(r){r.querySelector('input').checked=saved.indexOf(r.dataset.id)>=0;r.querySelector('input').addEventListener('change',refresh)});
 document.getElementById('all').onclick=function(){rows.forEach(function(r){if(r.style.display!=='none')r.querySelector('input').checked=true});refresh()};
 document.getElementById('none').onclick=function(){rows.forEach(function(r){if(r.style.display!=='none')r.querySelector('input').checked=false});refresh()};
@@ -52,9 +54,12 @@ document.getElementById('copy').onclick=function(){var t=chosen().join(', ');var
  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(function(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}ta.remove()}).then(function(){b.textContent='Copied!';setTimeout(function(){b.textContent='Copy chosen IDs'},1500)})};
 document.getElementById('dl').onclick=function(){var blob=new Blob([JSON.stringify({chosen:chosen()},null,1)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='chosen-puzzles.json';a.click()};
 var types={};rows.forEach(function(r){var s=r.querySelector('.id small').textContent;types[s]=1});
-var f=document.getElementById('filters');var cur='';
+var f=document.getElementById('filters');var cur='';var nt=document.getElementById('notilt');
+function apply(){var shown=0;rows.forEach(function(r){var ok=(!cur||r.querySelector('.id small').textContent===cur)&&!(nt.checked&&r.dataset.tilt==='1');r.style.display=ok?'':'none';if(ok)shown++});
+ document.getElementById('count').dataset.shown=shown;refresh()}
+nt.addEventListener('change',apply);
 ['All'].concat(Object.keys(types)).forEach(function(n){var b=document.createElement('button');b.textContent=n==='All'?'All lattices':({R22:'Square 2×2',R32:'Square 3×2',R33:'Square 3×3',T2:'Triangle 2',T3:'Triangle 3'}[n]||n);if(n==='All')b.className='on';
- b.onclick=function(){cur=n==='All'?'':n;[].forEach.call(f.children,function(x){x.classList.remove('on')});b.classList.add('on');rows.forEach(function(r){r.style.display=(!cur||r.querySelector('.id small').textContent===cur)?'':'none'})};f.appendChild(b)});
+ b.onclick=function(){cur=n==='All'?'':n;[].forEach.call(f.children,function(x){x.classList.remove('on')});b.classList.add('on');apply()};f.appendChild(b)});
 refresh();
 })();
 </script></body></html>
