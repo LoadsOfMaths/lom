@@ -2435,7 +2435,7 @@ function csLevel(nc){
         const num=mk('text',{x:W/2,y:H+22,class:'tn','text-anchor':'middle'});num.textContent=i+1;
         const hit=mk('rect',{x:-8,y:-30,width:W+16,height:H+60,class:'hit',fill:'transparent'});
         hit.addEventListener('click',()=>tap(i));
-        grp.append(clip,mk('rect',{x:0,y:-40,width:W,height:H+40,rx:W/2-2,class:'bg'}),segs,outline,num,hit);
+        grp.append(clip,mk('path',{d:`M0,0 V${H-W/2+2} A${W/2},${W/2} 0 0 0 ${W},${H-W/2+2} V0 Z`,class:'bg'}),segs,outline,num,hit);
         svg.append(grp);tubes.push({grp,segs});
       }
       const stream=mk('line',{class:'stream',visibility:'hidden'});
