@@ -592,6 +592,22 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .crSvg text{text-anchor:middle;font-weight:800;fill:#cdd9e6}
 .crSvg text.sm{font-size:13px;font-weight:600;fill:#9fb3c8}
 /* ===/CSS:rings=== */
+/* ===CSS:passola=== */
+.paGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:600px;margin:8px auto}
+.paGrid button{font:inherit;font-weight:800;border-radius:8px;border:2px solid var(--line);background:#16283f;color:#e6eef7;padding:0;min-height:40px;font-size:clamp(.7rem,2.2vw,1.1rem);cursor:pointer}
+.paGrid.big button{min-height:30px;font-size:clamp(.6rem,1.8vw,.85rem)}
+.paGrid button.x1{background:#2d5a86;color:#9fc3e6;text-decoration:line-through;border-color:#3f78ad}
+.paGrid button.x2{background:#7a4a1d;color:#f0c08a;text-decoration:line-through;border-color:#b07232}
+.paGrid button.lastc{box-shadow:0 0 0 3px #fff;text-decoration:none}
+.paGrid button.legal{border-color:#5ed08a}
+.paGrid button.hint{background:#2f8f5b;border-color:#5ed08a}
+.paGrid button.sel{background:#4a3d1c;border-color:#ffb84a;color:#ffd98a}
+.paGrid button.ok{background:#2f8f5b}
+.paGrid button.bad{border-color:#e8604f}
+.paTop{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.paTop button.on{background:var(--accent);color:#2a1a00;border-color:var(--accent)}
+.paLog{text-align:center;color:var(--mute);font-size:.95rem;margin:4px 0}
+/* ===/CSS:passola=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -6469,6 +6485,215 @@ shuffleLevels(RINGS);
 INV_LIST.push(RINGS);
 INV_API.rings={crLegal,crMin,crDist};
 /* ===/JS:rings=== */
+/* ===JS:passola=== */
+const PA_S={};
+function paSolver(N){
+  if(PA_S[N])return PA_S[N];
+  const memo=new Map(),used=new Uint8Array(N+1),adj=[];let key=0;
+  for(let a=1;a<=N;a++){adj[a]=[];for(let b=1;b<=N;b++)if(a!==b&&(a%b===0||b%a===0))adj[a].push(b);}
+  const P=m=>Math.pow(2,m-1);
+  function rec(last){
+    const k=key*64+last,c=memo.get(k);if(c!==undefined)return c;
+    let w=false;
+    for(const m of adj[last]){if(used[m])continue;used[m]=1;key+=P(m);const r=rec(m);key-=P(m);used[m]=0;if(!r){w=true;break;}}
+    memo.set(k,w);return w;
+  }
+  function load(arr){key=0;for(let i=1;i<=N;i++){used[i]=arr[i]?1:0;if(used[i])key+=P(i);}}
+  const S={
+    adj,
+    legal(arr,last){if(!last){const r=[];for(let i=1;i<=N;i++)if(!arr[i])r.push(i);return r;}return adj[last].filter(m=>!arr[m]);},
+    wins(arr,last){load(arr);return rec(last);},
+    winMoves(arr,last){
+      const out=[];
+      if(!last){for(let a=1;a<=N;a++){load(arr);used[a]=1;key+=P(a);if(!rec(a))out.push(a);}return out;}
+      for(const m of adj[last]){if(arr[m])continue;load(arr);used[m]=1;key+=P(m);if(!rec(m))out.push(m);}return out;
+    },
+    openers(){return S.winMoves(Array(N+1).fill(0),0);}
+  };
+  PA_S[N]=S;return S;
+}
+const PA_EXACT=25;
+function paGreedy(N,arr,last){
+  const adj=(a)=>{const r=[];for(let b=1;b<=N;b++)if(b!==a&&!arr[b]&&(a%b===0||b%a===0))r.push(b);return r;};
+  const cand=last?adj(last):Array.from({length:N},(_,i)=>i+1).filter(i=>!arr[i]);
+  let best=null,bs=1e9;
+  cand.forEach((m,i)=>{arr[m]=1;const n=adj(m).length;arr[m]=0;const sc=n*1000+((m*7919)%97);if(sc<bs){bs=sc;best=m;}});
+  return best;
+}
+function paMaths(){return `<p><strong>The game.</strong> The numbers 1 to <em>N</em> are on the board. Player 1 crosses out any number. After that, each player must cross out a number that is a <strong>factor or a multiple</strong> of the number the other player has just crossed out. You lose if you can’t move. This investigation is known as <strong>Passola</strong>, from John Mason’s collection of mathematical investigations.</p>
+<p><strong>Someone always has a winning strategy.</strong> The game can’t go on for ever (numbers get crossed out) and there are no draws, so for each starting position one player can always force a win, if they play perfectly. The trick is to work backwards: a position is <strong>good for the player about to move</strong> if there is a move that leaves the opponent in a <strong>bad</strong> position, and bad if every move leaves the opponent in a good one. A computer can work this out for small boards, and that is what the computer opponent here is doing.</p>
+<p><strong>Things worth noticing.</strong></p>
+<ul><li>1 is a factor of every number, so after 1 the next player may choose <em>anything</em> that is left.</li>
+<li>A prime bigger than <em>N</em>/2 has no multiples on the board. For example with <em>N</em> = 20, after 13 the <em>only</em> legal reply is 1. Then the player who opened can pick whatever they like. Big primes are powerful openers.</li>
+<li>With <em>N</em> = 6 or 10, <strong>no opening wins</strong>: Player 2 wins whatever Player 1 does. With <em>N</em> = 15 the only winning openers are 11 and 13. With <em>N</em> = 25 they are 13, 17, 19 and 23, and for <em>N</em> = 35 they are 19, 23, 29 and 31. In each case these are exactly the primes bigger than <em>N</em>/2.</li>
+<li>With <em>N</em> = 20 most openers win (everything except 1 and 14). The winning set changes irregularly as <em>N</em> grows, so there is no simple formula. That is part of what makes it a good investigation.</li></ul>
+<p><strong>Questions to explore.</strong> Why does opening with 1 lose for the first player when <em>N</em> = 20? Which boards give the second player the win? What happens if you play on 1 to <em>N</em> with only the even numbers, or if the rule is changed to allow only multiples?</p>`;}
+function passolaLevel(mode,cfg){
+  const N=cfg.n;
+  const def={custom:true,
+    brief:mode==='play'?`The numbers 1 to ${N} are on the board. Player 1 crosses out any number. After that you must cross out a <strong>factor or a multiple</strong> of the number just crossed out. If you can’t move, you lose. Play with two teams, or against the computer${N<=PA_EXACT?', which plays perfectly':''}.`
+      :mode==='open'?`Numbers 1 to ${N}, with Player 1 opening. <strong>Which opening numbers give Player 1 a win</strong> if both players play perfectly? Tap them all, then press Check. If you think none win, press “None win”.`
+      :`It’s a game with the numbers 1 to ${N}. The crossed-out numbers are shaded and the last number crossed out is outlined in white. <strong>It’s your turn. Find a move that wins</strong> whatever the other player does. Tap a number.`,
+    get maths(){return paMaths();},
+    mount(stage,S){
+      const solver=N<=PA_EXACT?paSolver(N):null;
+      let arr,owner,seq,last,turn,vs=(mode==='play'&&N<=PA_EXACT),over=false,solved=false,demoing=false,tok=0,tick=null,hintN=0,hintSet=[],sel=new Set(),init=true,pos=null,busy=false;
+      const info=el('div',{class:'hsInfo',style:'text-align:center'}),grid=el('div',{class:'paGrid'+(N>50?' big':'')}),top=el('div',{class:'paTop'}),log=el('div',{class:'paLog'}),row=el('div',{class:'invRow'});
+      const bCmp=el('button',{class:'btn',onclick:()=>setVs(true)},'💻 v computer'),b2p=el('button',{class:'btn',onclick:()=>setVs(false)},'👥 Two players');
+      if(mode==='play'&&N<=PA_EXACT)top.append(b2p,bCmp);
+      if(mode==='open')row.append(el('button',{class:'btn primary',onclick:()=>checkOpen()},'Check'),el('button',{class:'btn',onclick:()=>checkOpen(true)},'None win'));
+      stage.append(top,info,grid,log,row);
+      const lock=()=>demoing||solved||over||busy;
+      function setVs(v){if(demoing)return;vs=v;reset();}
+      function legalNow(){return solver?solver.legal(arr,last):(()=>{const r=[];for(let m=1;m<=N;m++)if(!arr[m]&&(!last||(m!==last&&(m%last===0||last%m===0))))r.push(m);return r;})();}
+      function names(){return vs?['You','The computer']:['Player 1','Player 2'];}
+      function draw(){
+        grid.replaceChildren();
+        const legal=new Set(mode==='open'?[]:legalNow());
+        for(let m=1;m<=N;m++){
+          let cls='';
+          if(owner[m]===1)cls='x1';if(owner[m]===2)cls='x2';
+          if(m===last)cls+=' lastc';
+          if(!owner[m]&&legal.has(m)&&!(mode==='play'&&over)&&!demoing)cls+=' legal';
+          if(hintSet.includes(m))cls+=' hint';
+          if(mode==='open'){cls=sel.has(m)?'sel':'';if(solved){const w=solver.openers();if(w.includes(m))cls+=' ok';if(sel.has(m)!==w.includes(m))cls+=' bad';}}
+          grid.append(el('button',{class:cls,onclick:()=>tap(m),'aria-label':'Number '+m},String(m)));
+        }
+        if(mode==='play'){
+          const nm=names();
+          if(over)info.innerHTML='';
+          else info.innerHTML=last?`<strong>${nm[turn-1]}</strong> to move: choose a factor or multiple of <strong>${last}</strong>. (${legal.size} choice${legal.size===1?'':'s'})`:`<strong>${nm[0]}</strong> to open: cross out any number.`;
+          log.textContent=seq.length?seq.join(' → '):'';
+        }
+        if(mode==='open')info.innerHTML=`Chosen: <strong>${sel.size}</strong>`;
+        if(mode==='find')info.innerHTML=`Last number crossed out: <strong>${last}</strong>. Choose a factor or a multiple of ${last}.`;
+        if(!init)S.refresh();
+      }
+      function cross(m,who){arr[m]=1;owner[m]=who;seq.push(m);last=m;}
+      function finishIfBlocked(){
+        if(!legalNow().length){
+          over=true;const winner=3-turn,nm=names();
+          if(vs&&winner===1){solved=true;draw();S.win(`🎉 You win! The computer has no factor or multiple of ${last} left.`);}
+          else if(vs){draw();S.say(`The computer wins: you have no factor or multiple of ${last} left. Press Undo to try another move, or Reset.`,'bad');}
+          else{solved=true;draw();S.win(`🎉 ${nm[winner-1]} wins! ${nm[turn-1]} has no factor or multiple of ${last} left.`);}
+          return true;
+        }
+        return false;
+      }
+      function tap(m){
+        if(mode==='open'){if(lock())return;sel.has(m)?sel.delete(m):sel.add(m);draw();return;}
+        if(lock())return;
+        if(mode==='find'){
+          if(!legalNow().includes(m)){S.say(`${m} isn’t a factor or multiple of ${last}, or it’s been crossed out already.`,'bad');return;}
+          const wm=solver.winMoves(arr,last);
+          if(wm.includes(m)){cross(m,1);solved=true;draw();S.win(`🎉 ${m} wins. Whatever the other player does, you can keep answering until they are blocked.`);}
+          else{
+            cross(m,1);const rep=solver.winMoves(arr,last)[0];
+            S.say(rep?`${m} loses: the other player can reply ${rep}, and they win from there with perfect play. Press Undo and try another.`:`${m} doesn’t win. Press Undo and try another.`,'bad');
+            arr[m]=0;owner[m]=0;seq.pop();last=pos.last;draw();
+          }
+          return;
+        }
+        if(!legalNow().includes(m)){S.say(last?`${m} isn’t a factor or multiple of ${last}, or it’s been crossed out already.`:'Choose a number not crossed out.','bad');return;}
+        snap();cross(m,turn);turn=3-turn;S.say('');hintSet=[];draw();
+        if(finishIfBlocked())return;
+        if(vs&&turn===2)computerMove();
+      }
+      let hist=[];
+      function snap(){hist.push(JSON.stringify({arr,owner,seq,last,turn,over}));}
+      function computerMove(){
+        busy=true;S.refresh();
+        setTimeout(()=>{
+          let m=0;
+          const legal=legalNow();
+          if(solver){const w=solver.winMoves(arr,last);m=w.length?w[Math.floor(w.length*0)]:legal[(legal.length*0)|0];
+            if(!w.length){m=legal[Math.floor((seq.length*7)%legal.length)];}}
+          else m=paGreedy(N,arr,last);
+          cross(m,2);turn=1;busy=false;S.say(`The computer crosses out ${m}.`,'info');draw();finishIfBlocked();
+        },650);
+      }
+      function checkOpen(none){
+        if(lock())return;
+        const w=solver.openers();
+        const chosen=none?[]:[...sel];
+        const ok=w.length===chosen.length&&w.every(x=>chosen.includes(x));
+        if(ok){solved=true;draw();S.win(w.length?`🎉 Yes! The winning openers are ${w.join(', ')}.`:`🎉 Yes! No opening wins: Player 2 can always win.`);}
+        else if(none)S.say('Some openers do win. Try playing against the computer to find one.','bad');
+        else{
+          const wrong=chosen.filter(x=>!w.includes(x)).length,missed=w.filter(x=>!chosen.includes(x)).length;
+          S.say(`Not quite. ${wrong?wrong+' of your choices ${wrong>1?"don’t":"doesn’t"} win. ':''}${missed?'You have missed '+(wrong?'some':'at least one')+'.':''}`.replace('${wrong>1?"don’t":"doesn’t"}',wrong>1?'don’t':'doesn’t'),'bad');
+        }
+      }
+      function makePos(){
+        const sv=solver;let seed=cfg.seed;
+        for(let tries=0;tries<400;tries++){
+          let r=seed*9301+49297;const rnd=()=>{r=(r*9301+49297)%233280;return r/233280;};
+          const a=Array(N+1).fill(0),ow=Array(N+1).fill(0),sq=[];let l=0,who=2;
+          const len=cfg.len;let okp=true;
+          for(let i=0;i<len;i++){const lg=sv.legal(a,l);if(!lg.length){okp=false;break;}const m=lg[Math.floor(rnd()*lg.length)];a[m]=1;ow[m]=(i%2)?2:1;sq.push(m);l=m;}
+          if(okp){const lg=sv.legal(a,l),wm=sv.winMoves(a,l);if(wm.length&&wm.length<lg.length&&lg.length>=3)return {arr:a,owner:ow,seq:sq,last:l};}
+          seed+=1000;
+        }
+        return null;
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}busy=false;over=false;solved=false;hintN=0;hintSet=[];sel=new Set();hist=[];
+        arr=Array(N+1).fill(0);owner=Array(N+1).fill(0);seq=[];last=0;turn=1;
+        if(mode==='find'){pos=makePos();arr=pos.arr;owner=pos.owner;seq=pos.seq.slice();last=pos.last;turn=1;}
+        bCmp.classList.toggle('on',vs);b2p.classList.toggle('on',!vs);
+        S.say('');draw();
+      }
+      function undo(){
+        if(demoing||busy||mode!=='play'||!hist.length)return;
+        let o=JSON.parse(hist.pop());
+        if(vs&&o.turn===2&&hist.length){o=JSON.parse(hist.pop());}
+        arr=o.arr;owner=o.owner;seq=o.seq;last=o.last;turn=o.turn;over=false;solved=false;hintSet=[];S.say('');draw();
+      }
+      function hint(){
+        if(lock())return;
+        if(mode==='open'){S.say(hintN?'💡 After a big prime like 13 or 19 only 1 is left as a reply. Then you can choose freely.':'💡 Try playing against the computer to see which openers it fears.','info');hintN++;return;}
+        if(mode==='find'){const w=solver.winMoves(arr,last);S.say(hintN?`💡 One winning move is highlighted.`:'💡 Look at each choice. What would the other player have to reply with?','info');if(hintN){hintSet=[w[0]];draw();}hintN++;return;}
+        if(solver){
+          const w=solver.winMoves(arr,last);
+          if(w.length){hintSet=[w[0]];S.say(last?`💡 ${w[0]} is a winning move.`:`💡 ${w.length>3?'Many openers win. ':''}${w[0]} is a winning opener.`,'info');}
+          else S.say('💡 Every move loses against perfect play from here. Pick one that gives the other player the most chances to go wrong.','info');
+          draw();
+        } else S.say('💡 Try a prime bigger than half of '+N+', or a number with few factors and multiples. Try to leave your opponent with only 1.','info');
+        hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        if(mode==='open'){reset();const w=solver.openers();w.forEach(x=>sel.add(x));solved=true;draw();S.say(w.length?`The winning openers are ${w.join(', ')}.`:'No opening wins.','info');S.revealMaths();S.refresh();return;}
+        if(mode==='find'){reset();const w=solver.winMoves(arr,last);hintSet=w;draw();S.say(`The winning moves are highlighted: ${w.join(', ')}.`,'info');return;}
+        vs=false;reset();demoing=true;const my=++tok;S.refresh();
+        let who=1,first=true;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          let m;
+          if(solver){const w=solver.winMoves(arr,last);const lg=solver.legal(arr,last);m=w.length?w[0]:lg[0];if(first&&!w.length)m=2;}
+          else m=paGreedy(N,arr,last);
+          cross(m,turn);turn=3-turn;first=false;draw();
+          if(!legalNow().length){clearInterval(tick);tick=null;demoing=false;over=true;solved=true;draw();S.say(`Blocked! ${names()[turn-1]} can’t move, so ${names()[2-turn]} wins. Press Reset to play.`,'info');S.revealMaths();S.refresh();}
+        },700);
+        S.say('A perfect game: watch.','info');
+      }
+      reset();init=false;
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:mode==='play'&&!demoing&&!busy&&hist.length>0,reset:true,hint:!demoing&&!solved&&!busy,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='play'?`Moves: ${seq.length}`:''})};
+    }};
+  return def;
+}
+const PA_PLAY=[10,15,20,25,50,100],PA_OPEN=[10,15,20,25],PA_FIND=[{n:20,seed:3,len:3},{n:20,seed:11,len:4},{n:20,seed:29,len:5},{n:25,seed:7,len:4}];
+const PASSOLA={id:'passola',icon:'✖️',title:'Passola',blurb:'Cross out a factor or multiple of the last number chosen. If you can’t move, you lose. Can you find a winning strategy?',
+  levels:[
+    {name:'Play the game',count:PA_PLAY.length,make:p=>passolaLevel('play',{n:PA_PLAY[p]})},
+    {name:'Winning openers',count:PA_OPEN.length,make:p=>passolaLevel('open',{n:PA_OPEN[p]})},
+    {name:'Find the winning move',count:PA_FIND.length,make:p=>passolaLevel('find',PA_FIND[p])}
+  ]};
+shuffleLevels(PASSOLA);
+INV_LIST.push(PASSOLA);
+INV_API.passola={paSolver,PA_FIND};
+/* ===/JS:passola=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -6502,7 +6727,8 @@ const INVESTIGATIONS=[
     KAPREKAR,
     LOCKERS,
     WINNER,
-    RINGS];
+    RINGS,
+    PASSOLA];
 
 
 /* ---------- home ---------- */
