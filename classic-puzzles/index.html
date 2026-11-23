@@ -346,6 +346,23 @@ svg.carpark{display:block;width:100%;margin:8px auto;touch-action:none}
 .stCell.w2{background:rgba(70,208,138,.4);border-color:var(--good)}
 .stCell.w3{background:rgba(70,208,138,.6);border-color:var(--good)}
 /* ===/CSS:consec=== */
+/* ===CSS:hail=== */
+.hsBtns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.hsBtns .btn{min-width:130px;font-size:1.2rem;min-height:56px}
+.hsBtns .btn.hint{box-shadow:0 0 0 4px var(--good)}
+.hsNow{text-align:center;font-size:2.6rem;font-weight:800;color:var(--accent);margin:2px 0}
+.hsSeq{display:flex;flex-wrap:wrap;gap:4px 6px;justify-content:center;align-items:center;max-height:210px;overflow:auto;padding:4px}
+.hsSeq span{background:rgba(255,255,255,.08);border-radius:8px;padding:2px 8px;font-weight:700}
+.hsSeq span.ev{background:rgba(111,181,255,.22)}
+.hsSeq span.od{background:rgba(255,184,77,.28)}
+.hsSeq i{color:var(--mute);font-style:normal}
+svg.hsChart{display:block;width:100%;max-width:760px;margin:6px auto}
+.hsChart .ax{stroke:var(--line);stroke-width:1}
+.hsChart .ln{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.hsChart .lb{font-size:12px;fill:var(--mute)}
+.hsInfo{text-align:center;color:#dbe7f3;min-height:1.6em}
+.stCell.sel{box-shadow:0 0 0 4px var(--accent)}
+/* ===/CSS:hail=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -3600,6 +3617,135 @@ const CONSEC={id:'consecutives',icon:'➕',title:'Consecutives',blurb:'Which num
 INV_LIST.push(CONSEC);
 INV_API.consec={consecLevel,cnRuns};
 /* ===/JS:consec=== */
+/* ===JS:hail=== */
+function hsSeq(n){const q=[n];while(n!==1){n=n%2?3*n+1:n/2;q.push(n);}return q;}
+function hsMaths(){return `<p>Start with any whole number. If it is even, halve it. If it is odd, multiply by 3 and add 1. Keep going. The numbers rise and fall like hailstones in a storm cloud, and every start anyone has ever tried ends up at 1 (after which the sequence repeats 1, 4, 2, 1, 4, 2, …).</p>
+<p>Nobody knows whether it <strong>always</strong> happens. This is the <strong>Collatz conjecture</strong>, named after Lothar Collatz, who asked about it in the 1930s. Computers have checked every start up to well over a billion billion, but there is no proof. It is one of the most famous unsolved problems in maths, and it takes only a few lines to explain.</p>
+<p>Some facts to notice. After 3n + 1 with n odd, the answer is always <em>even</em>, so an odd number is always followed by a halving. Starting at a power of 2 (such as 16) just halves all the way down. A start of 27 takes <strong>111</strong> steps and climbs as high as <strong>9232</strong> before it falls. Under 100, the start that takes longest is 97, with 118 steps.</p>`;}
+function hailLevel(starts,idx){
+  const n0=starts[idx];
+  const def={
+    custom:true,
+    brief:`Follow the <strong>hailstone rule</strong>. If the number is <strong>even</strong>, halve it. If it is <strong>odd</strong>, multiply by 3 and add 1. Start at <strong>${n0}</strong> and keep going until you reach <strong>1</strong>. Tap the correct button each time.`,
+    maths:hsMaths(),
+    mount(stage,S){
+      let seq=[n0],solved=false,demoing=false,tok=0,hintOn=false,init=true;
+      const now=el('div',{class:'hsNow'}),seqBox=el('div',{class:'hsSeq'});
+      const bHalf=el('button',{class:'btn',onclick:()=>press('h')},'÷ 2'),bTrip=el('button',{class:'btn',onclick:()=>press('t')},'× 3 + 1');
+      stage.append(now,el('div',{class:'hsBtns'},bHalf,bTrip),seqBox);
+      const cur=()=>seq[seq.length-1];
+      function press(w,quiet){
+        if(demoing&&!quiet)return;
+        if(solved)return;
+        const c=cur(),even=c%2===0;
+        if((w==='h')!==even){S.say(even?`${c} is even, so halve it.`:`${c} is odd, so multiply by 3 and add 1.`,'bad');return;}
+        seq.push(even?c/2:3*c+1);hintOn=false;S.say('');
+        if(cur()===1&&!quiet){solved=true;draw();
+          S.win(`🎉 Reached 1 in ${seq.length-1} steps. The highest number was ${Math.max(...seq)}.`);return;}
+        draw();
+      }
+      function draw(){
+        now.textContent=cur();
+        seqBox.replaceChildren();
+        seq.forEach((v,i)=>{if(i)seqBox.append(el('i',null,'→'));seqBox.append(el('span',{class:v%2?'od':'ev'},String(v)));});
+        bHalf.disabled=solved;bTrip.disabled=solved;
+        bHalf.classList.toggle('hint',hintOn&&cur()%2===0);bTrip.classList.toggle('hint',hintOn&&cur()%2===1);
+        if(!init)S.refresh();
+      }
+      function reset(){tok++;demoing=false;seq=[n0];solved=false;hintOn=false;S.say('');draw();}
+      function undo(){if(demoing||solved&&false||seq.length<2)return;seq.pop();solved=false;S.say('');draw();}
+      function hint(){if(demoing||solved)return;hintOn=true;const c=cur();S.say(c%2?`💡 ${c} is odd.`:`💡 ${c} is even.`,'info');draw();}
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        const go=()=>{
+          if(my!==tok)return;
+          if(cur()===1){demoing=false;solved=true;draw();S.say(`Reached 1 in ${seq.length-1} steps. The highest number was ${Math.max(...seq)}. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;}
+          const c=cur();S.say(c%2?`${c} is odd: ×3 + 1.`:`${c} is even: ÷2.`,'info');
+          seq.push(c%2?3*c+1:c/2);draw();setTimeout(go,seq.length>40?150:600);
+        };
+        setTimeout(go,400);
+      }
+      reset();init=false;
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;},
+        ctl:()=>({undo:!demoing&&seq.length>1&&!solved,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Steps: ${seq.length-1}`})};
+    }
+  };
+  return def;
+}
+function hailHunt(N){
+  const best=(()=>{let b=1,bs=0;for(let n=1;n<=N;n++){const s=hsSeq(n).length-1;if(s>bs){bs=s;b=n;}}return b;})();
+  const bs=hsSeq(best).length-1;
+  const def={
+    custom:true,
+    brief:`Every whole number up to ${N} eventually reaches 1 under the hailstone rule. The number of steps it takes varies a lot. Pick a start with the − and + buttons and press <strong>Run it</strong> to see its journey. Which start up to ${N} takes the <strong>most steps</strong> to reach 1? When you think you know, press Check.`,
+    maths:hsMaths(),
+    mount(stage,S){
+      let sel=1,done=new Map(),solved=false,demoing=false,tok=0,tick=null,init=true;
+      const sB=el('b',null,'1'),info=el('div',{class:'hsInfo'}),chart=el('div'),grid=el('div',{class:'stGrid'});
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      const bRun=el('button',{class:'btn primary',onclick:()=>run(sel)},'Run it'),bCheck=el('button',{class:'btn',onclick:()=>check()},'Check');
+      const ctl=el('div',{class:'cnBuild'},el('span',null,'Start at'),stp('−',()=>setSel(sel-1),'Less'),sB,stp('+',()=>setSel(sel+1),'More'),bRun,bCheck);
+      stage.append(ctl,info,chart,grid);
+      function setSel(v){sel=Math.max(1,Math.min(N,v));sB.textContent=sel;draw();}
+      function plot(q){
+        const W=700,H=210,P=34,mx=Math.max(...q),dx=(W-P-10)/Math.max(1,q.length-1);
+        const pts=q.map((v,i)=>`${P+i*dx},${H-24-(v/mx)*(H-44)}`).join(' ');
+        chart.innerHTML=`<svg class="hsChart" viewBox="0 0 ${W} ${H}"><line class="ax" x1="${P}" y1="${H-24}" x2="${W-6}" y2="${H-24}"/><line class="ax" x1="${P}" y1="10" x2="${P}" y2="${H-24}"/><polyline class="ln" points="${pts}"/><text class="lb" x="${P-4}" y="18" text-anchor="end">${mx}</text><text class="lb" x="${P-4}" y="${H-26}" text-anchor="end">1</text><text class="lb" x="${W-6}" y="${H-6}" text-anchor="end">step ${q.length-1}</text></svg>`;
+      }
+      function run(n){
+        if(demoing)return;
+        const q=hsSeq(n);done.set(n,q.length-1);
+        info.textContent=`Start ${n}: ${q.length-1} steps to reach 1, highest number ${Math.max(...q)}.`;
+        plot(q);S.say('');draw(n);
+      }
+      function check(){
+        if(demoing||solved)return;
+        const s=hsSeq(sel).length-1;
+        if(sel===best){solved=true;draw();S.win(`🎉 Yes! ${best} takes ${bs} steps, more than any other start up to ${N}.`);return;}
+        if(done.size&&[...done.entries()].some(([n,v])=>v>s)){S.say(`${sel} takes ${s} steps, but you have already found one that takes more.`,'bad');return;}
+        S.say(`${sel} takes ${s} steps. There is a start that takes more. Keep exploring!`,'bad');
+      }
+      function draw(just){
+        grid.replaceChildren();
+        for(let n=1;n<=N;n++){
+          const v=done.get(n);
+          grid.append(el('button',{class:'stCell'+(v!=null?' yes':'')+(n===sel?' sel':'')+(n===just?' now':'')+(solved&&n===best?' top':''),onclick:()=>{setSel(n);if(done.has(n))run(n);}},el('b',null,String(n)),v!=null?el('small',null,v+(v===1?' step':' steps')):null));
+        }
+        if(!init)S.refresh();
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}done=new Map();solved=false;sel=1;sB.textContent='1';chart.replaceChildren();info.textContent='';S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        const un=[];for(let n=1;n<=N;n++)if(!done.has(n))un.push(n);
+        S.say(un.length?`💡 Try ${un[Math.floor(Math.random()*un.length)]} — you haven't run it yet. Odd numbers give 3n + 1 and can climb high first.`:'💡 You have run them all. Which has the biggest number of steps?','info');
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();let n=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          n++;
+          if(n>N){clearInterval(tick);tick=null;demoing=false;solved=true;setSel(best);run(best);S.say(`${best} takes the most steps: ${bs}. Press Reset to try it yourself!`,'info');S.revealMaths();return;}
+          const q=hsSeq(n);done.set(n,q.length-1);sel=n;sB.textContent=n;plot(q);info.textContent=`Start ${n}: ${q.length-1} steps.`;draw(n);
+        },N>50?70:140);
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Starts run: ${done.size}`})};
+    }
+  };
+  return def;
+}
+const HAIL={id:'hailstones',icon:'🌨️',title:'Hailstones',blurb:'Halve it or triple it and add one — where does it end?',
+  levels:[
+    {name:'Follow the rule',count:6,make:p=>hailLevel([6,7,9,12,15,19],p)},
+    {name:'Hunt for the longest',count:2,make:p=>hailHunt([30,100][p])}
+  ]};
+shuffleLevels(HAIL);
+INV_LIST.push(HAIL);
+INV_API.hail={hsSeq,hailLevel,hailHunt};
+/* ===/JS:hail=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -3616,7 +3762,7 @@ const GROUPS=[
   {title:'Investigations',items:[
     STAMPS,
     CONSEC,
-    {soon:1,icon:'🌨️',title:'Hailstones',blurb:'Halve it or triple it and add one — where does it end?'},
+    HAIL,
     {soon:1,icon:'🔢',title:'Euler\u2019s Phi Function',blurb:'How many numbers up to n share no factor with n?'},
     {soon:1,icon:'🟦',title:'Tiles and Spacers',blurb:'Tile an m × n wall — how many spacers for the corners and the edges?'},
     {soon:1,icon:'📦',title:'Max Box',blurb:'Cut corners from a sheet and fold it up — which box holds the most?'},
