@@ -382,6 +382,29 @@ svg.tsWall{display:block;width:100%;max-width:640px;margin:6px auto;touch-action
 .tsCmp{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;margin:8px 0}
 .tsCmp .stStep b{min-width:2.2em}
 /* ===/CSS:tiles=== */
+/* ===CSS:box=== */
+.mbWrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:flex-start}
+.mbWrap svg{flex:1 1 300px;max-width:440px;min-width:240px;display:block}
+.mbSl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:8px 0}
+.mbSl input[type=range]{flex:1 1 260px;max-width:520px;height:34px;accent-color:var(--accent)}
+.mbSl .rd{font-weight:800;font-size:1.2rem;min-width:7.5em;text-align:center}
+.mbRead{text-align:center;min-height:1.7em;color:#dbe7f3}
+.mbRead b{color:var(--accent)}
+.mbG .ax{stroke:var(--line);stroke-width:1}
+.mbG .tk{font-size:11px;fill:var(--mute)}
+.mbG .pt{fill:var(--accent);stroke:#2a1a00;stroke-width:1}
+.mbG .cv{fill:none;stroke:var(--good);stroke-width:2.5}
+.mbG .pl{fill:none;stroke:rgba(255,184,77,.45);stroke-width:1.5}
+.mbG .cur{fill:none;stroke:#fff;stroke-width:2}
+.mbS .sh{fill:#d9c79a;stroke:#8a7440;stroke-width:1.5}
+.mbS .cut{fill:#0e2339;stroke:#ff7a7a;stroke-width:1.5;stroke-dasharray:4 3}
+.mbS .fd{fill:none;stroke:#8a7440;stroke-width:1;stroke-dasharray:3 3}
+.mbS .f1{fill:#e8b86a;stroke:#6b4f1d;stroke-width:1.5}
+.mbS .f2{fill:#c4934a;stroke:#6b4f1d;stroke-width:1.5}
+.mbS .f3{fill:#8a6a2e;stroke:#6b4f1d;stroke-width:1.5}
+.mbS .f4{fill:#a47d3a;stroke:#6b4f1d;stroke-width:1.5}
+.mbS .tx{font-size:12px;fill:var(--ink)}
+/* ===/CSS:box=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -4041,6 +4064,121 @@ shuffleLevels(TILES);
 INV_LIST.push(TILES);
 INV_API.tiles={tsCounts,tilesLevel};
 /* ===/JS:tiles=== */
+/* ===JS:box=== */
+function mbVol(a,b,x){return x*(a-2*x)*(b-2*x);}
+function mbBest(a,b){return (a+b-Math.sqrt(a*a-a*b+b*b))/6;}
+function mbMaths(a,b){
+  const xs=mbBest(a,b),sq=a===b;
+  return `<p>Cut a square of side <em>x</em> from each corner of an <em>${a} × ${b}</em> sheet and fold up the sides. The box is <strong>${a} − 2<em>x</em></strong> by <strong>${b} − 2<em>x</em></strong> by <strong><em>x</em></strong> high, so the volume is</p>
+<p style="text-align:center"><strong><em>V</em> = <em>x</em>(${a} − 2<em>x</em>)(${b} − 2<em>x</em>)</strong></p>
+<p>The graph rises, reaches a highest point, then falls back to zero when <em>x</em> = ${Math.min(a,b)/2} (when there is nothing left of the base). Small cuts make a shallow box, big cuts make a box with a tiny base, so the best box is in between. This is a <strong>cubic</strong> graph.</p>
+<p>${sq?`For a square sheet of side ${a} the best cut is <em>x</em> = ${a}/6 = <strong>${(a/6).toFixed(2).replace(/\.?0+$/,'')}</strong> cm, giving the largest volume <strong>${mbVol(a,b,xs).toFixed(1)} cm³</strong>. In general a square sheet of side <em>s</em> gives its best box when the cut is <em>s</em>/6, and then the volume is 2<em>s</em>³/27.`
+ :`For this sheet the best cut is <em>x</em> = (${a} + ${b} − √(${a}² − ${a}×${b} + ${b}²)) ÷ 6 ≈ <strong>${xs.toFixed(2)}</strong> cm, giving the largest volume <strong>${mbVol(a,b,xs).toFixed(1)} cm³</strong>. (This comes from finding where the gradient of the cubic is zero.)`}</p>
+<p>Without calculus you can still find the maximum by <strong>trial and improvement</strong>: keep narrowing the range for <em>x</em> that gives the biggest volume.</p>`;
+}
+function maxBoxLevel(a,b){
+  const xmax=Math.min(a,b)/2,xs=mbBest(a,b),vmax=mbVol(a,b,xs);
+  const def={
+    custom:true,
+    brief:`A sheet of card is <strong>${a} cm by ${b} cm</strong>. Cut a square of side <em>x</em> from each corner and fold up the sides to make an open box. Move the slider to change <em>x</em>. Which cut makes the box with the <strong>greatest volume</strong>? Find <em>x</em> to the nearest 0.1 cm, then press Check.`,
+    get maths(){return mbMaths(a,b);},
+    mount(stage,S){
+      let x=1,trials=new Map(),solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true;
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(t,at)=>{const e=document.createElementNS(ns,t);for(const k in at)e.setAttribute(k,at[k]);return e;};
+      const sheet=mk('svg',{viewBox:'0 0 300 340',class:'mbS'}),graph=mk('svg',{viewBox:'0 0 360 260',class:'mbG'});
+      const slider=el('input',{type:'range',min:'0.1',max:String(xmax-0.1),step:'0.1',value:'1','aria-label':'Size of the cut-out square'});
+      const rd=el('span',{class:'rd'}),read=el('div',{class:'mbRead'});
+      const fine=(d)=>()=>{if(demoing||solved)return;set(Math.round((x+d)*10)/10,true);};
+      const bCheck=el('button',{class:'btn primary',onclick:()=>check()},'Check');
+      stage.append(el('div',{class:'mbWrap'},sheet,graph),el('div',{class:'mbSl'},el('button',{class:'mini',onclick:fine(-0.1),'aria-label':'Smaller'},'−'),slider,el('button',{class:'mini',onclick:fine(0.1),'aria-label':'Bigger'},'+'),rd,bCheck),read);
+      slider.addEventListener('input',()=>{if(demoing||solved){slider.value=x;return;}x=+slider.value;draw();});
+      slider.addEventListener('change',()=>{if(demoing||solved)return;record();});
+      function set(v,rec){x=Math.max(0.1,Math.min(xmax-0.1,v));slider.value=x;draw();if(rec)record();}
+      function record(){const k=Math.round(x*10);if(!trials.has(k)){trials.set(k,[x,mbVol(a,b,x)]);S.say('');}draw();}
+      function fmt(v){return (Math.round(v*10)/10).toString();}
+      function drawSheet(){
+        sheet.replaceChildren();
+        const sc=130/Math.max(a,b),nw=a*sc,nh=b*sc,nx=10,ny=8,s=x*sc;
+        sheet.append(mk('rect',{x:nx,y:ny,width:nw,height:nh,class:'sh'}));
+        [[nx,ny],[nx+nw-s,ny],[nx,ny+nh-s],[nx+nw-s,ny+nh-s]].forEach(([cx,cy])=>sheet.append(mk('rect',{x:cx,y:cy,width:s,height:s,class:'cut'})));
+        sheet.append(mk('rect',{x:nx+s,y:ny+s,width:nw-2*s,height:nh-2*s,class:'fd'}));
+        const t=mk('text',{x:nx+nw+12,y:ny+nh/2,class:'tx'});t.textContent=`${a} × ${b} cm sheet`;sheet.append(t);
+        const t2=mk('text',{x:nx+nw+12,y:ny+nh/2+16,class:'tx'});t2.textContent=`corners of ${fmt(x)} cm cut out`;sheet.append(t2);
+        const L=a-2*x,W=b-2*x,H=x;
+        const k=Math.min(250/(a+0.45*b),120/(xmax+0.35*b));
+        const l=L*k,h=H*k,dx=0.45*W*k,dy=0.35*W*k,ox=14,oy=330;
+        const P=(...p)=>p.map(([u,v])=>`${ox+u},${oy+v}`).join(' ');
+        sheet.append(mk('polygon',{points:P([0,0],[l,0],[l+dx,-dy],[dx,-dy]),class:'f3'}));
+        sheet.append(mk('polygon',{points:P([dx,-dy],[l+dx,-dy],[l+dx,-dy-h],[dx,-dy-h]),class:'f3'}));
+        sheet.append(mk('polygon',{points:P([0,0],[dx,-dy],[dx,-dy-h],[0,-h]),class:'f4'}));
+        sheet.append(mk('polygon',{points:P([0,0],[l,0],[l,-h],[0,-h]),class:'f1'}));
+        sheet.append(mk('polygon',{points:P([l,0],[l+dx,-dy],[l+dx,-dy-h],[l,-h]),class:'f2'}));
+      }
+      function drawGraph(){
+        graph.replaceChildren();
+        const P=44,Q=16,W=360,H=260,pw=W-P-10,ph=H-Q-34,vy=vmax*1.12;
+        const X=v=>P+v/xmax*pw,Y=v=>Q+ph-v/vy*ph;
+        graph.append(mk('line',{x1:P,y1:Q,x2:P,y2:Q+ph,class:'ax'}),mk('line',{x1:P,y1:Q+ph,x2:P+pw,y2:Q+ph,class:'ax'}));
+        const lab=(tx,ty,t,an)=>{const e=mk('text',{x:tx,y:ty,class:'tk','text-anchor':an||'middle'});e.textContent=t;graph.append(e);};
+        for(let v=0;v<=xmax+1e-9;v+=Math.max(1,Math.round(xmax/6)))lab(X(v),Q+ph+14,String(v));
+        lab(P+pw/2,Q+ph+30,'cut x (cm)');
+        const yt=Math.pow(10,Math.floor(Math.log10(vy)))*(vy/Math.pow(10,Math.floor(Math.log10(vy)))>5?2:1);
+        for(let v=0;v<=vy;v+=yt/(yt>=vy/4?1:1))lab(P-4,Y(v)+4,String(Math.round(v)),'end');
+        const e=mk('text',{x:12,y:Q+ph/2,class:'tk','text-anchor':'middle',transform:`rotate(-90 12 ${Q+ph/2})`});e.textContent='volume (cm³)';graph.append(e);
+        if(solved||demoing&&false){let d='';for(let v=0;v<=xmax+1e-9;v+=xmax/120)d+=(d?'L':'M')+X(v)+','+Y(mbVol(a,b,v));graph.append(mk('path',{d,class:'cv'}));}
+        const pts=[...trials.values()].sort((p,q)=>p[0]-q[0]);
+        if(pts.length>1)graph.append(mk('polyline',{points:pts.map(p=>X(p[0])+','+Y(p[1])).join(' '),class:'pl'}));
+        pts.forEach(p=>graph.append(mk('circle',{cx:X(p[0]),cy:Y(p[1]),r:4,class:'pt'})));
+        graph.append(mk('circle',{cx:X(x),cy:Y(mbVol(a,b,x)),r:7,class:'cur'}));
+      }
+      function draw(){
+        rd.textContent=`x = ${fmt(x)} cm`;
+        read.innerHTML=`Box: ${fmt(a-2*x)} × ${fmt(b-2*x)} × ${fmt(x)} cm. Volume = <b>${mbVol(a,b,x).toFixed(1)} cm³</b>`;
+        drawSheet();drawGraph();
+        if(!init)S.refresh();
+      }
+      function check(){
+        if(demoing||solved)return;
+        if(Math.abs(x-xs)<=0.1+1e-9){solved=true;draw();S.win(`🎉 A cut of ${fmt(x)} cm gives a volume of ${mbVol(a,b,x).toFixed(1)} cm³. The exact best cut is about ${xs.toFixed(2)} cm, giving ${vmax.toFixed(1)} cm³.`);}
+        else{
+          const hi=[...trials.values()].some(p=>p[1]>mbVol(a,b,x)+1e-9);
+          S.say(`A cut of ${fmt(x)} cm gives ${mbVol(a,b,x).toFixed(1)} cm³, but a better box is possible. ${hi?'Look at the graph: where are the points highest?':'Try some other cuts and watch the graph.'}`,'bad');
+        }
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}trials=new Map();solved=false;hintN=0;x=1;slider.value=1;S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        const lo=Math.max(0.1,Math.floor(xs)),hi=Math.ceil(xs);
+        S.say(hintN===0?'💡 Try cuts of 1 cm, 2 cm, 3 cm… and watch the graph of volume against cut. The best cut is where the points are highest.':`💡 The best cut is between ${lo} cm and ${hi===lo?lo+1:hi} cm. Try cuts in steps of 0.1 cm between them.`,'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();let v=0.5;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(v>xmax-0.1){clearInterval(tick);tick=null;x=Math.round(xs*10)/10;slider.value=x;trials.set(Math.round(x*10),[x,mbVol(a,b,x)]);demoing=false;solved=true;draw();
+            S.say(`The volume rises, peaks near x = ${xs.toFixed(2)} cm (${vmax.toFixed(1)} cm³), then falls. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;}
+          x=Math.round(v*10)/10;slider.value=x;trials.set(Math.round(x*10),[x,mbVol(a,b,x)]);draw();
+          S.say(`x = ${fmt(x)} cm: ${mbVol(a,b,x).toFixed(1)} cm³.`,'info');v+=0.5;
+        },450);
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Cuts tried: ${trials.size}`})};
+    }
+  };
+  return def;
+}
+const MAXBOX={id:'maxbox',icon:'📦',title:'Max Box',blurb:'Cut corners from a sheet and fold it up — which box holds the most?',
+  levels:[
+    {name:'Square sheet',count:4,make:p=>maxBoxLevel(...[[18,18],[20,20],[24,24],[30,30]][p])},
+    {name:'Rectangular sheet',count:4,make:p=>maxBoxLevel(...[[24,15],[20,12],[30,18],[16,10]][p])}
+  ]};
+shuffleLevels(MAXBOX);
+INV_LIST.push(MAXBOX);
+INV_API.maxbox={mbVol,mbBest,maxBoxLevel};
+/* ===/JS:box=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -4060,7 +4198,7 @@ const GROUPS=[
     HAIL,
     PHI,
     TILES,
-    {soon:1,icon:'📦',title:'Max Box',blurb:'Cut corners from a sheet and fold it up — which box holds the most?'},
+    MAXBOX,
     {soon:1,icon:'📐',title:'Pick\u2019s Theorem',blurb:'Find the area of a shape on a dotty grid by counting dots.'},
     {soon:1,icon:'➗',title:'Goldbach\u2019s Conjecture',blurb:'Is every even number the sum of two primes?'},
     {soon:1,icon:'🟥',title:'Coloured Tiles',blurb:'Find every 3 × 3 tile in two colours — and prove you have them all.'},
