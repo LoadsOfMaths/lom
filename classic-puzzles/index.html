@@ -1176,7 +1176,9 @@ function shapeLevel(spec){
   }
   const word=type==='sq'?'square':'triangle',words=word+'s';
   const N=spec.N;
-  const goalCount=s=>latCount(lat,s)===N&&!latLoose(lat,s);
+  const minLen=Math.min(...lat.polys.map(p=>p.length));
+  const noBig=s=>{for(const p of lat.polys){if(p.length>minLen&&p.every(e=>s[e]))return false;}return true;};
+  const goalCount=s=>latCount(lat,s)===N&&!latLoose(lat,s)&&(!spec.same||noBig(s));
   let tkeys=null,targets=null;
   if(mode==='transform'&&G){
     targets=[graphState(lat,G.target)];tkeys=new Set(targets.map(t=>t.join('')));
@@ -1347,6 +1349,9 @@ const SH_SQUARES=[
 const SH_TAKE=[
   {mode:'remove',type:'sq',k:1,N:3,fig:shGrid(2,2),maths:SH_M_TAKE},
   {mode:'remove',type:'sq',k:2,N:2,fig:shGrid(2,2),maths:SH_M_TAKE},
+  {mode:'remove',type:'sq',k:2,N:3,same:true,fig:shGrid(2,2),
+    brief:'This grid of <strong>12 matches</strong> hides five squares. Take away <strong>2 matches</strong> to leave exactly <strong>3 squares</strong>, all the <em>same size</em>, with no spare matches sticking out. Which matches belong to the big square? Tap a match to take it away.',
+    maths:`<p>The big square is made from the 8 matches round the outside, so to get rid of it you must take away an <em>outside</em> match. But an outside match on its own leaves a spare match sticking out, because each corner match belongs to only one small square.</p><p>The clever idea is to take away <em>both</em> outside matches of one corner. That removes the big square and the small square in that corner together, and leaves three small squares that are all the same size. By symmetry, any of the four corners works.</p><p>Compare this with taking away just one match to leave 3 squares: that works by removing a match from the middle, which leaves two small squares and the big one, so the squares are not all the same size.</p>`},
   {mode:'none',type:'sq',k:3,fig:shGrid(2,2),maths:SH_M_NONE(2)},
   {mode:'remove',type:'sq',k:3,N:4,fig:shCells([[1,0],[0,1],[1,1],[2,1],[1,2]]),maths:SH_M_TAKE},
   {mode:'remove',type:'sq',k:4,N:4,fig:shGrid(3,3),maths:SH_M_TAKE},
