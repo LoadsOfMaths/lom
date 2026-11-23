@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Classic Puzzles – LoadsOfMaths</title>
+<style>
+:root{
+  --bg:#0e2339; --card:#1b3d61; --line:#2f628f; --ink:#f3f7fb; --mute:#a9bdd3;
+  --accent:#ffb84d; --good:#46d08a; --bad:#ff7a7a; --water:#2f7fb8; --tea:#c47a2c;
+  --grass:#2b6a45; --r:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:clamp(16px,0.9vw + 11px,22px);-webkit-tap-highlight-color:transparent}
+body{min-height:100vh}
+.app{max-width:1100px;margin:0 auto;padding:14px 14px 48px}
+h1{font-size:1.7rem;margin:.2em 0 .1em}
+h2{font-size:1.15rem;margin:1.4em 0 .5em;color:var(--accent);letter-spacing:.03em;text-transform:uppercase}
+p{line-height:1.45}
+.tag{color:var(--mute);margin:0 0 .6em}
+.foot{margin-top:2.5em;color:var(--mute);font-size:.8rem;text-align:center}
+
+/* home */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px 16px;border-radius:var(--r);
+  background:var(--card);border:2px solid var(--line);color:var(--ink);font:inherit;cursor:pointer;min-height:112px}
+.card:hover,.card:focus-visible{border-color:var(--accent);outline:none}
+.card .ic{font-size:2rem;line-height:1}
+.card .tt{font-weight:700;font-size:1.05rem}
+.card .bl{color:var(--mute);font-size:.85rem;line-height:1.3}
+.card.soon{opacity:.5;border-style:dashed;cursor:default}
+.card.soon:hover{border-color:var(--line)}
+.card .soonTag{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+
+/* shell */
+.head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.head h1{margin:0;flex:1 1 auto}
+.btn{min-height:48px;padding:0 18px;border-radius:12px;border:2px solid var(--line);background:var(--card);
+  color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#2a1a00}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.chip{min-height:42px;padding:0 14px;border-radius:999px;border:2px solid var(--line);background:transparent;
+  color:var(--ink);font:inherit;cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#2a1a00;font-weight:700}
+.brief{margin:.6em 0;color:#dbe7f3}
+.stage{background:rgba(255,255,255,.04);border-radius:var(--r);padding:10px;margin:8px 0}
+.msg{min-height:3.1em;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center}
+.msg.good{background:rgba(70,208,138,.18);color:#bff3d8}
+.msg.bad{background:rgba(255,122,122,.18);color:#ffd0d0}
+.msg.info{background:rgba(255,184,77,.14);color:#ffe4b8}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.score{margin-left:auto;font-weight:700;font-size:1.1rem;color:var(--accent)}
+details.maths{margin-top:14px;background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:10px 16px}
+details.maths summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:center}
+details.maths[hidden]{display:none}
+
+/* jugs */
+.jugs{display:flex;justify-content:center;align-items:flex-end;gap:clamp(14px,4vw,52px);padding:14px 6px;min-height:340px}
+.jugcol{display:flex;flex-direction:column;align-items:center;gap:8px}
+.jugcap{font-weight:700}
+.jug{position:relative;width:clamp(78px,19vw,128px);border:4px solid #dfe9f3;border-radius:6px 6px 20px 20px;
+  background:rgba(255,255,255,.07);overflow:hidden;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;
+  transition:box-shadow .15s,transform .15s}
+.jug.sel{box-shadow:0 0 0 4px var(--accent);transform:translateY(-6px)}
+.jug.lift{transform:translateY(-10px) scale(1.03)}
+.jug.hint-from{box-shadow:0 0 0 4px var(--good)}
+.jug.hint-to{box-shadow:0 0 0 4px #7ab7ff}
+.liquid{position:absolute;left:0;right:0;bottom:0;background:var(--tea);transition:height .55s ease}
+.ticks{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(to top,transparent 0,transparent calc(var(--u) - 2px),rgba(255,255,255,.35) calc(var(--u) - 2px),rgba(255,255,255,.35) var(--u))}
+.amt{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-weight:800;font-size:1.2rem;z-index:3;text-shadow:0 1px 3px #000}
+.jugbtns{display:flex;gap:6px}
+.mini{min-height:44px;padding:0 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.mini.hint{border-color:var(--good);box-shadow:0 0 0 3px var(--good)}
+
+/* crossing */
+.cross{display:grid;grid-template-columns:1fr minmax(210px,34%) 1fr;gap:10px;align-items:stretch}
+.bank{background:var(--grass);border-radius:var(--r);padding:10px;min-height:190px}
+.bank h3{margin:0 0 8px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:#cfe9d8;text-align:center}
+.bank .items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.river{position:relative;background:var(--water);border-radius:var(--r);overflow:hidden;height:210px}
+.river::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 22px,rgba(255,255,255,.08) 22px 26px)}
+.boat{position:absolute;top:50px;left:6px;width:132px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  transition:left .65s ease,top .65s ease;cursor:pointer;touch-action:manipulation}
+.boat[data-side="1"]{left:calc(100% - 138px)}
+.boat .deck{display:flex;gap:2px;min-height:48px;align-items:flex-end;justify-content:center;flex-wrap:nowrap}
+.boat .hull{width:100%;height:26px;background:#8b5a2b;border-radius:4px 4px 28px 28px;border:2px solid #5a3612}
+.boat .go{font-size:.78rem;font-weight:700;background:rgba(0,0,0,.35);border-radius:8px;padding:2px 8px;margin-top:2px}
+.boat.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.tile{display:flex;flex-direction:column;align-items:center;gap:0;min-width:64px;padding:6px 8px;border-radius:12px;
+  border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:var(--ink);font:inherit;cursor:pointer;touch-action:manipulation}
+.tile .emo{font-size:2rem;line-height:1.1}
+.tile .nm{font-size:.72rem}
+.tile .tm{font-size:.78rem;font-weight:800;color:var(--accent)}
+.tile.small{min-width:0;padding:2px 3px;border-color:transparent;background:rgba(0,0,0,.2)}
+.tile.small .emo{font-size:1.6rem}
+.tile.fixed{cursor:default}
+.tile.hint,.boat.hint .hull{box-shadow:0 0 0 3px var(--good)}
+.scene-bridge .river{background:linear-gradient(#26384a,#0c1722)}
+.scene-bridge .river::before{background:none}
+.scene-bridge .boat .hull{height:8px;border-radius:2px;background:#a8814a;border:0}
+.scene-bridge .bank{background:#4a3f33}
+.scene-bridge .bank h3{color:#e6d6bf}
+@media (max-width:700px){
+  .cross{grid-template-columns:1fr;grid-template-rows:auto 150px auto}
+  .river{height:150px}
+  .boat,.boat[data-side="1"]{left:calc(50% - 66px)}
+  .boat{top:6px}
+  .boat[data-side="1"]{top:calc(100% - 104px)}
+  }
+
+/* picker + new puzzles */
+.pick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}
+.pick[hidden]{display:none}
+.pickLbl{font-weight:700;min-width:7.5em;text-align:center}
+table.mt{border-collapse:collapse;margin:8px 0}
+table.mt th,table.mt td{border:1px solid var(--line);padding:4px 12px;text-align:center}
+.swapleg{display:flex;justify-content:space-between;color:var(--mute);font-size:.85rem;max-width:760px;margin:4px auto}
+.swaprow{position:relative;max-width:760px;margin:6px auto 10px}
+.swaprow .cells{display:flex}
+.scell{flex:1 1 0;aspect-ratio:1/1;border:1px solid var(--line);background:rgba(255,255,255,.05)}
+.scoin{position:absolute;top:0;width:var(--w);aspect-ratio:1/1;padding:0;border:0;background:none;cursor:pointer;
+  transition:left .4s ease;font:inherit;font-weight:800;font-size:clamp(.6rem,2.2vw,1.05rem);border-radius:50%}
+.scoin::after{content:"";position:absolute;inset:8%;border-radius:50%;z-index:-1}
+.scoin{z-index:1;color:#1a1208}
+.scoin.cu::after{background:radial-gradient(circle at 35% 30%,#f0a672,#b4622c 70%);border:3px solid #7a3d14}
+.scoin.ag::after{background:radial-gradient(circle at 35% 30%,#fafcff,#aab4c0 70%);border:3px solid #6d7783}
+.scoin.hint::after{box-shadow:0 0 0 4px var(--good)}
+.scoin:focus-visible::after{box-shadow:0 0 0 4px var(--accent)}
+
+.balance{position:relative;height:210px;max-width:760px;margin:6px auto}
+.balance .post{position:absolute;left:calc(50% - 5px);top:44px;width:10px;bottom:0;background:#6b5a46;border-radius:5px 5px 0 0}
+.balance .beam{position:absolute;left:8%;right:8%;top:36px;height:10px;background:#a8814a;border-radius:5px;transition:transform .8s ease}
+.balance[data-tilt="-1"] .beam{transform:rotate(-5deg)}
+.balance[data-tilt="1"] .beam{transform:rotate(5deg)}
+.pan{position:absolute;top:70px;width:40%;min-height:112px;border:3px solid #a8814a;border-top-width:0;border-radius:0 0 40px 40px;
+  background:rgba(255,255,255,.05);padding:6px 8px 12px;transition:transform .8s ease}
+.balance .pl{left:2%}
+.balance .pr{right:2%}
+.balance[data-tilt="-1"] .pl{transform:translateY(16px)}
+.balance[data-tilt="-1"] .pr{transform:translateY(-16px)}
+.balance[data-tilt="1"] .pl{transform:translateY(-16px)}
+.balance[data-tilt="1"] .pr{transform:translateY(16px)}
+.panLabel{text-align:center;font-size:.75rem;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+.items,.tray{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.tray{min-height:58px;padding:8px;background:rgba(255,255,255,.05);border-radius:var(--r);margin-bottom:8px}
+.trayLabel{font-size:.8rem;color:var(--mute);margin:4px 2px}
+.coin{width:46px;height:46px;border-radius:50%;border:3px solid #8a6a1c;background:radial-gradient(circle at 35% 30%,#ffe18a,#d9a21f 70%);
+  color:#3a2a00;font:inherit;font-weight:800;cursor:pointer;touch-action:manipulation}
+.coin.hintc{box-shadow:0 0 0 4px var(--good)}
+.coin.pick{box-shadow:0 0 0 4px var(--accent)}
+.coin.fake{box-shadow:0 0 0 5px var(--bad)}
+.guessRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.guessRow[hidden]{display:none}
+.wlog{margin:4px 0 0;padding-left:1.4em;line-height:1.7}
+.logBox{margin-top:6px}
+
+svg.matches{display:block;width:100%;max-width:820px;margin:10px auto}
+.matches .ghost{stroke:rgba(255,255,255,.12);stroke-width:6;stroke-dasharray:3 8;stroke-linecap:round;fill:none}
+.matches .wood{stroke:#e3b778;stroke-width:8;stroke-linecap:round;display:none}
+.matches .head{fill:#c0392b;stroke:#5c1a12;stroke-width:1.5;display:none}
+.matches .hit{stroke:transparent;stroke-width:26;stroke-linecap:round;cursor:pointer}
+.matches .slot.on .wood,.matches .slot.on .head{display:block}
+.matches .slot.on .ghost{display:none}
+.matches .slot.lift .wood{stroke:#fff0b8;filter:drop-shadow(0 0 6px #ffcf5a)}
+.matches .carrying .slot.empty .ghost{stroke:rgba(255,255,255,.6)}
+.matches .slot.hintFrom .wood{stroke:var(--good)}
+.matches .slot.hintTo .ghost{stroke:var(--good);stroke-width:8;stroke-dasharray:none}
+
+.tabs{display:flex;gap:6px;margin:12px 0 0;border-bottom:2px solid var(--line)}
+.tab{min-height:48px;padding:0 26px;border:2px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0;background:transparent;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.tab.on{background:var(--accent);border-color:var(--accent);color:#2a1a00}
+.shWrap{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:center}
+.shBoard{flex:1 1 300px;min-width:0}
+.shCount{text-align:center;min-height:1.6em;margin:2px 0 0;color:#dbe7f3}
+.shCount .warn{color:var(--bad);font-weight:600}
+svg.matches.shape{margin:4px auto}
+.matches.shape .ghost{stroke:rgba(255,255,255,.07);stroke-width:3}
+.matches.shape.carrying .slot.empty .ghost{stroke:rgba(255,255,255,.55);stroke-width:5}
+.matches .node{fill:rgba(255,255,255,.16)}
+.goalBox{flex:0 0 auto;text-align:center;background:rgba(255,255,255,.05);border:1px dashed var(--line);border-radius:12px;padding:8px 12px}
+.goalLbl{font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;color:#9fb3c8;margin-bottom:4px}
+svg.goalSvg{display:block;margin:0 auto}
+.goalSvg .gw{stroke:#e3b778;stroke-width:5;stroke-linecap:round}
+.goalSvg .gh{fill:#c0392b}
+svg.plus{display:block;width:100%;margin:6px auto;touch-action:none}
+.plus .stick{fill:#e3b778;stroke:#a87b3a;stroke-width:1.5}
+.plus .ph{fill:#c0392b;stroke:#5c1a12;stroke-width:1.5}
+.plus .pm{cursor:grab}
+.plus .pm.grab{cursor:grabbing}
+.plus .pm.grab .stick{fill:#fff0b8}
+.plus .sline{stroke:#e3b778;stroke-width:11;stroke-linecap:round}
+.plus .sline.back{stroke:#9a7a48;stroke-dasharray:2 14;stroke-width:9}
+.cherry .stick{fill:#ffc04d;stroke:#2a1a00;stroke-width:1.5}
+.cherry .phead{fill:#111;stroke:none}
+.cherry .cball{fill:#d22a2a;stroke:#2a0a0a;stroke-width:4}
+.cherry .cshine{fill:rgba(255,255,255,.55)}
+.cherry .cstalk{fill:none;stroke:#4a8a3a;stroke-width:5;stroke-linecap:round}
+.plus .hole{fill:rgba(70,208,138,.45);stroke:var(--good);stroke-width:2}
+
+svg.carpark{display:block;width:100%;margin:8px auto;touch-action:none}
+.carpark .cpFloor{fill:#2c3541}
+.carpark .cpBay{stroke:rgba(255,255,255,.08);stroke-width:2;stroke-dasharray:10 8}
+.carpark .cpWall{stroke:#9fb3c8;stroke-width:6;stroke-linecap:round}
+.carpark .cpExit{fill:var(--good);font-weight:700;font-size:15px}
+.carpark .veh{cursor:grab}
+.carpark .veh.grab{cursor:grabbing}
+.carpark .vwin{fill:rgba(20,30,45,.55)}
+.carpark .vgloss{fill:none;stroke:rgba(0,0,0,.35);stroke-width:2}
+.carpark .veh.hint .vgloss{stroke:var(--good);stroke-width:5}
+.carpark .veh.target .vgloss{stroke:#fff;stroke-width:3}
+.carpark .cpGhost{fill:rgba(70,208,138,.22);stroke:var(--good);stroke-width:3;stroke-dasharray:8 6;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<noscript>This app needs JavaScript.</noscript>
+<script>
+(function(){
+'use strict';
+const $=(s,e=document)=>e.querySelector(s);
+function el(tag,props,...kids){
+  const e=document.createElement(tag);
+  if(props)for(const k in props){
+    const v=props[k];
+    if(k==='class')e.className=v;
+    else if(k==='html')e.innerHTML=v;
+    else if(k==='dataset')Object.assign(e.dataset,v);
+    else if(k.slice(0,2)==='on')e.addEventListener(k.slice(2),v);
+    else e.setAttribute(k,v);
+  }
+  for(const c of kids.flat()){if(c==null)continue;e.append(c&&c.nodeType?c:document.createTextNode(c));}
+  return e;
+}
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+
+/* ---------- generic shortest-path solver ---------- */
+function rebuild(prev,k0,k){
+  const path=[];
+  while(k!==k0){const p=prev.get(k);path.push(p.move);k=p.from;}
+  return path.reverse();
+}
+function bfs(def,start){
+  const key=def.key,k0=key(start),prev=new Map(),seen=new Map([[k0,start]]);
+  if(def.isGoal(start))return {path:[],cost:0,states:[start]};
+  let frontier=[start];
+  while(frontier.length){
+    const next=[];
+    for(const s of frontier){
+      const ks=key(s);
+      for(const m of def.moves(s)){
+        const k=key(m.to);
+        if(seen.has(k))continue;
+        seen.set(k,m.to);prev.set(k,{from:ks,move:m});
+        if(def.isGoal(m.to)){const path=rebuild(prev,k0,k);return {path,cost:path.length,states:[...seen.values()]};}
+        next.push(m.to);
+      }
+    }
+    frontier=next;
+  }
+  return {path:null,cost:null,states:[...seen.values()]};
+}
+function solve(def,start){
+  if(def.solver)return def.solver(start);
+  if(def.uniform)return bfs(def,start);
+  const key=def.key,k0=key(start);
+  const dist=new Map([[k0,0]]),prev=new Map(),seen=new Map();
+  let open=[{s:start,k:k0,d:0}],best=null;
+  while(open.length){
+    open.sort((a,b)=>a.d-b.d);
+    const cur=open.shift();
+    if(seen.has(cur.k))continue;
+    seen.set(cur.k,cur.s);
+    if(def.isGoal(cur.s)){best=cur;break;}
+    for(const m of def.moves(cur.s)){
+      const k=key(m.to),nd=cur.d+(m.cost||1);
+      if(!dist.has(k)||nd<dist.get(k)){dist.set(k,nd);prev.set(k,{from:cur.k,move:m});open.push({s:m.to,k,d:nd});}
+    }
+  }
+  if(!best)return {path:null,cost:null,states:[...seen.values()]};
+  return {path:rebuild(prev,k0,best.k),cost:best.d,states:[...seen.values()]};
+}
+
+/* ---------- JUGS ---------- */
+function jugsLevel(L){
+  const caps=L.caps,n=caps.length;
+  const name=i=>caps[i]+' L jug';
+  const def={
+    scoreLabel:'Moves',unit:'moves',uniform:true,
+    start:L.start.slice(),
+    key:s=>s.join(','),
+    isGoal:s=>L.goal.exact?s.every((v,i)=>v===L.goal.exact[i]):s.some(v=>v===L.goal.any),
+    moves(s){
+      const out=[];
+      for(let i=0;i<n;i++){
+        if(L.tap&&s[i]<caps[i]){const t=s.slice();t[i]=caps[i];out.push({kind:'fill',i,to:t,label:`Fill the ${name(i)} from the tap`});}
+        if(L.drain&&s[i]>0){const t=s.slice();t[i]=0;out.push({kind:'empty',i,to:t,label:`Empty the ${name(i)}`});}
+        for(let j=0;j<n;j++){
+          if(i===j||s[i]===0||s[j]>=caps[j])continue;
+          const a=Math.min(s[i],caps[j]-s[j]),t=s.slice();t[i]-=a;t[j]+=a;
+          out.push({kind:'pour',i,j,to:t,label:`Pour the ${name(i)} into the ${name(j)}`});
+        }
+      }
+      return out;
+    },
+    impossible(states){
+      const amts=[...new Set(states.flatMap(s=>s))].sort((a,b)=>a-b);
+      const g=caps.reduce(gcd);
+      return `No solution exists! Every amount that can ever appear in a jug is: ${amts.join(', ')} L. They are all multiples of ${g} (the highest common factor of ${caps.join(' and ')}), so ${L.goal.any} L can never be made.`;
+    },
+    maths:L.maths,
+    brief:L.brief,
+    mount(stage,S){
+      const maxCap=Math.max(...caps),unit=Math.min(30,Math.floor(300/maxCap));
+      let sel=null,downIdx=null;
+      const wrap=el('div',{class:'jugs'});
+      const jugs=[],liquids=[],amts=[],fills=[],empties=[];
+      for(let i=0;i<n;i++){
+        const liquid=el('div',{class:'liquid'}),amt=el('div',{class:'amt'});
+        const jug=el('div',{class:'jug',dataset:{jug:i},style:`height:${caps[i]*unit}px;--u:${unit}px`,role:'button',tabindex:'0','aria-label':name(i)},
+          el('div',{class:'ticks'}),liquid,amt);
+        jug.addEventListener('pointerdown',e=>{if(S.busy)return;downIdx=i;jug.classList.add('lift');});
+        jug.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tapJug(i);}});
+        const btns=el('div',{class:'jugbtns'});
+        if(L.tap){const b=el('button',{class:'mini',onclick:()=>single('fill',i)},'Fill');fills[i]=b;btns.append(b);}
+        if(L.drain){const b=el('button',{class:'mini',onclick:()=>single('empty',i)},'Empty');empties[i]=b;btns.append(b);}
+        jugs[i]=jug;liquids[i]=liquid;amts[i]=amt;
+        wrap.append(el('div',{class:'jugcol'},el('div',{class:'jugcap'},caps[i]+' L'),jug,btns));
+      }
+      stage.append(wrap);
+      function release(){jugs.forEach(j=>j.classList.remove('lift'));downIdx=null;}
+      function tapJug(jj){
+        if(S.busy)return;
+        if(sel===null){sel=jj;}
+        else if(sel===jj){sel=null;}
+        else{const a=sel;sel=null;pour(a,jj);}
+        paintSel();
+      }
+      function paintSel(){jugs.forEach((j,i)=>j.classList.toggle('sel',i===sel));}
+      wrap.addEventListener('pointerup',e=>{
+        if(downIdx===null)return;
+        const i=downIdx;release();
+        const t=document.elementFromPoint(e.clientX,e.clientY),jx=t&&t.closest&&t.closest('[data-jug]');
+        if(!jx)return;
+        const jj=+jx.dataset.jug;
+        if(jj!==i){sel=null;paintSel();pour(i,jj);}
+        else tapJug(jj);
+      });
+      document.addEventListener('pointerup',release);
+      wrap.addEventListener('pointercancel',release);
+      function find(kind,i,j){return S.moves().find(m=>m.kind===kind&&m.i===i&&(j===undefined||m.j===j));}
+      function pour(i,j){
+        const s=S.state,m=find('pour',i,j);
+        if(m)return S.play(m);
+        if(s[i]===0)S.say(`The ${name(i)} is empty — there is nothing to pour.`,'bad');
+        else S.say(`The ${name(j)} is already full.`,'bad');
+      }
+      function single(kind,i){
+        const m=find(kind,i);
+        if(m)return S.play(m);
+        S.say(kind==='fill'?`The ${name(i)} is already full.`:`The ${name(i)} is already empty.`,'bad');
+      }
+      return {
+        update(s){
+          s.forEach((v,i)=>{liquids[i].style.height=(v*unit)+'px';amts[i].textContent=v?v+' L':'';});
+          sel=null;paintSel();this.clear();
+        },
+        highlight(m){
+          this.clear();
+          if(m.kind==='pour'){jugs[m.i].classList.add('hint-from');jugs[m.j].classList.add('hint-to');}
+          else{const b=(m.kind==='fill'?fills:empties)[m.i];b&&b.classList.add('hint');}
+        },
+        clear(){jugs.forEach(j=>j.classList.remove('hint-from','hint-to'));fills.concat(empties).forEach(b=>b&&b.classList.remove('hint'));}
+      };
+    }
+  };
+  return def;
+}
+const JUG_MATHS_TAP=`<p>Each jug's contents is a coordinate, so a two-jug puzzle is a single point moving around a rectangle. Filling and emptying slide the point along the edges; pouring slides it along a diagonal until it hits an edge — just like a snooker ball bouncing round a table.</p>
+<p>With a tap and a drain, jugs of <em>a</em> and <em>b</em> litres can measure exactly the multiples of their highest common factor. 3 and 5 have HCF 1, so <strong>every</strong> whole number of litres up to 5 can be made. 4 and 6 have HCF 2, so only even amounts are possible.</p>
+<p>Notice that every move leaves a jug either full or empty — you can never stop part-way through a pour.</p>`;
+const JUG_MATHS_SPLIT=`<p>With no tap and no drain the <strong>total never changes</strong>, so every state is a way of splitting that total between the jugs. Searching all the possible states (there are only a few dozen) quickly finds the shortest route.</p>
+<p>The trick that makes these work is the same as for two jugs: each pour ends with one jug full or one jug empty, creating a new "known" amount you can build on.</p>`;
+const JUG_MATHS_IMP=`<p>This one can't be done — and proving it is the whole point. Each jug holds an even number of litres and you can only ever fill, empty, or pour until one jug is full or empty, so every amount that appears is a combination of 4s and 6s. That's always a multiple of 2 (their highest common factor), so an odd amount like 3 L is out of reach.</p>
+<p>In general, jugs of <em>a</em> and <em>b</em> litres can measure <em>n</em> litres (n ≤ the larger jug) exactly when HCF(a, b) divides <em>n</em>.</p>`;
+
+const JUGS={id:'jugs',icon:'🫖',title:'Jugs',blurb:'Measure exactly the right amount using jugs that have no markings.',
+  levels:[
+    {name:'3 L and 5 L',make:()=>jugsLevel({caps:[3,5],start:[0,0],tap:true,drain:true,goal:{any:4},
+      brief:'You have a 3 L jug and a 5 L jug, a tap and a drain. Neither jug has markings. Measure exactly <strong>4 L</strong> in either jug.',maths:JUG_MATHS_TAP})},
+    {name:'4 L and 7 L',make:()=>jugsLevel({caps:[4,7],start:[0,0],tap:true,drain:true,goal:{any:5},
+      brief:'A 4 L jug and a 7 L jug, with a tap and a drain. Measure exactly <strong>5 L</strong>.',maths:JUG_MATHS_TAP})},
+    {name:'Medieval 8-5-3',make:()=>jugsLevel({caps:[8,5,3],start:[8,0,0],tap:false,drain:false,goal:{exact:[4,4,0]},
+      brief:'A puzzle that has been passed down for centuries. Jugs of 8 L, 5 L and 3 L, none with markings. The 8 L jug is full and the others are empty. There is no tap and no drain. Share the 8 L equally so that the 8 L jug and the 5 L jug each hold <strong>4 L</strong>.',maths:JUG_MATHS_SPLIT})},
+    {name:'Share 12 L',make:()=>jugsLevel({caps:[12,8,5],start:[12,0,0],tap:false,drain:false,goal:{exact:[6,6,0]},
+      brief:'The 12 L jug is full. No tap, no drain. Share it so that the 12 L jug and the 8 L jug each hold <strong>6 L</strong>.',maths:JUG_MATHS_SPLIT})},
+    {name:'Can it be done?',make:()=>jugsLevel({caps:[4,6],start:[0,0],tap:true,drain:true,goal:{any:3},
+      brief:'A 4 L jug and a 6 L jug, with a tap and a drain. Can you measure exactly <strong>3 L</strong>? <em>(Be ready to explain your answer.)</em>',maths:JUG_MATHS_IMP})}
+  ]};
+
+/* ---------- CROSSINGS (boat and bridge share one engine) ---------- */
+function crossingLevel(C){
+  const ents=C.ents,n=ents.length,pilot=C.pilot==null?-1:C.pilot;
+  const names=i=>ents[i].name;
+  function banksOf(p){const b=[[],[]];p.forEach((v,i)=>b[v].push(i));return b;}
+  const def={
+    scoreLabel:C.scoreLabel||'Crossings',unit:C.unit||'crossings',uniform:!C.cost,
+    ents,
+    start:{p:Array(n).fill(0),b:0},
+    key:s=>s.p.join('')+s.b,
+    isGoal:s=>s.p.every(v=>v===1),
+    check(p){return C.unsafe?C.unsafe(banksOf(p)):null;},
+    moves(s){
+      const out=[],cand=[];
+      for(let i=0;i<n;i++)if(i!==pilot&&s.p[i]===s.b)cand.push(i);
+      const min=pilot>=0?0:1;
+      const rec=(start,cur)=>{
+        if(cur.length>=min&&cur.length<=C.cap){
+          const np=s.p.slice();cur.forEach(i=>np[i]=1-s.b);if(pilot>=0)np[pilot]=1-s.b;
+          if(!def.check(np)){
+            const who=cur.map(names);
+            const label=cur.length===0?`${names(pilot)} crosses alone`:C.verb?C.verb(who,pilot>=0?names(pilot):null):`Cross with ${who.join(' and ')}`;
+            out.push({kind:'cross',set:cur.slice(),to:{p:np,b:1-s.b},cost:C.cost?C.cost(cur.map(i=>ents[i])):1,label});
+          }
+        }
+        if(cur.length>=C.cap)return;
+        for(let k=start;k<cand.length;k++){cur.push(cand[k]);rec(k+1,cur);cur.pop();}
+      };
+      rec(0,[]);
+      return out;
+    },
+    impossible:()=>'No solution found.',
+    maths:C.maths,brief:C.brief,
+    mount(stage,S){
+      let load=[],hintSet=null,hintBoat=false;
+      const wrap=el('div',{class:'cross scene-'+C.scene});
+      const bankL=el('div',{class:'bank'}),bankR=el('div',{class:'bank'});
+      const boat=el('div',{class:'boat',dataset:{side:'0'},role:'button',tabindex:'0','aria-label':C.goLabel||'Cross the river'});
+      const river=el('div',{class:'river'},boat);
+      wrap.append(bankL,river,bankR);stage.append(wrap);
+      boat.addEventListener('click',go);
+      boat.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+      function tile(i,inBoat,fixed){
+        const e=ents[i];
+        const t=el('button',{class:'tile'+(inBoat?' small':'')+(fixed?' fixed':'')+((hintSet&&hintSet.includes(i))?' hint':''),'aria-label':e.name},
+          el('span',{class:'emo'},e.emoji),
+          inBoat?null:el('span',{class:'nm'},e.name),
+          e.time!=null?el('span',{class:'tm'},e.time+(inBoat?'':' min')):null);
+        if(!fixed)t.addEventListener('click',ev=>{ev.stopPropagation();tap(i);});
+        else t.addEventListener('click',ev=>{ev.stopPropagation();go();});
+        return t;
+      }
+      function draw(){
+        const s=S.state;
+        [bankL,bankR].forEach((bk,side)=>{
+          const items=el('div',{class:'items'});
+          for(let i=0;i<n;i++)if(s.p[i]===side&&!load.includes(i)&&i!==pilot)items.append(tile(i,false));
+          bk.replaceChildren(el('h3',null,C.banks[side]),items);
+        });
+        const deck=el('div',{class:'deck'});
+        if(pilot>=0)deck.append(tile(pilot,true,true));
+        load.forEach(i=>deck.append(tile(i,true)));
+        if(C.scene==='bridge')deck.append(el('span',{class:'emo',style:'font-size:1.5rem'},'🔦'));
+        boat.replaceChildren(deck,el('div',{class:'hull'}),el('div',{class:'go'},load.length||pilot>=0?(C.goText||'Go ➜'):(C.loadText||'Load up')));
+        boat.dataset.side=String(s.b);
+        boat.classList.toggle('hint',hintBoat);
+      }
+      function tap(i){
+        if(S.busy)return;
+        const s=S.state;
+        if(s.p[i]!==s.b){S.say(C.wrongSide,'bad');return;}
+        if(load.includes(i))load=load.filter(x=>x!==i);
+        else if(load.length>=C.cap){S.say(C.fullMsg,'bad');return;}
+        else load.push(i);
+        hintSet=null;hintBoat=false;draw();S.say('');
+      }
+      function go(){
+        if(S.busy)return;
+        const s=S.state;
+        if(pilot<0&&load.length===0){S.say(C.emptyMsg,'bad');shake();return;}
+        const np=s.p.slice();load.forEach(i=>np[i]=1-s.b);if(pilot>=0)np[pilot]=1-s.b;
+        const msg=def.check(np);
+        if(msg){S.say(msg,'bad');shake();return;}
+        const m=S.moves().find(m=>m.set.length===load.length&&m.set.every(x=>load.includes(x)));
+        if(m)S.play(m,true);
+      }
+      function shake(){boat.classList.remove('shake');void boat.offsetWidth;boat.classList.add('shake');}
+      return {
+        update(){load=[];hintSet=null;hintBoat=false;draw();},
+        highlight(m){hintSet=m.set;hintBoat=true;draw();},
+        clear(){hintSet=null;hintBoat=false;},
+        animate(m,done,preloaded){
+          const from=S.state.b;
+          const slide=()=>{boat.dataset.side=String(1-from);setTimeout(done,750);};
+          if(!preloaded){load=m.set.slice();hintSet=null;draw();setTimeout(slide,650);}
+          else slide();
+        }
+      };
+    }
+  };
+  return def;
+}
+
+const WGC_MATHS=`<p>Write down where each of the four is — left or right bank — and you get 2 × 2 × 2 × 2 = 16 possible arrangements. Some are forbidden (the farmer's away from a wolf and goat, or goat and cabbage). Joining each safe arrangement to the ones one crossing away gives a <strong>graph</strong>, and a solution is just a path from "all on the left" to "all on the right".</p>
+<p>The key idea is that the farmer must sometimes bring something <em>back</em> — a step backwards that makes progress. Many people get stuck because they think every crossing has to carry something forwards.</p>
+<p>There are exactly two shortest solutions, each with 7 crossings.</p>`;
+const WGC={id:'wgc',icon:'🐺',title:'Wolf, Goat and Cabbage',blurb:'Get everything across the river without anything being eaten.',
+  levels:[{name:'Classic',make:()=>crossingLevel({
+    scene:'boat',pilot:0,cap:1,
+    ents:[{name:'Farmer',emoji:'🧑‍🌾'},{name:'Wolf',emoji:'🐺'},{name:'Goat',emoji:'🐐'},{name:'Cabbage',emoji:'🥬'}],
+    banks:['Left bank','Right bank'],
+    brief:'A farmer must take a wolf, a goat and a cabbage across the river. The boat holds the farmer and <strong>one</strong> other. Left alone together, the wolf eats the goat and the goat eats the cabbage. Tap something to load it, then tap the boat.',
+    wrongSide:'The boat is on the other bank.',fullMsg:'The boat only has room for the farmer and one other.',
+    verb:(who)=>`Take the ${who[0].toLowerCase()} across`,
+    unsafe(b){
+      for(let side=0;side<2;side++){
+        const bk=b[side];if(bk.includes(0))continue;
+        if(bk.includes(1)&&bk.includes(2))return `Oh no! The wolf would eat the goat on the ${side?'right':'left'} bank.`;
+        if(bk.includes(2)&&bk.includes(3))return `Oh no! The goat would eat the cabbage on the ${side?'right':'left'} bank.`;
+      }
+      return null;
+    },
+    maths:WGC_MATHS})}]};
+
+function foxLevel(k,cap,label){
+  const ents=[];
+  for(let i=1;i<=k;i++)ents.push({name:'Fox '+i,emoji:'🦊',kind:'f'});
+  for(let i=1;i<=k;i++)ents.push({name:'Hen '+i,emoji:'🐔',kind:'c'});
+  return crossingLevel({
+    scene:'boat',pilot:null,cap,ents,
+    banks:['Left bank','Right bank'],
+    brief:`${k} foxes and ${k} hens must cross the river. The boat holds up to <strong>${cap}</strong> animals and cannot cross empty (anyone can paddle). If the foxes ever <strong>outnumber the hens</strong> on a bank where there are hens, the hens are in trouble!`,
+    wrongSide:'The boat is on the other bank.',fullMsg:`The boat only holds ${cap}.`,emptyMsg:'Someone has to paddle the boat across!',
+    unsafe(b){
+      for(let side=0;side<2;side++){
+        const f=b[side].filter(i=>ents[i].kind==='f').length,c=b[side].length-f;
+        if(c>0&&f>c)return `Oh no! The foxes outnumber the hens on the ${side?'right':'left'} bank.`;
+      }
+      return null;
+    },
+    verb:(who)=>`Cross with ${who.join(' and ')}`,
+    maths:`<p>The only thing that matters is <em>how many</em> foxes and hens are on each bank, so a state can be written (hens, foxes, boat side). The safe states lie on or next to the "equal numbers" diagonal, and a solution has to squeeze along it — a narrow path through the state graph.</p>
+    <p>With the boat holding 2, you can solve 2 pairs in 5 crossings and 3 pairs in 11 — but <strong>4 pairs is impossible</strong> with a 2-seater boat. A 3-seater boat fixes that (9 crossings). Bigger boats make bigger groups possible; this is a classic example of a problem with a threshold.</p>`
+  });
+}
+const FOX={id:'foxes',icon:'🦊',title:'Foxes and Hens',blurb:'Get the hens across safely — the foxes must never outnumber them.',
+  levels:[
+    {name:'2 and 2',make:()=>foxLevel(2,2)},
+    {name:'3 and 3',make:()=>foxLevel(3,2)},
+    {name:'4 and 4, bigger boat',make:()=>foxLevel(4,3)}
+  ]};
+
+function bridgeLevel(people){
+  const all=[{name:'Ava',emoji:'👧'},{name:'Ben',emoji:'👦'},{name:'Mum',emoji:'👩'},{name:'Nan',emoji:'👵'},{name:'Grandad',emoji:'👴'}];
+  const ents=people.map((t,i)=>Object.assign({},all[i],{time:t}));
+  return crossingLevel({
+    scene:'bridge',pilot:null,cap:2,ents,scoreLabel:'Time',unit:'minutes',
+    banks:['This side','Far side'],
+    goLabel:'Cross the bridge',goText:'Cross ➜',loadText:'Pick 1 or 2',
+    cost:set=>Math.max(...set.map(e=>e.time)),
+    brief:`A family must cross a narrow rope bridge at night. The bridge holds <strong>two</strong> people at a time and they need the <strong>torch</strong> 🔦 to see, so someone must bring it back each time. Each person's walking time is shown; a pair walks at the slower one's pace. Get everyone across as fast as you can.`,
+    wrongSide:'The torch is on the other side!',fullMsg:'The bridge only holds two people.',emptyMsg:'Someone has to carry the torch across!',
+    verb:(who)=>who.length===1?`${who[0]} crosses with the torch`:`${who.join(' and ')} cross together`,
+    maths:`<p>The obvious plan — let the fastest person escort everyone across and bring the torch back — is <em>not</em> the best. With walking times 1, 2, 5 and 10 minutes it takes 2 + 1 + 5 + 1 + 10 = <strong>19</strong> minutes.</p>
+    <p>The best plan sends the two slowest together so their long times overlap, using the two fastest as torch-carriers: (1, 2) cross: 2; 1 returns: 1; (5, 10) cross: 10; 2 returns: 2; (1, 2) cross: 2 — a total of <strong>17</strong>.</p>
+    <p>It's a nice example where the greedy approach fails, and a good reason to compare strategies systematically rather than trust the first one that works.</p>`
+  });
+}
+const BRIDGE={id:'bridge',icon:'🔦',title:'Night Bridge',blurb:'A family, one torch and a rope bridge. How fast can everyone cross?',
+  levels:[
+    {name:'Three people',make:()=>bridgeLevel([1,2,5])},
+    {name:'Four people',make:()=>bridgeLevel([1,2,5,10])},
+    {name:'Five people',make:()=>bridgeLevel([1,3,6,8,12])}
+  ]};
+
+/* ---------- COIN SWAP ---------- */
+function swapLevel(n){
+  const len=2*n+1;
+  const start=[];for(let i=0;i<n;i++)start.push('R');start.push(null);for(let i=0;i<n;i++)start.push('B');
+  const goal=[];for(let i=0;i<n;i++)goal.push('B');goal.push(null);for(let i=0;i<n;i++)goal.push('R');
+  const goalKey=goal.map(c=>c||'_').join('');
+  const nm=c=>c==='R'?'copper':'silver';
+  const def={
+    scoreLabel:'Moves',unit:'moves',uniform:true,
+    start,
+    key:s=>s.map(c=>c||'_').join(''),
+    isGoal:s=>s.map(c=>c||'_').join('')===goalKey,
+    moves(s){
+      const out=[];
+      for(let i=0;i<len;i++){
+        const c=s[i];if(!c)continue;
+        const d=c==='R'?1:-1,a=i+d,b=i+2*d;
+        if(a>=0&&a<len&&s[a]===null){const t=s.slice();t[a]=c;t[i]=null;out.push({kind:'slide',i,to:t,label:`Slide the ${nm(c)} coin in place ${i+1} into the space`});}
+        else if(a>=0&&b>=0&&a<len&&b<len&&s[a]&&s[a]!==c&&s[b]===null){const t=s.slice();t[b]=c;t[i]=null;out.push({kind:'jump',i,to:t,label:`Jump the ${nm(c)} coin in place ${i+1} over the ${nm(s[a])} coin`});}
+      }
+      return out;
+    },
+    brief:`Swap the ${n} copper coin${n>1?'s':''} and the ${n} silver coin${n>1?'s':''} so that they end up on opposite sides. Copper coins only move <strong>right</strong>, silver coins only move <strong>left</strong>. A coin can slide into the empty space next to it, or jump over <em>one</em> coin of the other colour into the empty space. Tap a coin to move it.`,
+    maths:`<p>The fewest possible number of moves is <strong>n² + 2n</strong>, where n is the number of coins of each colour. Check it against the levels:</p>
+    <table class="mt"><tr><th>n</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr><tr><th>fewest moves</th><td>3</td><td>8</td><td>15</td><td>24</td><td>35</td></tr></table>
+    <p>Why? Each coin has to travel n + 1 places in total, so all 2n coins together travel 2n(n + 1) = 2n² + 2n places. Each copper–silver pair must swap order exactly once, and only a <em>jump</em> can do that, so there are n × n = n² jumps. Each jump moves a coin 2 places, covering 2n² of the places. The remaining 2n places are covered by slides, one place each: 2n slides.</p>
+    <p>Notice too that n² + 2n = (n + 1)² − 1: one less than a square number. The sequence 3, 8, 15, 24, 35 is the square numbers 4, 9, 16, 25, 36 each reduced by 1 — can you see why?</p>`,
+    mount(stage,S){
+      const row=el('div',{class:'swaprow',style:`--n:${len}`});
+      const cells=el('div',{class:'cells'});
+      for(let i=0;i<len;i++)cells.append(el('div',{class:'scell'}));
+      row.append(cells);
+      const legend=el('div',{class:'swapleg'},el('span',null,'copper coins move →'),el('span',null,'← silver coins move'));
+      stage.append(legend,row);
+      const coins=[];
+      const ids=[];
+      for(let i=0;i<2*n;i++){
+        const kind=i<n?'R':'B';
+        const b=el('button',{class:'scoin '+(kind==='R'?'cu':'ag'),style:`--w:${100/len}%`,'aria-label':nm(kind)+' coin'},kind==='R'?'1p':'10p');
+        row.append(b);coins.push({kind,el:b,pos:-1});
+      }
+      let posEl=[];
+      coins.forEach((c,k)=>c.el.addEventListener('click',()=>{
+        if(S.busy)return;
+        const i=posEl.indexOf(c.el);
+        const m=S.moves().find(m=>m.i===i);
+        if(m)S.play(m);
+        else S.say(c.kind==='R'?'That copper coin is stuck. It can only slide right into a space, or jump right over one silver coin into a space.':'That silver coin is stuck. It can only slide left into a space, or jump left over one copper coin into a space.','bad');
+      }));
+      return {
+        update(s){
+          const Rs=[],Bs=[];
+          s.forEach((c,i)=>{if(c==='R')Rs.push(i);else if(c==='B')Bs.push(i);});
+          posEl=Array(len).fill(null);
+          coins.forEach((c,k)=>{
+            const p=c.kind==='R'?Rs[k]:Bs[k-n];
+            c.pos=p;c.el.style.left=(p*100/len)+'%';c.el.classList.remove('hint');posEl[p]=c.el;
+          });
+        },
+        highlight(m){posEl[m.i]&&posEl[m.i].classList.add('hint');}
+      };
+    }
+  };
+  return def;
+}
+const SWAP={id:'swap',icon:'🪙',title:'Coin Swap',blurb:'Swap copper and silver coins using only slides and jumps.',
+  levels:[1,2,3,4,5].map(n=>({name:`${n} and ${n}`,make:()=>swapLevel(n)}))};
+
+/* ---------- TWELVE COINS (custom) ---------- */
+function coinOut(L,R,h){
+  const inL=L.includes(h.i),inR=R.includes(h.i);
+  if(!inL&&!inR)return 'B';
+  const heavySide=(inL?'L':'R');
+  if(h.t==='H')return heavySide;
+  return heavySide==='L'?'R':'L';
+}
+function coinHyps(n,unknown){const h=[];for(let i=0;i<n;i++){h.push({i,t:'H'});if(unknown)h.push({i,t:'L'});}return h;}
+function coinBest(n,hyps){
+  let best=null;const asg=new Array(n).fill(0);
+  const rec=(i,l,r)=>{
+    if(Math.abs(l-r)>n-i)return;
+    if(i===n){
+      if(l!==r||l===0)return;
+      const L=[],R=[];asg.forEach((a,k)=>{if(a===1)L.push(k);else if(a===2)R.push(k);});
+      const cnt={L:0,R:0,B:0};
+      for(const h of hyps)cnt[coinOut(L,R,h)]++;
+      const mx=Math.max(cnt.L,cnt.R,cnt.B),sq=cnt.L*cnt.L+cnt.R*cnt.R+cnt.B*cnt.B;
+      if(!best||mx<best.mx||(mx===best.mx&&sq<best.sq))best={L,R,mx,sq};
+      return;
+    }
+    asg[i]=1;rec(i+1,l+1,r);
+    asg[i]=2;rec(i+1,l,r+1);
+    asg[i]=0;rec(i+1,l,r);
+  };
+  rec(0,0,0);
+  return best;
+}
+const cnum=a=>a.map(x=>x+1).join(', ');
+function coinsLevel(cfg,seed){
+  const n=cfg.n;
+  const def={
+    custom:true,brief:cfg.brief,maths:cfg.maths,
+    mount(stage,S){
+      const fake=Math.floor(Math.random()*n),kind=cfg.unknown?(Math.random()<.5?'H':'L'):'H';
+      let assign=Array(n).fill(0),log=[],tilt=0,phase='play',pending=null,demoTok=0,demoing=false,hintOn=null;
+      const used=()=>log.length;
+      const coinEls=[];
+      for(let i=0;i<n;i++){
+        const b=el('button',{class:'coin','aria-label':'Coin '+(i+1)},String(i+1));
+        b.addEventListener('click',()=>coinTap(i));coinEls.push(b);
+      }
+      const panLItems=el('div',{class:'items'}),panRItems=el('div',{class:'items'});
+      const panL=el('div',{class:'pan pl'},el('div',{class:'panLabel'},'Left pan'),panLItems);
+      const panR=el('div',{class:'pan pr'},el('div',{class:'panLabel'},'Right pan'),panRItems);
+      const beam=el('div',{class:'beam'});
+      const post=el('div',{class:'post'});
+      const balance=el('div',{class:'balance'},post,beam,panL,panR);
+      const tray=el('div',{class:'tray'});
+      const trayWrap=el('div',null,el('div',{class:'trayLabel'},'Tap a coin to move it: tray → left pan → right pan → tray'),tray);
+      const bWeigh=el('button',{class:'btn primary',onclick:weigh},'⚖ Weigh');
+      const bDecl=el('button',{class:'btn',onclick:startDeclare},'I know which is fake');
+      const guessRow=el('div',{class:'guessRow',hidden:''});
+      const logEl=el('ol',{class:'wlog'});
+      const logBox=el('div',{class:'logBox'},el('div',{class:'trayLabel'},'Weighings so far'),logEl);
+      stage.append(balance,trayWrap,el('div',{class:'bar'},bWeigh,bDecl),guessRow,logBox);
+
+      function paint(){
+        panLItems.replaceChildren();panRItems.replaceChildren();tray.replaceChildren();
+        coinEls.forEach((b,i)=>{
+          b.className='coin'+(hintOn&&hintOn.includes(i)?' hintc':'')+(phase==='done'&&i===fake?' fake':'')+(pending===i?' pick':'');
+          (assign[i]===1?panLItems:assign[i]===2?panRItems:tray).append(b);
+        });
+        balance.dataset.tilt=String(tilt);
+        logEl.replaceChildren(...log.map(e=>el('li',null,`${cnum(e.L)}  vs  ${cnum(e.R)}  →  `,el('strong',null,e.res==='B'?'Balanced':e.res==='L'?'Left pan heavier':'Right pan heavier'))));
+        bWeigh.disabled=phase!=='play'||demoing||used()>=cfg.max;
+        bDecl.disabled=phase!=='play'||demoing;
+        S.refresh();
+      }
+      function coinTap(i){
+        if(demoing)return;
+        if(phase==='declare'){
+          if(cfg.unknown){pending=i;guessRow.hidden=false;guessRow.replaceChildren(el('span',null,`Coin ${i+1} is the fake. Is it…`),el('button',{class:'btn',onclick:()=>finish(i,'H')},'heavier'),el('button',{class:'btn',onclick:()=>finish(i,'L')},'lighter'));paint();}
+          else finish(i,'H');
+          return;
+        }
+        if(phase!=='play')return;
+        assign[i]=(assign[i]+1)%3;tilt=0;hintOn=null;S.say('');paint();
+      }
+      function weigh(){
+        if(phase!=='play'||demoing||used()>=cfg.max)return;
+        const L=[],R=[];assign.forEach((a,i)=>{if(a===1)L.push(i);else if(a===2)R.push(i);});
+        if(!L.length||L.length!==R.length){S.say('Put the same number of coins in each pan (at least one in each) before weighing.','bad');return;}
+        const res=coinOut(L,R,{i:fake,t:kind});
+        log.push({L,R,res});tilt=res==='L'?-1:res==='R'?1:0;hintOn=null;
+        S.say(`Weighing ${used()}: ${res==='B'?'the pans balance':res==='L'?'the left pan is heavier':'the right pan is heavier'}.`,'info');
+        if(used()>=cfg.max){phase='declare';S.say(`That was your last weighing. Now tap the coin you think is the fake${cfg.unknown?', then say whether it is heavier or lighter':''}.`,'info');}
+        paint();
+      }
+      function startDeclare(){
+        if(phase!=='play'||demoing)return;
+        phase='declare';S.say(`Tap the coin you think is the fake${cfg.unknown?'.':'.'}`,'info');paint();
+      }
+      function finish(i,t){
+        phase='done';pending=null;guessRow.hidden=true;
+        const what=kind==='H'?'heavier':'lighter';
+        const ok=i===fake&&t===kind;
+        if(ok)S.win(`🎉 Correct! Coin ${fake+1} is the fake${cfg.unknown?` and it is ${what}`:''}. You used ${used()} of your ${cfg.max} weighing${cfg.max>1?'s':''}.`);
+        else{S.say(`Not quite — the fake was coin ${fake+1}${cfg.unknown?` (${what})`:''}. Press Reset to try the same coins again, or New puzzle for different ones.`,'bad');S.revealMaths();}
+        paint();
+      }
+      function hyps(){
+        let h=coinHyps(n,cfg.unknown);
+        log.forEach(e=>{h=h.filter(x=>coinOut(e.L,e.R,x)===e.res);});
+        return h;
+      }
+      function reset(){
+        demoTok++;demoing=false;assign=Array(n).fill(0);log=[];tilt=0;phase='play';pending=null;hintOn=null;guessRow.hidden=true;
+        S.say('');paint();
+      }
+      function undo(){
+        if(demoing||!log.length)return;
+        log.pop();assign=Array(n).fill(0);tilt=0;phase='play';pending=null;guessRow.hidden=true;S.say('');paint();
+      }
+      function hint(){
+        if(demoing||phase==='done')return;
+        const h=hyps();
+        if(h.length===1){const x=h[0];S.say(`💡 You have enough information: it must be coin ${x.i+1}${cfg.unknown?(x.t==='H'?' (heavier)':' (lighter)'):''}. Press "I know which is fake".`,'info');return;}
+        if(used()>=cfg.max){S.say('💡 No weighings left — make your best guess!','info');return;}
+        const b=coinBest(n,h);
+        hintOn=b.L.concat(b.R);
+        S.say(`💡 Try weighing coins ${cnum(b.L)} against coins ${cnum(b.R)}.`,'info');paint();
+      }
+      function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+      async function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();
+        const my=++demoTok;demoing=true;paint();
+        await wait(500);
+        while(my===demoTok){
+          const h=hyps();
+          if(h.length===1)break;
+          const b=coinBest(n,h);
+          assign=Array(n).fill(0);b.L.forEach(i=>assign[i]=1);b.R.forEach(i=>assign[i]=2);tilt=0;
+          S.say(`Weighing ${used()+1}: coins ${cnum(b.L)} against coins ${cnum(b.R)}.`,'info');paint();
+          await wait(1500);if(my!==demoTok)return;
+          const res=coinOut(b.L,b.R,{i:fake,t:kind});
+          log.push({L:b.L,R:b.R,res});tilt=res==='L'?-1:res==='R'?1:0;
+          S.say(`Result: ${res==='B'?'balanced':res==='L'?'left pan heavier':'right pan heavier'}.`,'info');paint();
+          await wait(1800);
+        }
+        if(my!==demoTok)return;
+        const x=hyps()[0];
+        demoing=false;phase='done';assign=Array(n).fill(0);
+        S.say(`Only one possibility is left: coin ${x.i+1}${cfg.unknown?(x.t==='H'?', heavier':', lighter'):''}. That took ${used()} weighing${used()>1?'s':''}.`,'info');
+        S.revealMaths();paint();
+      }
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;},
+        ctl:()=>({undo:!demoing&&log.length>0,reset:true,hint:!demoing&&phase!=='done',show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Weighings: ${used()} / ${cfg.max}`})
+      };
+    }
+  };
+  return def;
+}
+const COIN_MATHS_HEAVY=`<p>A balance gives <strong>three</strong> possible results: left heavier, right heavier, or balanced. So <em>k</em> weighings can tell apart at most 3<sup>k</sup> possibilities.</p>
+<p>With one heavy coin among <em>n</em>, there are <em>n</em> possibilities, so you need 3<sup>k</sup> ≥ <em>n</em>. That is why 3 coins need 1 weighing, 9 coins need 2 weighings, and 27 coins would need only 3.</p>
+<p>The winning strategy is to split the coins into <strong>three equal groups</strong> (or as equal as you can): weigh two of them. If they balance, the heavy coin is in the third group. Each weighing divides the problem by three.</p>`;
+const COIN_MATHS_12=`<p>Now the fake could be heavier <em>or</em> lighter, so there are 12 × 2 = <strong>24</strong> possibilities. Three weighings give 3<sup>3</sup> = 27 outcomes, and 24 ≤ 27 — just enough room!</p>
+<p>The first weighing must be four coins against four. Any other split leaves too many possibilities for the remaining weighings to separate. After that, the coins that have been on the scales and the coins that haven't tell you very different things, and you must use the coins you've proved genuine as "known good" weights.</p>
+<p>With 13 coins you could still find the fake in 3 weighings in most cases, but not always know if it was heavier or lighter. In general the most coins you can handle in <em>k</em> weighings is (3<sup>k</sup> − 3) ÷ 2: for k = 3 that is 12.</p>`;
+const COINS={id:'coins',icon:'⚖️',title:'Twelve Coins',blurb:'Find the odd coin with a balance, using as few weighings as possible.',
+  levels:[
+    {name:'3 coins',random:true,make:()=>coinsLevel({n:3,max:1,unknown:false,maths:COIN_MATHS_HEAVY,brief:'Three coins look identical, but one is <strong>heavier</strong> than the others. You have a balance and just <strong>one weighing</strong>. Find the heavy coin.'})},
+    {name:'9 coins',random:true,make:()=>coinsLevel({n:9,max:2,unknown:false,maths:COIN_MATHS_HEAVY,brief:'Nine coins, one of them <strong>heavier</strong>. You have two weighings. Find the heavy coin.'})},
+    {name:'8 coins',random:true,make:()=>coinsLevel({n:8,max:2,unknown:false,maths:COIN_MATHS_HEAVY,brief:'Eight coins, one of them <strong>heavier</strong>. Still just two weighings — but the groups can\'t all be the same size now.'})},
+    {name:'12 coins',random:true,make:()=>coinsLevel({n:12,max:3,unknown:true,maths:COIN_MATHS_12,brief:'Twelve coins. One is a fake that is a different weight — it could be <strong>heavier or lighter</strong>, you don\'t know which. You have three weighings. Find the fake <em>and</em> say whether it is heavy or light.'})}
+  ]};
+
+/* ---------- MATCHSTICKS ---------- */
+const SEG={a:[[10,6],[50,6]],b:[[54,10],[54,46]],c:[[54,54],[54,90]],d:[[10,94],[50,94]],e:[[6,54],[6,90]],f:[[6,10],[6,46]],g:[[10,50],[50,50]]};
+const SEGS='abcdefg';
+const DIG=['abcdef','bc','abdeg','abcdg','bcfg','acdfg','acdefg','abc','abcdefg','abcdfg'];
+const OPSLOT=[[[12,50],[48,50]],[[30,32],[30,68]]];
+const EQSLOT=[[[12,40],[48,40]],[[12,60],[48,60]]];
+function matchTokens(eq){
+  const toks=[];let off=0;
+  for(const ch of eq){
+    if(ch>='0'&&ch<='9'){toks.push({t:'d',off,n:7,init:SEGS.split('').map(s=>DIG[+ch].includes(s)?1:0)});off+=7;}
+    else if(ch==='+'||ch==='-'){toks.push({t:'o',off,n:2,init:ch==='+'?[1,1]:[1,0]});off+=2;}
+    else if(ch==='='){toks.push({t:'e',off,n:2,init:[1,1]});off+=2;}
+  }
+  return {toks,total:off};
+}
+function matchText(toks,bits){
+  let txt='';
+  for(const t of toks){
+    const b=bits.slice(t.off,t.off+t.n);
+    if(t.t==='d'){
+      const set=SEGS.split('').filter((s,i)=>b[i]).join('');
+      const d=DIG.indexOf(set);if(d<0)return null;txt+=d;
+    }else if(t.t==='o'){
+      if(b[0]&&b[1])txt+='+';else if(b[0]&&!b[1])txt+='-';else return null;
+    }else{if(b[0]&&b[1])txt+='=';else return null;}
+  }
+  return txt;
+}
+function matchValid(txt){
+  if(!txt)return false;
+  let m=txt.match(/^(\d+)([+-])(\d+)=(\d+)$/);
+  let a,b,c,op;
+  if(m){a=m[1];op=m[2];b=m[3];c=m[4];
+    const ok=s=>s.length===1||s[0]!=='0';if(!ok(a)||!ok(b)||!ok(c))return false;
+    return (op==='+'?+a+ +b:+a- +b)===+c;}
+  m=txt.match(/^(\d+)=(\d+)([+-])(\d+)$/);
+  if(m){c=m[1];a=m[2];op=m[3];b=m[4];
+    const ok=s=>s.length===1||s[0]!=='0';if(!ok(a)||!ok(b)||!ok(c))return false;
+    return (op==='+'?+a+ +b:+a- +b)===+c;}
+  return false;
+}
+function matchLevel(eq,moveCount){
+  const {toks,total}=matchTokens(eq);
+  const start=[];toks.forEach(t=>t.init.forEach(v=>start.push(v)));
+  const tokOf=p=>toks.findIndex(t=>p>=t.off&&p<t.off+t.n);
+  const tokName=(s,ti)=>{
+    const t=toks[ti],b=s.slice(t.off,t.off+t.n);let ch=null;
+    if(t.t==='d'){const d=DIG.indexOf(SEGS.split('').filter((x,i)=>b[i]).join(''));if(d>=0)ch=String(d);}
+    else if(t.t==='o'){ch=b[0]&&b[1]?'+':b[0]?'−':null;}
+    else ch=b[0]&&b[1]?'=':null;
+    return (ch?`the ${ch}`:'the shape')+` (symbol ${ti+1})`;
+  };
+  const def={
+    scoreLabel:'Moves',unit:'moves',uniform:true,
+    start,toks,
+    key:s=>s.join(''),
+    isGoal:s=>matchValid(matchText(toks,s)),
+    moves(s){
+      const out=[];
+      for(let p=0;p<total;p++){
+        if(!s[p])continue;
+        for(let q=0;q<total;q++){
+          if(s[q]||q===p)continue;
+          const t=s.slice();t[p]=0;t[q]=1;
+          const a=tokOf(p),b=tokOf(q);
+          out.push({kind:'move',from:p,to:t,dest:q,label:a===b?`Move one match inside ${tokName(s,a)}`:`Move one match from ${tokName(s,a)} to ${tokName(s,b)}`});
+        }
+      }
+      return out;
+    },
+    impossible:()=>'No solution found.',
+    brief:`This equation is wrong. Move <strong>${moveCount===1?'one match':moveCount+' matches'}</strong> to make it correct. Tap a match to pick it up, then tap an empty space to put it down. (Matches can also be added to or taken from the + − and = signs.)`,
+    maths:`<p>Each digit is built from up to seven matches, the same pattern as a calculator display. Moving a match changes a digit into a different digit — for example moving the top-right match of a 9 round to the bottom-left turns it into a 6. A digit can only change if the new pattern is a real digit.</p>
+    <p>A good way to solve these is to list, for each digit, which digits it becomes by <em>adding</em> one match (e.g. 5 → 6 or 9), <em>removing</em> one (e.g. 9 → 5 or 3), or <em>moving</em> one within the digit (e.g. 6 → 9, 0 → 6). Then look for a pair of changes that cancel — one symbol gives a match and another receives it.</p>`,
+    mount(stage,S){
+      const W=toks.length*72;
+      const ns='http://www.w3.org/2000/svg';
+      const svg=document.createElementNS(ns,'svg');
+      svg.setAttribute('viewBox',`0 0 ${W} 110`);svg.setAttribute('class','matches');
+      const slots=[];
+      let sel=null,hintMove=null;
+      toks.forEach((t,ti)=>{
+        const x0=ti*72+6;
+        for(let k=0;k<t.n;k++){
+          const pts=t.t==='d'?SEG[SEGS[k]]:t.t==='o'?OPSLOT[k]:EQSLOT[k];
+          const kk=t.t==='d'?7:1,sh=(pt,o)=>{const dx=o[0]-pt[0],dy=o[1]-pt[1],L=Math.hypot(dx,dy)||1;return [pt[0]+dx/L*kk,pt[1]+dy/L*kk];};
+          const [x1,y1]=sh(pts[0],pts[1]),[x2,y2]=sh(pts[1],pts[0]);
+          const g=document.createElementNS(ns,'g');g.setAttribute('class','slot');g.setAttribute('transform',`translate(${x0},0)`);
+          const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+          const ghost=mk('line',{x1,y1,x2,y2,class:'ghost'});
+          const wood=mk('line',{x1,y1,x2,y2,class:'wood'});
+          const head=mk('circle',{cx:x1,cy:y1,r:5.5,class:'head'});
+          const hit=mk('line',{x1,y1,x2,y2,class:'hit'});
+          g.append(ghost,wood,head,hit);svg.append(g);
+          const p=t.off+k;
+          hit.addEventListener('click',()=>tapSlot(p));
+          slots[p]={g};
+        }
+      });
+      stage.append(svg);
+      function tapSlot(p){
+        if(S.busy)return;
+        const s=S.state;
+        if(sel===null){
+          if(s[p]){sel=p;paint(s);S.say('Now tap an empty space to put the match down (or tap it again to put it back).');}
+          else S.say('Tap a match to pick it up first.','bad');
+          return;
+        }
+        if(p===sel){sel=null;paint(s);S.say('');return;}
+        if(s[p]){sel=p;paint(s);return;}
+        const m=S.moves().find(m=>m.from===sel&&m.dest===p);
+        sel=null;
+        if(m)S.play(m);
+      }
+      function paint(s){
+        slots.forEach((o,p)=>{
+          const g=o.g;
+          g.classList.toggle('on',!!s[p]);
+          g.classList.toggle('lift',sel===p);
+          g.classList.toggle('empty',!s[p]);
+          g.classList.toggle('hintFrom',!!hintMove&&hintMove.from===p);
+          g.classList.toggle('hintTo',!!hintMove&&hintMove.dest===p);
+        });
+        svg.classList.toggle('carrying',sel!==null);
+      }
+      return {
+        update(s){sel=null;hintMove=null;paint(s);},
+        highlight(m){hintMove=m;paint(S.state);}
+      };
+    }
+  };
+  return def;
+}
+/* ---------- LATTICE ENGINE (matchstick shapes) ---------- */
+function makeLat(type,cols,rows){
+  const id=(a,b)=>(a>=0&&a<cols&&b>=0&&b<rows)?b*cols+a:-1;
+  const edges=[],emap=new Map();
+  const ek=(u,v)=>u<v?u+','+v:v+','+u;
+  const add=(u,v)=>{if(u<0||v<0)return;const k=ek(u,v);if(emap.has(k))return;emap.set(k,edges.length);edges.push({u,v});};
+  for(let b=0;b<rows;b++)for(let a=0;a<cols;a++){
+    const n=id(a,b);
+    add(n,id(a+1,b));add(n,id(a,b+1));
+    if(type==='tri')add(n,id(a-1,b+1));
+  }
+  const pos=n=>{const a=n%cols,b=Math.floor(n/cols);return type==='tri'?{x:a+b/2,y:b*0.8660254}:{x:a,y:b};};
+  const eOf=(a1,b1,a2,b2)=>{const u=id(a1,b1),v=id(a2,b2);if(u<0||v<0)return -1;const k=emap.get(ek(u,v));return k===undefined?-1:k;};
+  /* polygons (arrays of edge indices) */
+  const polys=[];
+  const line=(a,b,da,db,s)=>{const r=[];for(let i=0;i<s;i++){const e=eOf(a+da*i,b+db*i,a+da*(i+1),b+db*(i+1));if(e<0)return null;r.push(e);}return r;};
+  if(type==='sq'){
+    for(let b=0;b<rows;b++)for(let a=0;a<cols;a++)for(let s=1;a+s<cols&&b+s<rows;s++){
+      const p=[line(a,b,1,0,s),line(a,b+s,1,0,s),line(a,b,0,1,s),line(a+s,b,0,1,s)];
+      if(p.every(Boolean))polys.push(p.flat());
+    }
+  }else{
+    for(let b=0;b<rows;b++)for(let a=0;a<cols;a++)for(let s=1;s<=Math.max(cols,rows);s++){
+      let p=[line(a,b,1,0,s),line(a,b,0,1,s),line(a+s,b,-1,1,s)];
+      if(p.every(Boolean))polys.push(p.flat());
+      p=[line(a,b,1,0,s),line(a,b,1,-1,s),line(a+s,b,0,-1,s)];
+      if(p.every(Boolean))polys.push(p.flat());
+    }
+  }
+  return {type,cols,rows,id,edges,eOf,pos,polys,E:edges.length,allowed:new Array(edges.length).fill(1)};
+}
+function latState(lat,list,dx=0,dy=0){
+  const s=new Array(lat.E).fill(0);
+  for(const [a1,b1,a2,b2] of list){const e=lat.eOf(a1+dx,b1+dy,a2+dx,b2+dy);if(e<0)return null;s[e]=1;}
+  return s;
+}
+function latCount(lat,s){
+  let c=0;for(const p of lat.polys){let ok=true;for(const e of p)if(!s[e]){ok=false;break;}if(ok)c++;}return c;
+}
+function latLoose(lat,s){
+  const used=new Array(lat.E).fill(0);
+  for(const p of lat.polys){let ok=true;for(const e of p)if(!s[e]){ok=false;break;}if(ok)for(const e of p)used[e]=1;}
+  for(let e=0;e<lat.E;e++)if(s[e]&&!used[e])return true;
+  return false;
+}
+/* edge list transforms: lists of [a1,b1,a2,b2] */
+const LT={
+  mirror:(t)=>t==='tri'?([a,b])=>[-a-b,b]:([a,b])=>[-a,b],
+  rot180:()=>([a,b])=>[-a,-b],
+  rot90:()=>([a,b])=>[-b,a],
+  flipV:(t)=>t==='tri'?([a,b])=>[a+b,-b]:([a,b])=>[a,-b]
+};
+function xformList(list,f){return list.map(([a1,b1,a2,b2])=>{const p=f([a1,b1]),q=f([a2,b2]);return [p[0],p[1],q[0],q[1]];});}
+/* all translations of a list that fit the lattice, as states */
+function translations(lat,list){
+  const out=[];
+  for(let dy=-2*lat.rows;dy<=2*lat.rows;dy++)for(let dx=-2*lat.cols;dx<=2*lat.cols;dx++){
+    const s=latState(lat,list,dx,dy);if(s)out.push(s);
+  }
+  return out;
+}
+/* ---- solvers ---- */
+function combos(arr,k,fn){
+  const cur=[];
+  const rec=(st)=>{
+    if(cur.length===k)return fn(cur);
+    for(let i=st;i<=arr.length-(k-cur.length);i++){cur.push(arr[i]);if(rec(i+1))return true;cur.pop();}
+    return false;
+  };
+  return rec(0);
+}
+/* relocate: move k matches so that goal(state) holds; returns [{from,to}] pairs or null */
+function solveRelocate(lat,s,goal,kmax){
+  const P=[],Em=[];s.forEach((v,i)=>{if(v)P.push(i);else if(lat.allowed[i])Em.push(i);});
+  if(goal(s))return [];
+  const t=s.slice();
+  for(let k=1;k<=kmax;k++){
+    let res=null;
+    combos(P,k,rem=>{
+      rem.forEach(e=>t[e]=0);
+      const r=rem.slice();
+      const hit=combos(Em,k,add=>{
+        add.forEach(e=>t[e]=1);
+        const ok=goal(t);
+        if(ok){res=r.map((f,i)=>({from:f,to:add[i]}));}
+        add.forEach(e=>t[e]=0);
+        return ok;
+      });
+      rem.forEach(e=>t[e]=1);
+      return hit;
+    });
+    if(res)return res;
+  }
+  return null;
+}
+/* remove exactly k matches */
+function solveRemove(lat,s,goal,kmax){
+  const P=[];s.forEach((v,i)=>{if(v)P.push(i);});
+  if(goal(s))return [];
+  const t=s.slice();
+  for(let k=1;k<=kmax;k++){
+    let res=null;
+    combos(P,k,rem=>{rem.forEach(e=>t[e]=0);const ok=goal(t);if(ok)res=rem.slice();rem.forEach(e=>t[e]=1);return ok;});
+    if(res)return res.map(f=>({from:f}));
+  }
+  return null;
+}
+/* remove matches until NO polygon remains (hitting-set DFS) */
+function solveRemoveNone(lat,s,kmax){
+  const t=s.slice();let best=null;
+  const polys=lat.polys.slice().sort((a,b)=>a.length-b.length);
+  const seen=new Set();
+  const rec=(chosen,k)=>{
+    const key=t.join('');
+    if(seen.has(key+k))return false;seen.add(key+k);
+    let target=null;
+    for(const p of polys){let ok=true;for(const e of p)if(!t[e]){ok=false;break;}if(ok){target=p;break;}}
+    if(!target){best=chosen.slice();return true;}
+    if(k===0)return false;
+    for(const e of target){
+      t[e]=0;chosen.push(e);
+      const r=rec(chosen,k-1);
+      chosen.pop();t[e]=1;
+      if(r)return true;
+    }
+    return false;
+  };
+  for(let k=0;k<=kmax;k++){seen.clear();if(rec([],k))return best.map(f=>({from:f}));}
+  return null;
+}
+/* transform: reach any translation of a target figure by relocating matches */
+function solveTransform(lat,s,targets){
+  let best=null;
+  for(const T of targets){
+    const rem=[],add=[];
+    for(let e=0;e<lat.E;e++){if(s[e]&&!T[e])rem.push(e);else if(!s[e]&&T[e])add.push(e);}
+    if(rem.length!==add.length)continue;
+    if(!best||rem.length<best.rem.length)best={rem,add};
+  }
+  return best?best.rem.map((f,i)=>({from:f,to:best.add[i]})):null;
+}
+/* turn solver output into engine moves */
+function pairsToPath(lat,s,pairs,labelFn){
+  const path=[];let cur=s.slice();
+  for(const p of pairs){
+    const t=cur.slice();t[p.from]=0;if(p.to!==undefined)t[p.to]=1;
+    path.push({kind:p.to===undefined?'remove':'move',from:p.from,dest:p.to,to:t,label:labelFn(p)});
+    cur=t;
+  }
+  return path;
+}
+
+/* free-form node graph for hand-drawn figures: every pair of nodes one match apart is a slot */
+function makeGraphLat(G){
+  const N=G.nodes,edges=[];
+  for(let i=0;i<N.length;i++)for(let j=i+1;j<N.length;j++){
+    if(Math.abs(Math.hypot(N[i][0]-N[j][0],N[i][1]-N[j][1])-1)<1e-3)edges.push({u:i,v:j});
+  }
+  return {type:'free',cols:0,rows:0,E:edges.length,edges,pos:n=>({x:N[n][0],y:N[n][1]}),polys:[],allowed:new Array(edges.length).fill(1),nodes:N};
+}
+function graphState(lat,list){
+  const idx=(x,y)=>lat.nodes.findIndex(n=>Math.abs(n[0]-x)<1e-6&&Math.abs(n[1]-y)<1e-6);
+  const s=new Array(lat.E).fill(0);
+  for(const [a,b,c,d] of list){
+    const u=idx(a,b),v=idx(c,d);
+    const e=lat.edges.findIndex(E=>(E.u===u&&E.v===v)||(E.u===v&&E.v===u));
+    if(e<0)throw new Error('no slot '+[a,b,c,d]);
+    s[e]=1;
+  }
+  return s;
+}
+const SH_R3=Math.sqrt(3)/2;
+const SH_CHAIR_NODES=(()=>{const n=[];const xs=[-1,-0.5,0,0.5,1,1.5,2],ys=[0,SH_R3,1,1+SH_R3,2,2+SH_R3];
+  for(const y of ys)for(const x of xs)n.push([x,y]);return n;})();
+const SH_CHAIR={mode:'transform',type:'sq',
+  graph:{nodes:SH_CHAIR_NODES,
+    start:[[0,0,1,0],[0,0,0,1],[1,0,1,1],[0,1,1,1],[0,1,-0.5,1+SH_R3],[1,1,0.5,1+SH_R3],[-0.5,1+SH_R3,0.5,1+SH_R3],[-0.5,1+SH_R3,-0.5,2+SH_R3],[0.5,1+SH_R3,0.5,2+SH_R3],[1,1,1,2]],
+    target:[[0,0,0,1],[1,0,1,1],[0,1,1,1],[0,1,-0.5,1+SH_R3],[1,1,0.5,1+SH_R3],[-0.5,1+SH_R3,0.5,1+SH_R3],[-0.5,1+SH_R3,-0.5,2+SH_R3],[0.5,1+SH_R3,0.5,2+SH_R3],[-0.5,2+SH_R3,0.5,2+SH_R3],[-0.5,SH_R3,-0.5,1+SH_R3]]},
+  brief:'This chair, made of <strong>10 matches</strong>, faces one way. Move just <strong>2 matches</strong> to make it face the other way. Which parts of the picture would stay exactly where they are if the chair were turned round?',
+  maths:`<p>This is a puzzle about <strong>rotational symmetry</strong>. The seat of the chair is a parallelogram, and a parallelogram looks exactly the same after a <em>half turn</em> (a rotation of 180°) about its centre. So the seat, with its four matches, does not need to move at all.</p>
+<p>A rotation turns a whole shape without changing its size or shape, so the rest of the chair swings round with the seat. Most of the chair lands on matches that are already there: two of the legs become the sides of the new back, and the old back sides become new legs. That leaves only two matches that are in the wrong place.</p>
+<p>The fewest moves is the number of matches that do not land on another match. Spotting a symmetry like this is a much quicker way of solving the puzzle than trying moves at random.</p>`};
+
+/* ---------- SHAPES: figure helpers ---------- */
+const shPath=pts=>{const o=[];for(let i=0;i+1<pts.length;i++)o.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]]);return o;};
+const shCells=cells=>{const m=new Map();for(const [c,r] of cells)for(const e of [[c,r,c+1,r],[c,r+1,c+1,r+1],[c,r,c,r+1],[c+1,r,c+1,r+1]])m.set(e.join(),e);return [...m.values()];};
+const shGrid=(w,h)=>{const c=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++)c.push([x,y]);return shCells(c);};
+const shTU=(a,b)=>[[a,b,a+1,b],[a,b,a,b+1],[a+1,b,a,b+1]];
+const shTD=(a,b)=>[[a,b,a+1,b],[a,b,a+1,b-1],[a+1,b,a+1,b-1]];
+const shTris=list=>{const seen=new Set(),out=[];for(const [k,a,b] of list)for(const e of (k==='u'?shTU(a,b):shTD(a,b))){const k1=e[0]+','+e[1]+'|'+e[2]+','+e[3],k2=e[2]+','+e[3]+'|'+e[0]+','+e[1];if(seen.has(k1)||seen.has(k2))continue;seen.add(k1);out.push(e);}return out;};
+const shHexTris=(a,b)=>[['u',a,b],['d',a-1,b+1],['u',a-1,b],['d',a-1,b],['u',a,b-1],['d',a,b]];
+const shHexRim=(c0,c1)=>{const nb=[[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]].map(([x,y])=>[c0+x,c1+y]);return nb.map((p,i)=>{const q=nb[(i+1)%6];return [p[0],p[1],q[0],q[1]];});};
+const shShift=(f,dx,dy)=>f.map(([a,b,c,d])=>[a+dx,b+dy,c+dx,d+dy]);
+const shFish=q=>q.map(([c1,y1,c2,y2])=>[(c1+y1)/2,-c1,(c2+y2)/2,-c2]);
+const SHF={
+  fish:shFish([[0,0,1,1],[0,0,1,-1],[1,1,2,0],[1,-1,2,0],[1,1,2,2],[1,-1,2,-2],[2,0,3,1],[2,0,3,-1]])
+};
+
+/* ---------- SHAPES: puzzle builder ---------- */
+function shapeLevel(spec){
+  const type=spec.type||'sq',mode=spec.mode;
+  const removeMode=mode==='remove'||mode==='none';
+  const G=spec.graph;
+  const fig=spec.fig||[];
+  let amin=1e9,bmin=1e9,amax=-1e9,bmax=-1e9;
+  fig.forEach(e=>{amin=Math.min(amin,e[0],e[2]);amax=Math.max(amax,e[0],e[2]);bmin=Math.min(bmin,e[1],e[3]);bmax=Math.max(bmax,e[1],e[3]);});
+  const pad=spec.pad===undefined?(removeMode?0:1):spec.pad;
+  const m=pad+1;
+  const cols=G?0:type==='sq'?(amax-amin)+1+2*m:(amax-amin)+(bmax-bmin)+1+2*m;
+  const rows=G?0:(bmax-bmin)+1+2*m;
+  const lat=G?makeGraphLat(G):makeLat(type,cols,rows);
+  const dx=G?0:m-amin,dy=G?0:m-bmin;
+  const start=G?graphState(lat,G.start):latState(lat,fig,dx,dy);
+  const Y=n=>type==='tri'?-lat.pos(n).y:lat.pos(n).y;
+  /* allowed region: bounding box of the starting figure, padded */
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  start.forEach((v,e)=>{if(!v)return;for(const n of [lat.edges[e].u,lat.edges[e].v]){const p=lat.pos(n);x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);y0=Math.min(y0,Y(n));y1=Math.max(y1,Y(n));}});
+  const padY=pad*(type==='tri'?0.8660254:1),eps=0.01;
+  if(G)lat.allowed.fill(1);
+  else for(let e=0;e<lat.E;e++){
+    let ok=1;
+    for(const n of [lat.edges[e].u,lat.edges[e].v]){const p=lat.pos(n),y=Y(n);if(p.x<x0-pad-eps||p.x>x1+pad+eps||y<y0-padY-eps||y>y1+padY+eps)ok=0;}
+    lat.allowed[e]=removeMode?start[e]:ok;
+  }
+  const word=type==='sq'?'square':'triangle',words=word+'s';
+  const N=spec.N;
+  const goalCount=s=>latCount(lat,s)===N&&!latLoose(lat,s);
+  let tkeys=null,targets=null;
+  if(mode==='transform'&&G){
+    targets=[graphState(lat,G.target)];tkeys=new Set(targets.map(t=>t.join('')));
+  }else if(mode==='transform'){
+    targets=[];tkeys=new Set();
+    const R=2*(cols+rows);
+    for(let ty=-rows;ty<=rows;ty++)for(let tx=-R;tx<=R;tx++){
+      const t=latState(lat,spec.target,tx,ty);if(!t)continue;
+      let ok=true;t.forEach((v,e)=>{if(v&&!lat.allowed[e])ok=false;});
+      if(!ok)continue;
+      const k=t.join('');if(tkeys.has(k))continue;tkeys.add(k);targets.push(t);
+    }
+  }
+  const isGoal=s=>mode==='transform'?tkeys.has(s.join('')):mode==='none'?latCount(lat,s)===0:goalCount(s);
+  const lbl=p=>p.to===undefined?'Take away the highlighted match':'Move the highlighted match to the highlighted space';
+  const memo=new Map();
+  const solver=s=>{
+    const key=s.join('');
+    if(memo.has(key))return memo.get(key);
+    let pairs=null;
+    if(mode==='relocate')pairs=solveRelocate(lat,s,goalCount,spec.k);
+    else if(mode==='remove')pairs=solveRemove(lat,s,goalCount,spec.k);
+    else if(mode==='none')pairs=solveRemoveNone(lat,s,spec.kmax||spec.k);
+    else pairs=solveTransform(lat,s,targets);
+    const r=pairs?{path:pairsToPath(lat,s,pairs,lbl),cost:pairs.length,states:[]}:{path:null,cost:null,states:[]};
+    memo.set(key,r);return r;
+  };
+  const unit=removeMode?'matches taken away':'moves';
+  const tapHow=removeMode?'Tap a match to take it away.':'Tap a match to pick it up, then tap an empty space to put it down.';
+  const nsq=`<strong>${N} ${words}</strong>`;
+  const rule=`${type==='sq'?'Squares':'Triangles'} of every size count, and every match must belong to a ${word} — no spare matches sticking out.`;
+  const kTxt=spec.k===1?'one match':spec.k+' matches';
+  let brief=spec.brief;
+  if(!brief){
+    if(mode==='relocate')brief=`Move <strong>${kTxt}</strong> to make ${nsq}. ${rule} ${tapHow}`;
+    else if(mode==='remove')brief=`Take away <strong>${kTxt}</strong> to leave exactly ${nsq}. ${rule} ${tapHow}`;
+    else brief=`Take matches away until <strong>no ${word} of any size</strong> is left. What is the fewest matches you can take away? ${tapHow}`;
+  }else brief+=' '+tapHow;
+  const def={
+    scoreLabel:'Moves',unit,uniform:false,
+    start,key:s=>s.join(''),isGoal,solver,
+    noHint:'💡 That arrangement is too far from a solution. Try Undo a few times, or press Reset and think again.',
+    moves(s){
+      const out=[];
+      for(let p=0;p<lat.E;p++){
+        if(!s[p])continue;
+        if(removeMode){const t=s.slice();t[p]=0;out.push({kind:'remove',from:p,to:t,label:lbl({})});}
+        else for(let q=0;q<lat.E;q++){
+          if(s[q]||q===p||!lat.allowed[q])continue;
+          const t=s.slice();t[p]=0;t[q]=1;out.push({kind:'move',from:p,dest:q,to:t,label:lbl({to:q})});
+        }
+      }
+      return out;
+    },
+    brief,maths:spec.maths,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg',U=60;
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const P=n=>spec.rot?{x:U*Y(n),y:-U*lat.pos(n).x}:{x:U*lat.pos(n).x,y:U*Y(n)};
+      let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+      for(let e=0;e<lat.E;e++)if(lat.allowed[e])for(const n of [lat.edges[e].u,lat.edges[e].v]){const p=P(n);minx=Math.min(minx,p.x);maxx=Math.max(maxx,p.x);miny=Math.min(miny,p.y);maxy=Math.max(maxy,p.y);}
+      const M=16,vw=maxx-minx+2*M,vh=maxy-miny+2*M;
+      const svg=mk('svg',{viewBox:`${minx-M} ${miny-M} ${vw} ${vh}`,class:'matches shape'});
+      svg.style.maxWidth=Math.min(640,Math.max(300,vw*1.7),520*vw/vh)+'px';
+      const slots=[];
+      const nodes=new Set();
+      for(let e=0;e<lat.E;e++)if(lat.allowed[e]){nodes.add(lat.edges[e].u);nodes.add(lat.edges[e].v);}
+      if(!removeMode)nodes.forEach(n=>{const p=P(n);svg.append(mk('circle',{cx:p.x,cy:p.y,r:2.5,class:'node'}));});
+      for(let e=0;e<lat.E;e++){
+        if(!lat.allowed[e])continue;
+        let A=P(lat.edges[e].u),B=P(lat.edges[e].v);
+        if(A.x>B.x+0.01||(Math.abs(A.x-B.x)<0.01&&A.y>B.y))[A,B]=[B,A];
+        const dxx=B.x-A.x,dyy=B.y-A.y,len=Math.hypot(dxx,dyy),k=6;
+        const x1=A.x+dxx/len*k,y1=A.y+dyy/len*k,x2=B.x-dxx/len*k,y2=B.y-dyy/len*k;
+        const g=mk('g',{class:'slot'});
+        g.append(mk('line',{x1,y1,x2,y2,class:'ghost'}),mk('line',{x1,y1,x2,y2,class:'wood'}),mk('circle',{cx:x1+dxx/len*3,cy:y1+dyy/len*3,r:(type==='tri'?4.5:5.5),class:'head'}));
+        const hit=mk('line',{x1,y1,x2,y2,class:'hit'});g.append(hit);svg.append(g);
+        hit.addEventListener('click',()=>tap(e));
+        slots[e]={g};
+      }
+      const cnt=el('div',{class:'shCount'});
+      const board=el('div',{class:'shBoard'},cnt,svg);
+      const wrap=el('div',{class:'shWrap'},board);
+      if(mode==='transform'){
+        const T=spec.target||[];let tx0=1e9,tx1=-1e9,ty0=1e9,ty1=-1e9;
+        
+        const tsvgPts=[];
+        const lat2=G?lat:makeLat(type,Math.max(cols,rows)*3,Math.max(cols,rows)*3);
+        const ty=n=>type==='tri'?-lat2.pos(n).y:lat2.pos(n).y;
+        const base=G?graphState(lat,G.target):latState(lat2,T,Math.max(cols,rows),Math.max(cols,rows));
+        const sc=20,segs=[];
+        if(base)base.forEach((v,e)=>{if(!v)return;let A=lat2.pos(lat2.edges[e].u),B=lat2.pos(lat2.edges[e].v);A=spec.rot?{x:ty(lat2.edges[e].u)*sc,y:-A.x*sc}:{x:A.x*sc,y:ty(lat2.edges[e].u)*sc};B=spec.rot?{x:ty(lat2.edges[e].v)*sc,y:-B.x*sc}:{x:B.x*sc,y:ty(lat2.edges[e].v)*sc};segs.push([A,B]);tx0=Math.min(tx0,A.x,B.x);tx1=Math.max(tx1,A.x,B.x);ty0=Math.min(ty0,A.y,B.y);ty1=Math.max(ty1,A.y,B.y);});
+        const g2=mk('svg',{viewBox:`${tx0-8} ${ty0-8} ${tx1-tx0+16} ${ty1-ty0+16}`,class:'matches goalSvg'});
+        g2.style.width=Math.max(70,(tx1-tx0+16)*1.1)+'px';
+        segs.forEach(([A,B])=>{
+          let a=A,b=B;if(a.x>b.x+0.01||(Math.abs(a.x-b.x)<0.01&&a.y>b.y))[a,b]=[b,a];
+          const d=Math.hypot(b.x-a.x,b.y-a.y),kk=2.2,ux=(b.x-a.x)/d,uy=(b.y-a.y)/d;
+          const X1=a.x+ux*kk,Y1=a.y+uy*kk,X2=b.x-ux*kk,Y2=b.y-uy*kk;
+          g2.append(mk('line',{x1:X1,y1:Y1,x2:X2,y2:Y2,class:'gw'}),mk('circle',{cx:X1,cy:Y1,r:2,class:'gh'}));
+        });
+        wrap.append(el('div',{class:'goalBox'},el('div',{class:'goalLbl'},'Goal'),g2));
+      }
+      stage.append(wrap);
+      let sel=null,hintMove=null;
+      function tap(e){
+        if(S.busy)return;
+        const s=S.state;
+        if(removeMode){
+          if(!s[e]){S.say('That match has already gone. Tap a match to take it away.');return;}
+          const m=S.moves().find(m=>m.from===e);if(m)S.play(m);return;
+        }
+        if(sel===null){
+          if(s[e]){sel=e;paint(s);S.say('Now tap an empty space to put the match down (or tap it again to put it back).');}
+          else S.say('Tap a match to pick it up first.','bad');
+          return;
+        }
+        if(e===sel){sel=null;paint(s);S.say('');return;}
+        if(s[e]){sel=e;paint(s);return;}
+        const m=S.moves().find(m=>m.from===sel&&m.dest===e);
+        sel=null;
+        if(m)S.play(m);
+      }
+      function paint(s){
+        slots.forEach((o,e)=>{
+          if(!o)return;
+          const g=o.g;
+          g.classList.toggle('on',!!s[e]);g.classList.toggle('empty',!s[e]);
+          g.classList.toggle('lift',sel===e);
+          g.classList.toggle('hintFrom',!!hintMove&&hintMove.from===e);
+          g.classList.toggle('hintTo',!!hintMove&&hintMove.dest===e);
+        });
+        svg.classList.toggle('carrying',sel!==null);
+        if(mode!=='transform'){
+          const c=latCount(lat,s),loose=latLoose(lat,s);
+          const cw=Math.abs(c)===1?word:words;
+          cnt.innerHTML=`${type==='sq'?'Squares':'Triangles'} you can find: <strong>${c}</strong>`+(mode==='none'?'':` &nbsp;·&nbsp; aim: ${N}`)+(loose&&mode!=='none'?` &nbsp;·&nbsp; <span class="warn">spare matches</span>`:'');
+        }else cnt.innerHTML='';
+      }
+      return {
+        update(s){sel=null;hintMove=null;paint(s);},
+        highlight(m){hintMove=m;paint(S.state);}
+      };
+    }
+  };
+  return def;
+}
+
+/* ---------- SHAPES: maths notes ---------- */
+const SH_M_SQ_MOVE=`<p>Squares hide in every size. A 2×2 block of small squares contains 4 small ones and 1 big one, so 5 in all; a 3×3 block contains 9 + 4 + 1 = 14. Always count the big squares too.</p>
+<p>A good method is to <em>work backwards</em>. Sketch the picture you want, then see which matches of the starting shape are already in the right place. Every match that is in the wrong place needs exactly one move, so the number of moves is the number of matches that are not part of the finished picture.</p>`;
+const SH_M_TRI_MOVE=`<p>Triangles come in different sizes too. Four small triangles can fit together to make one bigger triangle whose sides are two matches long, and that counts as another triangle. Count the big ones as well as the small ones.</p>
+<p>Work backwards: picture the finished shape, see which matches are already in place, and move only the ones that are not. The number of moves is the number of matches that are in the wrong place.</p>`;
+const SH_M_TAKE=`<p>Every match you take away destroys every square that it belongs to. A match in the middle of a grid belongs to two small squares (and possibly some bigger ones), but a match on the edge belongs to only one small square, so middle matches are usually the more useful ones to remove.</p>
+<p>Mathematicians call this kind of problem a <em>hitting set</em> problem: you want to “hit” every square, by removing at least one of its matches, using as few matches as possible. To leave a particular number of squares, decide which squares you want to keep, protect their matches, and take the rest.</p>`;
+const SH_M_NONE=n=>`${SH_M_TAKE}<p>Here is a useful bound. Each small square needs one of its four matches removed, and no match belongs to more than two small squares. So the small squares alone need at least ${n} removals. The bigger squares then make it harder — checking every possibility shows that the least you can manage is a little more than this bound.</p>`;
+const SH_M_PIC=`<p>When you turn a picture over (a <em>reflection</em>) or turn it round (a <em>rotation</em>), the picture stays the same shape and size. Only its position changes. So the question is: how few matches do you have to move to get from the picture you have to the picture you want?</p>
+<p>The finished picture can sit anywhere on the board. Slide the target around in your mind and look for the position where the most matches already overlap the matches you have. Every match that does not overlap has to move, and the matches that do overlap can stay put.</p>
+<p>A reflection swaps left and right. A rotation by a quarter turn swaps up, right, down and left in turn. Both are examples of <em>transformations</em> that keep lengths and angles unchanged.</p>`;
+
+/* ---------- SHAPES: the puzzles ---------- */
+const SH_SQUARES=[
+  {mode:'relocate',type:'sq',k:3,N:3,fig:shGrid(2,2),brief:'This grid of <strong>12 matches</strong> hides five squares: four small and one big. Move <strong>3 matches</strong> so that exactly <strong>3 squares</strong> are left. Every match must be part of a square, and the big square counts too.',maths:SH_M_SQ_MOVE},
+  {mode:'relocate',type:'sq',k:2,N:4,fig:shCells([[1,0],[0,1],[1,1],[2,1],[1,2]]),maths:SH_M_SQ_MOVE}
+];
+const SH_TAKE=[
+  {mode:'remove',type:'sq',k:1,N:3,fig:shGrid(2,2),maths:SH_M_TAKE},
+  {mode:'remove',type:'sq',k:2,N:2,fig:shGrid(2,2),maths:SH_M_TAKE},
+  {mode:'none',type:'sq',k:3,fig:shGrid(2,2),maths:SH_M_NONE(2)},
+  {mode:'remove',type:'sq',k:3,N:4,fig:shCells([[1,0],[0,1],[1,1],[2,1],[1,2]]),maths:SH_M_TAKE},
+  {mode:'remove',type:'sq',k:4,N:4,fig:shGrid(3,3),maths:SH_M_TAKE},
+  {mode:'remove',type:'sq',k:5,N:3,fig:shGrid(3,3),maths:SH_M_TAKE},
+  {mode:'none',type:'sq',k:6,fig:shGrid(3,3),maths:SH_M_NONE(5)},
+  {mode:'remove',type:'sq',k:8,N:2,fig:shGrid(3,3),maths:SH_M_TAKE},
+  {mode:'none',type:'sq',k:9,fig:shGrid(4,4),maths:SH_M_NONE(8)},
+  {mode:'remove',type:'tri',k:2,N:4,fig:shTris(shHexTris(1,1)),maths:SH_M_TAKE},
+  {mode:'remove',type:'tri',k:3,N:3,fig:shTris(shHexTris(1,1)),maths:SH_M_TAKE}
+];
+const SH_PICS=[
+  {mode:'transform',type:'tri',rot:true,pad:1,fig:SHF.fish,target:LT_m(SHF.fish,'flipV','tri'),
+    brief:'This fish, made of <strong>8 matches</strong>, is swimming to the left. Move <strong>3 matches</strong> to make it swim to the right instead. Whichever way it faces, it must still be the same fish.',maths:SH_M_PIC}
+];
+function LT_m(fig,name,type){return xformList(fig,LT[name](type));}
+
+/* ---------- SIX MATCHES (custom, lateral) ---------- */
+function sixLevel(){
+  return {
+    custom:true,
+    brief:'You have <strong>six matches</strong>. Arrange them to make <strong>four equilateral triangles</strong>, each side the length of one match. No breaking, and no bending. Drag a match to move it; tap it to turn it.',
+    maths:`<p>Four triangles have 4 × 3 = 12 sides between them, but there are only six matches, so every match must be a side of <em>two</em> triangles at once. On a flat table that cannot be done — the matches must leave the table.</p>
+<p>Lay three matches as a triangle and stand the other three up from its corners so that they meet at a point above the middle. The result is a <strong>tetrahedron</strong>: four triangular faces, six edges and four corners. It is the simplest of the five Platonic solids.</p>
+<p>Euler noticed that for solids like this, corners − edges + faces is always 2. Check it: 4 − 6 + 4 = 2.</p>
+<p>The lateral-thinking lesson is that the puzzle never said the matches had to stay flat.</p>`,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const L=170,VW=560,VH=380;
+      const init=()=>[[110,70,0],[110,130,30],[110,190,60],[110,250,90],[110,310,120],[110,350,150]].map(([x,y,a],i)=>({x:60+((i%3)*0)+x*0+110+(i%2)*40,y:50+i*55,a:[0,20,-15,10,-25,30][i]}));
+      let ms=init(),hist=[],hintN=0,shown=false,turns=0;
+      const svg=mk('svg',{viewBox:`0 0 ${VW} ${VH}`,class:'plus six'});svg.style.maxWidth='560px';
+      const layer=mk('g',{});svg.append(layer);
+      stage.append(svg);
+      const gs=ms.map((m,i)=>{
+        const g=mk('g',{class:'pm'});
+        g.append(mk('line',{x1:-L/2,y1:0,x2:L/2,y2:0,class:'sline'}),mk('circle',{cx:-L/2+4,cy:0,r:9,class:'ph'}));
+        layer.append(g);g.addEventListener('pointerdown',ev=>down(ev,i));return g;
+      });
+      function place(){ms.forEach((m,i)=>gs[i].setAttribute('transform',`translate(${m.x},${m.y}) rotate(${m.a})`));}
+      function pt(ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+      let drag=null;
+      function down(ev,i){
+        if(shown)return;ev.preventDefault();
+        const p=pt(ev);drag={i,px:p.x,py:p.y,ox:ms[i].x,oy:ms[i].y,snap:ms.map(m=>({...m})),moved:false};
+        gs[i].classList.add('grab');try{gs[i].setPointerCapture(ev.pointerId);}catch(e){}
+        gs[i].onpointermove=move;gs[i].onpointerup=up;gs[i].onpointercancel=up;
+      }
+      function move(ev){
+        if(!drag)return;const p=pt(ev),m=ms[drag.i];
+        m.x=Math.max(20,Math.min(VW-20,drag.ox+p.x-drag.px));m.y=Math.max(20,Math.min(VH-20,drag.oy+p.y-drag.py));
+        if(Math.abs(m.x-drag.ox)+Math.abs(m.y-drag.oy)>4)drag.moved=true;place();
+      }
+      function up(){
+        if(!drag)return;const i=drag.i;gs[i].classList.remove('grab');
+        gs[i].onpointermove=gs[i].onpointerup=gs[i].onpointercancel=null;
+        if(!drag.moved){ms[i].x=drag.ox;ms[i].y=drag.oy;ms[i].a=(ms[i].a+30)%360;}
+        hist.push(drag.snap);turns++;drag=null;place();S.refresh();
+      }
+      function reset(){
+        shown=false;ms=init();hist=[];turns=0;hintN=0;
+        layer.replaceChildren(...gs);
+        [...svg.querySelectorAll('.reveal')].forEach(e=>e.remove());
+        S.say('');place();S.refresh();
+      }
+      function undo(){if(shown||!hist.length)return;ms=hist.pop();turns=Math.max(0,turns-1);S.say('');place();S.refresh();}
+      function hint(){
+        const t=['💡 Count the sides: four triangles need 12 sides, but you only have 6 matches. So every match has to be the side of two triangles at once.','💡 A flat table is not the only place a match can go. Could the matches leave the table?','💡 Make one triangle from three matches. Then stand the other three matches up on its corners so that their tops meet.'];
+        S.say(t[Math.min(hintN,t.length-1)],'info');hintN++;
+      }
+      function show(){
+        if(shown){reset();return;}
+        shown=true;layer.replaceChildren();
+        const A=[110,290],B=[330,290],C=[220,340],D=[220,90];
+        const stick=(p,q,hidden)=>{
+          const g=mk('g',{class:'reveal'});
+          g.append(mk('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],class:'sline'+(hidden?' back':'')}),mk('circle',{cx:p[0]+(q[0]-p[0])*0.04,cy:p[1]+(q[1]-p[1])*0.04,r:8,class:'ph'}));
+          svg.append(g);
+        };
+        stick(A,B,true);stick(B,C);stick(C,A);stick(D,A);stick(D,B);stick(D,C);
+        S.say('Three matches make a triangle on the table, and three more rise from its corners to meet at a point: a tetrahedron, with four triangular faces.','info');
+        S.revealMaths();S.refresh();
+      }
+      place();
+      return {reset,undo,hint,show,stop(){},ctl:()=>({undo:!shown&&hist.length>0,reset:true,hint:!shown,show:true,showText:shown?'↺ Back':'▶ Show me',score:`Moves: ${turns}`})};
+    }
+  };
+}
+
+/* ---------- CHERRY IN THE GLASS (custom) ---------- */
+function cherryLevel(){
+  const U=110,OX=170,OY=230,VW=560,VH=520,W=12;
+  const start=()=>[{x:0.5,y:0,o:'H'},{x:0,y:-0.5,o:'V'},{x:1,y:-0.5,o:'V'},{x:0.5,y:0.5,o:'V'}];
+  const ORI=start();
+  const CH={x:0.5,y:-0.5};
+  /* the 8 symmetries of a square, as [a,b,c,d]: (x,y)->(ax+by, cx+dy) */
+  const SYM=[[1,0,0,1],[0,-1,1,0],[-1,0,0,-1],[0,1,-1,0],[-1,0,0,1],[1,0,0,-1],[0,1,1,0],[0,-1,-1,0]];
+  const key=m=>m.map(a=>`${a.o}${Math.round(a.x*2)},${Math.round(a.y*2)}`).sort().join('|');
+  const tf=(s,m)=>({x:s[0]*m.x+s[1]*m.y,y:s[2]*m.x+s[3]*m.y,o:(s[0]===0)?(m.o==='H'?'V':'H'):m.o});
+  const tp=(s,p)=>({x:s[0]*p.x+s[1]*p.y,y:s[2]*p.x+s[3]*p.y});
+  function analyse(ms){
+    if(new Set(ms.map(m=>`${m.o}${m.x},${m.y}`)).size<4)return null;
+    const mnx=Math.min(...ms.map(m=>m.x)),mny=Math.min(...ms.map(m=>m.y));
+    const norm=a=>{const nx=Math.min(...a.map(m=>m.x)),ny=Math.min(...a.map(m=>m.y));return {nx,ny,k:key(a.map(m=>({x:m.x-nx,y:m.y-ny,o:m.o})))};};
+    const cur=norm(ms);
+    for(const s of SYM){
+      const t=ORI.map(m=>tf(s,m)),n=norm(t);
+      if(n.k===cur.k){
+        const dx=cur.nx-n.nx,dy=cur.ny-n.ny;
+        const corners=[[0,0],[1,0],[1,-1],[0,-1]].map(c=>{const p=tp(s,{x:c[0],y:c[1]});return {x:p.x+dx,y:p.y+dy};});
+        const xs=corners.map(c=>c.x),ys=corners.map(c=>c.y);
+        const inside=CH.x>Math.min(...xs)&&CH.x<Math.max(...xs)&&CH.y>Math.min(...ys)&&CH.y<Math.max(...ys);
+        return {glass:true,inside};
+      }
+    }
+    return {glass:false};
+  }
+  return {
+    custom:true,
+    brief:'A cherry sits inside a glass made of <strong>4 matches</strong>. <strong>Move 2 matches</strong> so that the cherry is <strong>outside the glass</strong>, and the glass is still the same shape. The cherry must not move. Drag a match to move it (it jumps to the nearest half-match position); tap a match to turn it.',
+    maths:`<p>The puzzle says the glass must end up the <em>same shape</em>. It does not say it must point the same way. A shape stays the same under a <strong>reflection</strong>, a <strong>rotation</strong> or a <strong>translation</strong> — mathematicians call such shapes <em>congruent</em>.</p>
+<p>Here the glass is turned upside down: the cup now hangs below the base and the old stem points up, so the cherry is left outside. Sliding the base by half a match and moving one other match is all that is needed.</p>
+<p>There are other solutions too, for instance turning the glass on its side. Once you see that the glass may change its orientation, the puzzle opens up.</p>`,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const svg=mk('svg',{viewBox:'30 40 450 440',class:'plus cherry'});svg.style.maxWidth='520px';
+      const cx=OX+CH.x*U,cy=OY+CH.y*U;
+      const cg=mk('g',{class:'cherryG'});
+      cg.append(mk('path',{d:`M${cx},${cy-34} Q${cx+8},${cy-72} ${cx+30},${cy-84}`,class:'cstalk'}),mk('circle',{cx,cy,r:40,class:'cball'}),mk('ellipse',{cx:cx-14,cy:cy-14,rx:10,ry:6,class:'cshine',transform:`rotate(-35 ${cx-14} ${cy-14})`}));
+      svg.append(cg);
+      stage.append(svg);
+      let ms=start().map(m=>({...m})),hist=[],solved=false,demoing=false,tok=0,hintN=0;
+      const gs=ms.map((m,i)=>{
+        const g=mk('g',{class:'pm'});g.append(mk('rect',{class:'stick',rx:3,ry:3}),mk('rect',{class:'phead',rx:3,ry:3}));
+        svg.append(g);g.addEventListener('pointerdown',ev=>down(ev,i));return g;
+      });
+      const moved=()=>ms.filter((m,i)=>m.x!==ORI[i].x||m.y!==ORI[i].y||m.o!==ORI[i].o).length;
+      function place(drawn){
+        const a=drawn||ms;
+        a.forEach((m,i)=>{
+          const g=gs[i],[r,h]=[g.children[0],g.children[1]];
+          const px=OX+m.x*U,py=OY+m.y*U,hl=U*0.2;
+          if(m.o==='H'){
+            r.setAttribute('x',px-U/2);r.setAttribute('y',py-W/2);r.setAttribute('width',U);r.setAttribute('height',W);
+            h.setAttribute('x',px+U/2-hl);h.setAttribute('y',py-W/2);h.setAttribute('width',hl);h.setAttribute('height',W);
+          }else{
+            r.setAttribute('x',px-W/2);r.setAttribute('y',py-U/2);r.setAttribute('width',W);r.setAttribute('height',U);
+            h.setAttribute('x',px-W/2);h.setAttribute('y',py-U/2);h.setAttribute('width',W);h.setAttribute('height',hl);
+          }
+        });
+      }
+      const snap=v=>Math.round(v*2)/2;
+      function pt(ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+      let drag=null;
+      function down(ev,i){
+        if(demoing)return;ev.preventDefault();
+        const p=pt(ev);drag={i,px:p.x,py:p.y,ox:ms[i].x,oy:ms[i].y,snap:ms.map(m=>({...m})),moved:false};
+        gs[i].classList.add('grab');try{gs[i].setPointerCapture(ev.pointerId);}catch(e){}
+        gs[i].onpointermove=move;gs[i].onpointerup=up;gs[i].onpointercancel=up;S.say('');
+      }
+      function move(ev){
+        if(!drag)return;const p=pt(ev),m=ms[drag.i];
+        const nx=snap(drag.ox+(p.x-drag.px)/U),ny=snap(drag.oy+(p.y-drag.py)/U);
+        m.x=Math.max(-1,Math.min(2.5,nx));m.y=Math.max(-1.5,Math.min(2,ny));
+        if(Math.hypot(p.x-drag.px,p.y-drag.py)>8)drag.moved=true;
+        if(!drag.moved){m.x=drag.ox;m.y=drag.oy;}
+        place();
+      }
+      function up(){
+        if(!drag)return;const i=drag.i;gs[i].classList.remove('grab');
+        gs[i].onpointermove=gs[i].onpointerup=gs[i].onpointercancel=null;
+        if(!drag.moved){ms[i].o=ms[i].o==='H'?'V':'H';}
+        hist.push(drag.snap);drag=null;place();evaluate();
+      }
+      function evaluate(){
+        const a=analyse(ms);
+        solved=!!(a&&a.glass&&!a.inside);
+        if(solved){
+          const n=moved();
+          S.win(n<=2?'🎉 The cherry is outside, and the glass is the same shape — it has simply been turned upside down!':`🎉 The cherry is outside and the glass is the same shape. That moved ${n} matches — can you do it by moving just 2?`);
+        }else if(a&&a.glass&&a.inside&&moved()>0)S.say('That is still a glass, but the cherry is still inside it.','info');
+        else if(a&&!a.glass)S.say('That no longer looks like the same glass.','info');
+        S.refresh();
+      }
+      function reset(){tok++;demoing=false;ms=start().map(m=>({...m}));hist=[];solved=false;hintN=0;S.say('');place();S.refresh();}
+      function undo(){if(demoing||!hist.length)return;ms=hist.pop();solved=false;S.say('');place();S.refresh();}
+      function hint(){
+        const t=['💡 The glass has to end up the same shape — but does it have to point the same way?','💡 Think about turning the glass upside down. Where would the cherry be then?','💡 Slide the base along by half a match, then move one of the side matches to the other end of the base.'];
+        S.say(t[Math.min(hintN,t.length-1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        S.say('First, slide the base along by half a match…','info');
+        setTimeout(()=>{if(my!==tok)return;ms[0].x=1;place();S.say('Now move the left-hand side match to the other end of the base, pointing down.','info');},1500);
+        setTimeout(()=>{if(my!==tok)return;ms[1].x=1.5;ms[1].y=0.5;place();},3200);
+        setTimeout(()=>{if(my!==tok)return;demoing=false;evaluate();S.say('Two matches moved: the glass is upside down and the cherry is out. Press Reset to try it yourself!','info');S.revealMaths();S.refresh();},4700);
+      }
+      place();
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;},ctl:()=>({undo:!demoing&&hist.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Matches moved: ${moved()}`})};
+    }
+  };
+}
+
+/* ---------- PLUS SIGN (custom) ---------- */
+function plusLevel(){
+  const def={
+    custom:true,
+    brief:'Four matches are laid in a plus sign, with the heads pointing outwards. <strong>Move just one match</strong> to make a <strong>square</strong>. You can drag any match.',
+    maths:`<p>The square is not made <em>of</em> matches at all — it is the little empty space the four matches enclose. In mathematics a line has no thickness, so this puzzle could not be solved with perfect lines. Real matches have width, and that width is what makes the answer possible.</p>
+<p>The gap is one match-width across and one match-width high, so it is a square exactly because the matches all have the same width. If you slide a match a little too far or not far enough, the hole becomes a rectangle, or closes up.</p>
+<p>Mathematicians call this <em>modelling</em>: we choose which features of the real world to keep (length) and which to ignore (width). A puzzle like this works by quietly breaking one of those choices. Look out for the same trick in other puzzles: ask what has been assumed, then ask whether it has to be true.</p>`,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const W=20,L=210,VB=500,CX=250,CY=250,JX=CX-W/2;
+      const initial=()=>[
+        {x:JX-L,y:CY-W/2,w:L,h:W,head:'l'},
+        {x:JX,y:CY-W/2,w:L,h:W,head:'r'},
+        {x:JX,y:CY-W/2-L,w:W,h:L,head:'t'},
+        {x:JX,y:CY+W/2,w:W,h:L,head:'b'}
+      ];
+      let ms=initial(),hist=[],solved=false,hintN=0,demoing=false,demoTok=0,drags=0;
+      const svg=mk('svg',{viewBox:`0 0 ${VB} ${VB}`,class:'plus'});
+      svg.style.maxWidth='460px';
+      const hole=mk('rect',{class:'hole',width:0,height:0});
+      svg.append(hole);
+      const gs=ms.map((m,i)=>{
+        const g=mk('g',{class:'pm'});
+        g.append(mk('rect',{class:'stick',rx:3,ry:3}),mk('circle',{class:'ph',r:W*0.68}));
+        svg.append(g);
+        g.addEventListener('pointerdown',ev=>down(ev,i));
+        return g;
+      });
+      stage.append(svg);
+      function place(){
+        ms.forEach((m,i)=>{
+          const g=gs[i],r=g.firstChild,c=g.lastChild;
+          r.setAttribute('x',m.x);r.setAttribute('y',m.y);r.setAttribute('width',m.w);r.setAttribute('height',m.h);
+          const inset=W*0.3;
+          const hx=m.head==='l'?m.x+inset:m.head==='r'?m.x+m.w-inset:m.x+m.w/2;
+          const hy=m.head==='t'?m.y+inset:m.head==='b'?m.y+m.h-inset:m.y+m.h/2;
+          c.setAttribute('cx',hx);c.setAttribute('cy',hy);
+        });
+        svg.classList.toggle('done',solved);
+      }
+      function check(){
+        const [Hl,Hr,Vt,Vb]=ms.map(m=>m);
+        const left=Hl.x<Hr.x?Hl:Hr,right=Hl.x<Hr.x?Hr:Hl;
+        const top=Vt.y<Vb.y?Vt:Vb,bot=Vt.y<Vb.y?Vb:Vt;
+        const hx0=left.x+left.w,hx1=right.x,hy0=top.y+top.h,hy1=bot.y;
+        const hw=hx1-hx0,hh=hy1-hy0,tol=W*0.35;
+        if(hw<=0||hh<=0)return null;
+        if(Math.abs(hw-W)>tol||Math.abs(hh-W)>tol||Math.abs(hw-hh)>tol)return null;
+        const cover=W*0.3;
+        for(const h of [left,right])if(h.y>hy0+cover||h.y+h.h<hy1-cover)return null;
+        for(const v of [top,bot])if(v.x>hx0+cover||v.x+v.w<hx1-cover)return null;
+        return {x:hx0,y:hy0,w:hw,h:hh};
+      }
+      function evaluate(){
+        const r=check();
+        if(r){
+          solved=true;
+          hole.setAttribute('x',r.x);hole.setAttribute('y',r.y);hole.setAttribute('width',r.w);hole.setAttribute('height',r.h);
+          S.win('🎉 There it is — a square! It is the hole in the middle, enclosed by the four matches.');
+        }else{solved=false;hole.setAttribute('width',0);hole.setAttribute('height',0);}
+        place();S.refresh();
+      }
+      let drag=null;
+      function pt(ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+      function down(ev,i){
+        if(demoing)return;
+        ev.preventDefault();
+        const p=pt(ev);
+        drag={i,px:p.x,py:p.y,ox:ms[i].x,oy:ms[i].y,snap:ms.map(m=>({...m})),moved:false};
+        gs[i].classList.add('grab');
+        try{gs[i].setPointerCapture(ev.pointerId);}catch(e){}
+        gs[i].onpointermove=move;gs[i].onpointerup=up;gs[i].onpointercancel=up;
+        solved=false;hole.setAttribute('width',0);hole.setAttribute('height',0);S.say('');
+      }
+      function move(ev){
+        if(!drag)return;
+        const p=pt(ev),m=ms[drag.i];
+        m.x=Math.max(0,Math.min(VB-m.w,drag.ox+p.x-drag.px));
+        m.y=Math.max(0,Math.min(VB-m.h,drag.oy+p.y-drag.py));
+        if(Math.abs(m.x-drag.ox)+Math.abs(m.y-drag.oy)>1)drag.moved=true;
+        place();
+      }
+      function up(ev){
+        if(!drag)return;
+        const i=drag.i;gs[i].classList.remove('grab');
+        gs[i].onpointermove=gs[i].onpointerup=gs[i].onpointercancel=null;
+        if(drag.moved){hist.push(drag.snap);drags++;}
+        drag=null;evaluate();
+      }
+      function reset(){
+        demoTok++;demoing=false;ms=initial();hist=[];solved=false;drags=0;hintN=0;
+        hole.setAttribute('width',0);hole.setAttribute('height',0);S.say('');place();S.refresh();
+      }
+      function undo(){
+        if(demoing||!hist.length)return;
+        ms=hist.pop();solved=false;drags=Math.max(0,drags-1);hole.setAttribute('width',0);hole.setAttribute('height',0);S.say('');place();S.refresh();
+      }
+      function hint(){
+        const t=['💡 Look closely at the matches. Real matches are not just lines — they have thickness.','💡 Two of the matches meet tail to tail. Could one of them slide a little way?','💡 Slide one of the two matches that meet tail to tail outwards, by about the width of a match.'];
+        S.say(t[Math.min(hintN,t.length-1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){demoTok++;demoing=false;reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++demoTok;S.refresh();
+        S.say('Watch the match on the right. It slides out by one match-width…','info');
+        const t0=Date.now(),dur=1400,x0=ms[1].x;
+        let iv=null;
+        const stepf=()=>{
+          if(my!==demoTok){clearInterval(iv);return;}
+          const f=Math.min(1,(Date.now()-t0)/dur);
+          ms[1].x=x0+W*f;place();
+          if(f<1)return;
+          clearInterval(iv);demoing=false;evaluate();S.say('There is the square: the gap in the middle. Press Reset to try it yourself!','info');S.revealMaths();
+        };
+        setTimeout(()=>{if(my===demoTok)iv=setInterval(stepf,16);},900);
+      }
+      place();
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;},
+        ctl:()=>({undo:!demoing&&hist.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Matches moved: ${drags}`})
+      };
+    }
+  };
+  return def;
+}
+
+/* ---------- CAR PARK (sliding vehicles) ---------- */
+const CAR_COL=[['blue','#2f7fb8'],['green','#3f9a5a'],['yellow','#e2b81e'],['purple','#8a5ac8'],['orange','#e0782c'],['teal','#2fa3a3'],['pink','#d9689f'],['grey','#8a919c'],['brown','#7a5230'],['navy','#2c3e94'],['lime','#8fc33a']];
+const CAR_MATHS=`<p>Every arrangement of the vehicles is one <em>position</em> of the puzzle, and every slide takes you from one position to another. Solving the puzzle means finding a path through this network of positions, from the start to a position where the red car can drive out.</p>
+<p>A good way to plan is to <strong>work backwards</strong>. Ask which vehicle is blocking the red car, then which vehicles are blocking <em>that</em> vehicle, and so on. This chain of blockers tells you which vehicles have to move. Sometimes you must move a vehicle <em>away</em> from where you want to go, just to make room for another one.</p>
+<p>A computer finds the fewest moves by checking every position that is one slide away from the start, then every position two slides away, and so on, until it reaches a position where the red car is free. Even on a small car park there can be thousands of different positions to check.</p>`;
+function carLevel(str,descr){
+  const n=Math.round(Math.sqrt(str.length));
+  const ids=[];[...str].forEach(ch=>{if(ch!=='.'&&!ids.includes(ch))ids.push(ch);});
+  ids.sort((a,b)=>a==='X'?-1:b==='X'?1:ids.indexOf(a)-ids.indexOf(b));
+  const V=ids.map((ch,i)=>{
+    const cells=[];[...str].forEach((c,k)=>{if(c===ch)cells.push([Math.floor(k/n),k%n]);});
+    const H=cells.every(c=>c[0]===cells[0][0]);
+    const o=H?'H':'V',len=cells.length,line=H?cells[0][0]:cells[0][1],pos=H?Math.min(...cells.map(c=>c[1])):Math.min(...cells.map(c=>c[0]));
+    const nm=ch==='X'?['red','#d22a2a']:CAR_COL[(i-1)%CAR_COL.length];
+    return {o,len,line,pos,colour:nm[1],name:nm[0]+(len===3?' lorry':' car')};
+  });
+  const start=V.map(v=>v.pos);
+  const grid=s=>{const g=new Array(n*n).fill(-1);V.forEach((v,i)=>{for(let k=0;k<v.len;k++){const r=v.o==='H'?v.line:s[i]+k,c=v.o==='H'?s[i]+k:v.line;g[r*n+c]=i;}});return g;};
+  const range=(s,i,g)=>{
+    const v=V[i],at=k=>v.o==='H'?g[v.line*n+k]:g[k*n+v.line];
+    let lo=s[i];while(lo>0&&at(lo-1)===-1)lo--;
+    let hi=s[i];while(hi+v.len<n&&at(hi+v.len)===-1)hi++;
+    return [lo,hi];
+  };
+  const sp=d=>d+(d===1?' space':' spaces');
+  const row=Math.floor((n-1)/2);
+  const def={
+    scoreLabel:'Moves',unit:'moves',uniform:true,start,
+    key:s=>s.join(','),isGoal:s=>s[0]===n-2,
+    moves(s){
+      const out=[],g=grid(s);
+      for(let i=0;i<V.length;i++){
+        const [lo,hi]=range(s,i,g),v=V[i];
+        for(let q=lo;q<=hi;q++){
+          if(q===s[i])continue;
+          const t=s.slice();t[i]=q;
+          const d=Math.abs(q-s[i]),dir=v.o==='H'?(q>s[i]?'right':'left'):(q>s[i]?'down':'up');
+          out.push({kind:'slide',v:i,pos:q,to:t,label:`Slide the ${v.name} ${sp(d)} ${dir}`});
+        }
+      }
+      return out;
+    },
+    brief:`Slide the cars and lorries to let the <strong>red car</strong> drive out through the exit on the right. Each vehicle can only slide <em>forwards or backwards</em> along its length, never sideways. Drag a vehicle to slide it; one slide of any distance counts as one move.`,
+    maths:CAR_MATHS,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg',C=70,M=20,W=n*C+2*M+60,H=n*C+2*M;
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,class:'carpark'});
+      svg.style.maxWidth=Math.min(620,W*1.5)+'px';
+      svg.append(mk('rect',{x:M,y:M,width:n*C,height:n*C,class:'cpFloor'}));
+      for(let i=1;i<n;i++){svg.append(mk('line',{x1:M+i*C,y1:M,x2:M+i*C,y2:M+n*C,class:'cpBay'}),mk('line',{x1:M,y1:M+i*C,x2:M+n*C,y2:M+i*C,class:'cpBay'}));}
+      /* walls with a gap at the exit */
+      const R=M+n*C,ey0=M+row*C,ey1=ey0+C;
+      [[M,M,R,M],[M,R,R,R],[M,M,M,R],[R,M,R,ey0],[R,ey1,R,R]].forEach(([a,b,c,d])=>svg.append(mk('line',{x1:a,y1:b,x2:c,y2:d,class:'cpWall'})));
+      const ex=mk('text',{x:R+30,y:ey0+C/2+6,class:'cpExit','text-anchor':'middle'});ex.textContent='EXIT ➜';svg.append(ex);
+      const ghost=mk('rect',{class:'cpGhost',rx:10,ry:10,style:'display:none'});svg.append(ghost);
+      const gs=V.map((v,i)=>{
+        const g=mk('g',{class:'veh'+(i===0?' target':'')});
+        const w=v.o==='H'?v.len*C:C,h=v.o==='H'?C:v.len*C;
+        g.append(mk('rect',{x:5,y:5,width:w-10,height:h-10,rx:12,ry:12,fill:v.colour,class:'vbody'}));
+        const wi=(a,b,c,d)=>g.append(mk('rect',{x:a,y:b,width:c,height:d,rx:5,class:'vwin'}));
+        if(v.o==='H'){wi(w*0.12+6,14,w*0.18,h-28);wi(w*0.62,14,w*0.2,h-28);}
+        else{wi(14,h*0.12+6,w-28,h*0.18);wi(14,h*0.62,w-28,h*0.2);}
+        g.append(mk('rect',{x:5,y:5,width:w-10,height:h-10,rx:12,ry:12,class:'vgloss'}));
+        svg.append(g);
+        g.addEventListener('pointerdown',ev=>down(ev,i));
+        return g;
+      });
+      const posXY=(i,p)=>{const v=V[i];return v.o==='H'?[M+p*C,M+v.line*C]:[M+v.line*C,M+p*C];};
+      const setT=(i,p,anim)=>{const [x,y]=posXY(i,p);gs[i].style.transition=anim?'transform .4s ease':'none';gs[i].style.transform=`translate(${x}px,${y}px)`;};
+      stage.append(svg);
+      const pt=ev=>{const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());};
+      let drag=null;
+      function down(ev,i){
+        if(S.busy)return;ev.preventDefault();
+        const s=S.state,[lo,hi]=range(s,i,grid(s)),p=pt(ev);
+        drag={i,lo,hi,start:s[i],px:p.x,py:p.y,cur:s[i]};
+        gs[i].classList.add('grab');try{gs[i].setPointerCapture(ev.pointerId);}catch(e){}
+        gs[i].onpointermove=move;gs[i].onpointerup=up;gs[i].onpointercancel=up;
+        clearHint();
+      }
+      function move(ev){
+        if(!drag)return;const p=pt(ev),v=V[drag.i];
+        const d=(v.o==='H'?p.x-drag.px:p.y-drag.py)/C;
+        drag.cur=Math.max(drag.lo,Math.min(drag.hi,drag.start+d));
+        setT(drag.i,drag.cur,false);
+      }
+      function up(){
+        if(!drag)return;const d=drag;drag=null;gs[d.i].classList.remove('grab');
+        gs[d.i].onpointermove=gs[d.i].onpointerup=gs[d.i].onpointercancel=null;
+        const q=Math.round(d.cur);
+        if(q===d.start){setT(d.i,d.start,true);return;}
+        const m=S.moves().find(m=>m.v===d.i&&m.pos===q);
+        if(m){setT(d.i,q,false);S.play(m,true);}else setT(d.i,d.start,true);
+      }
+      function clearHint(){ghost.style.display='none';gs.forEach(g=>g.classList.remove('hint'));}
+      return {
+        update(s){
+          clearHint();
+          s.forEach((p,i)=>setT(i,p,true));
+          if(s[0]===n-2){setTimeout(()=>{if(S.state[0]===n-2)gs[0].style.transform=`translate(${M+(n+1.2)*C}px,${M+V[0].line*C}px)`;},500);}
+        },
+        highlight(m){
+          clearHint();gs[m.v].classList.add('hint');
+          const v=V[m.v],[x,y]=posXY(m.v,m.pos);
+          ghost.setAttribute('x',x+5);ghost.setAttribute('y',y+5);
+          ghost.setAttribute('width',(v.o==='H'?v.len*C:C)-10);ghost.setAttribute('height',(v.o==='H'?C:v.len*C)-10);
+          ghost.style.display='';
+        },
+        animate(m,done,pre){
+          if(pre){done();return;}
+          setT(m.v,m.pos,true);setTimeout(done,450);
+        }
+      };
+    }
+  };
+  return def;
+}
+const CAR_DATA={"s":[["AA..XXE.BBEC.DDC",3],["BBDCXXDC.AA.EE..",4],["EE.BXX.BD.CCD.AA",4],["BBCEXXCE..AA..DD",5],["EEC.XXCD.BBD.AA.",5],[".CCEXX.EDAAADBBB",6]],"m":[[".EEEF..BBFXX..AD.G.AD.GCC",8],["G.BBBG.DC.XXDC..AFFE.A..E",9],["FBB..F.DA.XXDA...CGE..CGE",10],[".BBB..DDAAXXGF.E.GF.ECC..",10],["..GC...GC.XXDA.F.DABF.EEB",11],["FBB..F.AA.XXCD..ECD..EGGG",12]],"h":[[".EEHDD..AH..XXA.F...A.F.GGBB.CIII..C",10],["....HH..C.BBXXCIDA..CIDAFGG..AF..EEE",11],[".D..HHFDAAE.FDXXE...CIE...CIGGBBB...",13],["III.HA....HAXXFB..C.FB..CEEG.D...G.D",15],["..FIAA..FIEDXXF.ED...C.HGBBC.HG....H",16],["AA.BD....BD..XX.D.CEE...CFHGII.FHG..",16]],"g":[["CCHJJ...H.I.AEXXIFAEDDDF.EBB.FKKGG..",19],["DJ.HH.DJ..AIG.XXAIGBBBA.G.F.CCKKFEE.",20],["KKK..JFFGD.JXXGD.CI..EECIBBAAC.HH...",23],["IIIHH...GJJ.XXG.E.KKCCEFDAA..FDBB...",25],["IIIGK..EEGKC..XXFCB..AF.B.JAHH..JDD.",25],["..DFJJH.DF..HXX..A..IIEACCCKEB.GGK.B",28]]};
+const CARPARK={id:'carpark',icon:'🚗',title:'Car Park',blurb:'Slide the cars and lorries to let the red car out.',
+  levels:[
+    ['Starter (4×4)','s'],['Medium (5×5)','m'],['Hard (6×6)','h'],['Gridlock','g']
+  ].map(([name,k])=>({name,count:CAR_DATA[k].length,make:p=>carLevel(CAR_DATA[k][p][0])}))};
+
+const MATCH1=['2+3=4','3+1=6','1+8=0','0+7=1','5+1=8','5+7=2','1+1=6','4-1=6'];
+const MATCH2=['9+5=4','4+3=2','6+1=4','6+7=3','7+4=6','3-3=5'];
+const MATCHES={id:'matches',icon:'🔥',title:'Matchsticks',blurb:'Fix wrong sums, then build and break shapes by moving matches.',
+  tabs:[{id:'sums',name:'Sums'},{id:'shapes',name:'Shapes'}],
+  levels:[
+    {tab:'sums',name:'Move 1 match',count:MATCH1.length,make:p=>matchLevel(MATCH1[p],1)},
+    {tab:'sums',name:'Move 2 matches',count:MATCH2.length,make:p=>matchLevel(MATCH2[p],2)},
+    {tab:'shapes',name:'Make squares',count:SH_SQUARES.length,make:p=>shapeLevel(SH_SQUARES[p])},
+    {tab:'shapes',name:'Take away',count:SH_TAKE.length,make:p=>shapeLevel(SH_TAKE[p])},
+    {tab:'shapes',name:'Cherry in the glass',make:()=>cherryLevel()},
+    {tab:'shapes',name:'The chair',make:()=>shapeLevel(SH_CHAIR)},
+    {tab:'shapes',name:'The fish',make:()=>shapeLevel(SH_PICS[0])},
+    {tab:'shapes',name:'The plus sign',make:()=>plusLevel()},
+    {tab:'shapes',name:'Six matches',make:()=>sixLevel()}
+  ]};
+
+const PUZZLES={};[JUGS,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK].forEach(p=>PUZZLES[p.id]=p);
+
+const GROUPS=[
+  {title:'Pouring',items:[JUGS]},
+  {title:'River and bridge crossings',items:[WGC,FOX,BRIDGE]},
+  {title:'Matches and coins',items:[MATCHES,COINS,SWAP]},
+  {title:'Chess board',items:[
+    {soon:1,icon:'♛',title:'Eight Queens',blurb:'Place eight queens so that none attacks another.'},
+    {soon:1,icon:'♞',title:"Knight's Tour",blurb:'Visit every square exactly once.'},
+    {soon:1,icon:'🀱',title:'Mutilated Chessboard',blurb:'Cover 62 squares with 31 dominoes. Or can you?'}]},
+  {title:'Movement',items:[CARPARK,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
+  {title:'Investigations',items:[
+    {soon:1,icon:'✉️',title:'Stamps',blurb:'Which postage can you make with just two stamps?'},
+    {soon:1,icon:'➕',title:'Consecutives',blurb:'Which numbers are sums of consecutive integers?'},
+    {soon:1,icon:'🌨️',title:'Hailstones',blurb:'Halve it or triple it and add one — where does it end?'}]}
+];
+
+/* ---------- home ---------- */
+let teardown=null;
+function showHome(){
+  if(teardown){teardown();teardown=null;}
+  const app=$('#app');app.replaceChildren();
+  app.append(el('h1',null,'Classic Puzzles'),el('p',{class:'tag'},'Famous puzzles to explore, solve and discuss. Pick one to start.'));
+  GROUPS.forEach(g=>{
+    const grid=el('div',{class:'grid'});
+    g.items.forEach(p=>{
+      if(p.soon)grid.append(el('div',{class:'card soon','aria-disabled':'true'},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb),el('span',{class:'soonTag'},'Coming soon')));
+      else grid.append(el('button',{class:'card',onclick:()=>{location.hash=p.id;}},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb)));
+    });
+    app.append(el('h2',null,g.title),grid);
+  });
+  app.append(el('div',{class:'foot'},'LoadsOfMaths'));
+  window.scrollTo(0,0);
+}
+
+/* ---------- puzzle shell ---------- */
+function showPuzzle(P){
+  if(teardown){teardown();teardown=null;}
+  const app=$('#app');app.replaceChildren();
+  let def,ui,state,hist,cost,moves,solved,shown,busy=false,demoing=false,token=0,best,levelIdx=0,pIdx=0;
+
+  const tabs=el('div',{class:'tabs'});
+  const chips=el('div',{class:'chips'});
+  const bPrev=el('button',{class:'mini',onclick:()=>step(-1),'aria-label':'Previous puzzle'},'◀');
+  const bNext=el('button',{class:'mini',onclick:()=>step(1),'aria-label':'Next puzzle'},'▶');
+  const pickLbl=el('span',{class:'pickLbl'});
+  const bNew=el('button',{class:'mini',onclick:()=>load(levelIdx,0)},'🎲 New puzzle');
+  const pick=el('div',{class:'pick',hidden:''},bPrev,pickLbl,bNext,bNew);
+  const brief=el('p',{class:'brief'});
+  const stage=el('div',{class:'stage'});
+  const msg=el('div',{class:'msg',role:'status','aria-live':'polite'});
+  const bUndo=el('button',{class:'btn',onclick:undo},'↶ Undo');
+  const bReset=el('button',{class:'btn',onclick:()=>{if(def.custom){ui.reset();}else if(!busy)fresh();}},'⟲ Reset');
+  const bHint=el('button',{class:'btn',onclick:hint},'💡 Hint');
+  const bShow=el('button',{class:'btn primary',onclick:show},'▶ Show me');
+  const score=el('span',{class:'score'});
+  const mathsBody=el('div');
+  const maths=el('details',{class:'maths',hidden:''},el('summary',null,"What's the maths?"),mathsBody);
+
+  app.append(
+    el('div',{class:'head'},el('button',{class:'btn',onclick:()=>{location.hash='';}},'← All puzzles'),el('h1',null,P.icon+' '+P.title)),
+    tabs,chips,pick,brief,stage,msg,
+    el('div',{class:'bar'},bUndo,bReset,bHint,bShow,score),
+    maths
+  );
+  if(P.tabs)P.tabs.forEach(t=>tabs.append(el('button',{class:'tab','data-id':t.id,onclick:()=>load(P.levels.findIndex(l=>l.tab===t.id),0)},t.name)));
+  else tabs.style.display='none';
+  if(P.levels.length>1)P.levels.forEach((L,i)=>chips.append(el('button',{class:'chip',onclick:()=>load(i,0)},L.name)));
+  else chips.style.display='none';
+
+  const S={
+    get state(){return state;},
+    get busy(){return busy;},
+    moves:()=>def.moves(state),
+    say,
+    refresh:()=>updateUI(),
+    revealMaths:()=>showMaths(),
+    win(text){say(text,'good');showMaths();},
+    play(move,preloaded){
+      if(busy)return;
+      if(ui.animate){busy=true;updateUI();ui.animate(move,()=>{busy=false;apply(move);},preloaded);}
+      else apply(move);
+    }
+  };
+
+  function say(t,kind){msg.className='msg'+(kind?' '+kind:'');msg.textContent=t||'';}
+  function updateUI(){
+    if(def.custom){
+      const c=ui.ctl();
+      bUndo.disabled=!c.undo;bReset.disabled=!c.reset;bHint.disabled=!c.hint;bShow.disabled=!c.show;
+      bShow.textContent=c.showText||'▶ Show me';score.textContent=c.score||'';
+      return;
+    }
+    bUndo.disabled=busy||!hist.length;
+    bReset.disabled=busy;
+    bHint.disabled=busy||solved;
+    bShow.disabled=busy&&!demoing;
+    bShow.textContent=demoing?'■ Stop':'▶ Show me';
+    score.textContent=`${def.scoreLabel}: ${cost}${def.unit==='minutes'?' min':''}`;
+  }
+  function render(){ui.update(state);updateUI();}
+  function showMaths(){mathsBody.innerHTML=def.maths||'';maths.hidden=false;}
+  function apply(move,quiet){
+    hist.push({state,cost,moves});
+    state=move.to;cost+=move.cost||1;moves++;
+    if(!quiet)say('');
+    render();
+    if(!quiet&&def.isGoal(state))win();
+  }
+  function win(){
+    solved=true;updateUI();
+    const u=def.unit;
+    const un=n=>n===1?u.replace(/^\w+/,w=>w==='matches'?'match':w.replace(/s$/,'')):u;
+    if(cost===best.cost)say(`🎉 Solved in ${cost} ${un(cost)} — that's the fewest possible!`,'good');
+    else say(`✅ Solved in ${cost} ${un(cost)}. The fewest possible is ${best.cost} — can you beat it? (Press Reset to try again.)`,'good');
+    showMaths();
+  }
+  function undo(){
+    if(def.custom){ui.undo&&ui.undo();return;}
+    if(busy||!hist.length)return;
+    const h=hist.pop();state=h.state;cost=h.cost;moves=h.moves;solved=false;say('');render();
+  }
+  function fresh(){
+    token++;busy=false;demoing=false;
+    if(def.custom){solved=false;say('');ui.reset();return;}
+    state=def.start;hist=[];cost=0;moves=0;solved=false;shown=false;
+    say('');render();
+  }
+  function hint(){
+    if(def.custom){ui.hint();return;}
+    if(busy||solved)return;
+    const r=solve(def,state);
+    if(!r.path&&def.noHint){say(def.noHint,'info');return;}
+    if(!r.path){say('💡 This one might be impossible from here. Try listing every amount you can make — what do they have in common?','info');return;}
+    if(!r.path.length)return;
+    say('💡 Hint: '+r.path[0].label+'.','info');
+    ui.highlight&&ui.highlight(r.path[0]);
+  }
+  function show(){
+    if(def.custom){ui.show();return;}
+    if(demoing){fresh();say('Demo stopped. Press Reset or Show me to go again.','info');return;}
+    if(busy)return;
+    if(!best.path){fresh();say(def.impossible(best.states),'info');showMaths();return;}
+    fresh();
+    const my=++token;busy=true;demoing=true;updateUI();
+    const path=best.path;let k=0;
+    const next=()=>{
+      if(my!==token)return;
+      if(k>=path.length){
+        busy=false;demoing=false;shown=true;updateUI();
+        say(`That's one shortest route: ${best.cost} ${best.cost===1?def.unit.replace(/^\w+/,w=>w==='matches'?'match':w.replace(/s$/,'')):def.unit}. Press Reset to try it yourself!`,'info');showMaths();return;
+      }
+      const m=path[k++];
+      say(`Step ${k}: ${m.label}.`,'info');
+      ui.highlight&&ui.highlight(m);
+      const done=()=>{if(my!==token)return;apply(m,true);setTimeout(next,1000);};
+      if(ui.animate)ui.animate(m,done,false);else setTimeout(done,700);
+    };
+    setTimeout(next,500);
+  }
+  function step(d){
+    const L=P.levels[levelIdx];
+    load(levelIdx,(pIdx+d+L.count)%L.count);
+  }
+  function load(i,p){
+    token++;busy=false;demoing=false;
+    levelIdx=i;pIdx=p||0;
+    const L=P.levels[i];
+    [...chips.children].forEach((c,j)=>c.classList.toggle('on',j===i));
+    if(P.tabs){
+      [...tabs.children].forEach(b=>b.classList.toggle('on',b.dataset.id===L.tab));
+      [...chips.children].forEach((c,j)=>{c.style.display=P.levels[j].tab===L.tab?'':'none';});
+      chips.style.display=P.levels.filter(l=>l.tab===L.tab).length>1?'':'none';
+    }
+    def=L.make(pIdx);
+    pick.hidden=!(L.count>1||L.random);
+    bPrev.style.display=bNext.style.display=pickLbl.style.display=L.count>1?'':'none';
+    bNew.style.display=L.random?'':'none';
+    pickLbl.textContent=L.count>1?`Puzzle ${pIdx+1} of ${L.count}`:'';
+    stage.replaceChildren();
+    brief.innerHTML=def.brief;
+    ui=def.mount(stage,S);
+    best=def.custom?null:solve(def,def.start);
+    maths.hidden=true;maths.open=false;
+    fresh();
+  }
+  teardown=()=>{token++;if(ui&&ui.stop)ui.stop();};
+  load(0,0);
+  window.scrollTo(0,0);
+}
+
+function route(){
+  const id=location.hash.replace('#','');
+  if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
+}
+window.addEventListener('hashchange',route);
+window.CP={solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+route();
+})();
+</script>
+</body>
+</html>

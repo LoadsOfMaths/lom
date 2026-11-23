@@ -18,6 +18,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Calendar Countdown | `calendar-countdown/` |
 | Can You Predict the Future? | `predict-the-future/` |
 | Chocolate Biscuits | `chocolate-biscuits/` |
+| Classic Puzzles | `classic-puzzles/` |
 | CodeMaker | `codemaker/` |
 | Count Protracula's Coffin Quiz | `coffin-quiz/` |
 | Dance Floor Filler | `dance-floor-filler/` |
