@@ -236,6 +236,20 @@ svg.mc{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:man
 .ct .hold{font-size:18px;fill:var(--accent)}
 .ctBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}
 .ctStatus{text-align:center;color:var(--mute);font-size:.9rem;margin-bottom:4px}
+.hn{display:flex;justify-content:center;gap:clamp(8px,3vw,36px);padding:14px 6px 6px;max-width:760px;margin:0 auto}
+.hcol{position:relative;flex:1;height:var(--hp);display:flex;flex-direction:column-reverse;align-items:center;padding-bottom:16px;cursor:pointer;border-radius:12px 12px 0 0}
+.hcol::before{content:"";position:absolute;bottom:16px;left:50%;width:14px;height:calc(100% - 20px);transform:translateX(-50%);background:linear-gradient(90deg,#8a5a2b,#b07a3d,#8a5a2b);border-radius:7px 7px 0 0}
+.hcol::after{content:"";position:absolute;bottom:0;left:0;right:0;height:16px;background:linear-gradient(#b9833f,#7a4e22);border-radius:8px;box-shadow:0 5px 8px rgba(0,0,0,.4)}
+.hcol.goal{background:linear-gradient(rgba(70,208,138,0),rgba(70,208,138,.18));outline:3px dashed var(--good);outline-offset:-3px}
+.hcol.sel{background:rgba(255,184,77,.14)}
+.hcol.hint-from{box-shadow:inset 0 0 0 4px var(--good)}
+.hcol.hint-to{box-shadow:inset 0 0 0 4px #7ab7ff}
+.hcol.shake{animation:hshake .3s}
+@keyframes hshake{25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
+.hflag{position:absolute;top:-4px;left:50%;transform:translateX(-50%);background:var(--good);color:#06301a;font-weight:700;padding:2px 12px;border-radius:12px;font-size:.8rem;z-index:5;display:none}
+.hcol.goal .hflag{display:block}
+.hdisk{position:relative;z-index:2;height:var(--dh);border-radius:calc(var(--dh)/2);margin-top:2px;display:flex;align-items:center;justify-content:center;font-weight:700;color:rgba(0,0,0,.65);font-size:calc(var(--dh)*.55);box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),inset 0 3px 0 rgba(255,255,255,.3),0 3px 5px rgba(0,0,0,.35);transition:transform .15s}
+.hdisk.lift{transform:translateY(calc(var(--dh)*-.7));box-shadow:0 0 0 4px #fff,0 0 20px 5px var(--accent)}
 svg.chess{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
 .chess .sq{cursor:pointer}
 .chess .lt{fill:#e8d9b5}.chess .dk{fill:#9a6b3f}
@@ -2983,7 +2997,86 @@ function candleLevel(L){
 const CANDLES={id:'candles',icon:'🕯️',title:'Candle Timers',blurb:'Measure the time using only candles that burn for an hour.',
   levels:CT_LEVELS.map(L=>({name:L.name,make:()=>candleLevel(L)}))};
 
-const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
+/* ---------- TOWER OF HANOI ---------- */
+const HN_NAMES=['left','middle','right'];
+function hanoiLevel(n){
+  const start=[[...Array(n).keys()].map(i=>n-i),[],[]];
+  const best=Math.pow(2,n)-1;
+  const def={
+    scoreLabel:'Moves',unit:'moves',uniform:true,
+    start,
+    key:s=>s.map(p=>p.join('.')).join('|'),
+    isGoal:s=>s[2].length===n,
+    moves(s){
+      const out=[];
+      for(let i=0;i<3;i++){
+        if(!s[i].length)continue;
+        const d=s[i][s[i].length-1];
+        for(let j=0;j<3;j++){
+          if(i===j)continue;
+          if(s[j].length&&s[j][s[j].length-1]<d)continue;
+          const t=s.map(p=>p.slice());t[i].pop();t[j].push(d);
+          out.push({kind:'move',i,j,to:t,label:`Move disk ${d} from the ${HN_NAMES[i]} pillar to the ${HN_NAMES[j]} pillar`});
+        }
+      }
+      return out;
+    },
+    brief:`Move the whole stack of <strong>${n} disks</strong> from the <strong>left</strong> pillar to the <strong>right</strong> pillar. Move one disk at a time, and <strong>never put a bigger disk on top of a smaller one</strong>. Tap a pillar to pick up its top disk, then tap the pillar to put it on. The fewest moves possible is <strong>${best}</strong>.`,
+    maths:`<p>To move a tower of <em>n</em> disks you must <strong>(1)</strong> move the top <em>n</em> − 1 disks out of the way onto the middle pillar, <strong>(2)</strong> move the biggest disk to the right pillar, and <strong>(3)</strong> move the <em>n</em> − 1 disks back on top of it. So if <em>M</em>(<em>n</em>) is the fewest moves for <em>n</em> disks, then <em>M</em>(<em>n</em>) = 2 × <em>M</em>(<em>n</em> − 1) + 1.</p>
+<p>Starting from 1 disk (1 move) this gives 1, 3, 7, 15, 31, 63, 127… which is always one less than a power of two: <strong>M(n) = 2<sup>n</sup> − 1</strong>. Every extra disk <em>doubles</em> the work.</p>
+<p>A legend says monks are moving a tower of 64 golden disks. At one move every second, 2<sup>64</sup> − 1 moves would take about <strong>585 billion years</strong>.</p>
+<p>A pattern to look for: the smallest disk moves every <em>other</em> move, always in the same direction round the three pillars. If the number of disks is odd it goes left → right → middle; if it is even it goes left → middle → right.</p>`,
+    mount(stage,S){
+      const cols=[];let sel=-1;
+      const wrap=el('div',{class:'hn'});
+      const avail=300,dh=Math.max(16,Math.min(36,Math.floor((avail-40)/n)-2));
+      wrap.style.setProperty('--hp',avail+'px');wrap.style.setProperty('--dh',dh+'px');
+      for(let c=0;c<3;c++){
+        const col=el('div',{class:'hcol'+(c===2?' goal':''),role:'button',tabindex:'0','aria-label':HN_NAMES[c]+' pillar'},el('div',{class:'hflag'},'GOAL'));
+        col.addEventListener('click',()=>tap(c));
+        col.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tap(c);}});
+        cols.push(col);wrap.append(col);
+      }
+      stage.append(wrap);
+      function paint(s){
+        cols.forEach((col,c)=>{
+          [...col.querySelectorAll('.hdisk')].forEach(x=>x.remove());
+          s[c].forEach((d,k)=>{
+            const top=k===s[c].length-1;
+            const w=n===1?60:28+(d/n)*66;
+            const el2=el('div',{class:'hdisk'+(top&&c===sel?' lift':''),style:`width:${w}%;background:hsl(${Math.round(((d-1)/n)*300+10)},78%,58%)`},String(d));
+            col.append(el2);
+          });
+          col.classList.toggle('sel',c===sel);
+        });
+      }
+      function tap(c){
+        if(S.busy)return;
+        const s=S.state;
+        if(sel<0){
+          if(!s[c].length){S.say('There is no disk on that pillar.','bad');return;}
+          S.say('');sel=c;paint(s);return;
+        }
+        if(sel===c){sel=-1;paint(s);return;}
+        const m=S.moves().find(x=>x.i===sel&&x.j===c);
+        if(m){sel=-1;S.play(m);return;}
+        S.say("A bigger disk can't go on top of a smaller one!",'bad');
+        cols[c].classList.add('shake');setTimeout(()=>cols[c].classList.remove('shake'),320);
+        sel=-1;paint(s);
+      }
+      return {
+        update(s){sel=-1;paint(s);this.clear();},
+        highlight(m){this.clear();cols[m.i].classList.add('hint-from');cols[m.j].classList.add('hint-to');},
+        clear(){cols.forEach(c=>c.classList.remove('hint-from','hint-to'));}
+      };
+    }
+  };
+  return def;
+}
+const HANOI={id:'hanoi',icon:'🗼',title:'Tower of Hanoi',blurb:'Move the whole stack to another pillar, never putting a big disk on a small one.',
+  levels:[3,4,5,6,7].map(n=>({name:n+' disks',make:()=>hanoiLevel(n)}))};
+
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Weights and Measures',items:[JUGS,COLSORT,COINS]},
@@ -2993,7 +3086,7 @@ const GROUPS=[
     CHESS,
     KNIGHT,
     MUTILATED]},
-  {title:'Movement',items:[CARPARK,SWAP,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
+  {title:'Movement',items:[CARPARK,SWAP,HANOI,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
   {title:'Investigations',items:[
     {soon:1,icon:'✉️',title:'Stamps',blurb:'Which postage can you make with just two stamps?'},
     {soon:1,icon:'➕',title:'Consecutives',blurb:'Which numbers are sums of consecutive integers?'},
@@ -3180,7 +3273,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
