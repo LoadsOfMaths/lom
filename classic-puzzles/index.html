@@ -1171,6 +1171,7 @@ const SHF={
 function shapeLevel(spec){
   const type=spec.type||'sq',mode=spec.mode;
   const removeMode=mode==='remove'||mode==='none';
+  const addMode=mode==='add';
   const G=spec.graph;
   const fig=spec.fig||[];
   let amin=1e9,bmin=1e9,amax=-1e9,bmax=-1e9;
@@ -1221,12 +1222,17 @@ function shapeLevel(spec){
     if(mode==='relocate')pairs=solveRelocate(lat,s,goalCount,spec.k);
     else if(mode==='remove')pairs=solveRemove(lat,s,goalCount,spec.k);
     else if(mode==='none')pairs=solveRemoveNone(lat,s,spec.kmax||spec.k);
+    else if(addMode){
+      if(goalCount(s))pairs=[];
+      else{const E=[];s.forEach((v,i)=>{if(!v&&lat.allowed[i])E.push(i);});const t=s.slice();
+        for(let k=1;k<=spec.k&&!pairs;k++)combos(E,k,add=>{add.forEach(e=>t[e]=1);const ok=goalCount(t);if(ok)pairs=add.map(q=>({add:q}));add.forEach(e=>t[e]=0);return ok;});}
+    }
     else pairs=solveTransform(lat,s,targets);
-    const r=pairs?{path:pairsToPath(lat,s,pairs,lbl),cost:pairs.length,states:[]}:{path:null,cost:null,states:[]};
+    const r=pairs?{path:addMode?(()=>{const path=[];let cur=s.slice();for(const p of pairs){const t=cur.slice();t[p.add]=1;path.push({kind:'add',dest:p.add,to:t,label:'Add a match in the highlighted space'});cur=t;}return path;})():pairsToPath(lat,s,pairs,lbl),cost:pairs.length,states:[]}:{path:null,cost:null,states:[]};
     memo.set(key,r);return r;
   };
-  const unit=removeMode?'matches taken away':'moves';
-  const tapHow=removeMode?'Tap a match to take it away.':'Tap a match to pick it up, then tap an empty space to put it down.';
+  const unit=removeMode?'matches taken away':addMode?'matches added':'moves';
+  const tapHow=removeMode?'Tap a match to take it away.':addMode?'Tap an empty space to add a match there.':'Tap a match to pick it up, then tap an empty space to put it down.';
   const nsq=`<strong>${N} ${words}</strong>`;
   const rule=`${type==='sq'?'Squares':'Triangles'} of every size count, and every match must belong to a ${word} — no spare matches sticking out.`;
   const kTxt=spec.k===1?'one match':spec.k+' matches';
@@ -1242,6 +1248,7 @@ function shapeLevel(spec){
     noHint:'💡 That arrangement is too far from a solution. Try Undo a few times, or press Reset and think again.',
     moves(s){
       const out=[];
+      if(addMode){for(let q=0;q<lat.E;q++){if(s[q]||!lat.allowed[q])continue;const t=s.slice();t[q]=1;out.push({kind:'add',dest:q,to:t,label:'Add a match in the highlighted space'});}return out;}
       for(let p=0;p<lat.E;p++){
         if(!s[p])continue;
         if(removeMode){const t=s.slice();t[p]=0;out.push({kind:'remove',from:p,to:t,label:lbl({})});}
@@ -1308,6 +1315,10 @@ function shapeLevel(spec){
       function tap(e){
         if(S.busy)return;
         const s=S.state;
+        if(addMode){
+          if(s[e]){S.say('There is already a match there. Tap an empty space to add one.','bad');return;}
+          const m=S.moves().find(m=>m.dest===e);if(m)S.play(m);return;
+        }
         if(removeMode){
           if(!s[e]){S.say('That match has already gone. Tap a match to take it away.');return;}
           const m=S.moves().find(m=>m.from===e);if(m)S.play(m);return;
@@ -1362,7 +1373,7 @@ const SH_M_PIC=`<p>When you turn a picture over (a <em>reflection</em>) or turn 
 
 /* ---------- SHAPES: the puzzles ---------- */
 const SH_M_HALF=n=>`<p>A plus sign made from two matches, laid across the middle of a square, cuts that square into <strong>four smaller squares</strong>. Each has sides of half a match, so its area is a quarter of the original. The original square is still there too, so one cell now holds 1 + 4 = 5 squares.</p>
-<p>${n===6?'To make 6, keep the big 2 × 2 square (the 8 matches round the outside), keep one cell with the plus sign in it, and take away the two inside matches that are not part of that cell. That gives 1 big + 1 medium + 4 small = 6 squares.':'To make 7, there is no big square this time. The three cells that are left make an L-shape: 8 matches round the outside of the L and 2 inside. The two spare matches (taken from the outside of the missing cell) become the plus sign. That gives 3 medium + 4 small = 7 squares.'}</p>
+<p>${n===9?'Here nothing is taken away, so all 5 of the original squares (4 small and 1 big) stay. The plus sign adds 4 new half-size squares in one cell, and 5 + 4 = 9. It does not matter which cell you choose.':n===6?'To make 6, keep the big 2 × 2 square (the 8 matches round the outside), keep one cell with the plus sign in it, and take away the two inside matches that are not part of that cell. That gives 1 big + 1 medium + 4 small = 6 squares.':'To make 7, there is no big square this time. The three cells that are left make an L-shape: 8 matches round the outside of the L and 2 inside. The two spare matches (taken from the outside of the missing cell) become the plus sign. That gives 3 medium + 4 small = 7 squares.'}</p>
 <p>Counting squares of <em>every</em> size is the heart of this puzzle. Think about how many different sizes of square there are, then count each size separately.</p>`;
 const SH_SQUARES=[
   {mode:'relocate',type:'sq',k:3,N:3,fig:shGrid(2,2),brief:'This grid of <strong>12 matches</strong> hides five squares: four small and one big. Move <strong>3 matches</strong> so that exactly <strong>3 squares</strong> are left. Every match must be part of a square, and the big square counts too.',maths:SH_M_SQ_MOVE},
@@ -1372,7 +1383,10 @@ const SH_SQUARES=[
     maths:SH_M_HALF(6)},
   {mode:'relocate',type:'sq',k:2,N:7,graph:makeCellGraph(),
     brief:'Move <strong>2 matches</strong> to make exactly <strong>7 squares</strong>. Again, the two matches you move must end up as a <strong>plus sign inside one of the small squares</strong>. Squares of every size count, and every match must belong to a square.',
-    maths:SH_M_HALF(7)}
+    maths:SH_M_HALF(7)},
+  {mode:'add',type:'sq',k:2,N:9,graph:makeCellGraph(),
+    brief:'This grid of <strong>12 matches</strong> hides five squares. Do not move any matches. Instead <strong>add 2 more matches</strong> to make exactly <strong>9 squares</strong>. The two new matches must be laid as a <strong>plus sign inside one of the small squares</strong>.',
+    maths:SH_M_HALF(9)}
 ];
 const SH_TAKE=[
   {mode:'remove',type:'sq',k:1,N:3,fig:shGrid(2,2),maths:SH_M_TAKE},
