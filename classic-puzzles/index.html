@@ -226,6 +226,16 @@ svg.mc{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:man
 .mc .hintr{fill:none;stroke:var(--good);stroke-width:5;pointer-events:none}
 .mc .leftr{fill:rgba(255,80,80,.25);stroke:#ff5252;stroke-width:5;pointer-events:none}
 .mc .lab{font-size:13px;fill:var(--mute);pointer-events:none}
+.ct{display:block;width:100%;margin:8px auto;touch-action:manipulation;user-select:none}
+.ct .stick{fill:#f6f3ec;stroke:#cfc8b8;stroke-width:1}
+.ct .cl{font-size:20px;fill:var(--mute);font-weight:700}
+.ct .fo{fill:#ff8a00}.ct .fi{fill:#ffe45c}
+.ct .flame path{transform-box:fill-box;transform-origin:50% 100%;animation:ctf .35s ease-in-out infinite alternate}
+@keyframes ctf{from{transform:scale(1,1)}to{transform:scale(.86,1.1)}}
+.ct .ehit{cursor:pointer}
+.ct .hold{font-size:18px;fill:var(--accent)}
+.ctBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+.ctStatus{text-align:center;color:var(--mute);font-size:.9rem;margin-bottom:4px}
 svg.chess{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
 .chess .sq{cursor:pointer}
 .chess .lt{fill:#e8d9b5}.chess .dk{fill:#9a6b3f}
@@ -2783,17 +2793,207 @@ const MUTILATED={id:'mutilated',icon:'🀱',title:'Mutilated Chessboard',blurb:'
     {name:'Different colours',make:()=>mcLevel('mixed')}
   ]};
 
-const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
+/* ---------- CANDLE TIMERS (custom) ---------- */
+const CT_LEVELS=[
+  {n:1,d:30,name:'30 minutes',steps:[[[0,'L'],[0,'R']]],markAt:0},
+  {n:2,d:45,name:'45 minutes',steps:[[[0,'L'],[0,'R'],[1,'L']],[[1,'R']]],markAt:0},
+  {n:2,d:15,name:'15 minutes',steps:[[[0,'L'],[0,'R'],[1,'L']],[[1,'R']]],markAt:1},
+  {n:2,d:90,name:'90 minutes',steps:[[[0,'L']],[[1,'L'],[1,'R']]],markAt:0},
+  {n:3,d:22.5,name:'22½ minutes',steps:[[[0,'L'],[0,'R'],[1,'L'],[2,'L']],[[1,'R']],[[2,'R']]],markAt:1},
+  {n:3,d:37.5,name:'37½ minutes',steps:[[[0,'L'],[0,'R'],[1,'L']],[[1,'R'],[2,'L']],[[2,'R']]],markAt:1},
+  {n:3,d:52.5,name:'52½ minutes',steps:[[[0,'L'],[0,'R'],[1,'L'],[2,'L']],[[1,'R']],[[2,'R']]],markAt:0},
+  {n:3,d:7.5,name:'7½ minutes',steps:[[[0,'L'],[0,'R'],[1,'L'],[2,'L']],[[1,'R']],[[2,'R']]],markAt:2}
+];
+const CT_T=60,CT_SPEED=4,CT_HOLD=5000;
+const ctNm=i=>'ABC'[i];
+function ctDescribe(steps,markAt,noEnd){
+  const lightTxt=lights=>{
+    const by={};lights.forEach(([i,e])=>{(by[i]=by[i]||[]).push(e);});
+    return Object.keys(by).map(i=>by[i].length===2?`both ends of candle ${ctNm(+i)}`:`one end of candle ${ctNm(+i)}`).join(', ');
+  };
+  const parts=steps.map((s,k)=>(k===0?'At the start: light ':`When ${k===1?'the first':k===2?'the second':'the next'} candle goes out: light `)+lightTxt(s)+(markAt===k&&k>0?', and press Start timing':'')+'.');
+  if(!noEnd)parts.push('When the last candle goes out, press Time\'s up!');
+  return parts.join(' ');
+}
+function ctWords(n){return n===1?'one candle':n===2?'two candles':'three candles';}
+function candleLevel(L){
+  const N=L.n,T=CT_T,target=L.d;
+  const tgt=(Math.floor(target)===target?target:Math.floor(target)+'½');
+  const hints=[
+    N===1?'💡 Is there only one way to light a candle?':'💡 You can only recognise exact moments when a candle goes out. Which moments could you use as the start and end of your timing?',
+    '💡 '+(N===1?'Light both ends. Two flames burn through the candle twice as fast.':ctDescribe([L.steps[0]],-1,true)),
+    '💡 '+ctDescribe(L.steps,L.markAt)
+  ];
+  const def={
+    custom:true,
+    brief:`You have <strong>${ctWords(N)}</strong> and a box of matches. Each candle takes exactly <strong>${T} minutes</strong> to burn, but not at a steady rate: some parts burn faster than others, so its length tells you nothing. Measure exactly <strong>${tgt} minutes</strong>. Tap the end of a candle to light its wick. Everything lit within 5 seconds of each other counts as lit at the same moment, and the clock stops each time a candle goes out. Timing begins when you first light a candle, unless you press ⏱ Start timing later. Press 🔔 Time's up! when you have measured ${tgt} minutes.`,
+    maths:`<p>A candle that burns for 60 minutes from one end will burn for <strong>30 minutes</strong> if it is lit at <em>both</em> ends: two flames each do half the job. This works even though the candle burns unevenly, because the two flames always have between them the whole candle to burn through. What matters is the total amount of burning left, shared between the flames.</p>
+<p>The key idea is that the only moments you can recognise exactly are the moments when a candle goes out. Each one gives you a time you can use, and when a candle goes out you can light something else. For example, with two candles: light both ends of one, and one end of the other. After 30 minutes the first goes out and the second has 30 minutes left; light its other end and it will go out 15 minutes later, giving <strong>45 minutes</strong> from the start, or just <strong>15 minutes</strong> measured from the moment the first one went out.</p>
+<p>So the burning time left in each candle is like a number, and lighting a second end <em>halves</em> the time that is left. Can you find the other times that are possible?</p>`,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      const X0=70,LEN=520,RH=84,VW=660,VH=N*RH+40;
+      const svg=mk('svg',{viewBox:`0 0 ${VW} ${VH}`,class:'ct'});
+      svg.style.maxWidth='720px';
+      /* uneven burn profiles: cost of each fifth of the candle */
+      const prof=[];
+      for(let i=0;i<N;i++){
+        const w=[0,1,2,3,4].map(()=>0.45+Math.random()*1.5),sum=w.reduce((a,b)=>a+b,0);
+        prof.push(w.map(x=>x/sum*T));
+      }
+      const xOf=(i,s)=>{ /* cost coordinate s (0..T from the left) to x */
+        let acc=0;for(let k=0;k<5;k++){const c=prof[i][k];if(s<=acc+c+1e-9)return X0+(k+(c>0?(s-acc)/c:0))*LEN/5;acc+=c;}
+        return X0+LEN;
+      };
+      let C=[],t=0,tStart=0,mode='idle',holdUntil=0,holdOn=false,solved=false,hintN=0,demoing=false,demoTok=0,markedLater=false,init=true,tick=null;
+      const fresh=()=>{C=[];for(let i=0;i<N;i++)C.push({cL:0,cR:0,lL:false,lR:false,out:false});t=0;tStart=0;mode='idle';holdUntil=0;solved=false;markedLater=false;};
+      fresh();
+      const rows=[];
+      for(let i=0;i<N;i++){
+        const y=30+i*RH+RH/2-8;
+        const lab=mk('text',{x:28,y:y+7,class:'cl','text-anchor':'middle'});lab.textContent=ctNm(i);
+        const stick=mk('rect',{height:9,rx:4.5,class:'stick'});
+        const fL=mk('g',{class:'flame',visibility:'hidden'}),fR=mk('g',{class:'flame',visibility:'hidden'});
+        [fL,fR].forEach(f=>{f.append(mk('path',{d:'M0,-6 C-9,-14 -3,-24 0,-34 C4,-24 10,-14 0,-6 Z',class:'fo'}),mk('path',{d:'M0,-7 C-4,-12 -1,-18 0,-23 C2,-18 5,-12 0,-7 Z',class:'fi'}));});
+        const hL=mk('rect',{height:44,fill:'transparent',class:'ehit'}),hR=mk('rect',{height:44,fill:'transparent',class:'ehit'});
+        hL.addEventListener('click',()=>light(i,'L',false));hR.addEventListener('click',()=>light(i,'R',false));
+        svg.append(lab,stick,fL,fR,hL,hR);
+        rows.push({y,stick,fL,fR,hL,hR});
+      }
+      const ring=mk('text',{x:VW-12,y:22,class:'hold','text-anchor':'end'});
+      svg.append(ring);
+      const bar=el('div',{class:'ctBar'});
+      const bGo=el('button',{class:'btn',onclick:()=>cont()},'▶ Continue');
+      const bPause=el('button',{class:'btn',onclick:()=>pauseBtn()},'⏸ Pause');
+      const bStart=el('button',{class:'btn',onclick:()=>startTiming()},'⏱ Start timing');
+      const bStop=el('button',{class:'btn primary',onclick:()=>timesUp()},"🔔 Time's up!");
+      bar.append(bGo,bPause,bStart,bStop);
+      const status=el('div',{class:'ctStatus'});
+      stage.append(svg,bar,status);
+      const flames=i=>(C[i].lL&&!C[i].out?1:0)+(C[i].lR&&!C[i].out?1:0);
+      function nextEvent(){
+        let best=null;
+        C.forEach((c,i)=>{const f=flames(i);if(!f)return;const dt=(T-c.cL-c.cR)/f;if(best===null||dt<best)best=dt;});
+        return best;
+      }
+      function advance(dt){
+        C.forEach((c,i)=>{if(c.out)return;if(c.lL)c.cL+=dt;if(c.lR)c.cR+=dt;if(c.cL+c.cR>=T-1e-9){c.out=true;c.cL=Math.min(c.cL,T);c.cR=T-c.cL;}});
+        t+=dt;
+      }
+      function draw(){
+        rows.forEach((R,i)=>{
+          const c=C[i];
+          if(c.out){R.stick.setAttribute('visibility','hidden');R.fL.setAttribute('visibility','hidden');R.fR.setAttribute('visibility','hidden');R.hL.setAttribute('visibility','hidden');R.hR.setAttribute('visibility','hidden');return;}
+          const xl=xOf(i,c.cL),xr=xOf(i,T-c.cR);
+          R.stick.setAttribute('visibility','visible');
+          R.stick.setAttribute('x',xl);R.stick.setAttribute('y',R.y-4.5);R.stick.setAttribute('width',Math.max(2,xr-xl));
+          R.fL.setAttribute('visibility',c.lL?'visible':'hidden');R.fR.setAttribute('visibility',c.lR?'visible':'hidden');
+          R.fL.setAttribute('transform',`translate(${xl},${R.y-4})`);R.fR.setAttribute('transform',`translate(${xr},${R.y-4})`);
+          const zw=Math.min(70,(xr-xl)/2);
+          R.hL.setAttribute('visibility','visible');R.hR.setAttribute('visibility','visible');
+          R.hL.setAttribute('x',xl-16);R.hL.setAttribute('width',zw+16);R.hL.setAttribute('y',R.y-24);
+          R.hR.setAttribute('x',xr-zw);R.hR.setAttribute('width',zw+16);R.hR.setAttribute('y',R.y-24);
+          R.hL.style.pointerEvents=c.lL?'none':'auto';R.hR.style.pointerEvents=c.lR?'none':'auto';
+        });
+        const left=holdOn?Math.max(0,Math.ceil((holdUntil-Date.now())/1000)):0;
+        ring.textContent=holdOn&&left>0?`🔥 lighting… ${left}`:'';
+        bGo.disabled=!(mode==='event'||mode==='manual')||demoing;
+        bPause.disabled=!(mode==='run')||demoing;
+        bStart.disabled=mode==='idle'||demoing||solved;
+        bStop.disabled=mode==='idle'||demoing;
+        status.textContent=mode==='idle'?'The clock has not started. Light a candle to begin.':markedLater?'Timing restarted when you pressed Start timing.':'Timing from the first lighting.';
+        if(!init)S.refresh();
+      }
+      function light(i,e,fromDemo){
+        if(demoing&&!fromDemo)return;
+        const c=C[i];if(c.out)return;
+        if(e==='L'){if(c.lL)return;c.lL=true;}else{if(c.lR)return;c.lR=true;}
+        if(mode==='idle'){mode='run';t=0;tStart=0;}
+        else if(mode==='event'||mode==='manual')mode='run';
+        holdOn=true;holdUntil=Date.now()+(demoing?700:CT_HOLD);
+        S.say('');draw();
+      }
+      function cont(){if(mode==='event'||mode==='manual'){mode='run';holdOn=false;S.say('');draw();}}
+      function pauseBtn(){if(mode==='run'){mode='manual';holdOn=false;draw();}}
+      function startTiming(){if(mode==='idle')return;tStart=t;markedLater=true;S.say('⏱ Timing starts now.','info');draw();}
+      function timesUp(){
+        if(mode==='idle')return;
+        const el2=t-tStart;
+        if(Math.abs(el2-target)<0.05){
+          solved=true;mode='manual';holdOn=false;
+          S.win(`🎉 Exactly ${tgt} minutes! ${N===1?'Two flames burn through a candle in half the time.':'Well measured.'}`);
+        }else{
+          const r=Math.round(el2*10)/10;
+          S.say(`That was ${Number.isInteger(r)?r:r.toFixed(1)} minutes, not ${tgt}. Press Reset to try again, or keep going.`,'info');
+        }
+        draw();
+      }
+      function loop(){
+        if(mode!=='run')return;
+        if(holdOn){if(Date.now()<holdUntil){draw();return;}holdOn=false;}
+        const dt=0.03*CT_SPEED*(demoing?2:1),ev=nextEvent();
+        if(ev===null){mode='manual';draw();return;}
+        if(dt>=ev-1e-9){
+          const before=C.map(c=>c.out);
+          advance(ev);mode='event';
+          const who=C.map((c,i)=>c.out&&!before[i]?ctNm(i):null).filter(x=>x);
+          S.say(`🕯️ Candle ${who.join(' and ')} has gone out.`,'info');
+        }else advance(dt);
+        draw();
+      }
+      tick=setInterval(loop,30);
+      function reset(){demoTok++;demoing=false;holdOn=false;fresh();hintN=0;S.say('');draw();}
+      function hint(){if(demoing||solved)return;S.say(hints[Math.min(hintN,2)],'info');hintN++;}
+      function show(){
+        if(demoing){demoTok++;demoing=false;reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++demoTok;
+        const steps=L.steps;let k=0;
+        const wait=(cond,fn)=>{const iv=setInterval(()=>{if(my!==demoTok){clearInterval(iv);return;}if(cond()){clearInterval(iv);fn();}},60);};
+        S.refresh();
+        S.say('Watch: '+ctDescribe(steps,L.markAt),'info');
+        const doStep=()=>{
+          if(my!==demoTok)return;
+          if(k>0&&L.markAt===k){startTiming();}
+          let q=0;const ls=steps[k];
+          const next=()=>{
+            if(my!==demoTok)return;
+            if(q<ls.length){const [i,e]=ls[q++];light(i,e,true);setTimeout(next,450);return;}
+            k++;
+            /* run to the next event */
+            wait(()=>mode==='event',()=>{
+              if(k<steps.length)setTimeout(doStep,700);
+              else setTimeout(()=>{if(my!==demoTok)return;demoing=false;timesUp();S.revealMaths();},900);
+            });
+          };
+          next();
+        };
+        setTimeout(doStep,500);
+      }
+      draw();init=false;
+      return {
+        reset,undo(){},hint,show,
+        stop(){demoTok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Measure: ${tgt} minutes`})
+      };
+    }
+  };
+  return def;
+}
+const CANDLES={id:'candles',icon:'🕯️',title:'Candle Timers',blurb:'Measure the time using only candles that burn for an hour.',
+  levels:CT_LEVELS.map(L=>({name:L.name,make:()=>candleLevel(L)}))};
+
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
-  {title:'Pouring',items:[JUGS,COLSORT]},
+  {title:'Weights and Measures',items:[JUGS,COLSORT,COINS]},
   {title:'River and bridge crossings',items:[WGC,FOX,BRIDGE]},
-  {title:'Matches and coins',items:[MATCHES,COINS,SWAP]},
+  {title:'Candles and Matches',items:[MATCHES,CANDLES]},
   {title:'Chess board',items:[
     CHESS,
     KNIGHT,
     MUTILATED]},
-  {title:'Movement',items:[CARPARK,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
+  {title:'Movement',items:[CARPARK,SWAP,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
   {title:'Investigations',items:[
     {soon:1,icon:'✉️',title:'Stamps',blurb:'Which postage can you make with just two stamps?'},
     {soon:1,icon:'➕',title:'Consecutives',blurb:'Which numbers are sums of consecutive integers?'},
@@ -2962,6 +3162,7 @@ function showPuzzle(P){
     bPrev.style.display=bNext.style.display=pickLbl.style.display=L.count>1?'':'none';
     bNew.style.display=L.random?'':'none';
     pickLbl.textContent=L.count>1?`Puzzle ${pIdx+1} of ${L.count}`:'';
+    if(ui&&ui.stop)ui.stop();
     stage.replaceChildren();
     brief.innerHTML=def.brief;
     ui=def.mount(stage,S);
@@ -2979,7 +3180,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
