@@ -216,7 +216,7 @@ svg.cs{display:block;width:100%;margin:8px auto;touch-action:manipulation;user-s
 .cs .tube.hB .out{stroke:var(--accent);stroke-width:6}
 .cs .tn{font-size:13px;fill:var(--mute);pointer-events:none}
 .cs .stream{stroke-width:8;stroke-linecap:round;pointer-events:none}
-.cs .seg{stroke:rgba(0,0,0,.25);stroke-width:1}
+.cs .seg{stroke:none}
 svg.mc{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
 .mc .sq{cursor:pointer}.mc .lt{fill:#e8d9b5}.mc .dk{fill:#9a6b3f}.mc .hole{fill:#0e2339;cursor:default}
 .mc .db{fill:rgba(255,255,255,.28);stroke:#12263b;stroke-width:3.5;cursor:pointer}
@@ -2424,28 +2424,57 @@ function csLevel(nc){
       svg.style.maxWidth=Math.min(560,perRow*86+40)+'px';
       const pos=i=>{const r=Math.floor(i/perRow),c=i%perRow,inRow=Math.min(perRow,n-r*perRow);const off=(perRow-inRow)*(W+GAP)/2;return {x:PADX+off+c*(W+GAP),y:r*RH+34};};
       let cur=g.start.map(t=>t.slice()),hist=[],sel=-1,busy=false,solved=false,demoing=false,demoTok=0,moves=0,hA=-1,hB=-1,init=true;
+      const SHAPE=`M0,0 V${H-W/2+2} A${W/2},${W/2} 0 0 0 ${W},${H-W/2+2} V0 Z`;
+      /* sample points inside the tube, used to keep the water level flat when the tube tilts */
+      const pts=[];
+      for(let v=1.5;v<H;v+=3)for(let u=1.5;u<W;u+=3){
+        const cyy=H-W/2+2;
+        if(v<=cyy||((u-W/2)*(u-W/2)+(v-cyy)*(v-cyy)<=(W/2)*(W/2)))pts.push([u-W/2,v]);
+      }
+      const NP=pts.length;
+      const sortedY=(al,py)=>{const sn=Math.sin(al),cs=Math.cos(al);return pts.map(p=>py+p[0]*sn+p[1]*cs).sort((x,y)=>y-x);};
+      const Y0=sortedY(0,0);
+      const levelAt=(ys,vol)=>{const k=Math.round(vol/CS_CAP*NP);return k<=0?ys[0]+2:k>=NP?ys[NP-1]-2:ys[k];};
+      const runsOf=t=>{const r=[];t.forEach(c=>{if(r.length&&r[r.length-1].c===c)r[r.length-1].v++;else r.push({c,v:1});});return r;};
+      const bandRects=(ys,layers,x0,wd)=>{
+        const out=[];let cum=0;
+        layers.forEach(L=>{
+          if(L.v<=0)return;
+          const yb=levelAt(ys,cum),yt=levelAt(ys,cum+L.v);cum+=L.v;
+          out.push(mk('rect',{x:x0,y:yt,width:wd,height:Math.max(0,yb-yt)+0.5,fill:CS_COL[L.c],class:'seg'}));
+        });
+        return out;
+      };
       const tubes=[];
       for(let i=0;i<n;i++){
         const p=pos(i);
         const grp=mk('g',{class:'tube',transform:`translate(${p.x},${p.y})`});
         const clip=mk('clipPath',{id:'csc'+i+'_'+(Math.random()*1e6|0)});
-        clip.append(mk('rect',{x:0,y:-40,width:W,height:H+40,rx:W/2-2}));
+        clip.append(mk('path',{d:SHAPE}));
         const segs=mk('g',{'clip-path':`url(#${clip.id})`});
         const outline=mk('path',{d:`M0,0 V${H-W/2+2} A${W/2},${W/2} 0 0 0 ${W},${H-W/2+2} V0`,class:'out'});
         const num=mk('text',{x:W/2,y:H+22,class:'tn','text-anchor':'middle'});num.textContent=i+1;
         const hit=mk('rect',{x:-8,y:-30,width:W+16,height:H+60,class:'hit',fill:'transparent'});
         hit.addEventListener('click',()=>tap(i));
-        grp.append(clip,mk('path',{d:`M0,0 V${H-W/2+2} A${W/2},${W/2} 0 0 0 ${W},${H-W/2+2} V0 Z`,class:'bg'}),segs,outline,num,hit);
+        grp.append(clip,mk('path',{d:SHAPE,class:'bg'}),segs,outline,num,hit);
         svg.append(grp);tubes.push({grp,segs});
       }
-      const stream=mk('line',{class:'stream',visibility:'hidden'});
-      svg.append(stream);
+      const overlay=mk('g',{});
+      svg.append(overlay);
       stage.append(svg);
+      let hideTube=-1,animTok=0,animTimer=null;
+      function drawTube(i,extra){
+        const T=tubes[i];
+        T.segs.replaceChildren();
+        const layers=runsOf(cur[i]);
+        if(extra)layers.push(extra);
+        bandRects(Y0,layers,-2,W+4).forEach(r=>T.segs.append(r));
+      }
       function draw(){
         tubes.forEach((T,i)=>{
-          T.segs.replaceChildren();
-          cur[i].forEach((c,k)=>T.segs.append(mk('rect',{x:0,y:H-(k+1)*U,width:W,height:U+0.5,fill:CS_COL[c],class:'seg'})));
+          drawTube(i);
           T.grp.setAttribute('transform',`translate(${pos(i).x},${pos(i).y-(sel===i?18:0)})`);
+          T.grp.setAttribute('opacity',hideTube===i?0:1);
           T.grp.classList.toggle('sel',sel===i);
           T.grp.classList.toggle('hA',hA===i);T.grp.classList.toggle('hB',hB===i);
           const full=cur[i].length===CS_CAP&&csUniform(cur[i]);T.grp.classList.toggle('fin',full);
@@ -2458,19 +2487,74 @@ function csLevel(nc){
         const b=cur[j];if(b.length>=CS_CAP)return false;
         return !b.length||csTop(b)===csTop(cur[i]);
       }
+      const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      function stopAnim(){animTok++;if(animTimer){clearInterval(animTimer);animTimer=null;}overlay.replaceChildren();hideTube=-1;}
       function doPour(i,j,quick,after){
-        const m={from:i,to:j,n:Math.min(csRun(cur[i]),CS_CAP-cur[j].length)};
-        const c=csTop(cur[i]);
-        busy=true;sel=i;draw();
-        const a=pos(i),b=pos(j);
-        stream.setAttribute('x1',a.x+W/2);stream.setAttribute('y1',a.y-18);
-        stream.setAttribute('x2',b.x+W/2);stream.setAttribute('y2',b.y+H-cur[j].length*U);
-        stream.setAttribute('stroke',CS_COL[c]);stream.setAttribute('visibility','visible');
-        setTimeout(()=>{
-          stream.setAttribute('visibility','hidden');
-          cur=csApply(cur,m);sel=-1;busy=false;moves++;draw();
-          if(after)after();
-        },quick?260:380);
+        const n2=Math.min(csRun(cur[i]),CS_CAP-cur[j].length),c=csTop(cur[i]);
+        const m={from:i,to:j,n:n2};
+        busy=true;sel=-1;hideTube=i;draw();
+        const my=++animTok;
+        const A=pos(i),B=pos(j),dir=(B.x>A.x||(B.x===A.x&&B.y>A.y))?1:-1;
+        const k=quick?0.65:1;
+        const start={x:A.x+W/2,y:A.y},end={x:B.x+W/2-dir*W*0.45,y:B.y-70};
+        const V0=cur[i].length,Vend=V0-n2,Vj=cur[j].length;
+        const srcLayers=V=>{ /* source layers cut to V units from the bottom */
+          const r=[];let left=V;for(const L of runsOf(cur[i])){if(left<=0)break;const v=Math.min(L.v,left);r.push({c:L.c,v});left-=v;}return r;};
+        const solveAngle=V=>{
+          if(V>=CS_CAP-1e-6)return 0;
+          let lo=0,hi=112*Math.PI/180;
+          for(let it=0;it<16;it++){
+            const mid=(lo+hi)/2,al=dir*mid,sn=Math.sin(al),cs=Math.cos(al);
+            const lipY=dir*(W/2)*sn;let cnt=0;
+            for(const p of pts)if(p[0]*sn+p[1]*cs>=lipY)cnt++;
+            const cap=cnt/NP*CS_CAP;
+            if(cap>V)lo=mid;else hi=mid;
+          }
+          return (lo+hi)/2;
+        };
+        const clip=mk('clipPath',{id:'cca'+my+'_'+(Math.random()*1e6|0)});
+        const cpath=mk('path',{d:SHAPE});clip.append(cpath);
+        const liquid=mk('g',{'clip-path':`url(#${clip.id})`});
+        const body=mk('path',{d:SHAPE,class:'bg'});
+        const out=mk('path',{d:`M0,0 V${H-W/2+2} A${W/2},${W/2} 0 0 0 ${W},${H-W/2+2} V0`,class:'out'});
+        const strm=mk('line',{class:'stream',stroke:CS_COL[c],visibility:'hidden'});
+        overlay.replaceChildren(clip,body,liquid,out,strm);
+        const place=(px,py,mag,V,poured)=>{
+          const al=dir*mag,tf=`translate(${px},${py}) rotate(${al*180/Math.PI}) translate(${-W/2},0)`;
+          cpath.setAttribute('transform',tf);body.setAttribute('transform',tf);out.setAttribute('transform',tf);
+          liquid.replaceChildren();
+          bandRects(sortedY(al,py),srcLayers(V),px-200,400).forEach(r=>liquid.append(r));
+          if(poured>0.01){
+            const lx=px+dir*(W/2)*Math.cos(al),ly=py+dir*(W/2)*Math.sin(al);
+            const surf=B.y+levelAt(Y0,Vj+poured);
+            strm.setAttribute('x1',lx);strm.setAttribute('x2',lx);strm.setAttribute('y1',ly);strm.setAttribute('y2',Math.max(ly,surf));
+            strm.setAttribute('visibility','visible');
+          }else strm.setAttribute('visibility','hidden');
+        };
+        const tA=450*k,tB=(400+420*n2)*k,tC=450*k,t0=Date.now();
+        const mag0=solveAngle(V0),magE=solveAngle(Vend);
+        drawTube(j);
+        animTimer=setInterval(()=>{
+          if(my!==animTok){clearInterval(animTimer);animTimer=null;return;}
+          const t=Date.now()-t0;
+          if(t<tA){
+            const p=ease(t/tA);
+            place(start.x+(end.x-start.x)*p,start.y+(end.y-start.y)*p-Math.sin(p*Math.PI)*10,mag0*p,V0,0);
+          }else if(t<tA+tB){
+            const p=ease((t-tA)/tB),poured=n2*p,V=V0-poured;
+            place(end.x,end.y,solveAngle(V),V,poured);
+            drawTube(j,{c,v:poured});
+          }else if(t<tA+tB+tC){
+            const p=ease((t-tA-tB)/tC);
+            drawTube(j,{c,v:n2});
+            place(end.x+(start.x-end.x)*p,end.y+(start.y-end.y)*p,magE*(1-p),Vend,0);
+          }else{
+            clearInterval(animTimer);animTimer=null;
+            overlay.replaceChildren();hideTube=-1;
+            cur=csApply(cur,m);sel=-1;busy=false;moves++;draw();
+            if(after)after();
+          }
+        },30);
         return m;
       }
       function checkWin(){
@@ -2489,7 +2573,7 @@ function csLevel(nc){
           sel=cur[i].length?i:-1;draw();
         }
       }
-      function reset(){demoTok++;demoing=false;busy=false;cur=g.start.map(t=>t.slice());hist=[];sel=-1;solved=false;moves=0;clearHint();stream.setAttribute('visibility','hidden');S.say('');draw();}
+      function reset(){demoTok++;stopAnim();demoing=false;busy=false;cur=g.start.map(t=>t.slice());hist=[];sel=-1;solved=false;moves=0;clearHint();S.say('');draw();}
       function undo(){if(busy||demoing||!hist.length)return;const h=hist.pop();cur=h.cur;moves=h.moves;sel=-1;solved=false;clearHint();S.say('');draw();}
       const mtxt=m=>`Pour the ${CS_NAME[csTop(cur[m.from])]} from tube ${m.from+1} into tube ${m.to+1}`;
       function hint(){
@@ -2517,7 +2601,7 @@ function csLevel(nc){
       draw();init=false;
       return {
         reset,undo,hint,show,
-        stop(){demoTok++;demoing=false;},
+        stop(){demoTok++;stopAnim();demoing=false;},
         ctl:()=>({undo:!busy&&!demoing&&hist.length>0,reset:true,hint:!busy&&!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Moves: ${moves}`})
       };
     }
