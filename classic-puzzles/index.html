@@ -335,6 +335,17 @@ svg.carpark{display:block;width:100%;margin:8px auto;touch-action:none}
 .stAns{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:8px 0}
 .stAns .lbl{font-weight:700}
 /* ===/CSS:stamps=== */
+/* ===CSS:consec=== */
+.cnBuild{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center;margin:6px 0}
+.cnRow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;min-height:56px;margin:6px 0}
+.cnBlk{min-width:46px;height:46px;border-radius:8px;background:var(--accent);color:#2a1a00;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:1.15rem;padding:0 6px}
+.cnPlus{color:var(--mute);font-weight:700}
+.cnSum{font-weight:800;font-size:1.3rem;color:var(--ink);padding-left:6px}
+.stCell.flag{border-style:dashed;border-color:var(--bad);background:rgba(255,122,122,.16)}
+.stCell.w1{background:rgba(70,208,138,.25);border-color:var(--good)}
+.stCell.w2{background:rgba(70,208,138,.4);border-color:var(--good)}
+.stCell.w3{background:rgba(70,208,138,.6);border-color:var(--good)}
+/* ===/CSS:consec=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -3438,6 +3449,157 @@ shuffleLevels(STAMPS);
 INV_LIST.push(STAMPS);
 INV_API.stamps={stampsLevel,stInfo,stMake,STAMPS};
 /* ===/JS:stamps=== */
+/* ===JS:consec=== */
+function cnRuns(N){
+  const w=[];for(let n=0;n<=N;n++)w[n]=[];
+  for(let s=1;s<=N;s++){let t=s;for(let k=2;;k++){t+=s+k-1;if(t>N)break;w[t].push([s,k]);}}
+  return w;
+}
+function cnText(s,k){const e=s+k-1;return k<=5?Array.from({length:k},(_,i)=>s+i).join(' + '):`${s} + ${s+1} + … + ${e}`;}
+function consecLevel(mode){
+  const N=mode==='ways'?100:64,ways=cnRuns(N);
+  const cant=[];for(let n=1;n<=N;n++)if(!ways[n].length)cant.push(n);
+  const target=3;
+  const def={
+    custom:true,
+    brief:mode==='ways'
+      ?`Some numbers can be made as a sum of consecutive whole numbers in more than one way: 9 = 4 + 5 and 9 = 2 + 3 + 4. Use the builder to explore. Then find a number up to ${N} that can be made in <strong>exactly ${target} different ways</strong>. (Use at least two numbers, all positive.)`
+      :`Some numbers are a sum of two or more <strong>consecutive</strong> positive whole numbers: 9 = 4 + 5, and 15 = 1 + 2 + 3 + 4 + 5. Use the builder to explore. Which numbers up to ${N} <strong>can't</strong> be made? Tap the chart to flag the ones you think can't be made, then press Check.`,
+    maths:`<p>Add up <em>k</em> consecutive numbers starting at <em>s</em>: the total <em>n</em> is <em>k</em> × (2<em>s</em> + <em>k</em> − 1) ÷ 2, so <strong>2<em>n</em> = <em>k</em> × (2<em>s</em> + <em>k</em> − 1)</strong>. The two factors <em>k</em> and 2<em>s</em> + <em>k</em> − 1 differ by an odd number (2<em>s</em> − 1), so one is odd and one is even.</p>
+<p>That means a way of making <em>n</em> is the same as an <strong>odd factor of <em>n</em> bigger than 1</strong>. For example 15 has odd factors 3, 5 and 15, so 15 can be made in exactly 3 ways: 7 + 8, 4 + 5 + 6 and 1 + 2 + 3 + 4 + 5.</p>
+<p>A power of 2 (1, 2, 4, 8, 16, 32, 64, …) has no odd factor except 1, so it <strong>can never be made</strong>. Every other number can be, because it has an odd factor bigger than 1. The number of ways is (the number of odd factors) − 1. For instance 81 has odd factors 1, 3, 9, 27, 81, so it can be made in exactly 4 ways.</p>`,
+    mount(stage,S){
+      let s=1,k=2,found=new Map(),flags=new Set(),solved=false,demoing=false,tok=0,tick=null,hintM=0,hintStage=0,guess=1,init=true;
+      const row=el('div',{class:'cnRow'}),sumB=el('span',{class:'cnSum'});
+      const stp=(txt,fn,lab)=>el('button',{class:'mini',onclick:fn,'aria-label':lab},txt);
+      const sB=el('b',null,'1'),kB=el('b',null,'2');
+      const build=el('div',{class:'cnBuild'},
+        el('div',{class:'stStep'},el('span',null,'Start at'),stp('−',()=>chg(-1,0),'Start lower'),sB,stp('+',()=>chg(1,0),'Start higher')),
+        el('div',{class:'stStep'},el('span',null,'How many numbers'),stp('−',()=>chg(0,-1),'Fewer'),kB,stp('+',()=>chg(0,1),'More')));
+      const grid=el('div',{class:'stGrid'});
+      const gB=el('b',null,'1');
+      const bCheck=el('button',{class:'btn primary',onclick:()=>check()},'Check');
+      const ans=mode==='ways'
+        ?el('div',{class:'stAns'},el('span',{class:'lbl'},`A number with exactly ${target} ways:`),stp('−',()=>setG(guess-1),'Less'),gB,stp('+',()=>setG(guess+1),'More'),bCheck)
+        :el('div',{class:'stAns'},el('span',{class:'lbl'},"Flag the numbers that can't be made, then:"),bCheck);
+      stage.append(build,row,grid,ans);
+      function setG(g){guess=Math.max(1,Math.min(N,g));gB.textContent=guess;}
+      function sum(){return k*s+k*(k-1)/2;}
+      function chg(ds,dk){
+        if(demoing)return;
+        s=Math.max(1,Math.min(40,s+ds));k=Math.max(2,Math.min(12,k+dk));
+        const t=sum();
+        if(t<=N){
+          const l=found.get(t)||[];
+          const dup=l.some(r=>r[0]===s&&r[1]===k);
+          if(!dup){l.push([s,k]);found.set(t,l);hintM=0;hintStage=0;S.say(`${t} = ${cnText(s,k)}.`,'good');}
+          else S.say(`${t} = ${cnText(s,k)}. You had found that one.`,'');
+        }else S.say(`That total is ${t}, off the end of the chart (it stops at ${N}).`,'info');
+        draw(t<=N?t:0);
+      }
+      function check(){
+        if(demoing||solved)return;
+        if(mode==='ways'){
+          const w=ways[guess].length;
+          if(w===target)win(`🎉 ${guess} can be made in exactly ${target} ways: ${ways[guess].map(r=>cnText(r[0],r[1])).join(';  ')}.`);
+          else S.say(`${guess} can be made in ${w} way${w===1?'':'s'}, not ${target}. Keep looking.`,'bad');
+          return;
+        }
+        const wrong=[...flags].filter(n=>ways[n].length);
+        if(wrong.length){const n=Math.min(...wrong);S.say(`Look at ${n}: ${n} = ${cnText(ways[n][0][0],ways[n][0][1])}. It can be made, so it shouldn't be flagged.`,'bad');return;}
+        const miss=cant.filter(n=>!flags.has(n));
+        if(miss.length){S.say(`Everything you have flagged really can't be made. But some more numbers can't be made — keep looking. What do the ones you have flagged have in common?`,'info');return;}
+        win(`🎉 Yes! The numbers that can't be made are ${cant.join(', ')} — the powers of 2. Every other number can be made.`);
+      }
+      function win(t){solved=true;S.win(t);draw();}
+      function draw(now){
+        row.replaceChildren();
+        for(let i=0;i<k;i++){if(i)row.append(el('span',{class:'cnPlus'},'+'));row.append(el('span',{class:'cnBlk'},String(s+i)));}
+        row.append(sumB);sumB.textContent='= '+sum();
+        sB.textContent=s;kB.textContent=k;
+        grid.replaceChildren();
+        for(let n=1;n<=N;n++){
+          const r=found.get(n);let cls='stCell';
+          if(mode==='ways'&&r)cls+=' w'+Math.min(3,r.length);
+          else if(r)cls+=' yes';
+          if(flags.has(n))cls+=' flag';
+          if(solved&&mode==='cant'&&!ways[n].length)cls+=' no';
+          if(n===hintM)cls+=' hint';
+          if(n===now)cls+=' now';
+          let sm=null;
+          if(r)sm=mode==='ways'?r.length+' way'+(r.length>1?'s':''):cnText(...r[0]);
+          grid.append(el('button',{class:cls,onclick:()=>tap(n),'aria-label':String(n)},el('b',null,String(n)),sm?el('small',null,sm):null));
+        }
+        if(!init)S.refresh();
+      }
+      function tap(n){
+        if(demoing)return;
+        const r=found.get(n);
+        if(mode==='ways'){
+          if(r)S.say(`${n}: ${r.map(x=>cnText(x[0],x[1])).join(';  ')}.`,'');
+          else S.say(`${n}: no way found yet.`,'info');
+          setG(n);return;
+        }
+        if(r){S.say(`${n} = ${cnText(r[0][0],r[0][1])}. That one can be made.`,'');return;}
+        if(solved)return;
+        if(flags.has(n))flags.delete(n);else flags.add(n);
+        S.say(flags.has(n)?`Flagged ${n}: you think it can't be made.`:`Unflagged ${n}.`,'info');
+        draw();
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        s=1;k=2;found=new Map();flags=new Set();solved=false;hintM=0;hintStage=0;setG(1);S.say('');draw();
+      }
+      function hint(){
+        if(demoing||solved)return;
+        if(mode==='ways'){
+          S.say('💡 A way of making n matches an odd factor of n bigger than 1. Which numbers have lots of odd factors?','info');return;
+        }
+        const need=[];for(let n=1;n<=N;n++)if(ways[n].length&&!found.has(n)&&!flags.has(n))need.push(n);
+        if(need.length&&hintStage<2){
+          if(hintM!==need[0]){hintM=need[0];hintStage=0;}
+          if(hintStage===0)S.say(`💡 ${hintM} can be made. Can you find how?`,'info');
+          else S.say(`💡 ${hintM} = ${cnText(ways[hintM][0][0],ways[hintM][0][1])}.`,'info');
+          hintStage++;draw();return;
+        }
+        S.say('💡 Look at the numbers still blank on the chart. Which ones you have never been able to make? Look at how each one is made from 2, 4, 8… What is special about them?','info');
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped. Press Reset or Show me to go again.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        let n=0;
+        S.say('Watch: each number is tried in turn.','info');
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          n++;
+          if(n>N){clearInterval(tick);tick=null;demoing=false;solved=true;
+            S.say(mode==='ways'?`Look at the chart: 15, 21, 27, 33… have lots of ways. Press Reset to try it yourself!`:`The numbers that can't be made are the powers of 2: ${cant.join(', ')}. Press Reset to try it yourself!`,'info');
+            draw();S.revealMaths();S.refresh();return;}
+          const w=ways[n];
+          if(w.length)found.set(n,w.slice());
+          draw(n);
+          S.say(w.length?`${n} = ${cnText(w[0][0],w[0][1])}${w.length>1?` (and ${w.length-1} more way${w.length>2?'s':''})`:''}.`:`${n} can't be made.`,w.length?'good':'bad');
+        },mode==='ways'?60:80);
+      }
+      function undo(){}
+      reset();init=false;
+      return {
+        reset,undo,hint,show,
+        stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='ways'?`Numbers found: ${found.size}`:`Flagged: ${flags.size}`})
+      };
+    }
+  };
+  return def;
+}
+const CONSEC={id:'consecutives',icon:'➕',title:'Consecutives',blurb:'Which numbers are sums of consecutive integers?',
+  levels:[
+    {name:'Which can’t be made?',make:()=>consecLevel('cant')},
+    {name:'In how many ways?',make:()=>consecLevel('ways')}
+  ]};
+INV_LIST.push(CONSEC);
+INV_API.consec={consecLevel,cnRuns};
+/* ===/JS:consec=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -3453,7 +3615,7 @@ const GROUPS=[
   {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS]},
   {title:'Investigations',items:[
     STAMPS,
-    {soon:1,icon:'➕',title:'Consecutives',blurb:'Which numbers are sums of consecutive integers?'},
+    CONSEC,
     {soon:1,icon:'🌨️',title:'Hailstones',blurb:'Halve it or triple it and add one — where does it end?'},
     {soon:1,icon:'🔢',title:'Euler\u2019s Phi Function',blurb:'How many numbers up to n share no factor with n?'},
     {soon:1,icon:'🟦',title:'Tiles and Spacers',blurb:'Tile an m × n wall — how many spacers for the corners and the edges?'},
