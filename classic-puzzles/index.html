@@ -493,6 +493,20 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .pyCard.ok{border-color:#5ed08a}.pyCard.no{border-color:#e8604f}
 .pyCard .dg{font-size:.85rem;color:var(--mute);min-height:2.4em}
 /* ===/CSS:pyth=== */
+/* ===CSS:happy=== */
+.hpChain{margin:6px 0;line-height:1.7;font-size:1.05rem;text-align:left;display:inline-block}
+.hpChain .hs{display:block}
+.hpChain b{font-size:1.15em}
+.hpChain .ok{color:#5ed08a;font-weight:800}
+.hpChain .lp{color:#e8a05a;font-weight:800}
+.hpBig{font-size:2.4rem;font-weight:800;text-align:center}
+.hpRes{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;font-size:.95rem;margin-top:10px}
+.hpRes div{background:#16283f;border:1px solid var(--line);border-radius:10px;padding:4px 10px}
+.hpNums{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0}
+.hpNums button{min-width:4.2em;font:inherit;font-size:1.5rem;font-weight:800;padding:12px 10px;border-radius:14px;border:2px solid var(--line);background:#16283f;color:inherit;cursor:pointer}
+.hpNums button.on{border-color:#ffb84a;background:#2a3a52}
+.hpNums button.ok{border-color:#5ed08a}.hpNums button.no{border-color:#e8604f}
+/* ===/CSS:happy=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -5323,6 +5337,142 @@ shuffleLevels(PYTH);
 INV_LIST.push(PYTH);
 INV_API.pyth={pyTriples,pyQuads,pyIsBrick,PY_FIND,PY_QUAD,PY_EUC,PY_BRICK};
 /* ===/JS:pyth=== */
+/* ===JS:happy=== */
+function hapSum(n){let s=0;while(n>0){const d=n%10;s+=d*d;n=(n-d)/10;}return s;}
+function hapChain(n){const c=[n],seen=new Set([n]);let loop=false;while(n!==1){n=hapSum(n);c.push(n);if(seen.has(n)){loop=true;break;}seen.add(n);}return {c,loop};}
+function hapIs(n){return !hapChain(n).loop;}
+function hapSteps(n){return hapChain(n).c.length-1;}
+function hapList(lo,hi){const r=[];for(let i=lo;i<=hi;i++)if(hapIs(i))r.push(i);return r;}
+function hapHtml(n){
+  const {c,loop}=hapChain(n);
+  const sq=x=>String(x).split('').map(d=>d+'²').join(' + ');
+  let h='';
+  for(let i=0;i<c.length-1;i++){
+    const last=i===c.length-2;
+    h+=`<span class="hs">${c[i]}: ${sq(c[i])} = <b>${c[i+1]}</b>${last&&!loop?' <span class="ok">✔ reached 1: happy!</span>':''}${last&&loop?` <span class="lp">↻ ${c[c.length-1]} has appeared before: stuck in a loop, so not happy</span>`:''}</span>`;
+  }
+  if(c.length===1)h='<span class="hs"><span class="ok">1 is already 1: happy!</span></span>';
+  return h;
+}
+function hapMaths(){return `<p><strong>The rule.</strong> Take a number, square each of its digits and add the squares to get a new number. Repeat. For 19: 1² + 9² = 82, then 8² + 2² = 68, then 6² + 8² = 100, then 1² + 0² + 0² = 1. We reached 1, so 19 is <strong>happy</strong>, and so is every number in its chain: 82, 68 and 100.</p>
+<p><strong>What happens to the others?</strong> Every number either reaches 1 or falls into the same loop: <strong>4 → 16 → 37 → 58 → 89 → 145 → 42 → 20 → 4</strong>. Such numbers are sometimes called <strong>unhappy</strong> (or sad). Nothing else can happen. Here is why: a 3-digit number is at most 999, but its digit squares add up to at most 3 × 81 = 243, so the number goes down. Bigger numbers are squashed even harder, so every chain ends up below 243, and checking all of those by computer shows each goes to 1 or the loop.</p>
+<p><strong>Patterns to look for.</strong></p>
+<ul><li>The order of the digits doesn’t matter, and neither do zeros. So 13, 31, 103, 130 and 310 are all happy together, and so are 7, 70 and 700.</li>
+<li>There are <strong>20</strong> happy numbers up to 100: 1, 7, 10, 13, 19, 23, 28, 31, 32, 44, 49, 68, 70, 79, 82, 86, 91, 94, 97, 100. Up to 1000 there are 143, about 1 in 7.</li>
+<li>Pairs of consecutive happy numbers exist, such as 31 and 32, and there is even a run of three: 1880, 1881 and 1882. It is known that there are arbitrarily long runs of consecutive happy numbers.</li>
+<li>Some happy numbers are also prime: 7, 13, 19, 23, 31, 79 and 97.</li></ul>
+<p>You can try the same idea with cubes or other powers, and in other bases. The chains and loops you meet are different, and more varied.</p>`;}
+function happyLevel(mode,cfg){
+  const def={custom:true,
+    brief:mode==='sort'?'Square the digits of a number and add them. Keep going. If you reach <strong>1</strong>, the number is <strong>happy</strong>. If you end up in a loop, it is not. <strong>Tap the happy numbers</strong>, then press Check.'
+      :mode==='explore'?'Choose a number with + and −. The chain of “square the digits and add” is worked out for you. Does it reach 1 (a happy number), or loop forever? The happy numbers you land on are collected below. How many can you find?'
+      :mode==='find'?`Find <strong>every happy number from ${cfg.lo} to ${cfg.hi}</strong>. There are <strong>${cfg.sol.length}</strong>. Choose a number, then press Add. Not sure? The chain will tell you.`
+      :`${cfg.text} Choose a number, then press Check.`,
+    get maths(){return hapMaths();},
+    mount(stage,S){
+      let n=cfg.start||19,found=[],solved=false,demoing=false,tok=0,tick=null,hintN=0,sel=new Set(),init=true;
+      const lo=mode==='find'?cfg.lo:1,hi=mode==='find'?cfg.hi:999;
+      const chain=el('div',{class:'hpChain'}),big=el('div',{class:'hpBig'}),fbox=el('div',{class:'pyFound'}),nums=el('div',{class:'hpNums'}),res=el('div',{class:'hpRes'}),inputs=el('div',{class:'pcInputs'});
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      const clamp=(v)=>Math.max(lo,Math.min(hi,v));
+      const nb=el('b',null,String(n));
+      const lock=()=>demoing||solved;
+      const mv=d=>{if(lock())return;n=clamp(n+d);draw();};
+      if(mode!=='sort'){
+        inputs.append(el('div',{class:'stStep'},stp('−10',()=>mv(-10),'Ten less'),stp('−',()=>mv(-1),'One less'),nb,stp('+',()=>mv(1),'One more'),stp('+10',()=>mv(10),'Ten more')));
+        if(mode==='target'||mode==='explore')inputs.append(el('div',{class:'stStep'},stp('−100',()=>mv(-100),'Hundred less'),stp('+100',()=>mv(100),'Hundred more')));
+        if(mode==='find')inputs.append(el('button',{class:'btn primary',onclick:()=>add()},'Add'));
+        if(mode==='target')inputs.append(el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      } else {
+        cfg.set.forEach((v,i)=>nums.append(el('button',{onclick:()=>{if(lock())return;sel.has(i)?sel.delete(i):sel.add(i);draw();}},String(v))));
+        inputs.append(el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      }
+      stage.append(mode==='sort'?el('div',null,nums,res):el('div',null,big,el('div',{style:'text-align:center'},chain),fbox),inputs);
+      function draw(){
+        if(mode==='sort'){
+          [...nums.children].forEach((b,i)=>{b.className=(sel.has(i)?'on ':'')+(solved?(hapIs(cfg.set[i])?'ok':'no'):'');});
+          res.replaceChildren(...(solved?cfg.set.map(v=>el('div',{html:`<b>${v}</b> → ${hapChain(v).c.slice(1).join(' → ')}${hapChain(v).loop?' ↻':' ✔'}`})):[]));
+          [...res.children].forEach((d,i)=>{d.innerHTML=`<b>${cfg.set[i]}</b> → ${hapChain(cfg.set[i]).c.slice(1).join(' → ')}${hapChain(cfg.set[i]).loop?' ↻ loop':' ✔ happy'}`;});
+        } else {
+          nb.textContent=n;big.textContent=n;chain.innerHTML=hapHtml(n);
+          if(mode==='explore'&&hapIs(n)&&!found.includes(n)){found.push(n);found.sort((a,b)=>a-b);}
+          fbox.replaceChildren(...found.map(f=>el('span',null,String(f))));
+        }
+        if(!init)S.refresh();
+      }
+      function add(){
+        if(lock())return;
+        if(!hapIs(n)){S.say(`${n} is not happy: its chain falls into the 4, 16, 37, 58, 89, 145, 42, 20 loop.`,'bad');return;}
+        if(found.includes(n)){S.say(`You have ${n} already.`,'info');return;}
+        found.push(n);found.sort((a,b)=>a-b);draw();
+        if(found.length===cfg.sol.length){solved=true;draw();S.win(`🎉 All ${cfg.sol.length} found. Did you notice that if 13 is happy then so is 31, as the order of the digits doesn’t matter?`);}
+        else S.say(`✔ ${n} is happy. ${found.length} of ${cfg.sol.length} found.`,'good');
+      }
+      function check(){
+        if(lock())return;
+        if(mode==='sort'){
+          const want=cfg.set.map((v,i)=>hapIs(v)?i:-1).filter(i=>i>=0),ok=want.length===sel.size&&want.every(i=>sel.has(i));
+          if(ok){solved=true;draw();S.win('🎉 Correct. The chains are shown. Each unhappy number ends up in the loop 4, 16, 37, 58, 89, 145, 42, 20.');}
+          else S.say(`Not quite. ${[...sel].filter(i=>!hapIs(cfg.set[i])).length+want.filter(i=>!sel.has(i)).length} of the numbers are wrong. Work out the chains with pencil and paper.`,'bad');
+        } else {
+          if(cfg.test(n)){solved=true;draw();S.win(`🎉 ${n} works: ${hapChain(n).c.join(' → ')}.`);}
+          else S.say(`${n} doesn’t fit: ${hapChain(n).c.join(' → ')}${hapChain(n).loop?' (loop)':''}. ${cfg.miss}`,'bad');
+        }
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        solved=false;found=[];sel=new Set();hintN=0;n=clamp(cfg.start||(mode==='find'?cfg.lo:19));
+        S.say('');draw();
+      }
+      function hint(){
+        if(lock())return;
+        const H={sort:['💡 Do each chain one step at a time. Stop when you reach 1, or when you see a number you have had before.','💡 Numbers that reach 4, 16, 37, 58, 89, 145, 42 or 20 are in the unhappy loop.'],
+          explore:['💡 Try 7, 10, 13 and 19. Then try swapping the digits of 13.','💡 Adding a zero on the end (like 70) makes no difference to the chain.'],
+          find:['💡 Start with 1, 7 and 10. Then try numbers whose digit squares add to a happy number you already know.','💡 If a number is happy, swapping its digits (13 and 31) gives another happy number.'],
+          target:[cfg.hint1,cfg.hint2]}[mode];
+        S.say(H[Math.min(hintN,1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        if(mode==='sort'){cfg.set.forEach((v,i)=>{if(hapIs(v))sel.add(i);});solved=true;demoing=false;draw();S.say('The happy numbers are highlighted, with their chains. Press Reset to try again.','info');S.revealMaths();S.refresh();return;}
+        let seq=mode==='explore'?[7,19,4,85,13,31]:mode==='find'?cfg.sol:[cfg.sol];
+        let k=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(k>=seq.length){clearInterval(tick);tick=null;demoing=false;if(mode!=='explore')solved=true;S.say(mode==='explore'?'Press Reset to start again.':'Press Reset to try it yourself.','info');S.revealMaths();draw();S.refresh();return;}
+          n=seq[k++];
+          if(mode==='find'&&!found.includes(n))found.push(n);
+          draw();
+        },mode==='find'?1000:1600);
+        S.say('Watch.','info');
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='find'?`Found: ${found.length} of ${cfg.sol.length}`:mode==='explore'?`Happy numbers found: ${found.length}`:''})};
+    }};
+  return def;
+}
+const HAP_SETS=[[13,14,19,25,28,32,37,41],[7,15,23,44,49,52,68,73],[31,45,58,70,79,85,89,94],[97,98,100,103,109,111,129,130]].map(set=>({set}));
+const HAP_FIND=[[1,30],[1,50],[51,100],[1,100]].map(([lo,hi])=>({lo,hi,sol:hapList(lo,hi)}));
+const hapFirst=t=>{for(let i=1;i<=999;i++)if(t(i))return i;return null;};
+const HAP_TARGETS=[
+  {text:'Find a happy number that reaches 1 in <strong>exactly 3 steps</strong>.',test:v=>hapIs(v)&&hapSteps(v)===3,miss:'It must reach 1 in exactly 3 steps.',hint1:'💡 Work backwards: which numbers go straight to 1? 10, 100 and 1000. Which go to 10?',hint2:'💡 Try 13 and 23. How many steps does each take?'},
+  {text:'Find a happy number that needs <strong>exactly 5 steps</strong> to reach 1.',test:v=>hapIs(v)&&hapSteps(v)===5,miss:'It must reach 1 in exactly 5 steps.',hint1:'💡 Longer chains tend to start with bigger numbers. Try three-digit numbers.',hint2:'💡 Try numbers in the high 100s and the 200s.'},
+  {text:'Find a <strong>palindromic</strong> happy number bigger than 10 (it reads the same both ways).',test:v=>v>10&&hapIs(v)&&String(v)===String(v).split('').reverse().join(''),miss:'It must be a palindrome, bigger than 10, and happy.',hint1:'💡 Try two-digit palindromes like 11, 22, 33 and 44, then three-digit ones.',hint2:'💡 Two of the two-digit palindromes are not happy; try 44.'},
+  {text:'Find a <strong>three-digit</strong> happy number all of whose digits are different and none is zero.',test:v=>v>=100&&hapIs(v)&&!String(v).includes('0')&&new Set(String(v)).size===3,miss:'It must be happy, with three different non-zero digits.',hint1:'💡 Take a happy two-digit number like 13 and add a different digit.',hint2:'💡 Try 123, 132 and so on. The order of the digits doesn’t matter for happiness.'}
+].map(t=>{t.sol=hapFirst(t.test);return t;}).filter(t=>t.sol);
+const HAPPY={id:'happy-numbers',icon:'😊',title:'Happy Numbers',blurb:'Square the digits and add them, again and again. Do you reach 1? How many happy numbers can you find?',
+  levels:[
+    {name:'Happy or not?',count:HAP_SETS.length,make:p=>happyLevel('sort',HAP_SETS[p])},
+    {name:'Explore',make:()=>happyLevel('explore',{})},
+    {name:'Find them all',count:HAP_FIND.length,make:p=>happyLevel('find',HAP_FIND[p])},
+    {name:'Which number?',count:HAP_TARGETS.length,make:p=>happyLevel('target',HAP_TARGETS[p])}
+  ]};
+shuffleLevels(HAPPY);
+INV_LIST.push(HAPPY);
+INV_API.happy={hapIs,hapChain,hapList,HAP_SETS,HAP_FIND,HAP_TARGETS};
+/* ===/JS:happy=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -5348,7 +5498,8 @@ const GROUPS=[
     CTILES,
     GOLOMB,
     PAINTED,
-    PYTH]}
+    PYTH,
+    HAPPY]}
 ];
 
 /* ---------- home ---------- */
