@@ -1222,8 +1222,8 @@ function matchLevel(eq,moveCount){
         svg.classList.toggle('carrying',sel!==null);
       }
       return {
-        update(s){sel=null;hintMove=null;if(goalBox)goalBox.style.display='none';paint(s);},
-        highlight(m){hintMove=m;if(goalBox)goalBox.style.display='';paint(S.state);}
+        update(s){sel=null;hintMove=null;paint(s);},
+        highlight(m){hintMove=m;paint(S.state);}
       };
     }
   };
