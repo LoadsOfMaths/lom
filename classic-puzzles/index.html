@@ -553,6 +553,31 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .kpFound{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
 .kpFound span{background:#1b3a5c;border:1px solid var(--line);border-radius:10px;padding:3px 10px;font-weight:700}
 /* ===/CSS:kaprekar=== */
+/* ===CSS:lockers=== */
+.lkGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:560px;margin:8px auto}
+.lkGrid button{font:inherit;font-weight:800;border-radius:8px;border:2px solid var(--line);background:#16283f;color:#9fb3c8;padding:0;min-height:40px;font-size:clamp(.7rem,2.2vw,1.05rem);cursor:default}
+.lkGrid button.tap{cursor:pointer}
+.lkGrid button.open{background:#2f8f5b;color:#fff;border-color:#5ed08a}
+.lkGrid button.tg{box-shadow:0 0 0 3px #ffb84a}
+.lkGrid button.sel{border-color:#ffb84a;background:#4a3d1c;color:#ffd98a}
+.lkGrid button.sel.open{background:#2f8f5b}
+.lkGrid button.bad{border-color:#e8604f}
+/* ===/CSS:lockers=== */
+/* ===CSS:winner=== */
+.pwSvg{display:block;width:100%;max-width:420px;margin:6px auto}
+.pwSvg .p{fill:#7fb1e3;stroke:#0e2339;stroke-width:2;cursor:pointer}
+.pwSvg .p.out{fill:#33465c;stroke:#22344a}
+.pwSvg .p.win{fill:#ffb84a}
+.pwSvg .p.sel{stroke:#fff;stroke-width:4}
+.pwSvg .p.cnt{fill:#f2d95c}
+.pwSvg text{text-anchor:middle;dominant-baseline:middle;font-weight:800;fill:#0e2339;pointer-events:none}
+.pwSvg .p.out+text{fill:#8aa0b8}
+.pwTbl{overflow-x:auto;text-align:center}
+.pwTbl table{margin:6px auto;border-collapse:collapse}
+.pwTbl td,.pwTbl th{border:1px solid var(--line);padding:3px 8px;text-align:center;min-width:2em}
+.pwTbl th{background:#1b3a5c}
+.pwSvg text.ord{fill:#9fb3c8;font-weight:700}
+/* ===/CSS:winner=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -6058,6 +6083,254 @@ shuffleLevels(KAPREKAR);
 INV_LIST.push(KAPREKAR);
 INV_API.kap={kpStep,kpChain,kpSteps,KP_START,KP_TARGETS,kpBig,kpSmall};
 /* ===/JS:kaprekar=== */
+/* ===JS:lockers=== */
+function lkOpen(N,upTo){const o=Array(N+1).fill(false);for(let p=1;p<=(upTo===undefined?N:upTo);p++)for(let i=p;i<=N;i+=p)o[i]=!o[i];return o;}
+function lkOpenList(N){const o=lkOpen(N),r=[];for(let i=1;i<=N;i++)if(o[i])r.push(i);return r;}
+function lkDivs(k){const d=[];for(let i=1;i<=k;i++)if(k%i===0)d.push(i);return d;}
+function lkMaths(){return `<p><strong>The set-up.</strong> A corridor has lockers numbered 1 to <em>N</em>, all shut. Pass 1: change every locker (open if shut, shut if open). Pass 2: change every 2nd locker. Pass 3: every 3rd locker, and so on until pass <em>N</em>, which changes only the last locker. Which lockers are open at the end?</p>
+<p><strong>The answer: the square numbers.</strong> With 100 lockers, exactly 10 are left open: 1, 4, 9, 16, 25, 36, 49, 64, 81 and 100.</p>
+<p><strong>Why?</strong> Locker <em>k</em> is changed once on every pass that is a <strong>factor</strong> of <em>k</em>. Locker 12 is changed on passes 1, 2, 3, 4, 6 and 12: six changes, an even number, so it ends up shut again. A locker ends up open only if it is changed an <em>odd</em> number of times, so it must have an odd number of factors.</p>
+<p>Factors normally come in <strong>pairs</strong> that multiply to <em>k</em>: for 12, (1, 12), (2, 6) and (3, 4). A pair means two changes, so the total is even. The exception is when a factor pairs with itself: in 36 the pair (6, 6) is only one factor. That only happens when <em>k</em> is a <strong>square number</strong>, so only square numbers have an odd number of factors.</p>
+<p><strong>Counting.</strong> The number of open lockers is the number of squares up to <em>N</em>, which is the whole-number part of √<em>N</em>. With 1000 lockers that is 31 (since 31<sup>2</sup> = 961 and 32<sup>2</sup> = 1024).</p>
+<p>You can use the same idea to count factors: the number of factors of a number is found from its prime factorisation. If <em>k</em> = 2<sup>a</sup> × 3<sup>b</sup> × … the number of factors is (a + 1)(b + 1)…, which is odd exactly when every power is even.</p>`;}
+function lockerLevel(mode,cfg){
+  const N=cfg.N||100;
+  const def={custom:true,
+    brief:mode==='run'?`${N} lockers are all shut. Pass 1 changes every locker. Pass 2 changes every 2nd locker, pass 3 every 3rd, and so on up to pass ${N}. Press <strong>Next pass</strong> to do each pass. Which lockers are open at the end? What do you notice?`
+      :mode==='predict'?`${N} lockers are all shut. On pass 1 every locker is changed, on pass 2 every 2nd locker, on pass 3 every 3rd, and so on up to pass ${N}. <strong>Tap the lockers that you think will be open at the end</strong>, then press Check.`
+      :mode==='one'?`Choose a locker with + and −. See which passes change it and how it ends up. Which lockers finish open? Collect them. Can you see why?`
+      :cfg.q,
+    get maths(){return lkMaths();},
+    mount(stage,S){
+      let p=0,open=[],sel=new Set(),k=cfg.k||1,found=[],solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true,hist=[];
+      const grid=el('div',{class:'lkGrid'}),info=el('div',{class:'hsInfo',style:'text-align:center'}),row=el('div',{class:'invRow'});
+      const inp=el('input',{type:'text',inputmode:'numeric',class:'invIn','aria-label':'Your answer',autocomplete:'off'});
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+      const nb=el('b',null,String(k));
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      if(mode==='run')row.append(el('button',{class:'btn primary',onclick:()=>nextPass()},'Next pass ▶'),el('button',{class:'btn',onclick:()=>runAll()},'Run all passes'));
+      if(mode==='predict')row.append(el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      if(mode==='one')row.append(el('div',{class:'stStep'},stp('−10',()=>mv(-10),'Ten less'),stp('−',()=>mv(-1),'One less'),nb,stp('+',()=>mv(1),'One more'),stp('+10',()=>mv(10),'Ten more')));
+      if(mode==='big')row.append(inp,el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      stage.append(mode==='big'?el('div'):info,mode==='big'?el('div'):grid,row);
+      const lock=()=>demoing||solved;
+      function mv(d){if(lock())return;k=Math.max(1,Math.min(100,k+d));draw();}
+      function draw(){
+        if(mode==='big'){if(!init)S.refresh();return;}
+        grid.replaceChildren();
+        const dv=mode==='one'?lkDivs(k):[];
+        for(let i=1;i<=N;i++){
+          let cls='';let isOpen;
+          if(mode==='run')isOpen=open[i];else if(mode==='one'){isOpen=lkOpen(N)[i];}else isOpen=solved&&lkOpen(N)[i];
+          if(isOpen)cls+=' open';
+          if(mode==='run'&&p>0&&i%p===0)cls+=' tg';
+          if(mode==='predict'&&sel.has(i)&&!solved)cls+=' sel';
+          if(mode==='predict'&&solved&&sel.has(i)!==lkOpen(N)[i])cls+=' bad';
+          if(mode==='one'&&i===k)cls+=' tg';
+          const b=el('button',{class:cls+(mode==='predict'?' tap':'')+(mode==='one'?' tap':''),onclick:()=>{if(mode==='predict'&&!lock()){sel.has(i)?sel.delete(i):sel.add(i);draw();}if(mode==='one'&&!lock()){k=i;draw();}},'aria-label':'Locker '+i},String(i));
+          grid.append(b);
+        }
+        if(mode==='run')info.innerHTML=p===0?'All the lockers are shut. Press Next pass.':`Pass ${p} of ${N}: every ${p===1?'':p+(p===2?'nd':p===3?'rd':'th')+' '}locker was changed${p===1?'':' (outlined)'}. <strong>${open.filter(Boolean).length}</strong> open.`;
+        if(mode==='predict')info.innerHTML=`Chosen: <strong>${sel.size}</strong>`;
+        if(mode==='one'){
+          const dv2=lkDivs(k),isO=dv2.length%2===1;nb.textContent=k;
+          info.innerHTML=`Locker <strong>${k}</strong> is changed on passes ${dv2.join(', ')}: <strong>${dv2.length}</strong> time${dv2.length===1?'':'s'}. It ends up <strong>${isO?'OPEN':'shut'}</strong>.<br><span style="color:var(--mute)">Open lockers found so far: ${found.length?found.join(', '):'none'}</span>`;
+          if(isO&&!found.includes(k)){found.push(k);found.sort((a,b)=>a-b);}
+        }
+        if(!init)S.refresh();
+      }
+      function snap(){hist.push(JSON.stringify({p,open}));}
+      function nextPass(){
+        if(demoing||p>=N)return;
+        snap();p++;for(let i=p;i<=N;i+=p)open[i]=!open[i];S.say('');draw();
+        if(p===N){solved=true;const l=lkOpenList(N);S.win(`🎉 All ${N} passes done. ${l.length} lockers are open: ${l.join(', ')}. Why those numbers?`);draw();}
+      }
+      function runAll(){
+        if(demoing||p>=N)return;demoing=true;const my=++tok;S.refresh();
+        tick=setInterval(()=>{if(my!==tok){clearInterval(tick);return;}demoing=false;if(p>=N){clearInterval(tick);tick=null;return;}nextPass();demoing=true;if(p>=N){clearInterval(tick);tick=null;demoing=false;S.refresh();}},N>20?250:500);
+      }
+      function check(){
+        if(lock())return;
+        if(mode==='predict'){
+          const truth=lkOpen(N);let wrong=0;for(let i=1;i<=N;i++)if(sel.has(i)!==truth[i])wrong++;
+          if(!wrong){solved=true;draw();S.win(`🎉 Yes! The open lockers are ${lkOpenList(N).join(', ')}: all the square numbers up to ${N}.`);}
+          else S.say(`Not quite: ${wrong} locker${wrong>1?'s are':' is'} wrong. Try some small cases first.`,'bad');
+        }
+        if(mode==='big'){
+          const v=parseInt(inp.value.replace(/[, ]/g,''),10);if(isNaN(v)){S.say('Type a whole number.','bad');return;}
+          if(v===cfg.ans){solved=true;S.win(`🎉 ${cfg.ans}. ${cfg.why}`);draw();}
+          else S.say(cfg.miss,'bad');
+        }
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}solved=false;hintN=0;p=0;open=Array(N+1).fill(false);sel=new Set();hist=[];found=[];k=cfg.k||1;inp.value='';S.say('');draw();}
+      function undo(){if(demoing||!hist.length||mode!=='run')return;solved=false;const o=JSON.parse(hist.pop());p=o.p;open=o.open;S.say('');draw();}
+      function hint(){
+        if(lock())return;
+        const H={run:['💡 Watch locker 6. Which passes change it?','💡 Look at which lockers are open at the end: is there a pattern in their numbers?'],
+          predict:['💡 Try a smaller number of lockers, like 10 or 20, and see which are open at the end.','💡 The open lockers are 1, 4, 9, 16 … What kind of numbers are they?'],
+          one:['💡 Try lockers 12, 16, 30 and 36. Which ones finish open?','💡 Look at how many times each locker is changed. When is that odd?'],
+          big:[cfg.h1,cfg.h2]}[mode];
+        S.say(H[Math.min(hintN,1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();
+        if(mode==='run'){S.say('Watch every pass.','info');runAll();return;}
+        if(mode==='predict'){lkOpenList(N).forEach(i=>sel.add(i));solved=true;draw();S.say(`The open lockers are the squares: ${lkOpenList(N).join(', ')}. Press Reset to try it yourself.`,'info');S.revealMaths();S.refresh();return;}
+        if(mode==='one'){demoing=true;const my=++tok;S.refresh();const seq=[6,12,16,25,30,36];let q=0;tick=setInterval(()=>{if(my!==tok){clearInterval(tick);return;}if(q>=seq.length){clearInterval(tick);tick=null;demoing=false;S.say('The ones that finish open are 16, 25 and 36: squares. Press Reset to start again.','info');S.revealMaths();S.refresh();return;}k=seq[q++];draw();},1700);return;}
+        inp.value=String(cfg.ans);solved=true;S.say(cfg.why,'info');S.revealMaths();S.refresh();
+      }
+      reset();init=false;
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:!demoing&&hist.length>0&&mode==='run',reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='run'?`Pass ${p} of ${N}`:mode==='one'?`Open lockers found: ${found.length}`:''})};
+    }};
+  return def;
+}
+const LK_RUN=[10,20,30].map(N=>({N}));
+const LK_PRED=[30,50,100].map(N=>({N}));
+const LK_BIG=[
+  {N:200,q:'There are <strong>200 lockers</strong>, and the passes go all the way to pass 200. <strong>How many lockers are open at the end?</strong> Type your answer and press Check.',ans:14,why:'The squares up to 200 are 1, 4, …, 196 = 14².',miss:'Not quite. Which numbers have an odd number of factors, and how many of them are there up to 200?',h1:'💡 Only some special numbers are left open. How many of them are there up to 200?',h2:'💡 14 × 14 = 196, and 15 × 15 = 225.'},
+  {N:1000,q:'There are <strong>1000 lockers</strong>, with passes up to 1000. <strong>How many lockers are open at the end?</strong> Type your answer and press Check.',ans:31,why:'31² = 961 is the last square up to 1000, so there are 31 squares.',miss:'Not quite. Count the square numbers up to 1000.',h1:'💡 The open ones are the squares. What is the biggest whole number whose square is at most 1000?',h2:'💡 30 × 30 = 900 and 32 × 32 = 1024.'},
+  {N:1000,q:'There are <strong>1000 lockers</strong>, with passes up to 1000. <strong>What is the number of the highest locker that is open at the end?</strong> Type your answer and press Check.',ans:961,why:'The last square number up to 1000 is 31² = 961.',miss:'Not quite. It is the biggest square number that is at most 1000.',h1:'💡 Square numbers end up open. Which is the biggest one below 1000?',h2:'💡 31 × 31 = 961.'},
+  {N:500,q:'There are <strong>500 lockers</strong> and 500 passes. <strong>How many lockers are shut at the end?</strong> Type your answer and press Check.',ans:478,why:'22 lockers are open (22² = 484), so 500 − 22 = 478 are shut.',miss:'Not quite. First find how many are open, then subtract from 500.',h1:'💡 First count how many square numbers there are up to 500.',h2:'💡 22 × 22 = 484 and 23 × 23 = 529.'}
+];
+const LOCKERS={id:'lockers',icon:'🚪',title:'Lockers',blurb:'Every locker is shut. Change every locker, then every 2nd, then every 3rd… Which ones end up open?',
+  levels:[
+    {name:'Do the passes',count:LK_RUN.length,make:p=>lockerLevel('run',LK_RUN[p])},
+    {name:'Predict the open ones',count:LK_PRED.length,make:p=>lockerLevel('predict',LK_PRED[p])},
+    {name:'Look at one locker',make:()=>lockerLevel('one',{N:100})},
+    {name:'Big numbers',count:LK_BIG.length,make:p=>lockerLevel('big',LK_BIG[p])}
+  ]};
+shuffleLevels(LOCKERS);
+INV_LIST.push(LOCKERS);
+INV_API.lockers={lkOpen,lkOpenList,lkDivs,LK_BIG};
+/* ===/JS:lockers=== */
+/* ===JS:winner=== */
+function pwOrder(n,k){
+  const q=Array.from({length:n},(_,i)=>i+1),out=[];let idx=0;
+  while(q.length>1){idx=(idx+k-1)%q.length;out.push(q.splice(idx,1)[0]);if(idx>=q.length)idx=0;}
+  return {out,win:q[0]};
+}
+function pwWin(n,k){return pwOrder(n,k||2).win;}
+function pwFormula(n){let m=1;while(m*2<=n)m*=2;return 2*(n-m)+1;}
+function pwRing(host,n,st){
+  const ns='http://www.w3.org/2000/svg',mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const x in a)e.setAttribute(x,a[x]);return e;};
+  const R=150,C=200,r=Math.max(4,Math.min(22,Math.PI*R/n*0.8));
+  const svg=mk('svg',{viewBox:'0 0 400 400',class:'pwSvg'});
+  for(let i=1;i<=n;i++){
+    const a=-Math.PI/2+2*Math.PI*(i-1)/n,x=C+R*Math.cos(a),y=C+R*Math.sin(a);
+    let cls='p';if(st.out&&st.out[i])cls+=' out';if(st.win===i)cls+=' win';if(st.sel===i)cls+=' sel';if(st.cnt===i)cls+=' cnt';
+    const c=mk('circle',{cx:x,cy:y,r,class:cls});
+    if(st.tap)c.addEventListener('click',()=>st.tap(i));
+    svg.append(c);
+    if(r>=9){const t=mk('text',{x,y,'font-size':Math.min(15,r*0.85)});t.textContent=i;svg.append(t);
+      if(st.showOrder&&st.out&&st.out[i]&&r>=12){const ox=C+(R+r+14)*Math.cos(a),oy=C+(R+r+14)*Math.sin(a),t2=mk('text',{x:ox,y:oy,'font-size':11,class:'ord'});t2.textContent='#'+st.out[i];svg.append(t2);}}
+  }
+  host.replaceChildren(svg);
+}
+function pwMaths(){return `<p><strong>The game.</strong> <em>n</em> people stand in a circle, numbered 1 to <em>n</em>. Count 1, 2 round the circle: person 1 stays and person 2 sits down. Carry on from person 3: 3 stays, 4 sits down, and so on, going round and round (people who have sat down are skipped). The last person standing is the winner. Where should you stand to win?</p>
+<p><strong>The results.</strong> For <em>n</em> = 1, 2, 3, 4, 5, 6, 7, 8, 9, … the winning seats are 1, 1, 3, 1, 3, 5, 7, 1, 3, … The winning seat is always an odd number, and it goes back to 1 every time <em>n</em> reaches a power of 2 (<em>n</em> = 1, 2, 4, 8, 16, 32, …).</p>
+<p><strong>The rule.</strong> Write <em>n</em> = 2<sup><em>m</em></sup> + <em>L</em>, where 2<sup><em>m</em></sup> is the biggest power of 2 that is not more than <em>n</em>. Then the winner is at seat <strong>2<em>L</em> + 1</strong>. For <em>n</em> = 100: 100 = 64 + 36, so the winner is at seat 2 × 36 + 1 = 73. For <em>n</em> = 64: <em>L</em> = 0, so seat 1.</p>
+<p><strong>Why?</strong> If <em>n</em> is a power of 2, the first trip round the circle removes all the even-numbered people and leaves a circle of half the size starting again at person 1. This keeps happening, so person 1 is always still there at the end. For any other <em>n</em>, after the first <em>L</em> people have sat down you are left with exactly a power of 2 people, and the next one to be counted is seat 2<em>L</em> + 1, who is therefore the winner.</p>
+<p><strong>Another way to see it.</strong> Write the winner’s seat number in binary and compare it to <em>n</em> in binary: the answer is found by taking the leading 1 of <em>n</em> and moving it to the end. For example 100 = 1100100 in binary becomes 1001001 = 73.</p>
+<p><strong>Counting by 3.</strong> If every <em>third</em> person sits down there is no tidy formula like this. The pattern is much harder to find.</p>
+<p>The puzzle goes back to the Jewish-Roman historian Josephus, who is said to have found a place in a similar circle of 41 people. Here we are only picking a winner.</p>`;}
+function winnerLevel(mode,cfg){
+  const def={custom:true,
+    brief:mode==='play'?`${cfg.n} people stand in a circle. Count round: <strong>1 stays, 2 sits down, 3 stays, 4 sits down…</strong> Keep going round and round, skipping people who have sat down. The last person standing wins. <strong>Tap the seat you think will win</strong>, then press Start.`
+      :mode==='explore'?`${cfg.k===3?'This time <strong>every third person sits down</strong> (1 and 2 stay, 3 sits down).':'<strong>Every second person sits down</strong> (1 stays, 2 sits down, 3 stays…).'} Choose the number of people with + and −. The last person standing is the winner. Where is the winner? Collect the results in the table.`
+      :`The table shows the winning seat for 1 to 16 people. Use the pattern to <strong>find the winning seat when there are ${cfg.n} people</strong>. Type your answer and press Check.`,
+    get maths(){return pwMaths();},
+    mount(stage,S){
+      let n=cfg.n||1,k=cfg.k||2,sel=0,solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true,log=[],cnt=0,outNow={};
+      const ring=el('div'),tbl=el('div',{class:'pwTbl'}),row=el('div',{class:'invRow'}),info=el('div',{class:'hsInfo',style:'text-align:center'});
+      const inp=el('input',{type:'text',inputmode:'numeric',class:'invIn','aria-label':'Your answer',autocomplete:'off'});
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+      const nb=el('b',null,String(n));
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      if(mode==='play')row.append(el('button',{class:'btn primary',onclick:()=>start()},'▶ Start'));
+      if(mode==='explore')row.append(el('div',{class:'stStep'},stp('−',()=>mv(-1),'Fewer'),nb,stp('+',()=>mv(1),'More'),stp('+5',()=>mv(5),'Five more')),el('button',{class:'btn',onclick:()=>watch()},'▶ Watch'));
+      if(mode==='predict')row.append(inp,el('button',{class:'btn primary',onclick:()=>check()},'Check'));
+      stage.append(info,ring,row,tbl);
+      const lock=()=>demoing||solved;
+      function mv(d){if(lock())return;n=Math.max(1,Math.min(41,n+d));draw();}
+      function draw(){
+        if(mode==='play'){pwRing(ring,n,{out:outNow,sel,cnt,tap:i=>{if(lock())return;sel=i;draw();},win:solved?sel:0});info.textContent=demoing?`Seats are sitting down… ${Object.keys(outNow).length} of ${n-1}`:(sel?`You chose seat ${sel}.`:'Tap a seat.');}
+        if(mode==='explore'){
+          const o=pwOrder(n,k),out={};o.out.forEach((p,i)=>out[p]=i+1);
+          if(demoing&&outNow.__w===undefined){}
+          const st=demoing?{out:outNow,cnt}:{out,win:o.win,showOrder:true};
+          pwRing(ring,n,st);nb.textContent=n;
+          if(!demoing){info.innerHTML=`<strong>${n}</strong> ${n===1?'person':'people'}: the winner is seat <strong>${o.win}</strong>. (The small # labels show the order in which people sat down.)`;
+            if(!log.some(x=>x[0]===n))log.push([n,o.win]);log.sort((a,b)=>a[0]-b[0]);
+            tbl.innerHTML='<table><tr><th>People</th>'+log.map(x=>`<td>${x[0]}</td>`).join('')+'</tr><tr><th>Winner</th>'+log.map(x=>`<td><b>${x[1]}</b></td>`).join('')+'</tr></table>';}
+        }
+        if(mode==='predict'){
+          const hdr=Array.from({length:16},(_,i)=>i+1);
+          tbl.innerHTML='<table><tr><th>People</th>'+hdr.map(i=>`<td>${i}</td>`).join('')+'</tr><tr><th>Winner</th>'+hdr.map(i=>`<td><b>${pwWin(i)}</b></td>`).join('')+'</tr></table>';
+          pwRing(ring,Math.min(cfg.n,64),{out:{},win:solved?pwWin(cfg.n):0});
+          info.textContent='Every second person sits down. Where does the winner stand?';
+        }
+        if(!init)S.refresh();
+      }
+      function animate(nn,kk,after){
+        const o=pwOrder(nn,kk);outNow={};let i=0;demoing=true;const my=++tok;S.refresh();
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(i>=o.out.length){clearInterval(tick);tick=null;demoing=false;after(o);return;}
+          const p=o.out[i];i++;outNow[p]=i;cnt=p;draw();
+        },nn>16?250:650);
+      }
+      function start(){
+        if(lock())return;
+        if(!sel){S.say('Tap the seat you think will win first.','bad');return;}
+        outNow={};
+        animate(n,2,o=>{
+          if(o.win===sel){solved=true;S.win(`🎉 Seat ${o.win} is the last one standing! You chose well.`);draw();}
+          else{S.say(`Seat ${o.win} won. You chose seat ${sel}, which sat down. Try another seat.`,'bad');sel=0;outNow={};draw();}
+        });
+      }
+      function watch(){if(lock())return;animate(n,k,o=>{draw();S.say(`Seat ${o.win} is the winner.`,'info');});}
+      function check(){
+        if(lock())return;
+        const v=parseInt(inp.value,10);if(isNaN(v)){S.say('Type a seat number.','bad');return;}
+        const w=pwWin(cfg.n);
+        if(v===w){solved=true;draw();S.win(`🎉 Seat ${w}. ${cfg.n} = ${cfg.n-(w-1)/2} + ${(w-1)/2}, so the winner is 2 × ${(w-1)/2} + 1 = ${w}.`);}
+        else S.say(v%2===0?'Not quite. Look at the table: is the winner ever an even number?':'Not quite. Look at the table. When does the winner go back to 1? What happens in between?','bad');
+      }
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}solved=false;hintN=0;sel=0;outNow={};cnt=0;n=mode==='explore'?1:(cfg.n||1);log=[];inp.value='';S.say('');tbl.innerHTML='';draw();}
+      function hint(){
+        if(lock())return;
+        const H={play:['💡 Try a small circle by hand: 4 people, then 5, then 6. Who wins each time?','💡 With 2, 4, 8 or 16 people, which seat wins?'],
+          explore:['💡 Try every number from 1 to 16. Where is the winner?','💡 The winner goes back to seat 1 at certain special numbers of people. Which?'],
+          predict:['💡 Find the biggest power of 2 in the table that is not more than '+cfg.n+'. The winner is at seat 1 there.','💡 Each extra person after that moves the winner on by 2 seats.']}[mode];
+        S.say(H[Math.min(hintN,1)],'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();
+        if(mode==='play'){sel=pwWin(n);draw();S.say(`Seat ${sel} is the winner. Watch.`,'info');animate(n,2,o=>{solved=true;draw();S.say('Press Reset to try again.','info');S.revealMaths();S.refresh();});return;}
+        if(mode==='explore'){demoing=true;const my=++tok;S.refresh();let q=1;tick=setInterval(()=>{if(my!==tok){clearInterval(tick);return;}if(q>16){clearInterval(tick);tick=null;demoing=false;draw();S.say('Where does the winner go back to seat 1? Press Reset to start again.','info');S.revealMaths();S.refresh();return;}n=q++;const o=pwOrder(n,k);log.push([n,o.win]);tbl.innerHTML='<table><tr><th>People</th>'+log.map(x=>`<td>${x[0]}</td>`).join('')+'</tr><tr><th>Winner</th>'+log.map(x=>`<td><b>${x[1]}</b></td>`).join('')+'</tr></table>';const out={};o.out.forEach((p,i)=>out[p]=i+1);pwRing(ring,n,{out,win:o.win,showOrder:true});nb.textContent=n;info.innerHTML=`<strong>${n}</strong> people: winner seat <strong>${o.win}</strong>.`;},1300);return;}
+        inp.value=String(pwWin(cfg.n));solved=true;draw();S.say(`The winner is seat ${pwWin(cfg.n)}.`,'info');S.revealMaths();S.refresh();
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='explore'?`People: ${n}`:''})};
+    }};
+  return def;
+}
+const PW_PLAY=[5,7,10,13];
+const PW_PRED=[20,33,64,100];
+const WINNER={id:'picking-a-winner',icon:'🏆',title:'Picking a Winner',blurb:'People stand in a circle and every second person sits down. Where should you stand to be the last one standing?',
+  levels:[
+    {name:'Pick your seat',count:PW_PLAY.length,make:p=>winnerLevel('play',{n:PW_PLAY[p]})},
+    {name:'Explore',count:2,make:p=>winnerLevel('explore',{k:[2,3][p]})},
+    {name:'Find the pattern',count:PW_PRED.length,make:p=>winnerLevel('predict',{n:PW_PRED[p]})}
+  ]};
+shuffleLevels(WINNER);
+INV_LIST.push(WINNER);
+INV_API.winner={pwOrder,pwWin,pwFormula};
+/* ===/JS:winner=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -6088,7 +6361,9 @@ const INVESTIGATIONS=[
     HAPPY,
     MAGIC,
     MOSER,
-    KAPREKAR];
+    KAPREKAR,
+    LOCKERS,
+    WINNER];
 
 
 /* ---------- home ---------- */
