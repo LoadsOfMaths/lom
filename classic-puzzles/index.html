@@ -1388,6 +1388,12 @@ const SH_SQUARES=[
     brief:'This grid of <strong>12 matches</strong> hides five squares. Do not move any matches. Instead <strong>add 2 more matches</strong> to make exactly <strong>9 squares</strong>. The two new matches must be laid as a <strong>plus sign inside one of the small squares</strong>.',
     maths:SH_M_HALF(9)}
 ];
+const SH_TRI=[
+  {mode:'relocate',type:'tri',k:2,N:3,
+    fig:[[0,0,1,0],[1,0,2,0],[0,0,0,1],[0,1,0,2],[2,0,1,1],[1,1,0,2],[0,1,1,1]],
+    brief:'A big triangle has sides <strong>2 matches</strong> long. A seventh match joins the middles of two of its sides, so there are <strong>7 matches</strong> and 2 triangles to find. Move <strong>2 matches</strong> to make exactly <strong>3 triangles</strong>. Triangles of every size count, and every match must belong to a triangle — no spare matches sticking out.',
+    maths:`<p>A triangle with sides 2 matches long is made of <strong>4</strong> small triangles (side 1 match), because doubling the sides multiplies the area by 2 × 2 = 4. The match across the middle cuts one small triangle off the top.</p><p>Three small triangles in a row make a <em>trapezium</em>: that is the big triangle with its top small triangle cut off, so it has 3/4 of the area. It needs 5 matches round the outside and 2 more matches inside to divide it up, 7 in all, the same number you started with.</p><p>The matches you must move are the two at the top corner, the ones that are not part of the trapezium. They go inside it as the two dividing lines. Counting triangles of every size is the key: here the trapezium holds 3 small triangles and no bigger one.</p>`}
+];
 const SH_TAKE=[
   {mode:'remove',type:'sq',k:1,N:3,fig:shGrid(2,2),maths:SH_M_TAKE},
   {mode:'remove',type:'sq',k:2,N:2,fig:shGrid(2,2),maths:SH_M_TAKE},
@@ -1863,6 +1869,7 @@ const MATCHES={id:'matches',icon:'🔥',title:'Matchsticks',blurb:'Fix wrong sum
     {tab:'sums',name:'Move 1 match',count:MATCH1.length,make:p=>matchLevel(MATCH1[p],1)},
     {tab:'sums',name:'Move 2 matches',count:MATCH2.length,make:p=>matchLevel(MATCH2[p],2)},
     {tab:'shapes',name:'Make squares',count:SH_SQUARES.length,make:p=>shapeLevel(SH_SQUARES[p])},
+    {tab:'shapes',name:'Make triangles',count:SH_TRI.length,make:p=>shapeLevel(SH_TRI[p])},
     {tab:'shapes',name:'Take away',count:SH_TAKE.length,make:p=>shapeLevel(SH_TAKE[p])},
     {tab:'shapes',name:'Cherry in the glass',make:()=>cherryLevel()},
     {tab:'shapes',name:'The chair',make:()=>shapeLevel(SH_CHAIR)},
@@ -2078,7 +2085,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
