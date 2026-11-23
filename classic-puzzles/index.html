@@ -363,6 +363,10 @@ svg.hsChart{display:block;width:100%;max-width:760px;margin:6px auto}
 .hsInfo{text-align:center;color:#dbe7f3;min-height:1.6em}
 .stCell.sel{box-shadow:0 0 0 4px var(--accent)}
 /* ===/CSS:hail=== */
+/* ===CSS:phi=== */
+.stCell.pick{background:rgba(255,184,77,.3);border-color:var(--accent)}
+.stCell.bad{background:rgba(255,122,122,.3);border-color:var(--bad)}
+/* ===/CSS:phi=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -3746,6 +3750,111 @@ shuffleLevels(HAIL);
 INV_LIST.push(HAIL);
 INV_API.hail={hsSeq,hailLevel,hailHunt};
 /* ===/JS:hail=== */
+/* ===JS:phi=== */
+function phGcd(a,b){return b?phGcd(b,a%b):a;}
+function phFactors(n){const f=[];let m=n;for(let p=2;p*p<=m;p++){if(m%p===0){let e=0;while(m%p===0){m/=p;e++;}f.push([p,e]);}}if(m>1)f.push([m,1]);return f;}
+function phi(n){let r=n;phFactors(n).forEach(([p])=>{r=r/p*(p-1);});return r;}
+function phMaths(n){
+  const f=phFactors(n),fs=f.map(([p,e])=>e>1?`${p}<sup>${e}</sup>`:String(p)).join(' × ');
+  const prod=f.map(([p])=>`(1 − 1/${p})`).join(' × ');
+  return `<p>Two numbers <strong>share no factor</strong> (other than 1) when their highest common factor is 1. The number of values from 1 to <em>n</em> that share no factor with <em>n</em> is written <strong>φ(<em>n</em>)</strong>, called <strong>Euler's phi function</strong> (say "fy"), after Leonhard Euler.</p>
+<p>Patterns to look for:</p>
+<ul><li>For a <strong>prime</strong> <em>p</em>, every number below it works, so φ(<em>p</em>) = <em>p</em> − 1.</li>
+<li>For a <strong>prime squared</strong>, only the multiples of <em>p</em> fail. There are <em>p</em> of them, so φ(<em>p</em><sup>2</sup>) = <em>p</em><sup>2</sup> − <em>p</em>.</li>
+<li>For two different primes, φ(<em>pq</em>) = (<em>p</em> − 1)(<em>q</em> − 1).</li></ul>
+<p>All of these come from one rule: φ(<em>n</em>) = <em>n</em> × (1 − 1/<em>p</em>) × (1 − 1/<em>q</em>) × … , using each prime factor of <em>n</em> once. For example, ${n} = ${fs}, so φ(${n}) = ${n} × ${prod} = <strong>${phi(n)}</strong>.</p>
+<p>Euler's phi function is used in modern encryption, which relies on being able to calculate φ of a huge number quickly only if you know its prime factors.</p>`;
+}
+function phiLevel(mode,n){
+  const coprime=[];for(let m=1;m<=n;m++)if(phGcd(m,n)===1)coprime.push(m);
+  const ans=coprime.length;
+  const def={
+    custom:true,
+    brief:mode==='count'
+      ?`Tap every number from 1 to <strong>${n}</strong> that <strong>shares no factor</strong> with ${n} (other than 1). Then press Check. For example 5 and 12 share no factor, but 6 and 12 share 2, 3 and 6.`
+      :`φ(<em>n</em>) counts the numbers from 1 to <em>n</em> that share no factor with <em>n</em> (other than 1). <strong>Predict φ(${n}).</strong> Set your answer with − and +, then press Check. You can tap numbers on the chart to help you count.`,
+    maths:phMaths(n),
+    mount(stage,S){
+      let sel=new Set(),solved=false,demoing=false,tok=0,tick=null,guess=1,hintN=0,init=true,badSet=new Set();
+      const grid=el('div',{class:'stGrid'}),gB=el('b',null,'1'),info=el('div',{class:'hsInfo'});
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      const bCheck=el('button',{class:'btn primary',onclick:()=>check()},'Check');
+      const ansRow=el('div',{class:'stAns'});
+      if(mode==='predict')ansRow.append(el('span',{class:'lbl'},`φ(${n}) =`),stp('−',()=>setG(guess-1),'Less'),gB,stp('+',()=>setG(guess+1),'More'));
+      ansRow.append(bCheck);
+      stage.append(grid,info,ansRow);
+      function setG(g){guess=Math.max(1,Math.min(n,g));gB.textContent=guess;}
+      function draw(now){
+        grid.replaceChildren();
+        for(let m=1;m<=n;m++){
+          let cls='stCell';
+          if(sel.has(m)&&!solved)cls+=' pick';
+          if(badSet.has(m))cls+=' bad';
+          if(solved&&phGcd(m,n)===1)cls+=' yes';
+          if(m===now)cls+=' now';
+          grid.append(el('button',{class:cls,onclick:()=>tap(m),'aria-label':String(m)},el('b',null,String(m)),badSet.has(m)?el('small',null,'factor '+phGcd(m,n)):null));
+        }
+        info.textContent=mode==='predict'?`Numbers selected: ${sel.size}`:'';
+        if(!init)S.refresh();
+      }
+      function tap(m){
+        if(demoing||solved)return;
+        if(sel.has(m))sel.delete(m);else sel.add(m);
+        badSet.delete(m);hintN=0;S.say('');draw();
+      }
+      function check(){
+        if(demoing||solved)return;
+        if(mode==='predict'){
+          if(guess===ans)win(`🎉 φ(${n}) = ${ans}. The numbers that share no factor with ${n} are: ${coprime.join(', ')}.`);
+          else S.say(guess<ans?`φ(${n}) is bigger than ${guess}. Try tapping the numbers that share no factor with ${n}.`:`φ(${n}) is smaller than ${guess}. Which numbers do share a factor with ${n}?`,'bad');
+          return;
+        }
+        badSet=new Set([...sel].filter(m=>phGcd(m,n)>1));
+        if(badSet.size){const m=Math.min(...badSet);S.say(`Look at ${m}: ${m} and ${n} share the factor ${phGcd(m,n)}. Unselect the numbers marked red.`,'bad');draw();return;}
+        if(sel.size<ans){S.say(`Everything you picked is right. There are more numbers that share no factor with ${n}. (You have ${sel.size} so far.)`,'info');draw();return;}
+        win(`🎉 φ(${n}) = ${ans}. The numbers are ${coprime.join(', ')}.`);
+      }
+      function win(t){solved=true;draw();S.win(t);}
+      function reset(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}sel=new Set();badSet=new Set();solved=false;hintN=0;setG(1);S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        const wrong=[...sel].filter(m=>phGcd(m,n)>1);
+        if(wrong.length){S.say(`💡 ${wrong[0]} and ${n} share the factor ${phGcd(wrong[0],n)}.`,'info');return;}
+        const miss=coprime.filter(m=>!sel.has(m));
+        if(!miss.length){S.say('💡 You have found them all.'+(mode==='predict'?' Now set your answer.':' Press Check.'),'info');return;}
+        S.say(hintN===0?`💡 Try the factors of ${n}: ${phFactors(n).map(x=>x[0]).join(', ')}. Numbers with one of these as a factor won't work.`:`💡 ${miss[0]} shares no factor with ${n}.`,'info');hintN++;
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();let m=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          m++;
+          if(m>n){clearInterval(tick);tick=null;demoing=false;solved=true;setG(ans);draw();S.say(`φ(${n}) = ${ans}. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;}
+          const g=phGcd(m,n);
+          if(g===1)sel.add(m);
+          S.say(g===1?`${m} and ${n} share no factor. ✔`:`${m} and ${n} share the factor ${g}.`,g===1?'good':'bad');
+          draw(m);
+        },n>30?130:220);
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Selected: ${sel.size}`})};
+    }
+  };
+  return def;
+}
+const PHI={id:'phi',icon:'🔢',title:'Euler’s Phi Function',blurb:'How many numbers up to n share no factor with n?',
+  levels:[
+    {name:'Find them',count:5,make:p=>phiLevel('count',[12,15,18,20,24][p])},
+    {name:'Prime numbers',count:4,make:p=>phiLevel('predict',[7,11,13,17][p])},
+    {name:'Prime squares',count:3,make:p=>phiLevel('predict',[9,25,49][p])},
+    {name:'Two primes multiplied',count:4,make:p=>phiLevel('predict',[15,21,35,33][p])}
+  ]};
+shuffleLevels(PHI);
+INV_LIST.push(PHI);
+INV_API.phi={phi,phiLevel,phFactors};
+/* ===/JS:phi=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -3763,7 +3872,7 @@ const GROUPS=[
     STAMPS,
     CONSEC,
     HAIL,
-    {soon:1,icon:'🔢',title:'Euler\u2019s Phi Function',blurb:'How many numbers up to n share no factor with n?'},
+    PHI,
     {soon:1,icon:'🟦',title:'Tiles and Spacers',blurb:'Tile an m × n wall — how many spacers for the corners and the edges?'},
     {soon:1,icon:'📦',title:'Max Box',blurb:'Cut corners from a sheet and fold it up — which box holds the most?'},
     {soon:1,icon:'📐',title:'Pick\u2019s Theorem',blurb:'Find the area of a shape on a dotty grid by counting dots.'},
