@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Classic Puzzles – LoadsOfMaths</title>
+<title>Classic Puzzles and Investigations – LoadsOfMaths</title>
 <style>
 :root{
   --bg:#0e2339; --card:#1b3d61; --line:#2f628f; --ink:#f3f7fb; --mute:#a9bdd3;
@@ -5325,7 +5325,7 @@ const PY_FIND=[[1,10],[1,13],[11,20]].map(([lo,hi])=>({lo,hi,sol:pyTriples(lo,hi
 const PY_QUAD=[7,9,12].map(m=>({m,sol:pyQuads(m)}));
 const PY_EUC=[13,25,29,41,65,85].map(t=>{let s=null;for(let m=2;m<=12&&!s;m++)for(let n=1;n<m;n++)if(m*m+n*n===t){s=[m,n];break;}return {t,solMN:s};}).filter(x=>x.solMN);
 const PY_BRICK=[[[44,117,240],[7,24,45],[3,4,12],[5,12,16]],[[8,15,36],[240,252,275],[9,12,35],[6,8,15]],[[7,24,70],[5,12,35],[85,132,720],[44,117,244]],[[140,480,693],[8,15,112],[7,24,32],[9,12,16]]].map(set=>({set}));
-const PYTH={id:'pythagorean-triples',icon:'📐',title:'Pythagorean Triples',blurb:'Find whole numbers with a² + b² = c², then take the idea into three dimensions and meet Euler’s brick.',
+const PYTH={id:'pythagorean-triples',icon:'🧱',title:'Pythagorean Triples',blurb:'Find whole numbers with a² + b² = c², then take the idea into three dimensions and meet Euler’s brick.',
   levels:[
     {name:'Explore',make:()=>pyLevel('explore',{})},
     {name:'Find them all',count:PY_FIND.length,make:p=>pyLevel('find',PY_FIND[p])},
@@ -5485,8 +5485,9 @@ const GROUPS=[
     CHESS,
     KNIGHT,
     MUTILATED]},
-  {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS]},
-  {title:'Investigations',items:[
+  {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS]}
+];
+const INVESTIGATIONS=[
     STAMPS,
     CONSEC,
     HAIL,
@@ -5499,23 +5500,21 @@ const GROUPS=[
     GOLOMB,
     PAINTED,
     PYTH,
-    HAPPY]}
-];
+    HAPPY];
+
 
 /* ---------- home ---------- */
-let teardown=null;
+let teardown=null,homeTab='puzzles';
 function showHome(){
   if(teardown){teardown();teardown=null;}
   const app=$('#app');app.replaceChildren();
-  app.append(el('h1',null,'Classic Puzzles'),el('p',{class:'tag'},'Famous puzzles to explore, solve and discuss. Pick one to start.'));
-  GROUPS.forEach(g=>{
-    const grid=el('div',{class:'grid'});
-    g.items.forEach(p=>{
-      if(p.soon)grid.append(el('div',{class:'card soon','aria-disabled':'true'},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb),el('span',{class:'soonTag'},'Coming soon')));
-      else grid.append(el('button',{class:'card',onclick:()=>{location.hash=p.id;}},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb)));
-    });
-    app.append(el('h2',null,g.title),grid);
-  });
+  app.append(el('h1',null,'Classic Puzzles and Investigations'),el('p',{class:'tag'},homeTab==='puzzles'?'Famous puzzles to explore, solve and discuss. Pick one to start.':'Open-ended mathematical investigations. Explore, spot the pattern, then find out why.'));
+  const tabs=el('div',{class:'tabs'});
+  [['puzzles','Puzzles'],['investigations','Investigations']].forEach(([id,nm])=>tabs.append(el('button',{class:'tab'+(homeTab===id?' on':''),onclick:()=>{homeTab=id;showHome();}},nm)));
+  app.append(tabs);
+  const card=p=>p.soon?el('div',{class:'card soon','aria-disabled':'true'},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb),el('span',{class:'soonTag'},'Coming soon')):el('button',{class:'card',onclick:()=>{location.hash=p.id;}},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb));
+  if(homeTab==='puzzles')GROUPS.forEach(g=>{const grid=el('div',{class:'grid'});g.items.forEach(p=>grid.append(card(p)));app.append(el('h2',null,g.title),grid);});
+  else{const grid=el('div',{class:'grid',style:'margin-top:14px'});INVESTIGATIONS.forEach(p=>grid.append(card(p)));app.append(grid);}
   app.append(el('div',{class:'foot'},'LoadsOfMaths'));
   window.scrollTo(0,0);
 }
@@ -5545,7 +5544,7 @@ function showPuzzle(P){
   const maths=el('details',{class:'maths',hidden:''},el('summary',null,"What's the maths?"),mathsBody);
 
   app.append(
-    el('div',{class:'head'},el('button',{class:'btn',onclick:()=>{location.hash='';}},'← All puzzles'),el('h1',null,P.icon+' '+P.title)),
+    el('div',{class:'head'},el('button',{class:'btn',onclick:()=>{location.hash='';}},INVESTIGATIONS.includes(P)?'← All investigations':'← All puzzles'),el('h1',null,P.icon+' '+P.title)),
     tabs,chips,pick,brief,stage,msg,
     el('div',{class:'bar'},bUndo,bReset,bHint,bShow,score),
     maths
@@ -5679,7 +5678,7 @@ function showPuzzle(P){
 
 function route(){
   const id=location.hash.replace('#','');
-  if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
+  if(PUZZLES[id]){homeTab=INVESTIGATIONS.includes(PUZZLES[id])?'investigations':'puzzles';showPuzzle(PUZZLES[id]);}else showHome();
 }
 window.addEventListener('hashchange',route);
 window.CP={pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
