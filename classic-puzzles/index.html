@@ -6742,7 +6742,7 @@ function showHome(){
   app.append(tabs);
   const card=p=>p.soon?el('div',{class:'card soon','aria-disabled':'true'},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb),el('span',{class:'soonTag'},'Coming soon')):el('button',{class:'card',onclick:()=>{location.hash=p.id;}},el('span',{class:'ic'},p.icon),el('span',{class:'tt'},p.title),el('span',{class:'bl'},p.blurb));
   if(homeTab==='puzzles')GROUPS.forEach(g=>{const grid=el('div',{class:'grid'});g.items.forEach(p=>grid.append(card(p)));app.append(el('h2',null,g.title),grid);});
-  else{const grid=el('div',{class:'grid',style:'margin-top:14px'});INVESTIGATIONS.forEach(p=>grid.append(card(p)));app.append(grid);}
+  else{const grid=el('div',{class:'grid',style:'margin-top:14px'});INVESTIGATIONS.slice().sort((a,b)=>a.title.localeCompare(b.title,'en-GB')).forEach(p=>grid.append(card(p)));app.append(grid);}
   app.append(el('div',{class:'foot'},'LoadsOfMaths'));
   window.scrollTo(0,0);
 }
