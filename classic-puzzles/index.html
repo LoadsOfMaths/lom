@@ -943,8 +943,8 @@ function matchLevel(eq,moveCount){
         svg.classList.toggle('carrying',sel!==null);
       }
       return {
-        update(s){sel=null;hintMove=null;paint(s);},
-        highlight(m){hintMove=m;paint(S.state);}
+        update(s){sel=null;hintMove=null;if(goalBox)goalBox.style.display='none';paint(s);},
+        highlight(m){hintMove=m;if(goalBox)goalBox.style.display='';paint(S.state);}
       };
     }
   };
@@ -1259,6 +1259,7 @@ function shapeLevel(spec){
       }
       const cnt=el('div',{class:'shCount'});
       const board=el('div',{class:'shBoard'},cnt,svg);
+      let goalBox=null;
       const wrap=el('div',{class:'shWrap'},board);
       if(mode==='transform'){
         const T=spec.target||[];let tx0=1e9,tx1=-1e9,ty0=1e9,ty1=-1e9;
@@ -1277,7 +1278,9 @@ function shapeLevel(spec){
           const X1=a.x+ux*kk,Y1=a.y+uy*kk,X2=b.x-ux*kk,Y2=b.y-uy*kk;
           g2.append(mk('line',{x1:X1,y1:Y1,x2:X2,y2:Y2,class:'gw'}),mk('circle',{cx:X1,cy:Y1,r:2,class:'gh'}));
         });
-        wrap.append(el('div',{class:'goalBox'},el('div',{class:'goalLbl'},'Goal'),g2));
+        goalBox=el('div',{class:'goalBox'},el('div',{class:'goalLbl'},'Goal'),g2);
+        goalBox.style.display='none';
+        wrap.append(goalBox);
       }
       stage.append(wrap);
       let sel=null,hintMove=null;
@@ -1316,8 +1319,8 @@ function shapeLevel(spec){
         }else cnt.innerHTML='';
       }
       return {
-        update(s){sel=null;hintMove=null;paint(s);},
-        highlight(m){hintMove=m;paint(S.state);}
+        update(s){sel=null;hintMove=null;if(goalBox)goalBox.style.display='none';paint(s);},
+        highlight(m){hintMove=m;if(goalBox)goalBox.style.display='';paint(S.state);}
       };
     }
   };
