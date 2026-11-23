@@ -188,6 +188,16 @@ svg.matches.shape{margin:4px auto}
 svg.goalSvg{display:block;margin:0 auto}
 .goalSvg .gw{stroke:#e3b778;stroke-width:5;stroke-linecap:round}
 .goalSvg .gh{fill:#c0392b}
+svg.chess{display:block;width:100%;max-width:520px;margin:8px auto;touch-action:manipulation;user-select:none}
+.chess .sq{cursor:pointer}
+.chess .lt{fill:#e8d9b5}.chess .dk{fill:#9a6b3f}
+.chess .att{fill:rgba(220,70,70,.38);pointer-events:none}
+.chess .pc{font-size:46px;text-anchor:middle;dominant-baseline:central;pointer-events:none;fill:#101820;stroke:#fff;stroke-width:1.2px;paint-order:stroke;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+.chess .pc.bad{fill:#b3201a}
+.chess .cl{stroke:#d22a2a;stroke-width:5;stroke-linecap:round;opacity:.85;pointer-events:none}
+.chess .ring{fill:none;stroke:var(--good);stroke-width:5;pointer-events:none}
+.chess .lab{font-size:13px;fill:var(--mute);opacity:1;pointer-events:none}
+.chessOpt{display:flex;justify-content:center;margin:2px 0 6px}
 svg.plus{display:block;width:100%;margin:6px auto;touch-action:none}
 .plus .stick{fill:#e3b778;stroke:#a87b3a;stroke-width:1.5}
 .plus .ph{fill:#c0392b;stroke:#5c1a12;stroke-width:1.5}
@@ -1951,14 +1961,187 @@ function shuffleLevels(def){
 }
 shuffleLevels(MATCHES);
 
-const PUZZLES={};[JUGS,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK].forEach(p=>PUZZLES[p.id]=p);
+/* ---------- CHESS BOARD: non-attacking pieces (custom) ---------- */
+const CH_N=8;
+const CH_ATT={
+  R:(a,b)=>a[0]===b[0]||a[1]===b[1],
+  B:(a,b)=>Math.abs(a[0]-b[0])===Math.abs(a[1]-b[1]),
+  Q:(a,b)=>a[0]===b[0]||a[1]===b[1]||Math.abs(a[0]-b[0])===Math.abs(a[1]-b[1])
+};
+function chSolve(kind,placed){
+  /* extend placed squares (indices r*8+c) to 8 non-attacking pieces; returns the extra squares, or null */
+  const att=CH_ATT[kind],P=placed.map(i=>[Math.floor(i/8),i%8]);
+  for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++)if(att(P[i],P[j]))return null;
+  const out=[];let nodes=0;
+  const ok=(r,c)=>P.every(p=>!att(p,[r,c]));
+  if(kind==='B'){
+    const rec=(from)=>{
+      if(P.length===8)return true;
+      if(++nodes>400000)return false;
+      for(let i=from;i<64&&64-i>=8-P.length;i++){
+        const r=Math.floor(i/8),c=i%8;
+        if(P.some(p=>p[0]===r&&p[1]===c)||!ok(r,c))continue;
+        P.push([r,c]);out.push(i);
+        if(rec(i+1))return true;
+        P.pop();out.pop();
+      }
+      return false;
+    };
+    return rec(0)?out:null;
+  }
+  const rows=[...Array(8).keys()].filter(r=>!P.some(p=>p[0]===r));
+  const rec=k=>{
+    if(k===rows.length)return true;
+    const r=rows[k];
+    for(let c=0;c<8;c++){
+      if(!ok(r,c))continue;
+      P.push([r,c]);out.push(r*8+c);
+      if(rec(k+1))return true;
+      P.pop();out.pop();
+    }
+    return false;
+  };
+  return rec(0)?out:null;
+}
+const CH_INFO={
+  R:{name:'rooks',one:'rook',glyph:'♜',
+    brief:'Place <strong>eight rooks</strong> on the board so that <strong>no rook attacks another</strong>. A rook attacks along its row and along its column, as far as it can see. Tap a square to place a rook; tap a rook to take it back.',
+    maths:`<p>Every rook uses up one whole row <em>and</em> one whole column, so eight rooks must have exactly one rook in every row and every column. There is a very easy solution: put them all on a diagonal.</p>
+<p>But how many solutions are there? The first rook can go in any of 8 squares of the top row. The rook in the next row can then go in any of the 7 remaining columns, then 6, and so on. That gives 8 × 7 × 6 × … × 1 = <strong>8! = 40 320</strong> different solutions.</p>
+<p>The diagonal is only one of them. Every solution is a <em>permutation</em> of the numbers 1 to 8 — the column in which each row's rook sits. Keep this idea in mind for the queens puzzle: a queen attacks like a rook <em>and</em> a bishop, so every queens solution is one of these 40 320 rook solutions that also survives the bishop test.</p>`},
+  B:{name:'bishops',one:'bishop',glyph:'♝',
+    brief:'Place <strong>eight bishops</strong> on the board so that <strong>no bishop attacks another</strong>. A bishop attacks along its diagonals. Tap a square to place a bishop; tap a bishop to take it back.',
+    maths:`<p>A bishop never leaves its colour: one that starts on a light square can only ever visit light squares. So the light-squared and dark-squared bishops can never attack each other, and the puzzle splits into two smaller puzzles.</p>
+<p>There is an easy solution: fill a whole edge row. Bishops side by side along an edge are never on the same diagonal. Along the bottom row, each bishop's diagonals fan upwards without meeting.</p>
+<p>The most you can fit on the board is 14, not 16: the two long diagonals each have to share. There are <strong>millions</strong> of ways to place eight, far more than the rooks puzzle — yet most people still reach for the edge.</p>
+<p>Compare this with the rooks puzzle, where each rook needed its own row and column. Here the lines to avoid are the diagonals. A queen has to avoid <em>both</em> kinds of line at once, which is why the queens puzzle is so much harder.</p>`},
+  Q:{name:'queens',one:'queen',glyph:'♛',
+    brief:'Place <strong>eight queens</strong> on the board so that <strong>no queen attacks another</strong>. A queen attacks along its row, its column and both diagonals. Tap a square to place a queen; tap a queen to take it back.',
+    maths:`<p>A queen moves like a rook and a bishop combined, so eight queens need a different row <em>and</em> a different column <em>and</em> a different diagonal each. The rooks puzzle gave 40 320 ways of covering every row and column; only <strong>92</strong> of them also avoid every diagonal.</p>
+<p>Those 92 solutions come in just <strong>12</strong> fundamentally different patterns. Rotating or reflecting the board turns one solution into up to seven others (a solution that looks the same after a half-turn gives fewer).</p>
+<p>The puzzle was first posed by the chess composer Max Bezzel in 1848. A computer solves it by <em>backtracking</em>: place a queen in the first row, then the next, and whenever a row has no safe square, step back and move an earlier queen. You can do exactly the same by hand. When you place a queen, ask which squares in the rows below it are now unavailable.</p>`}
+};
+function chessLevel(kind){
+  const I=CH_INFO[kind],att=CH_ATT[kind];
+  const def={
+    custom:true,brief:I.brief,maths:I.maths,
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg',U=60,M=24;
+      const mk=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);return e;};
+      let placed=[],hist=[],solved=false,demoing=false,demoTok=0,showAtt=false,hintSq=null,init=true;
+      const svg=mk('svg',{viewBox:`${-M} 0 ${CH_N*U+M} ${CH_N*U+M}`,class:'chess'});
+      const cells=[],layer=mk('g',{}),lines=mk('g',{}),pcs=mk('g',{}),ring=mk('rect',{class:'ring',width:U-8,height:U-8,rx:6,visibility:'hidden'});
+      for(let r=0;r<CH_N;r++)for(let c=0;c<CH_N;c++){
+        const i=r*8+c;
+        const sq=mk('rect',{x:c*U,y:r*U,width:U,height:U,class:'sq '+((r+c)%2?'dk':'lt'),'data-i':i});
+        sq.addEventListener('click',()=>tap(i));
+        svg.append(sq);cells.push(sq);
+      }
+      for(let c=0;c<8;c++){const t=mk('text',{x:c*U+U/2,y:CH_N*U+16,class:'lab','text-anchor':'middle'});t.textContent='abcdefgh'[c];svg.append(t);}
+      for(let r=0;r<8;r++){const t=mk('text',{x:-8,y:r*U+U/2+4,class:'lab','text-anchor':'middle'});t.textContent=8-r;svg.append(t);}
+      svg.append(layer,lines,pcs,ring);
+      const optBtn=el('button',{class:'mini',onclick:()=>{showAtt=!showAtt;draw();}},'');
+      stage.append(svg,el('div',{class:'chessOpt'},optBtn));
+      const rc=i=>[Math.floor(i/8),i%8];
+      const cx=i=>(i%8)*U+U/2,cy=i=>Math.floor(i/8)*U+U/2;
+      function conflicts(){
+        const bad=new Set(),pairs=[];
+        for(let a=0;a<placed.length;a++)for(let b=a+1;b<placed.length;b++)
+          if(att(rc(placed[a]),rc(placed[b]))){bad.add(placed[a]);bad.add(placed[b]);pairs.push([placed[a],placed[b]]);}
+        return {bad,pairs};
+      }
+      function draw(){
+        const {bad,pairs}=conflicts();
+        layer.replaceChildren();lines.replaceChildren();pcs.replaceChildren();
+        if(showAtt){
+          for(let i=0;i<64;i++){
+            if(placed.includes(i))continue;
+            if(placed.some(p=>att(rc(p),rc(i))))layer.append(mk('rect',{x:(i%8)*U,y:Math.floor(i/8)*U,width:U,height:U,class:'att'}));
+          }
+        }
+        pairs.forEach(([a,b])=>lines.append(mk('line',{x1:cx(a),y1:cy(a),x2:cx(b),y2:cy(b),class:'cl'})));
+        placed.forEach(i=>{const t=mk('text',{x:cx(i),y:cy(i)+2,class:'pc'+(bad.has(i)?' bad':'')});t.textContent=I.glyph;pcs.append(t);});
+        optBtn.textContent=showAtt?'Hide attacked squares':'Show attacked squares';
+        if(hintSq===null)ring.setAttribute('visibility','hidden');
+        else{ring.setAttribute('x',(hintSq%8)*U+4);ring.setAttribute('y',Math.floor(hintSq/8)*U+4);ring.setAttribute('visibility','visible');}
+        if(!init)S.refresh();
+      }
+      function check(){
+        if(placed.length===8&&!conflicts().pairs.length){
+          solved=true;
+          S.win(`🎉 Eight ${I.name}, and not one attacks another!`+(kind==='Q'?' That is a genuine solution to the famous eight queens puzzle.':''));
+        }else solved=false;
+      }
+      function tap(i){
+        if(demoing)return;
+        hist.push(placed.slice());hintSq=null;
+        const k=placed.indexOf(i);
+        if(k>=0)placed.splice(k,1);
+        else{
+          if(placed.length>=8){hist.pop();S.say(`You already have eight ${I.name}. Tap one to take it back first.`,'info');return;}
+          placed.push(i);
+        }
+        S.say('');solved=false;draw();check();S.refresh();
+      }
+      function reset(){demoTok++;demoing=false;placed=[];hist=[];solved=false;hintSq=null;S.say('');draw();}
+      function undo(){if(demoing||!hist.length)return;placed=hist.pop();solved=false;hintSq=null;S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        const {bad,pairs}=conflicts();
+        if(pairs.length){
+          const [a,b]=pairs[0];hintSq=a;
+          S.say(`💡 The two ${I.name} joined by a red line attack each other. Take one of them back.`,'info');draw();return;
+        }
+        const ext=chSolve(kind,placed);
+        if(!ext){
+          S.say(`💡 No one gets stuck yet, but these ${I.name} can't all be part of a solution. Take one or two back and try a different square.`,'info');return;
+        }
+        if(!ext.length)return;
+        hintSq=ext[0];
+        S.say(`💡 Try the ringed square: ${I.one==='queen'?'a queen':'a '+I.one} there can still lead to a solution.`,'info');draw();
+      }
+      function show(){
+        if(demoing){demoTok++;demoing=false;reset();S.say('Demo stopped.','info');return;}
+        reset();
+        let sol;
+        if(kind==='R')sol=[0,1,2,3,4,5,6,7].map(r=>r*8+r);
+        else if(kind==='B')sol=[0,1,2,3,4,5,6,7].map(c=>56+c);
+        else sol=chSolve('Q',[]);
+        demoing=true;const my=++demoTok;S.refresh();
+        let k=0;
+        const stepf=()=>{
+          if(my!==demoTok)return;
+          if(k>=sol.length){demoing=false;check();S.say(kind==='R'?'The diagonal is the easy answer, but there are 40 320 solutions. Press Reset to find another!':kind==='B'?'A whole edge row works. Press Reset to find a different solution!':'One of the 92 solutions. Press Reset to try it yourself!','info');S.revealMaths();S.refresh();return;}
+          placed.push(sol[k++]);draw();setTimeout(stepf,550);
+        };
+        S.say('Watch the pieces go down one at a time…','info');
+        setTimeout(stepf,500);
+      }
+      draw();init=false;
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;},
+        ctl:()=>({undo:!demoing&&hist.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Placed: ${placed.length} of 8`})
+      };
+    }
+  };
+  return def;
+}
+const CHESS={id:'chess',icon:'♛',title:'Eight Queens',blurb:'Place eight rooks, bishops, then queens so that none attacks another.',
+  levels:[
+    {name:'Eight rooks',make:()=>chessLevel('R')},
+    {name:'Eight bishops',make:()=>chessLevel('B')},
+    {name:'Eight queens',make:()=>chessLevel('Q')}
+  ]};
+
+const PUZZLES={};[JUGS,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK,CHESS].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Pouring',items:[JUGS]},
   {title:'River and bridge crossings',items:[WGC,FOX,BRIDGE]},
   {title:'Matches and coins',items:[MATCHES,COINS,SWAP]},
   {title:'Chess board',items:[
-    {soon:1,icon:'♛',title:'Eight Queens',blurb:'Place eight queens so that none attacks another.'},
+    CHESS,
     {soon:1,icon:'♞',title:"Knight's Tour",blurb:'Visit every square exactly once.'},
     {soon:1,icon:'🀱',title:'Mutilated Chessboard',blurb:'Cover 62 squares with 31 dominoes. Or can you?'}]},
   {title:'Movement',items:[CARPARK,{soon:1,icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs to leave just one.'}]},
@@ -2147,7 +2330,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
 route();
 })();
 </script>
