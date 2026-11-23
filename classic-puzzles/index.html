@@ -2534,6 +2534,7 @@ function csLevel(nc){
         const tA=450*k,tB=(400+420*n2)*k,tC=450*k,t0=Date.now();
         const mag0=solveAngle(V0),magE=solveAngle(Vend);
         drawTube(j);
+        place(start.x,start.y,0,V0,0);
         animTimer=setInterval(()=>{
           if(my!==animTok){clearInterval(animTimer);animTimer=null;return;}
           const t=Date.now()-t0;
