@@ -301,6 +301,41 @@ svg.carpark{display:block;width:100%;margin:8px auto;touch-action:none}
 .carpark .veh.hint .vgloss{stroke:var(--good);stroke-width:5}
 .carpark .veh.target .vgloss{stroke:#fff;stroke-width:3}
 .carpark .cpGhost{fill:rgba(70,208,138,.22);stroke:var(--good);stroke-width:3;stroke-dasharray:8 6;pointer-events:none}
+/* ===CSS:stamps=== */
+.stPick{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center;margin:4px 0 8px}
+.stStep{display:flex;align-items:center;gap:6px}
+.stStep b{min-width:2.4em;text-align:center;font-size:1.3rem}
+.stStamps{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+/* perforated edge: a dotted border in the stamp colour, with the background stopping at the padding box */
+.stamp{position:relative;width:98px;height:114px;border:8px dotted var(--sc);padding:0;background:var(--sc);background-clip:padding-box;color:#1b1206;font:inherit;font-weight:800;cursor:pointer;
+  box-shadow:0 3px 0 rgba(0,0,0,.35);touch-action:manipulation}
+.stamp::before{content:"";position:absolute;inset:4px;border:3px solid rgba(255,255,255,.75);pointer-events:none}
+.stamp .sv{position:absolute;left:0;right:0;top:28px;font-size:1.8rem;line-height:1}
+.stamp .ss{position:absolute;left:0;right:0;top:10px;font-size:.9rem;opacity:.7}
+.stamp .sa{position:absolute;left:0;right:0;bottom:8px;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+.stamp:active{transform:translateY(2px)}
+.stamp:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.stEnv{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#efe7d3;color:#2b2112;border-radius:12px;padding:8px 12px;margin:8px auto;max-width:760px;min-height:64px;border-bottom:6px solid #d6c9a6}
+.stEnv .ev{font-size:1.6rem}
+.stEnv .row{display:flex;flex-wrap:wrap;gap:4px;flex:1 1 200px;min-height:36px;align-items:center}
+.stMini{display:inline-flex;align-items:center;justify-content:center;width:36px;height:42px;background:var(--sc);font-weight:800;font-size:.8rem;color:#1b1206;box-shadow:0 1px 0 rgba(0,0,0,.35);outline:2px dotted rgba(255,255,255,.7);outline-offset:-4px}
+.stTot{font-weight:800;font-size:1.25rem;white-space:nowrap}
+.stGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px;margin:8px 0}
+.stCell{min-height:58px;border-radius:10px;border:2px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);font:inherit;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:2px;cursor:pointer;touch-action:manipulation}
+.stCell b{font-size:1.1rem}
+.stCell small{font-size:.62rem;color:var(--mute);line-height:1.1;text-align:center}
+.stCell.yes{background:rgba(70,208,138,.28);border-color:var(--good)}
+.stCell.yes2{background:rgba(70,208,138,.1);border-color:rgba(70,208,138,.5)}
+.stCell.no{background:rgba(255,122,122,.2);border-color:var(--bad)}
+.stCell.top{box-shadow:0 0 0 4px var(--accent)}
+.stCell.hint{box-shadow:0 0 0 4px var(--good)}
+.stCell.now{animation:stpop .5s}
+@keyframes stpop{40%{transform:scale(1.18)}}
+.stAns{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:8px 0}
+.stAns .lbl{font-weight:700}
+/* ===/CSS:stamps=== */
+/* ==INV-CSS-END== */
 </style>
 </head>
 <body>
@@ -3219,7 +3254,193 @@ const PEGS={id:'pegs',icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs over ea
     {name:'Cross: classic',make:()=>pegLevel('cross',[3,3],[3,3])}
   ]};
 
-const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED].forEach(p=>PUZZLES[p.id]=p);
+/* ==INV-BEGIN== investigations are added here, one after another */
+const INV_LIST=[],INV_API={};
+/* ===JS:stamps=== */
+function stGcd(x,y){return y?stGcd(y,x%y):x;}
+const ST_COL={2:'#c58bd9',3:'#f08aa0',4:'#6cc0ee',5:'#9bd870',6:'#f2b84b',7:'#f29a5b',8:'#74d6c9',9:'#b9a5f2',10:'#e5d35c'};
+/* every way (x,y) with a*x+b*y=m; the one with the fewest stamps first */
+function stMake(a,b,m){
+  let best=null;
+  for(let x=0;x*a<=m;x++){const r=m-x*a;if(r%b===0){const y=r/b;if(!best||x+y<best[0]+best[1])best=[x,y];}}
+  return best;
+}
+function stText(a,b,r){return (r[0]?r[0]+'×'+a+'p':'')+(r[0]&&r[1]?' + ':'')+(r[1]?r[1]+'×'+b+'p':'');}
+function stInfo(a,b){
+  const g=stGcd(a,b),F=g===1?a*b-a-b:null;
+  const N=g===1?Math.max(30,F+2*Math.max(a,b)):40;
+  const can=[];for(let m=0;m<=N;m++)can[m]=stMake(a,b,m);
+  const cant=[];for(let m=1;m<=N;m++)if(!can[m])cant.push(m);
+  return {a,b,g,F,N,can,cant};
+}
+function stMaths(I){
+  const {a,b,g,F,N,cant}=I;
+  const runStart=(()=>{for(let m=1;m<=N-a+1;m++){let ok=true;for(let k=0;k<a;k++)if(!I.can[m+k]){ok=false;break;}if(ok)return m;}return null;})();
+  const intro=`<p>An amount can be made when it equals ${a} × (some number of ${a}p stamps) + ${b} × (some number of ${b}p stamps) — in symbols, <em>${a}x + ${b}y</em> with <em>x</em> and <em>y</em> whole numbers (zero is allowed).</p>`;
+  if(g>1){
+    const ga=a/g,gb=b/g,F2=ga*gb-ga-gb;
+    return intro+`<p>Here ${a} and ${b} share the factor <strong>${g}</strong>. Every stamp is a multiple of ${g}, so every total is a multiple of ${g} too. Amounts that are not multiples of ${g} can <strong>never</strong> be made, however many stamps you stick on, so the list of "can't make" amounts never stops. There is no largest one.</p>
+<p>Among the multiples of ${g}, nothing is different: divide everything by ${g} and you have stamps of ${ga}p and ${gb}p, which share no factor. For those, the largest amount that can't be made is ${ga} × ${gb} − ${ga} − ${gb} = ${F2}. So the largest <em>multiple of ${g}</em> you can't make is ${g} × ${F2} = ${g*F2}, and after that every multiple of ${g} can be made.</p>
+<p>The key to the whole problem is the <strong>highest common factor</strong>: the amounts that can be made are exactly the multiples of HCF(${a}, ${b}) = ${g}, from some point on.</p>`;
+  }
+  const K=(a-1)*(b-1)/2;
+  return intro+`<p><strong>Once you have a run, it never ends.</strong> ${runStart?`Look at ${runStart} to ${runStart+a-1}: that is ${a} amounts in a row that can all be made. `:''}Add one more ${a}p stamp to each of them and the next ${a} amounts can all be made, then the next ${a}, and so on for ever. So the hunt for the largest amount that can't be made is a hunt for the first run of ${a} in a row.</p>
+<p><strong>The result.</strong> When two stamp values share no common factor, the largest amount that can't be made is <strong>ab − a − b</strong>. Here that is ${a} × ${b} − ${a} − ${b} = <strong>${F}</strong>. The number of amounts that can't be made is <strong>(a − 1)(b − 1) ÷ 2</strong> = ${a-1} × ${b-1} ÷ 2 = <strong>${K}</strong>. Count the red squares to check.</p>
+<p><strong>Why?</strong> Take the amounts ${b}, ${2*b}, ${3*b}, … ${a*b}. When divided by ${a} they leave ${a} different remainders (this is where having no common factor matters). So for any amount <em>n</em> there is exactly one number <em>y</em> from 0 to ${a-1} that makes <em>n</em> − ${b}<em>y</em> a multiple of ${a}. The amount can be made exactly when that multiple of ${a} is not negative. The worst case is <em>y</em> = ${a-1} and a multiple of −${a}, which gives <em>n</em> = ${b}(${a-1}) − ${a} = ${F}. This result is named after the mathematician Sylvester, in 1884.</p>
+<p>Try it with different pairs of stamps. Can you predict the answer before you look at the chart?</p>`;
+}
+function stampsLevel(a0,b0,own){
+  let I=stInfo(a0,b0);
+  const def={
+    custom:true,
+    brief:own?`Choose the values of two stamps. You have <strong>as many of each as you like</strong>. Stick stamps on the envelope to make an amount of postage. Which amounts can you make? Which can't you make? Find the <strong>largest amount that can't be made</strong>.`
+      :`The post office has run out of everything except <strong>${a0}p</strong> and <strong>${b0}p</strong> stamps, but you can have as many of each as you like. Tap the stamps to stick them on the envelope and see which amounts of postage you can make. Then find the <strong>largest amount that can't be made</strong>.`,
+    get maths(){return stMaths(I);},
+    mount(stage,S){
+      let env=[],found=new Map(),solved=false,demoing=false,demoTok=0,guess=1,hintM=0,hintStage=0,selM=0,tick=null,fresh=true;
+      const pick=el('div',{class:'stPick'}),stampsRow=el('div',{class:'stStamps'}),envRow=el('div',{class:'row'}),envTot=el('span',{class:'stTot'});
+      const envBox=el('div',{class:'stEnv'},el('span',{class:'ev'},'✉️'),envRow,envTot);
+      const grid=el('div',{class:'stGrid'}),guessB=el('b',null,'1');
+      const stepBtn=(txt,fn,lab)=>el('button',{class:'mini',onclick:fn,'aria-label':lab},txt);
+      const bCheck=el('button',{class:'btn primary',onclick:()=>check()},'Check');
+      const bNone=el('button',{class:'btn',onclick:()=>none()},"There isn't a largest one");
+      const ans=el('div',{class:'stAns'},el('span',{class:'lbl'},"Largest amount that can't be made:"),
+        stepBtn('−',()=>setGuess(guess-1),'Less'),guessB,stepBtn('+',()=>setGuess(guess+1),'More'),el('span',null,'p'),bCheck,bNone);
+      if(own){
+        const mk=(lab,get,set)=>{const v=el('b',null,String(get()));return {v,node:el('div',{class:'stStep'},el('span',null,lab),stepBtn('−',()=>{set(-1);v.textContent=get();},'Less'),v,stepBtn('+',()=>{set(1);v.textContent=get();},'More'),el('span',null,'p'))};};
+        const A=mk('First stamp',()=>I.a,d=>newPair(I.a+d,I.b)),B=mk('Second stamp',()=>I.b,d=>newPair(I.a,I.b+d));
+        pick.append(A.node,B.node);
+        pick._upd=()=>{A.v.textContent=I.a;B.v.textContent=I.b;};
+      }else pick.style.display='none';
+      stage.append(pick,stampsRow,envBox,grid,ans);
+      function newPair(a,b){
+        a=Math.max(2,Math.min(9,a));b=Math.max(2,Math.min(9,b));
+        if(a===b){if(b<9)b++;else a--;}
+        I=stInfo(a,b);pick._upd&&pick._upd();reset();
+      }
+      function buildStamps(){
+        stampsRow.replaceChildren();
+        [[I.a,0],[I.b,1]].forEach(([v,k])=>{
+          const col=ST_COL[v]||'#ddd';
+          stampsRow.append(el('button',{class:'stamp',style:`--sc:${col}`,'aria-label':`Add a ${v} pence stamp`,onclick:()=>add(k)},
+            el('span',{class:'ss'},'★'),el('span',{class:'sv'},v+'p'),el('span',{class:'sa'},'stamp')));
+        });
+      }
+      function total(){return env.reduce((t,k)=>t+(k?I.b:I.a),0);}
+      function recipe(){const x=env.filter(k=>!k).length;return [x,env.length-x];}
+      function add(k){
+        if(demoing)return;
+        const v=k?I.b:I.a;
+        if(total()+v>I.N){S.say(`The chart only goes up to ${I.N}p. Take a stamp off, or press Reset.`,'bad');return;}
+        env.push(k);
+        const t=total(),r=recipe();
+        const had=found.get(t);
+        if(!had||r[0]+r[1]<had[0]+had[1])found.set(t,r);
+        selM=t;
+        S.say(had?`${t}p again — you had already found that one.`:`${t}p = ${stText(I.a,I.b,r)}. That amount can be made!`,had?'':'good');
+        hintM=0;hintStage=0;
+        draw(t);
+      }
+      function setGuess(g){guess=Math.max(1,Math.min(400,g));guessB.textContent=guess;}
+      function makeable(m){return stMake(I.a,I.b,m);}
+      function check(){
+        if(demoing||solved)return;
+        const m=guess,r=makeable(m);
+        if(r){S.say(`You can make ${m}p: ${stText(I.a,I.b,r)}. So that isn't an amount that can't be made.`,'bad');return;}
+        if(I.g>1){S.say(`${m}p can't be made, true — but is it the largest? Look at the grey amounts: do they ever stop?`,'info');return;}
+        if(m<I.F){S.say(`Yes, ${m}p can't be made. But is it the largest? Keep looking further along the chart.`,'info');return;}
+        win(`🎉 ${I.F}p is the largest amount you can't make. ${I.a} × ${I.b} − ${I.a} − ${I.b} = ${I.F}. Open the maths note to see why.`);
+      }
+      function none(){
+        if(demoing||solved)return;
+        if(I.g>1)win(`🎉 Right. Every total is a multiple of ${I.g}, so amounts that aren't multiples of ${I.g} can never be made. The can't-make list goes on for ever.`);
+        else S.say(`There is a largest one for these stamps. Look for a run of ${I.a} amounts in a row that can be made — nothing after it can ever be missed.`,'info');
+      }
+      function win(t){solved=true;S.win(t);draw();}
+      function draw(now){
+        envRow.replaceChildren(...env.map(k=>el('span',{class:'stMini',style:`--sc:${ST_COL[k?I.b:I.a]||'#ddd'}`},(k?I.b:I.a)+'p')));
+        envTot.textContent=`Total: ${total()}p`;
+        grid.replaceChildren();
+        for(let m=1;m<=I.N;m++){
+          const r=found.get(m),can=I.can[m];
+          let cls='stCell';
+          if(r)cls+=' yes';else if(solved){cls+=can?' yes2':' no';}
+          if(solved&&I.g===1&&m===I.F)cls+=' top';
+          if(m===hintM)cls+=' hint';
+          if(m===now)cls+=' now';
+          const rr=r||(solved&&can?can:null);
+          grid.append(el('button',{class:cls,onclick:()=>tapCell(m),'aria-label':`${m} pence`},el('b',null,String(m)),rr?el('small',null,stText(I.a,I.b,rr)):null));
+        }
+        if(!fresh)S.refresh();
+      }
+      function tapCell(m){
+        if(demoing)return;
+        const r=found.get(m);
+        if(r){S.say(`${m}p = ${stText(I.a,I.b,r)}.`,'');return;}
+        if(solved){const c=I.can[m];S.say(c?`${m}p = ${stText(I.a,I.b,c)}.`:`${m}p can't be made.`,'');return;}
+        S.say(`${m}p: not found yet. Can you make it with the stamps? Or is it impossible?`,'info');
+      }
+      function reset(){
+        demoTok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        env=[];found=new Map();solved=false;hintM=0;hintStage=0;selM=0;
+        buildStamps();setGuess(1);S.say('');draw();
+      }
+      function undo(){if(demoing||!env.length)return;env.pop();hintM=0;S.say('');draw();}
+      function hint(){
+        if(demoing||solved)return;
+        const need=[];for(let m=1;m<=I.N;m++)if(I.can[m]&&!found.has(m))need.push(m);
+        if(!need.length){
+          S.say(I.g>1?`💡 You have found every amount up to ${I.N}p that can be made. Look at the grey ones. Is there a pattern? Does the list of grey amounts ever stop?`
+            :`💡 You have found every amount that can be made. Look at the grey ones: which is the largest? Press Check when you know.`,'info');return;
+        }
+        if(hintM!==need[0]){hintM=need[0];hintStage=0;}
+        if(hintStage===0){S.say(`💡 ${hintM}p can be made. Can you find how?`,'info');hintStage=1;}
+        else S.say(`💡 ${hintM}p = ${stText(I.a,I.b,I.can[hintM])}.`,'info');
+        draw();
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped. Press Reset or Show me to go again.','info');return;}
+        reset();demoing=true;const my=++demoTok;S.refresh();
+        let m=0;const per=I.N>60?70:120;
+        S.say('Watch: each amount is tried in turn. Green means it can be made.','info');
+        tick=setInterval(()=>{
+          if(my!==demoTok){clearInterval(tick);return;}
+          m++;
+          if(m>I.N){
+            clearInterval(tick);tick=null;demoing=false;solved=true;draw();
+            S.say(I.g===1?`The largest amount that can't be made is ${I.F}p. Press Reset to try it yourself!`:`Only multiples of ${I.g} can ever be made, so the red amounts never stop. Press Reset to try it yourself!`,'info');
+            S.revealMaths();S.refresh();return;
+          }
+          const c=I.can[m];
+          if(c)found.set(m,c);
+          draw(m);
+          S.say(c?`${m}p = ${stText(I.a,I.b,c)}.`:`${m}p can't be made.`,c?'good':'bad');
+          if(!c){const cell=grid.children[m-1];cell&&cell.classList.add('no');}
+        },per);
+      }
+      reset();fresh=false;
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:!demoing&&env.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Amounts found: ${found.size}`})
+      };
+    }
+  };
+  return def;
+}
+const STAMPS={id:'stamps',icon:'✉️',title:'Stamps',blurb:'Which postage can you make with just two stamps?',
+  levels:[
+    {name:'No common factor',count:4,make:p=>stampsLevel(...[[3,5],[4,7],[5,8],[5,7]][p])},
+    {name:'A common factor',count:3,make:p=>stampsLevel(...[[4,6],[6,9],[4,8]][p])},
+    {name:'Choose your own',make:()=>stampsLevel(3,5,true)}
+  ]};
+shuffleLevels(STAMPS);
+INV_LIST.push(STAMPS);
+INV_API.stamps={stampsLevel,stInfo,stMake,STAMPS};
+/* ===/JS:stamps=== */
+/* ==INV-END== */
+
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Weights and Measures',items:[JUGS,COLSORT,COINS]},
@@ -3231,7 +3452,7 @@ const GROUPS=[
     MUTILATED]},
   {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS]},
   {title:'Investigations',items:[
-    {soon:1,icon:'✉️',title:'Stamps',blurb:'Which postage can you make with just two stamps?'},
+    STAMPS,
     {soon:1,icon:'➕',title:'Consecutives',blurb:'Which numbers are sums of consecutive integers?'},
     {soon:1,icon:'🌨️',title:'Hailstones',blurb:'Halve it or triple it and add one — where does it end?'},
     {soon:1,icon:'🔢',title:'Euler\u2019s Phi Function',blurb:'How many numbers up to n share no factor with n?'},
@@ -3423,7 +3644,7 @@ function route(){
   if(PUZZLES[id])showPuzzle(PUZZLES[id]);else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES};
+window.CP={pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
 route();
 })();
 </script>
