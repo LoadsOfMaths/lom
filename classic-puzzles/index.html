@@ -1871,6 +1871,17 @@ const MATCHES={id:'matches',icon:'🔥',title:'Matchsticks',blurb:'Fix wrong sum
     {tab:'shapes',name:'Six matches',make:()=>sixLevel()}
   ]};
 
+/* Shuffle the order of puzzles within each section, once per launch, so that a pupil meets them in a different order each time */
+function shuffleLevels(def){
+  def.levels.forEach(L=>{
+    if(!(L.count>1))return;
+    const perm=[...Array(L.count).keys()];
+    for(let i=perm.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]];}
+    const mk=L.make;L.make=p=>mk(perm[p]);
+  });
+}
+shuffleLevels(MATCHES);
+
 const PUZZLES={};[JUGS,WGC,FOX,BRIDGE,MATCHES,COINS,SWAP,CARPARK].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
