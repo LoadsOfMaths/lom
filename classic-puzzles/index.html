@@ -1390,20 +1390,27 @@ const SH_SQUARES=[
     brief:'This grid of <strong>12 matches</strong> hides five squares. Do not move any matches. Instead <strong>add 2 more matches</strong> to make exactly <strong>9 squares</strong>. The two new matches must be laid as a <strong>plus sign inside one of the small squares</strong>.',
     maths:SH_M_HALF(9)}
 ];
-const SH_CUT=(()=>{
+const SH_T3_OUT=[[0,0,1,0],[1,0,2,0],[2,0,3,0],[0,0,0,1],[0,1,0,2],[0,2,0,3],[3,0,2,1],[2,1,1,2],[1,2,0,3]];
+const SH_T3_SLOTS=(()=>{
   const slots=[],T=3;
   for(let b=0;b<=T;b++)for(let a=0;a+b<=T;a++){
     if(a+1+b<=T)slots.push([a,b,a+1,b]);
     if(a+b+1<=T)slots.push([a,b,a,b+1]);
     if(a-1>=0&&a-1+b+1<=T)slots.push([a,b,a-1,b+1]);
   }
-  const outline=[[0,0,1,0],[1,0,2,0],[2,0,3,0],[0,0,0,1],[0,1,0,2],[0,2,0,3],[3,0,2,1],[2,1,1,2],[1,2,0,3]];
+  return slots;
+})();
+const SH_CUT=(()=>{
+  const slots=SH_T3_SLOTS,outline=SH_T3_OUT;
   const A=[[1,1,2,1],[1,1,0,2],[1,0,1,1]],B=[[1,1,1,2],[0,1,1,1],[2,0,1,1]];
   return [{mode:'add',type:'tri',k:3,pad:0,noCount:true,fig:outline,slots,goals:[outline.concat(A),outline.concat(B)],
     brief:'A triangle has sides <strong>3 matches</strong> long, so it is made from <strong>9 matches</strong>. Add <strong>3 more matches</strong> to cut it into <strong>3 pieces</strong> that are all exactly the same size and shape. The new matches must lie inside the triangle.',
     maths:`<p>A triangle with sides 3 matches long is made of 3 × 3 = <strong>9</strong> small triangles, because tripling the sides multiplies the area by 9. Three equal pieces must therefore have 9 ÷ 3 = <strong>3</strong> small triangles each.</p><p>Three small triangles in a row make an isosceles <em>trapezium</em>. The big triangle has <em>rotational symmetry of order 3</em>, which means it looks the same after a turn of 120°. Because of this, the three pieces can be the same trapezium turned through 120° and 240° about the centre.</p><p>That centre is the only point inside the triangle where the matches meet. The three new matches run from it to the edge, a third of a turn apart. Try both ways round: each makes three identical pieces, but one is the mirror image of the other.</p>`}];
 })();
 const SH_TRI=[
+  {mode:'relocate',type:'tri',k:3,N:3,apart:true,pad:0,fig:SH_T3_OUT,slots:SH_T3_SLOTS,
+    brief:'A triangle has sides <strong>3 matches</strong> long, so it is made from <strong>9 matches</strong>. Move <strong>3 matches</strong> to make exactly <strong>3 triangles</strong> that do not share any matches. Triangles of every size count, and every match must belong to a triangle — no spare matches sticking out.',
+    maths:`<p>Three triangles that share no matches need 3 × 3 = 9 matches, which is exactly how many you have. So every match must be used, and each triangle must be made from three matches of its own.</p><p>The smallest triangle has sides 1 match long. Look at each corner of the big triangle: two of its matches already form two sides of a small triangle. Each corner is just one match short of a triangle, so three moves are enough: take the three matches from the middle of the sides and use them to close the corners.</p><p>The three small triangles touch the corners of the big one and do not touch each other. This is a nice example of <em>using what is already there</em>: spotting the parts of a figure that are already in the right place before moving anything.</p>`},
   {mode:'relocate',type:'tri',k:2,N:3,
     fig:[[0,0,1,0],[1,0,2,0],[0,0,0,1],[0,1,0,2],[2,0,1,1],[1,1,0,2],[0,1,1,1]],
     brief:'A big triangle has sides <strong>2 matches</strong> long. A seventh match joins the middles of two of its sides, so there are <strong>7 matches</strong> and 2 triangles to find. Move <strong>2 matches</strong> to make exactly <strong>3 triangles</strong>. Triangles of every size count, and every match must belong to a triangle — no spare matches sticking out.',
