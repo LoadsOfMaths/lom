@@ -429,6 +429,26 @@ svg.pkG{display:block;width:100%;max-width:440px;margin:6px auto;touch-action:ma
 .gbFound span{background:rgba(70,208,138,.22);border:2px solid var(--good);border-radius:999px;padding:2px 12px;font-weight:700}
 .gbC1{background:rgba(70,208,138,.14)}.gbC2{background:rgba(70,208,138,.28)}.gbC3{background:rgba(70,208,138,.45)}.gbC4{background:rgba(70,208,138,.65)}
 /* ===/CSS:gold=== */
+/* ===CSS:ctiles=== */
+.ctWrap{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:center}
+.ctBoard{flex:0 1 330px;min-width:240px}
+.ctColl{flex:1 1 300px;min-width:240px}
+.ctPal{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.ctSw{width:54px;height:54px;border-radius:12px;border:4px solid rgba(255,255,255,.25);cursor:pointer;padding:0}
+.ctSw.on{border-color:#fff;box-shadow:0 0 0 3px var(--accent)}
+.ctGrid{display:grid;gap:3px;background:#0a1a2b;padding:3px;border-radius:10px;width:100%;max-width:300px;margin:6px auto;aspect-ratio:1/1}
+.ctCell{border:0;border-radius:4px;cursor:pointer;padding:0;background:#3a4a5c;min-height:0}
+.ctBtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.ctBox{display:flex;flex-wrap:wrap;gap:8px;max-height:430px;overflow:auto;padding:6px;background:rgba(255,255,255,.04);border-radius:12px;min-height:80px}
+.ctTh{position:relative;display:grid;gap:1px;background:#0a1a2b;padding:2px;border-radius:5px;width:var(--tw);height:var(--tw);cursor:pointer;border:2px solid transparent}
+.ctTh i{display:block}
+.ctTh.dup{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent)}
+.ctTh.sel{border-color:#fff}
+.ctTh b{position:absolute;right:-2px;bottom:-6px;font-size:.55rem;background:#0a1a2b;color:var(--mute);padding:0 3px;border-radius:5px;font-weight:600}
+.ctOri{margin-top:8px;padding:8px;background:rgba(255,255,255,.05);border-radius:10px;color:var(--mute);font-size:.85rem}
+.ctOri .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.ctRule{color:var(--mute);font-size:.85rem;text-align:center;margin:2px 0}
+/* ===/CSS:ctiles=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -4530,6 +4550,186 @@ shuffleLevels(GOLD);
 INV_LIST.push(GOLD);
 INV_API.gold={gbPairs,gbPrime,goldLevel,goldComet};
 /* ===/JS:gold=== */
+/* ===JS:ctiles=== */
+const CT_COL=[{n:'red',c:'#e0524a'},{n:'blue',c:'#3d7be0'},{n:'yellow',c:'#f2c53d'},{n:'green',c:'#3fae6b'}];
+const ctCache={};
+function ctMaps(n){
+  const maps=[];
+  for(let fl=0;fl<2;fl++)for(let ro=0;ro<4;ro++){const m=[];for(let r=0;r<n;r++)for(let c=0;c<n;c++){let p=[r,c];if(fl)p=[p[0],n-1-p[1]];for(let t=0;t<ro;t++)p=[p[1],n-1-p[0]];m[r*n+c]=p[0]*n+p[1];}maps.push(m);}
+  return maps;
+}
+function ctNb(n,diag){
+  const nb=[];for(let i=0;i<n*n;i++){const r=Math.floor(i/n),c=i%n,l=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;if(!diag&&dr&&dc)continue;const rr=r+dr,cc=c+dc;if(rr>=0&&rr<n&&cc>=0&&cc<n)l.push(rr*n+cc);}nb.push(l);}
+  return nb;
+}
+/* number of separate regions of each colour (colours 0..k-1) */
+function ctComps(g,n,diag,k,nb){
+  const out=[],seen=new Array(g.length).fill(false);
+  for(let c=0;c<k;c++)out[c]=0;
+  for(let i=0;i<g.length;i++){
+    if(seen[i])continue;
+    const col=g[i];out[col]++;
+    const st=[i];seen[i]=true;
+    while(st.length){const x=st.pop();for(const y of nb[x])if(!seen[y]&&g[y]===col){seen[y]=true;st.push(y);}}
+  }
+  return out;
+}
+function ctOkComps(L,comps){
+  if(comps.some(x=>x===0))return false;
+  if(L.split){const s=[...comps].sort();return s.length===2&&s[0]===1&&s[1]===2;}
+  return comps.every(x=>x===1);
+}
+function ctCanon(g,maps){let best=null;for(const m of maps){const h=new Array(g.length);for(let j=0;j<g.length;j++)h[m[j]]=g[j];const s=h.join('');if(best===null||s<best)best=s;}return best;}
+function ctEnum(L){
+  const key=[L.n,L.k,L.diag?1:0,L.split?1:0].join('-');
+  if(ctCache[key])return ctCache[key];
+  const n=L.n,N=n*n,maps=ctMaps(n),nb=ctNb(n,L.diag),seen=new Set(),out=[],g=new Array(N).fill(0);
+  (function rec(i){
+    if(i===N){if(ctOkComps(L,ctComps(g,n,L.diag,L.k,nb))){const s=ctCanon(g,maps);if(!seen.has(s)){seen.add(s);out.push(s);}}return;}
+    for(let c=0;c<L.k;c++){g[i]=c;rec(i+1);}
+  })(0);
+  return ctCache[key]={list:out,set:seen};
+}
+function ctMaths(L){
+  const E=ctEnum(L);
+  let body=`<p>Two tiles count as the <strong>same</strong> if one can be turned or flipped over to match the other. Swapping the colours <strong>does</strong> make a different tile. A tile is allowed when each colour forms a single connected shape${L.diag?' (squares touching at a corner count as joined)':' (squares must share an edge to be joined)'}.</p>`;
+  if(L.k===2&&!L.split){
+    const rows={};E.list.forEach(s=>{const r=[...s].filter(c=>c==='0').length;rows[r]=(rows[r]||0)+1;});
+    const ks=Object.keys(rows).map(Number).sort((a,b)=>a-b);
+    body+=`<p>To <strong>convince someone</strong> that your list is complete, you need a method, not just a lucky search. A good one is to sort the tiles by <strong>how many red squares</strong> they have, and check each group in turn:</p>
+<table class="mt"><tr><th>Red squares</th>${ks.map(k=>`<th>${k}</th>`).join('')}</tr><tr><th>Tiles</th>${ks.map(k=>`<td>${rows[k]}</td>`).join('')}</tr></table>
+<p>Total: <strong>${E.list.length}</strong> tiles. Notice that the table is the same read backwards: swapping red and blue turns a tile with <em>k</em> red squares into one with ${L.n*L.n} − <em>k</em>. So you only need to search the small groups carefully and then swap the colours for the rest.</p>
+<p>Within one group, sort again, for example by where the squares sit (corner, edge or centre), and use the symmetries to avoid counting a tile twice. A proof of completeness is an <strong>organised list</strong> plus an argument that nothing is missing from each group.</p>`;
+  }else{
+    body+=`<p>A computer search gives <strong>${E.list.length}</strong> different tiles for these rules. With so many, guessing will not work: you need a system, such as sorting by how many squares each colour has, or by which colour is in the centre, and using the turns and flips to avoid repeats.</p>`;
+    if(L.split)body+=`<p>Here one colour is allowed to be in <strong>two separate pieces</strong>, and the other colour must be in one piece. Either colour could be the one that is split.</p>`;
+    if(L.diag)body+=`<p>Letting squares join at corners means some tiles that were not allowed before are now fine, because the pieces were joined diagonally. But some tiles that were allowed before are fine in both versions.</p>`;
+    if(L.n===4)body+=`<p>On a 4 × 4 grid there are 2<sup>16</sup> = 65 536 ways to colour the squares in two colours. Only a small fraction of these have both colours in one piece.</p>`;
+    if(L.k===3)body+=`<p>Each of the three colours must be used and each in one piece. Different sets of three colours behave in the same way, so the answer is the same for any trio you choose.</p>`;
+  }
+  return body;
+}
+function cTilesLevel(L){
+  const E=ctEnum(L),total=E.list.length,n=L.n,N=n*n,maps=ctMaps(n),nb=ctNb(n,L.diag);
+  const pal=CT_COL.slice(0,L.k);
+  const def={
+    custom:true,
+    brief:L.brief,
+    get maths(){return ctMaths(L);},
+    mount(stage,S){
+      let g=new Array(N).fill(-1),brush=0,saved=[],selTile=-1,dupIdx=-1,solved=false,demoing=false,tok=0,tick=null,hintN=0,init=true;
+      const board=el('div',{class:'ctGrid',style:`grid-template-columns:repeat(${n},1fr);grid-template-rows:repeat(${n},1fr)`});
+      const cells=[];
+      for(let i=0;i<N;i++){const b=el('button',{class:'ctCell','aria-label':'Square '+(i+1),onclick:()=>paint(i)});cells.push(b);board.append(b);}
+      const palRow=el('div',{class:'ctPal'});
+      const sw=pal.map((c,i)=>{const b=el('button',{class:'ctSw','aria-label':c.n,style:`background:${c.c}`,onclick:()=>{brush=i;drawPal();}});palRow.append(b);return b;});
+      const bSave=el('button',{class:'btn primary',onclick:()=>save()},'Save this tile');
+      const bClear=el('button',{class:'btn',onclick:()=>{if(demoing)return;g.fill(-1);dupIdx=-1;S.say('');drawBoard();}},'Clear grid');
+      const bAll=el('button',{class:'btn',onclick:()=>claim()},'I have them all');
+      const rule=el('div',{class:'ctRule'},L.rule);
+      const left=el('div',{class:'ctBoard'},palRow,board,el('div',{class:'ctBtns'},bSave,bClear),el('div',{class:'ctBtns'},bAll),rule);
+      const box=el('div',{class:'ctBox'}),oriBox=el('div');
+      const right=el('div',{class:'ctColl'},el('div',{class:'trayLabel'},'Your tiles (tap one to see its turns and flips)'),box,oriBox);
+      stage.append(el('div',{class:'ctWrap'},left,right));
+      const tw=n===4?44:38;
+      function thumb(s,idx,cls){
+        const t=el('div',{class:'ctTh'+(cls?' '+cls:''),style:`--tw:${tw}px;grid-template-columns:repeat(${n},1fr);grid-template-rows:repeat(${n},1fr)`,onclick:idx==null?null:()=>{if(demoing)return;selTile=selTile===idx?-1:idx;drawColl();}});
+        [...s].forEach(ch=>t.append(el('i',{style:`background:${pal[+ch].c}`})));
+        if(idx!=null)t.append(el('b',null,String(idx+1)));
+        return t;
+      }
+      function drawPal(){sw.forEach((b,i)=>b.classList.toggle('on',i===brush));}
+      function drawBoard(){
+        cells.forEach((b,i)=>{b.style.background=g[i]<0?'':pal[g[i]].c;});
+        if(!init)S.refresh();
+      }
+      function drawColl(){
+        box.replaceChildren(...saved.map((s,i)=>thumb(s,i,i===dupIdx?'dup':i===selTile?'sel':'')));
+        oriBox.replaceChildren();
+        if(selTile>=0){
+          const s=saved[selTile],arr=[...s].map(Number),seenO=new Set(),list=[];
+          maps.forEach(m=>{const h=new Array(N);for(let j=0;j<N;j++)h[m[j]]=arr[j];const k=h.join('');if(!seenO.has(k)){seenO.add(k);list.push(k);}});
+          oriBox.append(el('div',{class:'ctOri'},`Tile ${selTile+1} can be turned or flipped into ${list.length} different-looking pictures. They all count as the same tile:`,el('div',{class:'row'},...list.map(k=>thumb(k,null)))));
+        }
+        if(!init)S.refresh();
+      }
+      function paint(i){
+        if(demoing)return;
+        g[i]=brush;dupIdx=-1;S.say('');drawBoard();
+      }
+      function save(){
+        if(demoing)return;
+        if(g.some(v=>v<0)){S.say('Colour every square first.','bad');return;}
+        const used=new Set(g);
+        if(used.size!==L.k){S.say(`A tile must use exactly ${L.k===2?'two':'three'} colours. This one uses ${used.size}.`,'bad');return;}
+        const comps=ctComps(g,n,L.diag,L.k,nb);
+        if(!ctOkComps(L,comps)){
+          const bad=comps.findIndex(x=>x!==1);
+          if(L.split){S.say(comps.every(x=>x===1)?'Every colour is in one piece. For this puzzle exactly one colour must be in two separate pieces.':'One colour must be in exactly two separate pieces, and the other colour in one piece.','bad');}
+          else S.say(`The ${pal[bad].n} squares are in ${comps[bad]} separate pieces. Each colour must be one connected shape${L.diag?' (edges or corners)':' (squares joined by edges)'}.`,'bad');
+          return;
+        }
+        const s=ctCanon(g,maps);
+        const at=saved.indexOf(s);
+        if(at>=0){dupIdx=at;S.say(`That is the same as tile ${at+1}, turned or flipped. It is already in your list.`,'info');drawColl();return;}
+        saved.push(s);dupIdx=-1;selTile=-1;hintN=0;
+        S.say(`✔ Saved as tile ${saved.length}.`,'good');
+        g.fill(-1);drawBoard();drawColl();
+        box.scrollTop=box.scrollHeight;
+      }
+      function claim(){
+        if(demoing||solved)return;
+        if(saved.length===total){solved=true;S.win(`🎉 Yes, that is all ${total}! The maths note explains how to organise the search so that you can be sure.`);drawColl();S.refresh();}
+        else if(saved.length>total)S.say('Something is wrong with the list.','bad');
+        else S.say(`Not yet. There are more tiles to find. Look for a system: for example, sort by how many squares each colour has.`,'bad');
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        g=new Array(N).fill(-1);saved=[];selTile=-1;dupIdx=-1;solved=false;hintN=0;brush=0;S.say('');drawPal();drawBoard();drawColl();
+      }
+      function undo(){if(demoing||!saved.length)return;saved.pop();selTile=-1;dupIdx=-1;solved=false;S.say('');drawColl();}
+      function hint(){
+        if(demoing||solved)return;
+        const mis=E.list.filter(s=>!saved.includes(s));
+        if(!mis.length){S.say('💡 You have every tile. Press “I have them all”.','info');return;}
+        if(hintN===0){S.say(L.k===2&&!L.split?'💡 Sort by number of red squares: first the tiles with one red square, then two, and so on. Remember that swapping red and blue makes a different tile.':'💡 Work systematically. First decide how many squares one colour has, then find every tile with that many.','info');hintN=1;return;}
+        const s=mis[Math.floor(Math.random()*mis.length)];
+        g=[...s].map(Number);drawBoard();S.say('💡 Here is a tile you have not found. Press “Save this tile”.','info');
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();let k=0;
+        const per=total>60?40:120;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(k>=total){clearInterval(tick);tick=null;demoing=false;solved=true;S.say(`All ${total} tiles. Press Reset to try it yourself!`,'info');drawColl();S.revealMaths();S.refresh();return;}
+          saved.push(E.list[k++]);drawColl();box.scrollTop=box.scrollHeight;
+          S.say(`${k} of ${total}`,'info');
+        },per);
+      }
+      reset();init=false;
+      return {reset,undo,hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:!demoing&&saved.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Tiles found: ${saved.length}`})};
+    }
+  };
+  return def;
+}
+const CTILES={id:'coloured-tiles',icon:'🟥',title:'Coloured Tiles',blurb:'Find every 3 × 3 tile in two colours — and prove you have them all.',
+  levels:[
+    {name:'Red and blue',make:()=>cTilesLevel({n:3,k:2,diag:false,split:false,rule:'Each colour must be one connected shape. Squares are joined if they share an edge.',
+      brief:'A tile is a <strong>3 × 3</strong> grid of squares coloured with <strong>exactly two colours</strong>, red and blue. Each colour must be <strong>one connected shape</strong>: the squares of a colour must join up along their edges. Tiles that can be <strong>turned or flipped over</strong> to match are the same tile, but swapping red and blue gives a different tile. Find every tile, then convince yourself that you have them all.'})},
+    {name:'Three colours',make:()=>cTilesLevel({n:3,k:3,diag:false,split:false,rule:'Use all three colours. Each must be one connected shape.',
+      brief:'Now use <strong>exactly three colours</strong>: red, blue and yellow. All three must appear, and each colour must be one connected shape (joined along edges). Turns and flips count as the same tile. There are a lot of these, so you will need a system.'})},
+    {name:'Joined at corners',make:()=>cTilesLevel({n:3,k:2,diag:true,split:false,rule:'Squares that touch at a corner count as joined.',
+      brief:'Back to red and blue on a <strong>3 × 3</strong> grid, with a new rule: squares that <strong>touch at a corner</strong> now count as joined, as well as squares that share an edge. Each colour must still be one connected shape. Which tiles are allowed now? Find them all.'})},
+    {name:'A 4 × 4 tile',make:()=>cTilesLevel({n:4,k:2,diag:false,split:false,rule:'Each colour must be one connected shape. Squares are joined if they share an edge.',
+      brief:'Try a bigger tile: a <strong>4 × 4</strong> grid in red and blue. Each colour must be one connected shape (joined along edges), and turns and flips count as the same tile. You will need an organised method to find them all.'})},
+    {name:'One colour in two pieces',make:()=>cTilesLevel({n:3,k:2,diag:false,split:true,rule:'Exactly one colour is in two separate pieces; the other is in one piece.',
+      brief:'A <strong>3 × 3</strong> tile in red and blue where <strong>one colour is in two separate pieces</strong> and the other colour is in one piece. Either colour can be the split one. Turns and flips count as the same tile; swapping the colours does not. Find every tile.'})}
+  ]};
+INV_LIST.push(CTILES);
+INV_API.ctiles={ctEnum,cTilesLevel,ctCanon};
+/* ===/JS:ctiles=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -4552,7 +4752,7 @@ const GROUPS=[
     MAXBOX,
     PICK,
     GOLD,
-    {soon:1,icon:'🟥',title:'Coloured Tiles',blurb:'Find every 3 × 3 tile in two colours — and prove you have them all.'},
+    CTILES,
     {soon:1,icon:'📏',title:'Golomb\u2019s Ruler',blurb:'Fewest marks on a ruler that can still measure every length.'}]}
 ];
 
