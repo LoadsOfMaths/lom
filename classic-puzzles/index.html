@@ -367,6 +367,21 @@ svg.hsChart{display:block;width:100%;max-width:760px;margin:6px auto}
 .stCell.pick{background:rgba(255,184,77,.3);border-color:var(--accent)}
 .stCell.bad{background:rgba(255,122,122,.3);border-color:var(--bad)}
 /* ===/CSS:phi=== */
+/* ===CSS:tiles=== */
+svg.tsWall{display:block;width:100%;max-width:640px;margin:6px auto;touch-action:manipulation;user-select:none}
+.tsWall .tl{fill:#d9d2c0;stroke:#a89f88;stroke-width:1}
+.tsWall .jn{fill:rgba(14,35,57,.35);stroke:rgba(14,35,57,.55);stroke-width:1.5;cursor:pointer}
+.tsWall .jn.on{display:none}
+.tsWall .sp{stroke-linecap:butt;pointer-events:none}
+.tsWall .sc{stroke:#d1432e}
+.tsWall .se{stroke:#1d6fa8}
+.tsWall .hit{fill:transparent;cursor:pointer}
+.tsWall .hint{fill:none;stroke:var(--good);stroke-width:4;pointer-events:none}
+.tsCount{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;font-weight:700;margin:4px 0}
+.tsCount .c1{color:#ff8f7d}.tsCount .c2{color:#7cc4f2}
+.tsCmp{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;margin:8px 0}
+.tsCmp .stStep b{min-width:2.2em}
+/* ===/CSS:tiles=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -3855,6 +3870,177 @@ shuffleLevels(PHI);
 INV_LIST.push(PHI);
 INV_API.phi={phi,phiLevel,phFactors};
 /* ===/JS:phi=== */
+/* ===JS:tiles=== */
+function tsCounts(m,n){return {c:(m-1)*(n-1),e:2*(m-1)+2*(n-1)};}
+const TS_MATHS=`<p>Picture the wall as <em>m</em> tiles across and <em>n</em> tiles up. Where four tiles meet, a <strong>corner spacer</strong> (shown as a + shape) goes in. Between two neighbouring tiles on the edge of the wall, an <strong>edge spacer</strong> (shown as a T shape) goes in.</p>
+<p><strong>Corner spacers.</strong> There are <em>m</em> − 1 gaps between the columns of tiles and <em>n</em> − 1 gaps between the rows, and a corner spacer sits wherever one of each crosses: <strong>(<em>m</em> − 1)(<em>n</em> − 1)</strong>.</p>
+<p><strong>Edge spacers.</strong> The top and bottom edges each have <em>m</em> − 1 gaps between tiles and the left and right edges each have <em>n</em> − 1, so there are <strong>2(<em>m</em> − 1) + 2(<em>n</em> − 1)</strong> edge spacers.</p>
+<p><strong>Total.</strong> (<em>m</em> − 1)(<em>n</em> − 1) + 2(<em>m</em> − 1) + 2(<em>n</em> − 1) = <em>mn</em> + <em>m</em> + <em>n</em> − 3. Check it a different way: the tiles' corners make a grid of (<em>m</em> + 1) × (<em>n</em> + 1) points, and the four corners of the whole wall need no spacer, so the total is (<em>m</em> + 1)(<em>n</em> + 1) − 4. Expand the brackets to see that it is the same.</p>
+<p>The rules still work for a wall one tile wide: when <em>m</em> = 1 there are no corner spacers, and 2(<em>n</em> − 1) edge spacers.</p>`;
+function tsDraw(m,n,placed,opts){
+  /* returns {svg, junctions} ; placed: Set of 'i,j' */
+  const ns='http://www.w3.org/2000/svg';
+  const mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const U=Math.min(64,Math.floor(560/Math.max(m,n)*(m>=n?1:1))),G=5,M=22;
+  const W=m*U+2*M,H=n*U+2*M;
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,class:'tsWall'});
+  svg.style.maxWidth=Math.min(680,Math.max(240,W))+'px';
+  svg.append(mk('rect',{x:M-4,y:M-4,width:m*U+8,height:n*U+8,fill:'#6b5d4a',rx:4}));
+  for(let c=0;c<m;c++)for(let r=0;r<n;r++)svg.append(mk('rect',{x:M+c*U+G/2,y:M+r*U+G/2,width:U-G,height:U-G,class:'tl',rx:3}));
+  const jn=[],L=Math.max(5,Math.min(11,U*0.22));
+  for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){
+    const corner=(i===0||i===m)&&(j===0||j===n);
+    if(corner)continue;
+    const inner=i>0&&i<m&&j>0&&j<n;
+    const x=M+i*U,y=M+j*U,key=i+','+j,on=placed&&placed.has(key);
+    const g=mk('g',{});
+    const dot=mk('circle',{cx:x,cy:y,r:Math.min(9,U*.16),class:'jn'+(on?' on':'')});
+    const hit=mk('circle',{cx:x,cy:y,r:Math.max(12,U*.3),class:'hit'});
+    const sp=mk('g',{class:'sp',visibility:on?'visible':'hidden'});
+    const cls=inner?'sc':'se',sw=Math.max(5,U*.11);
+    const line=(x1,y1,x2,y2)=>mk('line',{x1,y1,x2,y2,class:cls,'stroke-width':sw});
+    if(inner){sp.append(line(x-L,y,x+L,y),line(x,y-L,x,y+L));}
+    else if(j===0)sp.append(line(x-L,y+sw/2,x+L,y+sw/2),line(x,y+sw/2,x,y+L+sw/2));
+    else if(j===n)sp.append(line(x-L,y-sw/2,x+L,y-sw/2),line(x,y-L-sw/2,x,y-sw/2));
+    else if(i===0)sp.append(line(x+sw/2,y-L,x+sw/2,y+L),line(x+sw/2,y,x+L+sw/2,y));
+    else sp.append(line(x-sw/2,y-L,x-sw/2,y+L),line(x-L-sw/2,y,x-L-sw/2,y));
+    g.append(dot,sp,hit);svg.append(g);
+    jn.push({i,j,key,inner,x,y,g,dot,sp,hit});
+  }
+  return {svg,jn,U,M};
+}
+function tilesLevel(mode,a0,b0){
+  const def={
+    custom:true,
+    brief:mode==='place'
+      ?`A tiler is fitting a wall of <strong>${a0} × ${b0}</strong> tiles (${a0} across, ${b0} up). Tap the gaps to put in the spacers: <strong>corner spacers</strong> (+) go where four tiles meet and <strong>edge spacers</strong> (T) go on the edge of the wall between two neighbouring tiles. Fill every gap that needs one.`
+      :mode==='predict'
+      ?`A wall is <strong>${a0} × ${b0}</strong> tiles (${a0} across, ${b0} up). Without placing every spacer, work out how many <strong>corner spacers</strong> (where four tiles meet) and how many <strong>edge spacers</strong> (on the edge of the wall, between neighbouring tiles) the tiler needs. Set both answers and press Check.`
+      :`Make walls of different sizes with the − and + buttons. The spacers are filled in for you. Look at the table. Can you find a rule for the number of <strong>corner spacers</strong> and a rule for the number of <strong>edge spacers</strong> in an <em>m</em> × <em>n</em> wall?`,
+    maths:TS_MATHS,
+    mount(stage,S){
+      let m=a0,n=b0,placed=new Set(),solved=false,demoing=false,tok=0,tick=null,guessC=0,guessE=0,hintN=0,log=[],hintKey=null,init=true;
+      const wallBox=el('div'),cnt=el('div',{class:'tsCount'}),extra=el('div');
+      stage.append(wallBox,cnt,extra);
+      const stp=(t,f,l)=>el('button',{class:'mini',onclick:f,'aria-label':l},t);
+      let cB,eB,mB,nB,tbl;
+      if(mode==='predict'){
+        cB=el('b',null,'0');eB=el('b',null,'0');
+        const bC=el('button',{class:'btn primary',onclick:()=>check()},'Check');
+        extra.append(el('div',{class:'tsCmp'},
+          el('div',{class:'stStep'},el('span',null,'Corner (+) spacers'),stp('−',()=>setG(-1,0),'Less'),cB,stp('+',()=>setG(1,0),'More')),
+          el('div',{class:'stStep'},el('span',null,'Edge (T) spacers'),stp('−',()=>setG(0,-1),'Less'),eB,stp('+',()=>setG(0,1),'More')),bC));
+      }
+      if(mode==='explore'){
+        mB=el('b',null,String(m));nB=el('b',null,String(n));tbl=el('div');
+        extra.append(el('div',{class:'tsCmp'},
+          el('div',{class:'stStep'},el('span',null,'Across'),stp('−',()=>sz(-1,0),'Fewer'),mB,stp('+',()=>sz(1,0),'More')),
+          el('div',{class:'stStep'},el('span',null,'Up'),stp('−',()=>sz(0,-1),'Fewer'),nB,stp('+',()=>sz(0,1),'More'))),tbl);
+      }
+      function setG(dc,de){if(demoing||solved)return;guessC=Math.max(0,Math.min(200,guessC+dc));guessE=Math.max(0,Math.min(200,guessE+de));cB.textContent=guessC;eB.textContent=guessE;}
+      function sz(dm,dn){
+        if(demoing)return;
+        m=Math.max(1,Math.min(12,m+dm));n=Math.max(1,Math.min(9,n+dn));
+        record();draw();
+      }
+      function record(){
+        mB.textContent=m;nB.textContent=n;
+        const t=tsCounts(m,n);
+        log=log.filter(r=>!(r[0]===m&&r[1]===n));log.unshift([m,n,t.c,t.e]);log=log.slice(0,14);
+        const rows=log.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+        tbl.innerHTML=`<table class="mt"><tr><th>Across</th><th>Up</th><th>Corner (+)</th><th>Edge (T)</th></tr>${rows}</table>`;
+      }
+      function allKeys(){const w=tsDraw(m,n,null);return w.jn;}
+      function draw(){
+        let placedNow=placed;
+        if(mode==='explore'){placedNow=new Set(allKeys().map(j=>j.key));}
+        if(mode==='predict'){placedNow=solved?new Set(allKeys().map(j=>j.key)):new Set();}
+        const w=tsDraw(m,n,placedNow);
+        w.jn.forEach(j=>{
+          if(mode==='place'&&!demoing)j.hit.addEventListener('click',()=>tap(j.key));
+          if(mode==='place'&&hintKey===j.key)j.g.append((()=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',j.x);c.setAttribute('cy',j.y);c.setAttribute('r',Math.max(14,w.U*.32));c.setAttribute('class','hint');return c;})());
+          if(mode!=='place')j.hit.style.display='none';
+        });
+        wallBox.replaceChildren(w.svg);
+        const all=w.jn,pc=all.filter(j=>j.inner&&placedNow.has(j.key)).length,pe=all.filter(j=>!j.inner&&placedNow.has(j.key)).length;
+        cnt.innerHTML=mode==='predict'&&!solved?'':`<span class="c1">Corner (+) spacers: ${pc}</span><span class="c2">Edge (T) spacers: ${pe}</span>`;
+        if(!init)S.refresh();
+      }
+      function tap(key){
+        if(solved||demoing)return;
+        if(placed.has(key))placed.delete(key);else placed.add(key);
+        hintKey=null;hintN=0;S.say('');
+        const total=allKeys().length;
+        if(placed.size===total){solved=true;draw();const t=tsCounts(m,n);S.win(`🎉 Every gap is filled: ${t.c} corner spacers and ${t.e} edge spacers, ${t.c+t.e} in all.`);return;}
+        draw();
+      }
+      function check(){
+        if(solved||demoing)return;
+        const t=tsCounts(m,n);
+        if(guessC===t.c&&guessE===t.e){solved=true;draw();S.win(`🎉 ${t.c} corner spacers and ${t.e} edge spacers. Here they are on the wall.`);return;}
+        if(guessC!==t.c&&guessE!==t.e)S.say('Neither answer is right yet. Try the same job on a very small wall, such as 3 × 2, and look for a pattern.','bad');
+        else if(guessC!==t.c)S.say(`The edge spacers are right, but the corner spacers are not. Where does each corner spacer sit, and how many of those places are there?`,'bad');
+        else S.say(`The corner spacers are right, but the edge spacers are not. Count along each side of the wall.`,'bad');
+      }
+      function reset(){
+        tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}
+        placed=new Set();solved=false;hintKey=null;hintN=0;guessC=0;guessE=0;
+        if(cB){cB.textContent='0';eB.textContent='0';}
+        if(mode==='explore'){m=3;n=2;log=[];record();}
+        S.say('');draw();
+      }
+      function hint(){
+        if(demoing||solved)return;
+        if(mode==='place'){
+          const missing=allKeys().filter(j=>!placed.has(j.key));
+          if(missing.length){hintKey=missing[0].key;S.say(missing[0].inner?'💡 There is a gap where four tiles meet that needs a corner spacer (+).':'💡 There is a gap at the edge of the wall between two tiles that needs an edge spacer (T).','info');draw();}
+          return;
+        }
+        if(mode==='predict'){
+          S.say(hintN===0?`💡 Try a 3 × 2 wall on paper. Corner spacers: how many gaps between columns? How many between rows?`:`💡 Corner spacers: (${a0} − 1) × (${b0} − 1). Edge spacers: count the gaps along each of the four sides.`,'info');hintN++;return;
+        }
+        S.say('💡 Look at what happens to the corner count when you add one more column. Compare the walls that are one tile wide.','info');
+      }
+      function show(){
+        if(demoing){reset();S.say('Demo stopped.','info');return;}
+        reset();demoing=true;const my=++tok;S.refresh();
+        if(mode==='place'){
+          const keys=allKeys().map(j=>j.key);let k=0;
+          tick=setInterval(()=>{
+            if(my!==tok){clearInterval(tick);return;}
+            if(k>=keys.length){clearInterval(tick);tick=null;demoing=false;solved=true;draw();const t=tsCounts(m,n);S.say(`${t.c} corner spacers and ${t.e} edge spacers. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;}
+            placed.add(keys[k++]);draw();
+          },160);
+          return;
+        }
+        if(mode==='predict'){
+          demoing=false;solved=true;const t=tsCounts(m,n);cB.textContent=t.c;eB.textContent=t.e;draw();
+          S.say(`Corner: (${m} − 1) × (${n} − 1) = ${t.c}. Edge: 2 × (${m} − 1) + 2 × (${n} − 1) = ${t.e}. Press Reset to try it yourself!`,'info');S.revealMaths();S.refresh();return;
+        }
+        const sizes=[[1,1],[2,2],[3,2],[3,3],[4,3],[5,3],[5,4],[6,4]];let k=0;
+        tick=setInterval(()=>{
+          if(my!==tok){clearInterval(tick);return;}
+          if(k>=sizes.length){clearInterval(tick);tick=null;demoing=false;S.say('Try to spot the rules in the table. Press Reset to start again.','info');S.revealMaths();S.refresh();return;}
+          [m,n]=sizes[k++];record();draw();
+        },1100);
+      }
+      reset();init=false;
+      return {reset,undo(){},hint,show,stop(){tok++;demoing=false;if(tick){clearInterval(tick);tick=null;}},
+        ctl:()=>({undo:false,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:mode==='place'?`Spacers placed: ${placed.size}`:mode==='explore'?`Walls tried: ${log.length}`:''})};
+    }
+  };
+  return def;
+}
+const TILES={id:'tiles',icon:'🟦',title:'Tiles and Spacers',blurb:'Tile an m × n wall — how many spacers for the corners and the edges?',
+  levels:[
+    {name:'Place the spacers',count:5,make:p=>tilesLevel('place',...[[3,4],[4,4],[5,3],[5,6],[6,4]][p])},
+    {name:'Work it out',count:4,make:p=>tilesLevel('predict',...[[7,4],[8,5],[10,6],[12,9]][p])},
+    {name:'Find the rule',make:()=>tilesLevel('explore',3,2)}
+  ]};
+shuffleLevels(TILES);
+INV_LIST.push(TILES);
+INV_API.tiles={tsCounts,tilesLevel};
+/* ===/JS:tiles=== */
 /* ==INV-END== */
 
 const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
@@ -3873,7 +4059,7 @@ const GROUPS=[
     CONSEC,
     HAIL,
     PHI,
-    {soon:1,icon:'🟦',title:'Tiles and Spacers',blurb:'Tile an m × n wall — how many spacers for the corners and the edges?'},
+    TILES,
     {soon:1,icon:'📦',title:'Max Box',blurb:'Cut corners from a sheet and fold it up — which box holds the most?'},
     {soon:1,icon:'📐',title:'Pick\u2019s Theorem',blurb:'Find the area of a shape on a dotty grid by counting dots.'},
     {soon:1,icon:'➗',title:'Goldbach\u2019s Conjecture',blurb:'Is every even number the sum of two primes?'},
