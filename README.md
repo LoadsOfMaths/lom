@@ -57,6 +57,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Number Memory Game | `number-memory-game/` |
 | Over & Under | `over-and-under/` |
 | Pancake Flipper | `pancake-flipper/` |
+| Pelmanism | `pelmanism/` |
 | Penguins & Icebergs | `penguins-and-icebergs/` |
 | Pentomino Explorer | `pentomino-explorer/` |
 | Pi-Rate Pete’s Circle Tour | `pi-rate-pete/` |

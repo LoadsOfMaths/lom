@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pelmanism | LoadsOfMaths</title>
+<style>
+:root{
+  --felt:#17653a; --felt2:#0d3f23;
+  --orange:#f58220; --blue:#2478c4; --grey:#c3cbd6;
+  --ink:#1f2937; --paper:#fffdf5; --panel:#fbfaf4;
+  --q:#dbeafe; --a:#fef3c7; --p:#fce7f3; --gold:#ffd24a;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Anak Orang','Trebuchet MS','Segoe UI',system-ui,sans-serif;
+  background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt2) 100%);
+  color:#fff;display:flex;flex-direction:column;overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;cursor:pointer}
+header{display:flex;align-items:center;gap:1rem;padding:.4rem 1rem;background:rgba(0,0,0,.28);flex:0 0 auto}
+header h1{margin:0;font-family:'Super Bouncer','Trebuchet MS',system-ui,sans-serif;font-size:1.5rem;letter-spacing:.03em}
+.logo{margin-left:auto;font-weight:700;font-size:1rem;color:var(--grey)}
+.logo .l{color:var(--orange)} .logo .m{color:#69b4f5}
+[hidden]{display:none!important}
+
+/* ---------- setup ---------- */
+#setup{flex:1;overflow:auto;padding:1rem}
+.panel{max-width:62rem;margin:0 auto;background:var(--panel);color:var(--ink);border-radius:1rem;padding:1.2rem 1.6rem 1.6rem;box-shadow:0 .5rem 2rem rgba(0,0,0,.4)}
+.panel h2{margin:1.1rem 0 .4rem;font-size:1.05rem;color:var(--blue)}
+.panel h2:first-of-type{margin-top:.2rem}
+.sub{margin:.1rem 0 .6rem;color:#4b5563}
+.seg{display:flex;flex-wrap:wrap;gap:.5rem}
+.seg button,.chip{border:2px solid #cbd5e1;background:#fff;color:var(--ink);border-radius:.7rem;padding:.45rem .9rem;font-weight:700}
+.seg.big button{flex:1 1 9rem;padding:.8rem .6rem;font-size:1.1rem}
+.seg button.on,.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.seg button:hover,.chip:hover{border-color:var(--orange)}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+.chip{min-width:2.6rem;padding:.35rem .6rem;text-align:center}
+.row{display:flex;flex-wrap:wrap;gap:1.2rem 2rem}
+.row>div{flex:1 1 15rem}
+label.line{display:flex;align-items:center;gap:.5rem;margin:.25rem 0;font-weight:600}
+input[type=checkbox]{width:1.2rem;height:1.2rem}
+select,input[type=text]{font:inherit;padding:.35rem .5rem;border:2px solid #cbd5e1;border-radius:.5rem;background:#fff;color:var(--ink)}
+input[type=range]{width:min(26rem,100%);accent-color:var(--orange)}
+.pairsline{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.pairsline b{font-size:1.6rem;color:var(--orange)}
+.backs{display:flex;gap:.8rem}
+.backs button{border:3px solid transparent;background:none;border-radius:.6rem;padding:2px}
+.backs button.on{border-color:var(--orange)}
+.backs img{display:block;width:4.2rem;height:5.9rem;border-radius:.4rem;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+#startBtn{margin-top:1.3rem;width:100%;padding:.9rem;font-size:1.4rem;font-weight:800;border:0;border-radius:.9rem;background:var(--orange);color:#fff;font-family:'Super Bouncer','Trebuchet MS',system-ui,sans-serif;letter-spacing:.04em}
+#startBtn:hover{filter:brightness(1.08)}
+#startBtn:disabled{background:#9ca3af;cursor:not-allowed}
+.note{color:#b45309;font-weight:700;margin:.4rem 0 0}
+
+/* ---------- game ---------- */
+#game{flex:1;display:flex;flex-direction:column;min-height:0}
+#bar{flex:0 0 auto;display:flex;align-items:center;gap:1rem;padding:.4rem 1rem;flex-wrap:wrap}
+#score{display:flex;gap:.8rem;flex-wrap:wrap;align-items:stretch}
+.stat{background:rgba(0,0,0,.3);border-radius:.7rem;padding:.3rem .9rem;font-size:1.05rem;border:3px solid transparent}
+.stat b{font-size:1.5rem;color:var(--gold)}
+.stat.active{border-color:var(--gold);background:rgba(255,210,74,.2)}
+.stat .nm{font-weight:800}
+#msg{flex:1 1 12rem;font-size:1.15rem;font-weight:700;text-align:center;min-height:1.5em}
+#gbtns{display:flex;gap:.5rem}
+#gbtns button{background:rgba(255,255,255,.14);color:#fff;border:2px solid rgba(255,255,255,.4);border-radius:.6rem;padding:.35rem .9rem;font-weight:700}
+#gbtns button:hover{background:rgba(255,255,255,.28)}
+#board{flex:1;min-height:0;display:grid;justify-content:center;align-content:center;padding:.5rem}
+.card{position:relative;width:100%;height:100%;perspective:900px;cursor:pointer;outline:none;border-radius:7% / 5%}
+.card:focus-visible{box-shadow:0 0 0 4px var(--gold)}
+.inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s ease}
+.card.up .inner{transform:rotateY(180deg)}
+.face,.back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:7% / 5%;overflow:hidden}
+.back{box-shadow:0 .15rem .5rem rgba(0,0,0,.45);background:#fff}
+.back img,.face img{display:block;width:100%;height:100%;object-fit:fill;pointer-events:none}
+.face{transform:rotateY(180deg);box-shadow:0 .15rem .5rem rgba(0,0,0,.45)}
+.face.txt{background:var(--paper);color:var(--ink);border:.18em solid #374151;display:flex;align-items:center;justify-content:center;text-align:center;padding:6%;font-weight:800;line-height:1.12;overflow-wrap:break-word}
+.face.txt.k-q{background:var(--q)} .face.txt.k-a{background:var(--a)} .face.txt.k-p{background:var(--p)}
+.face.txt.def{font-weight:600}
+.fr{display:inline-flex;flex-direction:column;align-items:center;line-height:1.05}
+.fr .n{padding:0 .25em .06em;border-bottom:.09em solid currentColor}
+.fr .d{padding-top:.06em}
+.card.done{pointer-events:none}
+.card.done .face,.card.done .back{transition:opacity .5s}
+.card.done.fade .face,.card.done.fade .back{opacity:.3}
+.card.done.gone{visibility:hidden}
+.card.hint .inner{animation:pulse .6s ease}
+@keyframes pulse{50%{filter:brightness(1.3)}}
+@media (prefers-reduced-motion:reduce){.inner{transition:none}}
+
+/* ---------- overlay ---------- */
+#over{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:5}
+#over .box{background:var(--panel);color:var(--ink);border-radius:1.2rem;padding:1.6rem 2.2rem;text-align:center;max-width:32rem;box-shadow:0 1rem 3rem rgba(0,0,0,.5)}
+#over h2{margin:.2rem 0 .6rem;font-family:'Super Bouncer','Trebuchet MS',system-ui,sans-serif;font-size:2rem;color:var(--orange)}
+#over p{font-size:1.2rem;margin:.4rem 0}
+#over .btns{display:flex;gap:.8rem;justify-content:center;margin-top:1.1rem;flex-wrap:wrap}
+#over .btns button{border:0;border-radius:.7rem;padding:.7rem 1.4rem;font-weight:800;font-size:1.1rem;background:var(--blue);color:#fff}
+#over .btns button.pri{background:var(--orange)}
+#dealing{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;background:rgba(0,0,0,.45);z-index:4}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pelmanism</h1>
+  <span class="logo"><span style="color:var(--grey)">www.</span><span class="l">loads</span>of<span class="m">maths</span>.co.uk</span>
+</header>
+
+<!-- ============ SETUP ============ -->
+<section id="setup">
+ <div class="panel">
+  <p class="sub">Turn over two cards at a time and find the matching pairs.</p>
+
+  <h2>1. What are you matching?</h2>
+  <div id="modeBtns" class="seg big"></div>
+
+  <div id="opt-cards" class="opts">
+    <h2>Cards to use</h2>
+    <div class="seg" id="cardsetBtns"></div>
+    <p class="sub">A pair is two cards with the same value and the same colour, such as the 7 of hearts and the 7 of diamonds.</p>
+  </div>
+
+  <div id="opt-tables" class="opts" hidden>
+    <h2>Times tables to include</h2>
+    <div class="chips" id="tableChips"></div>
+    <div class="chips" style="margin-top:.5rem" id="tablePresets"></div>
+    <label class="line"><input type="checkbox" id="optMul"> Multiplication (6 × 7 with 42)</label>
+    <label class="line"><input type="checkbox" id="optDiv"> Division (42 ÷ 6 with 7)</label>
+  </div>
+
+  <div id="opt-fdp" class="opts" hidden>
+    <h2>Which pairs?</h2>
+    <div class="seg" id="fdpTypeBtns"></div>
+    <h2>Difficulty</h2>
+    <div class="chips" id="fdpLevels"></div>
+  </div>
+
+  <div id="opt-vocab" class="opts" hidden>
+    <h2>Word level</h2>
+    <div class="chips" id="vocabLevels"></div>
+    <p class="sub">Each pair is a maths word and its meaning.</p>
+  </div>
+
+  <h2>2. How many pairs on the table?</h2>
+  <div class="pairsline">
+    <input type="range" id="pairs" min="2" max="26" step="1">
+    <span><b id="pairsN">8</b> pairs (<span id="cardsN">16</span> cards)</span>
+  </div>
+  <p class="note" id="poolNote" hidden></p>
+
+  <h2>3. Players</h2>
+  <div class="row">
+    <div>
+      <div class="seg" id="playerBtns"></div>
+    </div>
+    <div id="names" hidden>
+      <label class="line">Player 1 <input type="text" id="name1" maxlength="14"></label>
+      <label class="line">Player 2 <input type="text" id="name2" maxlength="14"></label>
+    </div>
+  </div>
+
+  <h2>4. Options</h2>
+  <div class="row">
+    <div>
+      <div style="font-weight:700;margin-bottom:.3rem">Card back</div>
+      <div class="backs" id="backBtns"></div>
+    </div>
+    <div>
+      <label class="line">Look at all the cards first
+        <select id="optPreview"><option value="0">No</option><option value="3">3 seconds</option><option value="5">5 seconds</option><option value="10">10 seconds</option></select>
+      </label>
+      <label class="line">Matched pairs
+        <select id="optMatched"><option value="fade">Fade out</option><option value="gone">Disappear</option></select>
+      </label>
+      <label class="line" id="colourLine"><input type="checkbox" id="optColour"> Colour-code the two kinds of card</label>
+    </div>
+  </div>
+
+  <button id="startBtn">Deal the cards</button>
+ </div>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="game" hidden>
+  <div id="bar">
+    <div id="score"></div>
+    <div id="msg"></div>
+    <div id="gbtns"><button id="bNew">New deal</button><button id="bSet">Settings</button></div>
+  </div>
+  <div id="board"></div>
+</section>
+
+<div id="over" hidden><div class="box"></div></div>
+<div id="dealing" hidden>Dealing…</div>
+
+<script>
+'use strict';
+/* ====================================================================
+   PELMANISM  –  card images live in the cards/ folder beside this file.
+   Change CARDS_DIR / BACKS / the naming here if your files differ.
+   Face files are <rank><suit>.svg  (A 2-9 T J Q K  +  H D S C), e.g. AS.svg, TH.svg
+   ==================================================================== */
+const CARDS_DIR = 'cards/';
+const BACKS = [
+  {id:'1B', src:CARDS_DIR+'1B.svg'},
+  {id:'2B', src:CARDS_DIR+'2B.svg'}
+];
+const faceUrl = code => CARDS_DIR + code + '.svg';
+
+const $ = s => document.querySelector(s);
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ---------------- data ---------------- */
+const RANKS = ['A','2','3','4','5','6','7','8','9','T','J','Q','K'];
+const RANK_NAME = {A:'Ace',T:'10',J:'Jack',Q:'Queen',K:'King'};
+const SUIT_NAME = {H:'hearts',D:'diamonds',S:'spades',C:'clubs'};
+const CARDSETS = [
+  {id:'all',   label:'All 52 cards',          ranks:RANKS},
+  {id:'num',   label:'Ace to 10',             ranks:RANKS.slice(0,10)},
+  {id:'pic',   label:'Picture cards (J, Q, K)',ranks:['J','Q','K']}
+];
+// [numerator, denominator, decimal, percentage, level]
+const FDP = [
+ [1,2,'0.5','50%','e'],[1,4,'0.25','25%','e'],[3,4,'0.75','75%','e'],
+ [1,10,'0.1','10%','e'],[3,10,'0.3','30%','e'],[7,10,'0.7','70%','e'],[9,10,'0.9','90%','e'],
+ [1,5,'0.2','20%','e'],[2,5,'0.4','40%','e'],[3,5,'0.6','60%','e'],[4,5,'0.8','80%','e'],
+ [1,8,'0.125','12.5%','m'],[3,8,'0.375','37.5%','m'],[5,8,'0.625','62.5%','m'],[7,8,'0.875','87.5%','m'],
+ [1,20,'0.05','5%','m'],[3,20,'0.15','15%','m'],[7,20,'0.35','35%','m'],[9,20,'0.45','45%','m'],
+ [11,20,'0.55','55%','m'],[13,20,'0.65','65%','m'],[17,20,'0.85','85%','m'],[19,20,'0.95','95%','m'],
+ [1,25,'0.04','4%','h'],[3,25,'0.12','12%','h'],[7,25,'0.28','28%','h'],[9,25,'0.36','36%','h'],
+ [11,25,'0.44','44%','h'],[13,25,'0.52','52%','h'],[17,25,'0.68','68%','h'],[19,25,'0.76','76%','h'],
+ [21,25,'0.84','84%','h'],[23,25,'0.92','92%','h'],[1,50,'0.02','2%','h'],[3,50,'0.06','6%','h']
+];
+const VOCAB = [
+ // Easy (KS2)
+ ['Sum','The answer to an addition','e'],['Difference','The answer to a subtraction','e'],
+ ['Product','The answer to a multiplication','e'],['Factor','A number that divides exactly into another','e'],
+ ['Multiple','A number in a times table','e'],['Prime number','A number with exactly two factors','e'],
+ ['Square number','A number multiplied by itself','e'],['Perimeter','The distance around the edge of a shape','e'],
+ ['Area','The surface inside a 2D shape','e'],['Volume','The space inside a 3D shape','e'],
+ ['Vertex','A corner of a shape','e'],['Edge','Where two faces of a solid meet','e'],
+ ['Face','A flat surface of a solid','e'],['Numerator','The top number of a fraction','e'],
+ ['Denominator','The bottom number of a fraction','e'],['Digit','A single figure from 0 to 9','e'],
+ ['Equivalent','Having the same value','e'],['Symmetry','When one half mirrors the other','e'],
+ ['Parallel','Lines that stay the same distance apart','e'],['Perpendicular','Lines that meet at a right angle','e'],
+ ['Acute','An angle smaller than 90°','e'],['Obtuse','An angle between 90° and 180°','e'],
+ ['Estimate','A sensible guess close to the answer','e'],
+ // Medium (KS3)
+ ['Mean','The total divided by how many values','m'],['Median','The middle value when in order','m'],
+ ['Mode','The most common value','m'],['Range','Largest value minus smallest value','m'],
+ ['Integer','A whole number, positive, negative or zero','m'],['Reciprocal','One divided by the number','m'],
+ ['Quotient','The answer to a division','m'],['Ratio','Compares quantities, written a : b','m'],
+ ['Coefficient','The number multiplying a letter','m'],['Expression','Numbers and letters with no equals sign','m'],
+ ['Equation','Says two expressions are equal','m'],['Formula','A rule linking quantities using letters','m'],
+ ['Term','One part of an expression','m'],['Inverse','The operation that undoes another','m'],
+ ['Bearing','A direction measured clockwise from north','m'],['Congruent','Exactly the same shape and size','m'],
+ ['Similar','The same shape but a different size','m'],['Circumference','The distance around a circle','m'],
+ ['Diameter','A line across a circle through the centre','m'],['Radius','From the centre of a circle to its edge','m'],
+ ['Hypotenuse','The longest side of a right-angled triangle','m'],['Polygon','A closed shape with straight sides','m'],
+ ['Prism','A solid with the same cross-section throughout','m'],['Tessellate','Fit together with no gaps or overlaps','m'],
+ ['Sequence','Numbers following a pattern','m'],['Variable','A letter that can take different values','m'],
+ ['Outlier','A value far away from the others','m'],
+ // Hard (GCSE)
+ ['Surd','An irrational root such as √2','h'],['Quadratic','An equation whose highest power is x²','h'],
+ ['Gradient','The steepness of a line','h'],['Tangent','A line touching a curve at one point','h'],
+ ['Locus','A set of points obeying a rule','h'],['Factorise','Write as a product, using brackets','h'],
+ ['Expand','Multiply out the brackets','h'],['Inequality','Compares using <, >, ≤ or ≥','h'],
+ ['Simultaneous equations','Equations solved at the same time','h'],['Asymptote','A line a curve approaches but never reaches','h'],
+ ['Intercept','Where a graph crosses an axis','h'],['Frequency density','Frequency divided by class width','h'],
+ ['Cumulative frequency','A running total of frequencies','h'],['Quartile','One of three values splitting data into four parts','h'],
+ ['Interquartile range','Upper quartile minus lower quartile','h'],['Vector','A quantity with size and direction','h'],
+ ['Standard form','A × 10ⁿ, with A from 1 to under 10','h'],['Recurring decimal','A decimal with a repeating pattern of digits','h'],
+ ['Irrational','Cannot be written as a fraction','h'],['Rationalise','Remove a surd from the denominator','h'],
+ ['Sector','A slice of a circle between two radii','h'],['Segment','The region between a chord and an arc','h'],
+ ['Arc','Part of the circumference of a circle','h'],['Chord','A line joining two points on a circle','h'],
+ ['Iteration','Repeating a process to approach a solution','h'],['Compound interest','Interest paid on interest as well','h'],
+ ['Direct proportion','Doubling one quantity doubles the other','h'],['Mutually exclusive','Events that cannot happen together','h'],
+ ['Independent events','One does not affect the other','h'],['Conditional probability','Probability of an event given another has happened','h']
+];
+const MODES = [
+  {id:'cards',  label:'Playing cards', cap:26},
+  {id:'tables', label:'Times tables',  cap:20},
+  {id:'fdp',    label:'Fractions, decimals, percentages', cap:20},
+  {id:'vocab',  label:'Maths vocabulary', cap:16}
+];
+const LEVELS = [['e','Easy (KS2)'],['m','Medium (KS3)'],['h','Hard (GCSE)']];
+const TABLE_PRESETS = [['None',[]],['All',[2,3,4,5,6,7,8,9,10,11,12]],['Easy',[2,3,4,5,10]],['Medium',[6,7,8,9]],['Hard',[7,8,9,11,12]]];
+const FDP_TYPES = [['fd','Fraction ↔ Decimal'],['fp','Fraction ↔ Percentage'],['dp','Decimal ↔ Percentage'],['any','A mixture']];
+
+/* ---------------- settings ---------------- */
+const DEFAULTS = {
+  mode:'cards', cardset:'all', tables:[2,3,4,5,10], mul:true, div:false,
+  fdpType:'any', fdpLevels:['e','m'], vocabLevels:['e','m'],
+  pairs:8, players:1, name1:'Team 1', name2:'Team 2',
+  back:'1B', preview:'0', matched:'fade', colour:true
+};
+let S = Object.assign({}, DEFAULTS);
+try{ const s = JSON.parse(localStorage.getItem('pelmanismSettings')||'null'); if(s) S = Object.assign(S, s); }catch(e){}
+const saveSettings = () => { try{ localStorage.setItem('pelmanismSettings', JSON.stringify(S)); }catch(e){} };
+
+/* ---------------- pools of pairs ---------------- */
+function fracHtml(n,d){ return `<span class="fr"><span class="n">${n}</span><span class="d">${d}</span></span>`; }
+function tableAnswerSet(){
+  const set = new Set();
+  S.tables.forEach(t=>{ for(let b=2;b<=12;b++){ if(S.mul) set.add(String(t*b)); if(S.div) set.add(String(b)); } });
+  return set;
+}
+function poolSize(){
+  switch(S.mode){
+    case 'cards':  return CARDSETS.find(c=>c.id===S.cardset).ranks.length*2;
+    case 'tables': return (S.tables.length && (S.mul||S.div)) ? tableAnswerSet().size : 0;
+    case 'fdp':    return FDP.filter(r=>S.fdpLevels.includes(r[4])).length;
+    case 'vocab':  return VOCAB.filter(r=>S.vocabLevels.includes(r[2])).length;
+  }
+  return 0;
+}
+const maxPairs = () => Math.min(MODES.find(m=>m.id===S.mode).cap, poolSize());
+
+function buildPool(){
+  const out = [];
+  if(S.mode==='cards'){
+    CARDSETS.find(c=>c.id===S.cardset).ranks.forEach(r=>{
+      [['H','D'],['S','C']].forEach(([x,y])=>{
+        out.push({id:r+x+y, a:{img:r+x}, b:{img:r+y}});
+      });
+    });
+  } else if(S.mode==='tables'){
+    const combos = [];
+    S.tables.forEach(t=>{ for(let b=2;b<=12;b++){
+      if(S.mul) combos.push({q:Math.random()<.5?`${t} × ${b}`:`${b} × ${t}`, ans:String(t*b)});
+      if(S.div) combos.push({q:`${t*b} ÷ ${t}`, ans:String(b)});
+    }});
+    const seen = new Set();
+    shuffle(combos).forEach(c=>{ if(!seen.has(c.ans)){ seen.add(c.ans); out.push({id:'t'+c.ans, a:{text:c.q,role:'q',cls:'math'}, b:{text:c.ans,role:'a',cls:'math'}}); } });
+  } else if(S.mode==='fdp'){
+    FDP.filter(r=>S.fdpLevels.includes(r[4])).forEach(r=>{
+      const rep = {f:{html:fracHtml(r[0],r[1]),role:'q',cls:'frac',kind:'f'}, d:{text:r[2],role:'a',cls:'math',kind:'d'}, p:{text:r[3],role:'p',cls:'math',kind:'p'}};
+      let k;
+      if(S.fdpType==='fd') k=['f','d']; else if(S.fdpType==='fp') k=['f','p']; else if(S.fdpType==='dp') k=['d','p'];
+      else k = shuffle(['f','d','p']).slice(0,2);
+      out.push({id:'f'+r[0]+'/'+r[1], a:rep[k[0]], b:rep[k[1]]});
+    });
+  } else {
+    VOCAB.filter(r=>S.vocabLevels.includes(r[2])).forEach(r=>{
+      out.push({id:'v'+r[0], a:{text:r[0],role:'q',cls:'word'}, b:{text:r[1],role:'a',cls:'def'}});
+    });
+  }
+  return out;
+}
+
+/* ---------------- setup screen ---------------- */
+function seg(el, items, cur, onpick, cls){
+  el.innerHTML = items.map(([id,label])=>`<button type="button" data-id="${id}" class="${id===cur?'on':''}">${label}</button>`).join('');
+  el.onclick = e=>{ const b=e.target.closest('button'); if(!b) return; onpick(b.dataset.id); };
+}
+function chipsMulti(el, items, selected, onchange){
+  el.innerHTML = items.map(([id,label])=>`<button type="button" class="chip ${selected.includes(id)?'on':''}" data-id="${id}">${label}</button>`).join('');
+  el.onclick = e=>{ const b=e.target.closest('button'); if(!b) return; const id=b.dataset.id; const i=selected.indexOf(id); if(i>=0) selected.splice(i,1); else selected.push(id); onchange(); };
+}
+function renderSetup(){
+  seg($('#modeBtns'), MODES.map(m=>[m.id,m.label]), S.mode, id=>{S.mode=id;renderSetup();});
+  ['cards','tables','fdp','vocab'].forEach(m=>{ $('#opt-'+m).hidden = S.mode!==m; });
+  seg($('#cardsetBtns'), CARDSETS.map(c=>[c.id,c.label]), S.cardset, id=>{S.cardset=id;renderSetup();});
+
+  const tbl = S.tables.map(String);
+  chipsMulti($('#tableChips'), [2,3,4,5,6,7,8,9,10,11,12].map(n=>[String(n),n+'×']), tbl, ()=>{S.tables=tbl.map(Number).sort((a,b)=>a-b);renderSetup();});
+  $('#tablePresets').innerHTML = TABLE_PRESETS.map(([n,v],i)=>`<button type="button" class="chip" data-i="${i}">${n}</button>`).join('');
+  $('#tablePresets').onclick = e=>{ const b=e.target.closest('button'); if(!b) return; S.tables=TABLE_PRESETS[+b.dataset.i][1].slice(); renderSetup(); };
+  $('#optMul').checked=S.mul; $('#optDiv').checked=S.div;
+
+  seg($('#fdpTypeBtns'), FDP_TYPES, S.fdpType, id=>{S.fdpType=id;renderSetup();});
+  chipsMulti($('#fdpLevels'), LEVELS, S.fdpLevels, renderSetup);
+  chipsMulti($('#vocabLevels'), LEVELS, S.vocabLevels, renderSetup);
+
+  seg($('#playerBtns'), [['1','1 player (against the clock)'],['2','2 players or teams']], String(S.players), id=>{S.players=+id;renderSetup();});
+  $('#names').hidden = S.players!==2;
+  $('#name1').value=S.name1; $('#name2').value=S.name2;
+
+  $('#backBtns').innerHTML = BACKS.map(b=>`<button type="button" class="${b.id===S.back?'on':''}" data-id="${b.id}"><img src="${b.src}" alt="Card back ${b.id}"></button>`).join('');
+  $('#backBtns').onclick = e=>{ const b=e.target.closest('button'); if(!b) return; S.back=b.dataset.id; renderSetup(); };
+  $('#optPreview').value=S.preview; $('#optMatched').value=S.matched; $('#optColour').checked=S.colour;
+  $('#colourLine').hidden = S.mode==='cards';
+
+  const mx = maxPairs();
+  const rng = $('#pairs');
+  rng.min = Math.min(2,mx); rng.max = mx;
+  if(S.pairs>mx) S.pairs=mx;
+  if(S.pairs<2 && mx>=2) S.pairs=2;
+  rng.value = S.pairs; rng.disabled = mx<2;
+  $('#pairsN').textContent = S.pairs; $('#cardsN').textContent = S.pairs*2;
+  const note = $('#poolNote');
+  if(mx<2){ note.hidden=false; note.textContent='Choose at least one option above so there are some cards to deal.'; }
+  else if(mx < MODES.find(m=>m.id===S.mode).cap){ note.hidden=false; note.textContent=`These settings give ${mx} different pairs at most.`; }
+  else note.hidden=true;
+  $('#startBtn').disabled = mx<2;
+  saveSettings();
+}
+$('#pairs').oninput = e=>{ S.pairs=+e.target.value; $('#pairsN').textContent=S.pairs; $('#cardsN').textContent=S.pairs*2; saveSettings(); };
+$('#optMul').onchange = e=>{S.mul=e.target.checked;renderSetup();};
+$('#optDiv').onchange = e=>{S.div=e.target.checked;renderSetup();};
+$('#optPreview').onchange = e=>{S.preview=e.target.value;saveSettings();};
+$('#optMatched').onchange = e=>{S.matched=e.target.value;saveSettings();};
+$('#optColour').onchange = e=>{S.colour=e.target.checked;saveSettings();};
+$('#name1').oninput = e=>{S.name1=e.target.value;saveSettings();};
+$('#name2').oninput = e=>{S.name2=e.target.value;saveSettings();};
+
+/* ---------------- images ---------------- */
+const rasterCache = new Map();
+function raster(url){
+  if(rasterCache.has(url)) return rasterCache.get(url);
+  const p = new Promise(res=>{
+    const im = new Image();
+    im.onload = ()=>{
+      try{
+        const c=document.createElement('canvas'); c.width=360; c.height=504;
+        c.getContext('2d').drawImage(im,0,0,360,504);
+        res({src:c.toDataURL('image/png'), ok:true});   // smooth, fast to flip
+      }catch(e){ res({src:url, ok:true}); }               // e.g. opened straight from disk
+    };
+    im.onerror = ()=>res({src:url, ok:false});
+    im.src = url;
+  });
+  rasterCache.set(url,p); return p;
+}
+
+/* ---------------- game ---------------- */
+let G = null;
+const fmtTime = s => Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+
+async function startGame(){
+  $('#dealing').hidden = false;
+  const n = Math.min(S.pairs, maxPairs());
+  const pairs = shuffle(buildPool()).slice(0,n);
+  const cards = [];
+  pairs.forEach(p=>{ cards.push({pid:p.id, def:p.a}); cards.push({pid:p.id, def:p.b}); });
+  G = {n, cards:shuffle(cards), open:[], lock:false, mm:null, found:0, started:false, over:false,
+       players:S.players, turn:0, scores:[0,0], turns:[0,0], t0:0, secs:0, timer:null,
+       names:[(S.name1||'Team 1').trim()||'Team 1',(S.name2||'Team 2').trim()||'Team 2']};
+
+  const jobs = [];
+  const back = BACKS.find(b=>b.id===S.back) || BACKS[0];
+  jobs.push(raster(back.src).then(r=>{G.backSrc=r.src; return r.ok;}));
+  G.cards.forEach(c=>{ if(c.def.img){ jobs.push(raster(faceUrl(c.def.img)).then(r=>{c.src=r.src; return r.ok;})); } });
+  const oks = await Promise.all(jobs);
+  $('#dealing').hidden = true;
+  if(oks.includes(false)){
+    alert('Some card pictures could not be loaded.\nCheck that the "cards" folder sits next to this file and holds the SVG files (AS.svg, 1B.svg, …).');
+  }
+  $('#setup').hidden = true; $('#game').hidden = false; $('#over').hidden = true;
+  buildBoard();
+  renderScore(); setMsg('');
+  layout();
+  const pv = +S.preview;
+  if(pv>0){
+    G.lock = true; setMsg('Remember where everything is…');
+    document.querySelectorAll('.card').forEach(el=>el.classList.add('up'));
+    setTimeout(()=>{ document.querySelectorAll('.card').forEach(el=>el.classList.remove('up')); setTimeout(()=>{G.lock=false;setTurnMsg();},500); }, pv*1000);
+  } else setTurnMsg();
+}
+
+function bestKey(){
+  return ['pelmBest',S.mode,S.mode==='cards'?S.cardset:S.mode==='tables'?S.tables.join('.')+(S.mul?'m':'')+(S.div?'d':''):S.mode==='fdp'?S.fdpType+S.fdpLevels.slice().sort().join(''):S.vocabLevels.slice().sort().join(''),G.n].join('|');
+}
+function getBest(){ try{ return JSON.parse(localStorage.getItem(bestKey())||'null'); }catch(e){ return null; } }
+
+function buildBoard(){
+  const b = $('#board'); b.innerHTML='';
+  G.cards.forEach((c,i)=>{
+    const el = document.createElement('div');
+    el.className='card'; el.tabIndex=0; el.setAttribute('role','button'); el.dataset.i=i;
+    el.setAttribute('aria-label','Card '+(i+1)+', face down');
+    let face;
+    if(c.def.img){
+      const code=c.def.img;
+      face = `<div class="face"><img src="${c.src}" alt="${RANK_NAME[code[0]]||code[0]} of ${SUIT_NAME[code[1]]}"></div>`;
+    } else {
+      const role = S.colour ? ' k-'+c.def.role : '';
+      const inner = c.def.html || c.def.text;
+      face = `<div class="face txt ${c.def.cls}${role}" data-cls="${c.def.cls}" data-len="${(c.def.text||'').length}"><span class="t">${inner}</span></div>`;
+    }
+    el.innerHTML = `<div class="inner">${face}<div class="back"><img src="${G.backSrc}" alt=""></div></div>`;
+    b.appendChild(el);
+    c.el = el;
+  });
+}
+
+function layout(){
+  if(!G) return;
+  const b = $('#board'); const r = b.getBoundingClientRect();
+  const W = r.width-16, H = r.height-16, n = G.cards.length, ratio = 5/7;
+  const gap = Math.max(6, Math.min(W,H)*0.014);
+  let best=null;
+  for(let c=1;c<=n;c++){
+    const rows=Math.ceil(n/c);
+    const w=Math.min((W-(c-1)*gap)/c, ((H-(rows-1)*gap)/rows)*ratio);
+    if(!best||w>best.w) best={c,rows,w};
+  }
+  const w=Math.floor(Math.max(30,Math.min(best.w,260))), h=Math.floor(w/ratio);
+  b.style.gridTemplateColumns=`repeat(${best.c}, ${w}px)`;
+  b.style.gridAutoRows=`${h}px`;
+  b.style.gap=gap+'px';
+  document.querySelectorAll('.face.txt').forEach(f=>fitText(f,w,h));
+}
+
+function fitText(f,w,h){
+  const cls=f.dataset.cls, t=f.querySelector('.t');
+  if(cls==='frac'){ f.style.fontSize=(w*0.3)+'px'; return; }
+  const text=t.textContent, len=text.length;
+  let maxFs = cls==='word' ? w*0.2 : cls==='def' ? w*0.13 : w*0.27;
+  const wordsArr = text.split(/\s+/), cw = cls==='def'?0.5:0.58;
+  const availW = w*0.78, availH = h*0.78;
+  let fs = maxFs;
+  for(; fs>6; fs*=0.94){
+    const perLine = availW/(fs*cw);
+    if(Math.max(...wordsArr.map(x=>x.length)) > perLine) continue;
+    let lines=1, cur=0;
+    wordsArr.forEach(x=>{ const l=x.length+(cur?1:0); if(cur+l>perLine){lines++;cur=x.length;} else cur+=l; });
+    if(lines*fs*1.15 <= availH) break;
+  }
+  f.style.fontSize=fs+'px';
+}
+window.addEventListener('resize', layout);
+
+function setMsg(m){ $('#msg').textContent=m; }
+function setTurnMsg(){
+  if(G.over) return;
+  setMsg(G.players===2 ? G.names[G.turn]+', your turn' : (G.started?'':'Turn over two cards'));
+}
+function renderScore(){
+  const s=$('#score');
+  if(G.players===1){
+    const best=getBest();
+    s.innerHTML = `<div class="stat"><b>${G.found}</b> of ${G.n} pairs</div><div class="stat">Turns <b>${G.turns[0]}</b></div><div class="stat">Time <b id="tm">${fmtTime(G.secs)}</b></div>`+(best?`<div class="stat">Best <b>${best.turns}</b> turns</div>`:'');
+  } else {
+    s.innerHTML = [0,1].map(i=>`<div class="stat ${G.turn===i&&!G.over?'active':''}"><span class="nm">${esc(G.names[i])}</span> <b>${G.scores[i]}</b></div>`).join('') + `<div class="stat"><b>${G.n-G.found}</b> pairs left</div>`;
+  }
+}
+const esc = t => t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function tick(){ if(!G||G.over||!G.started) return; G.secs=Math.floor((Date.now()-G.t0)/1000); const tm=$('#tm'); if(tm) tm.textContent=fmtTime(G.secs); }
+setInterval(tick, 500);
+
+function flipDown(c){ c.el.classList.remove('up'); c.up=false; c.el.setAttribute('aria-label','Card face down'); }
+
+function resolveMismatch(){
+  if(!G||!G.mm) return;
+  clearTimeout(G.mm.timer);
+  const [a,b]=G.mm.pair; G.mm=null;
+  flipDown(G.cards[a]); flipDown(G.cards[b]);
+  G.open=[];
+  if(G.players===2) G.turn=1-G.turn;
+  renderScore(); setTurnMsg();
+  setTimeout(()=>{G.lock=false;},250);
+}
+
+function clickCard(i){
+  if(!G||G.over) return;
+  if(G.mm){ resolveMismatch(); return; }          // tap to clear a miss early
+  if(G.lock) return;
+  const c=G.cards[i];
+  if(c.up||c.done) return;
+  if(!G.started){ G.started=true; G.t0=Date.now(); }
+  c.up=true; c.el.classList.add('up');
+  c.el.setAttribute('aria-label',(c.def.text||c.el.querySelector('img')?.alt||'Card')+', face up');
+  G.open.push(i);
+  if(G.open.length<2) return;
+
+  const [a,b]=G.open; const ca=G.cards[a], cb=G.cards[b];
+  G.turns[G.turn]++;
+  G.lock=true;
+  if(ca.pid===cb.pid){
+    G.scores[G.turn]++; G.found++;
+    setMsg('A pair!');
+    renderScore();
+    setTimeout(()=>{
+      [ca,cb].forEach(x=>{ x.done=true; x.el.classList.add('done', S.matched==='gone'?'gone':'fade'); });
+      G.open=[]; G.lock=false;
+      if(G.found===G.n) finish(); else setTurnMsg();
+    }, 800);
+  } else {
+    setMsg('Not a pair – tap to carry on');
+    renderScore();
+    G.mm={pair:[a,b], timer:setTimeout(resolveMismatch, 1900)};
+  }
+}
+$('#board').addEventListener('click', e=>{ const el=e.target.closest('.card'); if(el) clickCard(+el.dataset.i); else if(G&&G.mm) resolveMismatch(); });
+$('#board').addEventListener('keydown', e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('card')){ e.preventDefault(); clickCard(+e.target.dataset.i); } });
+
+function finish(){
+  G.over=true; tick();
+  const box=$('#over .box'); let html='';
+  if(G.players===1){
+    const t=G.turns[0], best=getBest();
+    let nb='';
+    if(!best || t<best.turns || (t===best.turns && G.secs<best.secs)){
+      try{ localStorage.setItem(bestKey(), JSON.stringify({turns:t,secs:G.secs})); }catch(e){}
+      nb = best ? '<p><b style="color:var(--orange)">New best!</b></p>' : '';
+    }
+    html = `<h2>All ${G.n} pairs found!</h2><p>${t} turns in ${fmtTime(G.secs)}</p>${nb}<p style="font-size:1rem;color:#4b5563">The fewest possible is ${G.n} turns.</p>`;
+  } else {
+    const [x,y]=G.scores;
+    html = x===y ? `<h2>It's a draw!</h2><p>${x} pairs each</p>`
+                 : `<h2>${esc(G.names[x>y?0:1])} win${''}!</h2><p>${esc(G.names[0])} ${x} – ${y} ${esc(G.names[1])}</p>`;
+  }
+  html += `<div class="btns"><button class="pri" id="oAgain">Play again</button><button id="oSet">Settings</button></div>`;
+  box.innerHTML=html; $('#over').hidden=false;
+  setMsg('');
+  $('#oAgain').onclick=()=>{ $('#over').hidden=true; startGame(); };
+  $('#oSet').onclick=toSettings;
+  renderScore();
+}
+
+function toSettings(){
+  if(G&&G.mm) clearTimeout(G.mm.timer);
+  G=null; $('#over').hidden=true; $('#game').hidden=true; $('#setup').hidden=false; renderSetup();
+}
+$('#startBtn').onclick = ()=>{ saveSettings(); startGame(); };
+$('#bNew').onclick = ()=>{ if(G&&G.mm) clearTimeout(G.mm.timer); startGame(); };
+$('#bSet').onclick = toSettings;
+
+renderSetup();
+</script>
+</body>
+</html>
