@@ -209,7 +209,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.4;font-family:Consolas,M
   <span class="last" id="lastTxt"></span>
   <span id="waitChip">Wait…</span>
   <span class="count" id="count">0 / 0 in</span>
-  <button class="hbtn" id="listBtn">Record student list</button>
+  <button class="hbtn" id="listBtn">Save who’s here</button>
   <button class="hbtn" id="missBtn">Still to tap</button>
   <button class="hbtn" id="teachBtn">⚙ Teacher</button>
 </header>
@@ -240,6 +240,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.4;font-family:Consolas,M
     <button class="btn" id="mSettings">⚙ Settings – theme, options, PIN</button>
     <button class="btn" id="mFinish">💾 Finish session and save attendance list</button>
     <button class="btn" id="mLog">⬇ Download register log (CSV)</button>
+    <button class="btn" id="mList">📋 Student list – everyone on the register</button>
     <button class="btn danger" id="mReset">Clear the whole board</button>
     <button class="btn danger" id="mErase">🧹 Erase all data on this device</button>
     <button class="btn blue" id="mClose">Close menu</button>
@@ -353,7 +354,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.4;font-family:Consolas,M
     <button class="btn blue" id="impFile">📂 Open a file…</button>
     <button class="btn primary" id="impGo">Import</button>
   </div>
-  <input type="file" id="csvFile" accept=".csv,.txt,text/csv,text/plain" style="display:none">
+  <input type="file" id="csvFile" accept=".csv,.txt,.rtf,text/csv,text/plain,application/rtf,text/rtf" style="display:none">
 </div></div>
 
 <!-- Add / edit -->
@@ -865,8 +866,22 @@ function buildListRTF(){
   list.forEach(p=>r+=line([p.sur||"",p.first,p.emoji||"",p.year?String(p.year):"",p.form||""],false));
   return r+"}";
 }
-$('listBtn').onclick=async()=>{
-  if(!(await gate()))return;
+/* Header button: list of those present so far. No PIN - just a Yes/No check. The session carries on afterwards. */
+$('listBtn').onclick=()=>{
+  rollover();
+  const people=attendees(), n=people.length;
+  if(!n){showMsg('<span class="big">'+esc(theme().crest||'📋')+'</span>Nobody has signed in yet.',[{t:'OK',c:'btn primary'}]);return}
+  showMsg('<span class="big">'+esc(theme().crest||'📋')+'</span>Save the list of the <b>'+n+'</b> '+(n===1?'name':'names')+' who '+(n===1?'is':'are')+' here?',[
+    {t:'No',c:'btn'},
+    {t:'Yes',c:'btn primary',f:()=>{
+      const iso=att.date||todayISO();
+      download('Present_'+heading().replace(/[^A-Za-z0-9]+/g,'_')+'_'+iso+'.rtf',buildRTF(attendees(),iso));
+      toast('List of those present downloaded');
+    }}]);
+};
+/* Teacher menu: the whole register (everyone enrolled), whether or not they have signed in */
+$('mList').onclick=()=>{
+  close('teachOv');
   if(!roster.length){showMsg('<span class="big">📋</span>There are no names in this register yet.',[{t:'OK',c:'btn primary'}]);return}
   download('Student_list_'+heading().replace(/[^A-Za-z0-9]+/g,'_')+'_'+todayISO()+'.rtf',buildListRTF());
   toast('Student list downloaded');
@@ -1104,7 +1119,7 @@ function showImportResult(res){
 }
 $('importBtn').onclick=()=>{
   $('csvText').value='';
-  $('impNote').innerHTML='Paste a CSV (columns: First name, Emoji, Surname, Year, Form – header row optional) or open a file. '+
+  $('impNote').innerHTML='Paste a CSV (columns: First name, Emoji, Surname, Year, Form – header row optional) or open a file (.csv, .txt, or a Student list .rtf saved from this app). '+
     (C.sur?'Or paste names one per line as <b>Surname, Forename</b>.':'Or paste names one per line, e.g. <b>Sam T</b> or <b>Taylor, Sam</b>.')+' Names already in the list are skipped.';
   $('csvText').placeholder=C.sur?'Taylor, Sam\nPatel, Aisha':'Sam T\nAisha Patel';
   open('impOv');
@@ -1113,8 +1128,23 @@ $('impCancel').onclick=()=>close('impOv');
 $('impFile').onclick=()=>$('csvFile').click();
 $('csvFile').onchange=function(){
   const f=this.files&&this.files[0];if(!f)return;
-  const rd=new FileReader();rd.onload=()=>{$('csvText').value=String(rd.result)};rd.readAsText(f);this.value='';
+  const rd=new FileReader();rd.onload=()=>{let t=String(rd.result);if(/^\s*\{\\rtf/.test(t))t=rtfToText(t);$('csvText').value=t};rd.readAsText(f);this.value='';
 };
+/* Turns a Student list saved by this app (.rtf) back into tab-separated text so it can be imported again. */
+function rtfToText(rtf){
+  const out=[],re=/\{\\pard([\s\S]*?)\\par\}/g;let m;
+  while((m=re.exec(rtf))){
+    let s='';const tk=/\\u(-?\d+)\??|\\(tab)(?![a-z]) ?|\\([\\{}])|\\[a-z]+-?\d* ?|([^\\])/gi;let t;
+    while((t=tk.exec(m[1]))){
+      if(t[1]!=null){const n=+t[1];s+=String.fromCharCode(n<0?n+65536:n)}
+      else if(t[2])s+='\t';
+      else if(t[3])s+=t[3];
+      else if(t[4]!=null)s+=t[4];
+    }
+    if(s.indexOf('\t')>-1)out.push(s);
+  }
+  return out.join('\n');
+}
 $('impGo').onclick=()=>{
   const rows=parseCSV($('csvText').value);
   if(!rows.length){showMsg('<span class="big">📋</span>Paste some names or open a file first.',[{t:'OK',c:'btn primary'}]);return}
