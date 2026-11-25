@@ -401,9 +401,18 @@ html,body{
 .py .pad button.enter{width:96px;background:var(--green);color:#fff;font-size:1.1rem;}
 .py .py-hint{font-size:.9rem;color:var(--muted);padding:2px 12px;text-align:center;}
 
-/* compact tabs so ten fit on one row on a 1366px board */
-.tab{padding:8px 11px;font-size:.92rem;}
-#topbar{gap:6px 10px;}
+/* compact tabs so twelve fit on one row on a 1366px board (title text hides below 1500px) */
+.tab{padding:8px 8px;font-size:.88rem;}
+#topbar{gap:6px 8px;}
+@media (min-width:701px) and (max-width:1500px){ #topbar h1 .ttl{display:none;} }
+@media (min-width:701px) and (max-width:1400px){ #topbar h1{display:none;} }
+/* narrow boards (iPad landscape and below): keep the tabs on one scrolling row rather than wrapping to three */
+@media (min-width:701px) and (max-width:1100px){
+  #topbar{flex-wrap:nowrap;}
+  #tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex:1 1 auto;min-width:0;}
+  #tabs::-webkit-scrollbar{display:none;}
+  .tab{white-space:nowrap;flex:0 0 auto;}
+}
 #topbar h1{font-size:1rem;}
 
 /* ---- consistency pass: IWB-friendly sizes + Number Path popup in the shell palette ---- */
@@ -466,12 +475,58 @@ html,body{
 .py .pcl{font-size:calc(var(--bh)*.3);padding:3px;}
 .py .br.noted{background:#fff;}
 .py .pend{font-size:.55em;font-style:italic;color:#6b6f8a;}
+
+/* =====================================================================
+   NONOGRAM  (.nono)
+   ===================================================================== */
+.nono .board{display:grid;gap:0;user-select:none;-webkit-user-select:none;touch-action:none;}
+.nono .rh,.nono .ch{display:flex;color:#e8ebff;font-weight:800;background:rgba(255,255,255,.07);font-size:var(--cf,16px);}
+.nono .rh{flex-direction:row;justify-content:flex-end;align-items:center;padding-right:.35em;border-bottom:1px solid rgba(255,255,255,.14);}
+.nono .ch{flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:.25em;border-right:1px solid rgba(255,255,255,.14);}
+.nono .rh span{min-width:1.2em;text-align:center;}
+.nono .rh span.w2{min-width:1.9em;}
+.nono .ch span{height:1.33em;line-height:1.33em;text-align:center;}
+.nono .rh.b5{border-bottom:3px solid rgba(255,255,255,.55);}
+.nono .ch.r5{border-right:3px solid rgba(255,255,255,.55);}
+.nono .rh.done span,.nono .ch.done span{opacity:.28;}
+.nono .rh.fx,.nono .ch.fx{background:rgba(255,140,66,.32);}
+.nono .cell{background:#f7f8ff;border:1px solid #9aa0ac;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;}
+.nono .cell.l0{border-left:3px solid #1c2230;} .nono .cell.t0{border-top:3px solid #1c2230;}
+.nono .cell.r5{border-right:3px solid #1c2230;} .nono .cell.b5{border-bottom:3px solid #1c2230;}
+.nono .cell.f{background:#2f3f9e;}
+.nono .cell.f.shown{background:#8a4fd1;}
+.nono .cell.x::after{content:'\2715';color:#8d93b8;font-weight:700;line-height:1;}
+.nono .cell.bad{background:#fbe1e1;}
+.nono .cell.f.bad{background:#d64545;}
+.nono .cell.x.bad::after{color:#d64545;}
+.nono .cell.hint{animation:nnPulse 1.2s ease-in-out infinite;}
+@keyframes nnPulse{0%,100%{box-shadow:inset 0 0 0 4px #ffb703;}50%{box-shadow:inset 0 0 0 4px #fff3cd;}}
+.nono .board.won .cell.f{background:hsl(var(--h,220),72%,50%);}
+.nono .board.won .cell.x::after{display:none;}
+.nono .rules,.ms .rules{font-size:.9rem;color:var(--muted);padding:0 12px 6px;text-align:center;}
+
+/* =====================================================================
+   MINESWEEPER  (.ms)
+   ===================================================================== */
+.ms .board{display:grid;gap:0;user-select:none;-webkit-user-select:none;touch-action:none;border:4px solid #e8ebff;border-radius:6px;background:#e8ebff;}
+.ms .cell{display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer;position:relative;
+  background:#c3c9ea;border:1px solid #8f96bd;box-shadow:inset 3px 3px 0 #e9ecff,inset -3px -3px 0 #8f96bd;line-height:1;}
+.ms .cell.open{background:#f4f5ff;box-shadow:none;border:1px solid #c3c8e3;cursor:default;}
+.ms .cell.n1{color:#2563eb;} .ms .cell.n2{color:#16803c;} .ms .cell.n3{color:#dc2626;} .ms .cell.n4{color:#1e1b8a;}
+.ms .cell.n5{color:#9a3412;} .ms .cell.n6{color:#0e7490;} .ms .cell.n7{color:#111827;} .ms .cell.n8{color:#6b7280;}
+.ms .cell.mine{background:#e4e7fa;box-shadow:none;}
+.ms .cell.boom{background:#ff6b6b;box-shadow:none;}
+.ms .cell.wrong::after{content:'\2716';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#d61f1f;font-size:1.1em;}
+.ms .cell.hint{animation:msPulse 1.1s ease-in-out infinite;}
+.ms .cell.ref{box-shadow:inset 0 0 0 4px #6c3ce9;}
+@keyframes msPulse{0%,100%{box-shadow:inset 0 0 0 5px #ffb703;background:#fff3cd;}50%{box-shadow:inset 0 0 0 5px #fff3cd;background:#ffe08a;}}
+.ms .count{font-weight:800;color:#ffd76a;font-size:1.15rem;white-space:nowrap;padding:0 8px;}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="topbar">
-    <h1>🧩 Puzzle of the Day</h1>
+    <h1>🧩<span class="ttl"> Puzzle of the Day</span></h1>
     <div id="tabs"></div>
   </div>
   <div id="panels"></div>
@@ -4868,6 +4923,652 @@ POTD.register({id:'py',label:'Pyramid',mount,onShow:layout});
 })();
 </script>
 
+
+<!-- =====================================================================
+     TAB 11: NONOGRAM
+     Puzzles are generated on the spot as random or left-right symmetric patterns (no stored or AI-made pictures).
+     Every puzzle is checked: exactly one solution, and it can be finished by line logic alone (never a guess).
+     Play: tap to fill, Cross mode for squares you know are empty, drag to paint a run.
+     ===================================================================== -->
+<script>
+(function(){
+/*NONOGRAM-ENGINE-START*/
+function nnClues(line){
+  const out=[]; let run=0;
+  for(const v of line){ if(v===1) run++; else if(run){ out.push(run); run=0; } }
+  if(run) out.push(run);
+  return out;
+}
+/* cells: -1 unknown, 0 empty, 1 filled.  Returns a new array with everything forced by this one line, or null if the line is contradictory. */
+function nnSolveLine(clue,cells){
+  const n=cells.length, k=clue.length;
+  const c=[]; for(let i=0;i<=n+1;i++) c.push(new Array(k+1).fill(false));
+  c[n][k]=true; c[n+1][k]=true;
+  function fits(i,L){
+    if(i+L>n) return false;
+    for(let x=i;x<i+L;x++) if(cells[x]===0) return false;
+    return i+L===n||cells[i+L]!==1;
+  }
+  for(let i=n-1;i>=0;i--){
+    c[i][k]=cells[i]!==1&&c[i+1][k];
+    for(let j=k-1;j>=0;j--){
+      let ok=cells[i]!==1&&c[i+1][j];
+      if(!ok&&fits(i,clue[j])) ok=c[i+clue[j]+1][j+1];
+      c[i][j]=ok;
+    }
+  }
+  if(!c[0][0]) return null;
+  const R=[]; for(let i=0;i<=n+1;i++) R.push(new Array(k+1).fill(false));
+  R[0][0]=true;
+  const canF=new Array(n).fill(false), canE=new Array(n).fill(false);
+  for(let i=0;i<n;i++) for(let j=0;j<=k;j++){
+    if(!R[i][j]) continue;
+    if(cells[i]!==1&&c[i+1][j]){ R[i+1][j]=true; canE[i]=true; }
+    if(j<k){
+      const L=clue[j];
+      if(fits(i,L)&&c[i+L+1][j+1]){
+        R[i+L+1][j+1]=true;
+        for(let x=i;x<i+L;x++) canF[x]=true;
+        if(i+L<n) canE[i+L]=true;
+      }
+    }
+  }
+  return cells.map((v,i)=> v!==-1?v : (canF[i]&&!canE[i]?1:(canE[i]&&!canF[i]?0:-1)));
+}
+/* Repeated line solving over the whole grid.  grid: rows*cols array.  Returns {grid,solved,passes,bad}. */
+function nnLineSolve(rowClues,colClues,start){
+  const R=rowClues.length, C=colClues.length;
+  const g=start?start.slice():new Array(R*C).fill(-1);
+  let passes=0, changed=true;
+  while(changed){
+    changed=false; passes++;
+    for(let r=0;r<R;r++){
+      const cells=[]; for(let c=0;c<C;c++) cells.push(g[r*C+c]);
+      const res=nnSolveLine(rowClues[r],cells); if(!res) return {grid:g,solved:false,passes,bad:true};
+      for(let c=0;c<C;c++) if(res[c]!==g[r*C+c]){ g[r*C+c]=res[c]; changed=true; }
+    }
+    for(let c=0;c<C;c++){
+      const cells=[]; for(let r=0;r<R;r++) cells.push(g[r*C+c]);
+      const res=nnSolveLine(colClues[c],cells); if(!res) return {grid:g,solved:false,passes,bad:true};
+      for(let r=0;r<R;r++) if(res[r]!==g[r*C+c]){ g[r*C+c]=res[r]; changed=true; }
+    }
+  }
+  return {grid:g,solved:g.every(v=>v!==-1),passes,bad:false};
+}
+function nnCluesOfGrid(sol,R,C){
+  const rows=[], cols=[];
+  for(let r=0;r<R;r++){ const l=[]; for(let c=0;c<C;c++) l.push(sol[r*C+c]); rows.push(nnClues(l)); }
+  for(let c=0;c<C;c++){ const l=[]; for(let r=0;r<R;r++) l.push(sol[r*C+c]); cols.push(nnClues(l)); }
+  return {rows,cols};
+}
+/* mode: 'random' or 'mirror' (left-right).  diff: 'easy' | 'medium' | 'hard' sets the fill density (bigger blocks = easier) and how many
+   rounds of line logic are needed.  Every puzzle returned has exactly one solution AND can be solved by line logic alone (no guessing). */
+const NN_DIFF={ easy:{lo:0.66,hi:0.80}, medium:{lo:0.54,hi:0.64}, hard:{lo:0.44,hi:0.52} };
+function nnMinPasses(n,diff){
+  if(diff==='easy') return 0;
+  if(diff==='medium') return n<=5?3:4;
+  return n<=5?4:(n<=8?5:(n<=10?6:8));
+}
+function generateNonogram(R,C,mode,diff,budgetMs){
+  const t0=Date.now(), d=NN_DIFF[diff]||NN_DIFF.medium, n=Math.max(R,C);
+  let minPasses=nnMinPasses(n,diff), tries=0, fallback=null;
+  while(true){
+    tries++;
+    const elapsed=Date.now()-t0;
+    if(elapsed>budgetMs*0.6) minPasses=Math.max(0,minPasses-1);   /* relax if it is taking too long */
+    const p=d.lo+Math.random()*(d.hi-d.lo);
+    const sol=new Array(R*C).fill(0);
+    if(mode==='mirror'){
+      const half=Math.ceil(C/2);
+      for(let r=0;r<R;r++) for(let c=0;c<half;c++){ const v=Math.random()<p?1:0; sol[r*C+c]=v; sol[r*C+(C-1-c)]=v; }
+    } else {
+      for(let i=0;i<R*C;i++) sol[i]=Math.random()<p?1:0;
+    }
+    const cl=nnCluesOfGrid(sol,R,C);
+    if(!(cl.rows.some(x=>!x.length)||cl.cols.some(x=>!x.length))){
+      const res=nnLineSolve(cl.rows,cl.cols);
+      if(res.solved){
+        const rec={rows:R,cols:C,solution:sol,rowClues:cl.rows,colClues:cl.cols,passes:res.passes,tries};
+        if(res.passes>=minPasses) return rec;
+        if(!fallback||res.passes>fallback.passes) fallback=rec;
+      }
+    }
+    if(Date.now()-t0>budgetMs) return fallback;
+  }
+}
+/*NONOGRAM-ENGINE-END*/
+
+window.__nonoengine = {generateNonogram,nnLineSolve,nnSolveLine,nnClues};
+
+const DEFAULT_SIZE={easy:5,medium:10,hard:15};
+let diff='medium', size=10, mirror=true, tool=1, busy=false, st=null;
+let $,boardEl,areaEl,msgEl,diffSeg,sizeSeg,toolSeg,mirrorBtn;
+let cellEls=[], rowEls=[], colEls=[];
+
+function setMsg(t,bad){ msgEl.textContent=t||''; msgEl.classList.toggle('bad',!!bad); }
+function runsEqual(vals,clue){ const runs=nnClues(vals.map(v=>v===1?1:0)); return runs.length===clue.length&&runs.every((x,i)=>x===clue[i]); }
+function rowVals(r){ const o=[]; for(let c=0;c<st.cols;c++) o.push(st.cells[r*st.cols+c]); return o; }
+function colVals(c){ const o=[]; for(let r=0;r<st.rows;r++) o.push(st.cells[r*st.cols+c]); return o; }
+function wrongSet(){
+  const s=new Set();
+  for(let i=0;i<st.cells.length;i++){
+    if((st.cells[i]===1&&!st.solution[i])||(st.cells[i]===2&&st.solution[i])) s.add(i);
+  }
+  return s;
+}
+
+function metrics(){
+  const slot=n=>n>=10?0.8:0.5;
+  let rw=0, mc=1;
+  for(const cl of st.rowClues){ let s=0; for(const n of (cl.length?cl:[0])) s+=slot(n); if(s>rw) rw=s; }
+  for(const cl of st.colClues) mc=Math.max(mc,cl.length||1);
+  return {rw:rw+0.45,ch:mc*0.56+0.3};
+}
+function layout(){
+  if(!st||!boardEl) return;
+  const m=metrics(), w=areaEl.clientWidth-24, h=areaEl.clientHeight-16;
+  const px=Math.max(16,Math.min(Math.floor(w/(st.cols+m.rw)),Math.floor(h/(st.rows+m.ch)),64));
+  boardEl.style.gridTemplateColumns=Math.round(m.rw*px)+'px repeat('+st.cols+','+px+'px)';
+  boardEl.style.gridTemplateRows=Math.round(m.ch*px)+'px repeat('+st.rows+','+px+'px)';
+  boardEl.style.fontSize=(px*0.55)+'px';
+  boardEl.style.setProperty('--cf',(px*0.46)+'px');
+}
+function buildBoard(){
+  boardEl.innerHTML=''; cellEls=[]; rowEls=[]; colEls=[];
+  const R=st.rows, C=st.cols;
+  function clueEl(cls,clue){
+    const h=document.createElement('div'); h.className=cls;
+    (clue.length?clue:[0]).forEach(n=>{ const s=document.createElement('span'); s.textContent=n; if(n>=10) s.className='w2'; h.appendChild(s); });
+    return h;
+  }
+  boardEl.appendChild(document.createElement('div'));
+  for(let c=0;c<C;c++){ const h=clueEl('ch',st.colClues[c]); boardEl.appendChild(h); colEls.push(h); }
+  for(let r=0;r<R;r++){
+    const h=clueEl('rh',st.rowClues[r]); boardEl.appendChild(h); rowEls.push(h);
+    for(let c=0;c<C;c++){ const d=document.createElement('div'); d.dataset.i=r*C+c; boardEl.appendChild(d); cellEls.push(d); }
+  }
+  boardEl.classList.remove('won');
+  refresh(); layout();
+}
+function refresh(){
+  const R=st.rows, C=st.cols;
+  for(let i=0;i<R*C;i++){
+    const r=(i/C)|0, c=i%C, v=st.cells[i];
+    let cls='cell';
+    if((c+1)%5===0||c===C-1) cls+=' r5';
+    if((r+1)%5===0||r===R-1) cls+=' b5';
+    if(r===0) cls+=' t0';
+    if(c===0) cls+=' l0';
+    if(v===1) cls+=' f'; else if(v===2) cls+=' x';
+    if(st.shown[i]) cls+=' shown';
+    if(st.bad.has(i)) cls+=' bad';
+    if(st.hintSet.has(i)) cls+=' hint';
+    cellEls[i].className=cls;
+  }
+  for(let r=0;r<R;r++) rowEls[r].className='rh'+(((r+1)%5===0&&r<R-1)?' b5':'')+(runsEqual(rowVals(r),st.rowClues[r])?' done':'')+(st.focusR===r?' fx':'');
+  for(let c=0;c<C;c++) colEls[c].className='ch'+(((c+1)%5===0&&c<C-1)?' r5':'')+(runsEqual(colVals(c),st.colClues[c])?' done':'')+(st.focusC===c?' fx':'');
+}
+function touched(i){
+  st.bad=new Set(); st.hintSet=new Set(); st.shown[i]=false;
+  st.focusR=(i/st.cols)|0; st.focusC=i%st.cols;
+}
+function tap(i,t){
+  if(!st||st.done) return;
+  const v=st.cells[i]===t?0:t;
+  st.cells[i]=v; touched(i); setMsg(''); refresh(); checkSolved();
+}
+function checkSolved(){
+  if(st.done) return;
+  for(let r=0;r<st.rows;r++) if(!runsEqual(rowVals(r),st.rowClues[r])) return;
+  for(let c=0;c<st.cols;c++) if(!runsEqual(colVals(c),st.colClues[c])) return;
+  st.done=true; setMsg('');
+  cellEls.forEach((el,i)=>{ const r=(i/st.cols)|0, c=i%st.cols; el.style.setProperty('--h',(r*17+c*11)%360); });
+  boardEl.classList.add('won'); st.focusR=st.focusC=null; refresh();
+  POTD.win('🎉 Solved! Well done! 🎉');
+}
+function hint(){
+  if(!st||st.done) return;
+  if(wrongSet().size){ setMsg('Some of your squares are wrong – press Check to see which.',true); return; }
+  const R=st.rows, C=st.cols, known=st.cells.map(v=>v===1?1:(v===2?0:-1));
+  let best=null;
+  function consider(name,clue,idxs){
+    const res=nnSolveLine(clue,idxs.map(i=>known[i])); if(!res) return;
+    const gain=[]; idxs.forEach((i,k)=>{ if(known[i]===-1&&res[k]!==-1) gain.push(i); });
+    if(gain.length&&(!best||gain.length>best.gain.length)) best={name,clue,gain};
+  }
+  for(let r=0;r<R;r++){ const idx=[]; for(let c=0;c<C;c++) idx.push(r*C+c); consider('row '+(r+1),st.rowClues[r],idx); }
+  for(let c=0;c<C;c++){ const idx=[]; for(let r=0;r<R;r++) idx.push(r*C+c); consider('column '+(c+1),st.colClues[c],idx); }
+  if(!best){ setMsg('No hint available.'); return; }
+  st.hintSet=new Set(best.gain); refresh();
+  setMsg('Hint: look at '+best.name+' ('+(best.clue.length?best.clue.join(' '):'0')+') – the flashing squares are forced.');
+}
+function check(){
+  if(!st||st.done) return;
+  st.bad=wrongSet(); st.hintSet=new Set(); refresh();
+  setMsg(st.bad.size?(st.bad.size+(st.bad.size===1?' square is':' squares are')+' wrong (shown in red).'):'No mistakes so far – keep going!',st.bad.size>0);
+}
+function clearAll(){
+  if(!st) return;
+  st.cells.fill(0); st.shown.fill(false); st.bad=new Set(); st.hintSet=new Set(); st.done=false; st.focusR=st.focusC=null;
+  boardEl.classList.remove('won'); setMsg(''); refresh();
+}
+function showAnswer(){
+  if(!st) return;
+  for(let i=0;i<st.cells.length;i++){
+    if(st.solution[i]){ if(st.cells[i]!==1) st.shown[i]=true; st.cells[i]=1; } else st.cells[i]=0;
+  }
+  st.bad=new Set(); st.hintSet=new Set(); st.done=true; st.focusR=st.focusC=null;
+  setMsg('Answer shown (purple squares were filled in for you).'); refresh();
+}
+function load(rec){
+  st={rows:rec.rows,cols:rec.cols,solution:rec.solution,rowClues:rec.rowClues,colClues:rec.colClues,
+      cells:new Array(rec.rows*rec.cols).fill(0),shown:new Array(rec.rows*rec.cols).fill(false),
+      bad:new Set(),hintSet:new Set(),done:false,focusR:null,focusC:null};
+  setMsg(''); buildBoard();
+}
+function newPuzzle(){
+  if(busy) return; busy=true; setMsg('Generating puzzle…');
+  setTimeout(()=>{
+    let rec=null; try{ rec=generateNonogram(size,size,mirror?'mirror':'random',diff,2500); }catch(e){ console.error(e); }
+    busy=false;
+    if(!rec){ setMsg('Could not generate a puzzle, please try again.',true); return; }
+    load(rec);
+  },20);
+}
+
+/* ---- input: tap (click), drag to paint, right-click to use the other tool ---- */
+function zoomed(){ const z=boardEl.closest('.zoom-clip'); return !!(z&&z.classList.contains('zoomed')); }
+function bindInput(){
+  const ptrs=new Set(); let drag=null, swallow=false, lastType='mouse';
+  boardEl.addEventListener('pointerdown',e=>{
+    lastType=e.pointerType; ptrs.add(e.pointerId);
+    if(ptrs.size>1){ drag=null; return; }
+    if(e.button!==0||!st||st.done||zoomed()) return;
+    const cell=e.target.closest('.cell'); if(!cell) return;
+    const i=+cell.dataset.i;
+    drag={id:e.pointerId,start:i,old:st.cells[i],last:i,moved:false,v:0};
+  });
+  boardEl.addEventListener('pointermove',e=>{
+    if(!drag||e.pointerId!==drag.id) return;
+    const el=document.elementFromPoint(e.clientX,e.clientY), cell=el&&el.closest?el.closest('.cell'):null;
+    if(!cell||!boardEl.contains(cell)) return;
+    const i=+cell.dataset.i; if(i===drag.last) return;
+    if(!drag.moved){
+      drag.moved=true; swallow=true;
+      drag.v=drag.old===tool?0:tool;
+      st.cells[drag.start]=drag.v; touched(drag.start);
+    }
+    drag.last=i;
+    if(drag.v!==0){ if(st.cells[i]===0) st.cells[i]=drag.v; }
+    else if(st.cells[i]===drag.old) st.cells[i]=0;
+    touched(i); refresh();
+  });
+  function end(e){
+    ptrs.delete(e.pointerId);
+    if(drag&&e.pointerId===drag.id){
+      const was=drag.moved; drag=null;
+      if(was){ setTimeout(()=>{ swallow=false; },80); setMsg(''); checkSolved(); }
+    }
+  }
+  boardEl.addEventListener('pointerup',end); boardEl.addEventListener('pointercancel',end);
+  boardEl.addEventListener('click',e=>{
+    if(swallow){ swallow=false; return; }
+    const cell=e.target.closest('.cell'); if(!cell) return;
+    tap(+cell.dataset.i,tool);
+  });
+  boardEl.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    if(lastType!=='mouse') return;
+    const cell=e.target.closest('.cell'); if(!cell) return;
+    tap(+cell.dataset.i,tool===1?2:1);
+  });
+}
+
+function mount(panel){
+  panel.classList.add('nono');
+  panel.innerHTML=`<div class="bar"></div><div class="stage"><div class="gp-wrap">
+    <div class="rules">Fill in squares so each row and column matches its numbers: every number is a run of filled squares, in order, with at least one gap between runs. Tap to fill; use ✕ mode to mark squares you know are empty; drag to paint a run.</div>
+    <div class="gp-area"><div class="board"></div></div><div class="msg"></div></div></div>`;
+  $=s=>panel.querySelector(s);
+  const bar=$('.bar'); boardEl=$('.board'); areaEl=$('.gp-area'); msgEl=$('.msg');
+  diffSeg=POTD.seg([['easy','Easy'],['medium','Medium'],['hard','Hard']],diff,v=>{ diff=v; size=DEFAULT_SIZE[v]; sizeSeg.set(size); newPuzzle(); });
+  sizeSeg=POTD.seg([[5,'5×5'],[10,'10×10'],[15,'15×15']],size,v=>{ size=+v; newPuzzle(); });
+  toolSeg=POTD.seg([[1,'■ Fill'],[2,'✕ Cross']],tool,v=>{ tool=+v; });
+  mirrorBtn=POTD.btn('Symmetric','toggle active',()=>{ mirror=!mirror; mirrorBtn.classList.toggle('active',mirror); newPuzzle(); });
+  const sp=document.createElement('span'); sp.className='spacer';
+  bar.append(diffSeg.el,toolSeg.el,sizeSeg.el,mirrorBtn,sp,
+    POTD.btn('Hint','secondary',hint),POTD.btn('Check','secondary',check),
+    POTD.btn('Clear','secondary',clearAll),POTD.btn('Show Answer','secondary',showAnswer),
+    POTD.btn('New Puzzle','',newPuzzle));
+  bindInput();
+  POTD.onResize(areaEl,layout);
+  newPuzzle();
+}
+POTD.register({id:'nono',label:'Nonogram',mount,onShow:layout});
+})();
+</script>
+
+<!-- =====================================================================
+     TAB 12: MINESWEEPER
+     First square is always safe.  "No-guess boards" (on by default) only keeps layouts that can be finished by logic alone.
+     Hint explains the reasoning.  Dig / Flag modes, long-press or right-click for the other action, tap a number to clear around it.
+     ===================================================================== -->
+<script>
+(function(){
+/*MINES-ENGINE-START*/
+function msNeigh(i,W,H){
+  const r=(i/W)|0, c=i%W, out=[];
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    if(!dr&&!dc) continue; const rr=r+dr, cc=c+dc;
+    if(rr>=0&&rr<H&&cc>=0&&cc<W) out.push(rr*W+cc);
+  }
+  return out;
+}
+/* st: {W,H,total,revealed:Uint8Array,count:Int8Array (-1 where unknown),known:Uint8Array (1 = deduced mine)}.
+   Looks only at revealed numbers and what has already been deduced.  Returns {safe:Map,mine:Map}; each value is {why,refs}. */
+function msDeduce(st,opts){
+  const {W,H,revealed,count,known}=st, N=W*H, deep=!opts||opts.deep!==false, maxComp=(opts&&opts.maxComp)||18;
+  const safe=new Map(), mine=new Map();
+  const cons=[]; const byCell=new Map();
+  for(let i=0;i<N;i++){
+    if(!revealed[i]||count[i]<=0) continue;
+    const U=[]; let rem=count[i];
+    for(const j of msNeigh(i,W,H)){ if(known[j]===1) rem--; else if(!revealed[j]) U.push(j); }
+    if(!U.length) continue;
+    const id=cons.length; cons.push({i,U,rem});
+    for(const j of U){ if(!byCell.has(j)) byCell.set(j,[]); byCell.get(j).push(id); }
+  }
+  function addSafe(j,why,refs){ if(!safe.has(j)&&!mine.has(j)) safe.set(j,{why,refs}); }
+  function addMine(j,why,refs){ if(!mine.has(j)&&!safe.has(j)) mine.set(j,{why,refs}); }
+  /* 1. a number that is already satisfied, or that needs every square left */
+  for(const c of cons){
+    if(c.rem===0) for(const j of c.U) addSafe(j,'single0',[c.i]);
+    else if(c.rem===c.U.length) for(const j of c.U) addMine(j,'singleAll',[c.i]);
+  }
+  if(safe.size||mine.size) return {safe,mine};
+  /* 2. compare two overlapping numbers */
+  for(let a=0;a<cons.length;a++){
+    const A=cons[a], seen=new Set();
+    for(const j of A.U) for(const b of byCell.get(j)){
+      if(b<=a||seen.has(b)) continue; seen.add(b);
+      const B=cons[b], setA=new Set(A.U), setB=new Set(B.U);
+      const onlyA=A.U.filter(x=>!setB.has(x)), onlyB=B.U.filter(x=>!setA.has(x));
+      const d=B.rem-A.rem;
+      const bMin=Math.max(0,d), bMax=Math.min(onlyB.length,d+onlyA.length);
+      const aMin=Math.max(0,-d), aMax=Math.min(onlyA.length,onlyB.length-d);
+      if(bMin>bMax||aMin>aMax) continue;
+      if(onlyB.length){ if(bMax===0) for(const x of onlyB) addSafe(x,'pair',[A.i,B.i]); else if(bMin===onlyB.length) for(const x of onlyB) addMine(x,'pair',[A.i,B.i]); }
+      if(onlyA.length){ if(aMax===0) for(const x of onlyA) addSafe(x,'pair',[A.i,B.i]); else if(aMin===onlyA.length) for(const x of onlyA) addMine(x,'pair',[A.i,B.i]); }
+    }
+  }
+  if(safe.size||mine.size) return {safe,mine};
+  /* 3. try every possibility for each connected patch of the frontier */
+  if(deep){
+    const seenC=new Array(cons.length).fill(false);
+    for(let s=0;s<cons.length;s++){
+      if(seenC[s]) continue;
+      const comp=[], stack=[s]; seenC[s]=true; const cellSet=new Set();
+      while(stack.length){ const k=stack.pop(); comp.push(k); for(const j of cons[k].U){ cellSet.add(j); for(const b of byCell.get(j)) if(!seenC[b]){ seenC[b]=true; stack.push(b); } } }
+      if(cellSet.size>maxComp) continue;
+      const cells=[...cellSet], idx=new Map(cells.map((x,q)=>[x,q]));
+      const cc=comp.map(k=>({cells:cons[k].U.map(x=>idx.get(x)),rem:cons[k].rem,got:0,left:cons[k].U.length}));
+      const of=cells.map(()=>[]); cc.forEach((c,q)=>c.cells.forEach(x=>of[x].push(q)));
+      const val=new Array(cells.length).fill(0), minC=new Array(cells.length).fill(true), safeC=new Array(cells.length).fill(true);
+      let sols=0, nodes=0, blown=false;
+      (function rec(p){
+        if(blown) return;
+        if(++nodes>40000){ blown=true; return; }
+        if(p===cells.length){ sols++; for(let q=0;q<cells.length;q++){ if(val[q]) safeC[q]=false; else minC[q]=false; } return; }
+        for(let v=0;v<=1;v++){
+          let ok=true; val[p]=v;
+          for(const q of of[p]){ const c=cc[q]; c.left--; c.got+=v; }
+          for(const q of of[p]){ const c=cc[q]; if(c.got>c.rem||c.got+c.left<c.rem){ ok=false; break; } }
+          if(ok) rec(p+1);
+          for(const q of of[p]){ const c=cc[q]; c.left++; c.got-=v; }
+          if(blown) return;
+        }
+      })(0);
+      if(blown||!sols) continue;
+      const refs=comp.map(k=>cons[k].i).slice(0,3);
+      cells.forEach((x,q)=>{ if(minC[q]) addMine(x,'tank',refs); else if(safeC[q]) addSafe(x,'tank',refs); });
+    }
+    if(safe.size||mine.size) return {safe,mine};
+  }
+  /* 4. count the mines that are left */
+  let minesLeft=st.total, unk=[];
+  for(let i=0;i<N;i++){ if(known[i]===1) minesLeft--; else if(!revealed[i]) unk.push(i); }
+  if(unk.length){
+    if(minesLeft===0) for(const j of unk) addSafe(j,'total',[]);
+    else if(minesLeft===unk.length) for(const j of unk) addMine(j,'total',[]);
+  }
+  return {safe,mine};
+}
+function msFlood(st,start,mineArr){
+  const {W,H,revealed,count}=st; const q=[start]; let n=0;
+  while(q.length){
+    const i=q.pop(); if(revealed[i]) continue;
+    revealed[i]=1; n++;
+    let c=0; for(const j of msNeigh(i,W,H)) if(mineArr[j]) c++;
+    count[i]=c;
+    if(c===0) for(const j of msNeigh(i,W,H)) if(!revealed[j]) q.push(j);
+  }
+  return n;
+}
+/* Can this layout be finished by logic alone after clicking `start`?  Returns the fraction of safe squares reached (1 = fully solved). */
+function msTrySolve(W,H,total,mineArr,start,opts){
+  const N=W*H;
+  const st={W,H,total,revealed:new Uint8Array(N),count:new Int8Array(N).fill(-1),known:new Uint8Array(N)};
+  let opened=msFlood(st,start,mineArr);
+  for(let guard=0;guard<N*2;guard++){
+    const d=msDeduce(st,opts);
+    if(!d.safe.size&&!d.mine.size) break;
+    for(const [j] of d.mine) st.known[j]=1;
+    for(const [j] of d.safe) if(!st.revealed[j]) opened+=msFlood(st,j,mineArr);
+    if(opened>=N-total) break;
+  }
+  return opened/(N-total);
+}
+function msLayout(W,H,total,start){
+  const N=W*H, banned=new Set([start,...msNeigh(start,W,H)]);
+  const pool=[]; for(let i=0;i<N;i++) if(!banned.has(i)) pool.push(i);
+  for(let i=pool.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  const m=new Uint8Array(N); for(let k=0;k<total;k++) m[pool[k]]=1;
+  return m;
+}
+/* fair=true: keep trying until a layout is solvable without any guess (or the time budget is spent) */
+function msGenerate(W,H,total,start,fair,budgetMs){
+  const t0=Date.now(); let best=null, bestScore=-1, tries=0;
+  while(true){
+    tries++;
+    const m=msLayout(W,H,total,start);
+    if(!fair) return {mines:m,fair:false,tries};
+    const sc=msTrySolve(W,H,total,m,start,{maxComp:16});
+    if(sc>=1) return {mines:m,fair:true,tries};
+    if(sc>bestScore){ bestScore=sc; best=m; }
+    if(Date.now()-t0>budgetMs) return {mines:best,fair:false,tries};
+  }
+}
+/*MINES-ENGINE-END*/
+
+window.__msengine = {msGenerate,msDeduce};
+
+const LEVELS={easy:{W:9,H:9,M:10},medium:{W:16,H:16,M:40},hard:{W:30,H:16,M:99}};
+let level='easy', mode='dig', fairOn=true, g=null;
+let $,boardEl,areaEl,msgEl,countEl,levelSeg,modeSeg,fairBtn;
+let cellEls=[];
+
+function setMsg(t,bad){ msgEl.textContent=t||''; msgEl.classList.toggle('bad',!!bad); }
+function flagCount(){ let n=0; for(let i=0;i<g.N;i++) if(g.flag[i]) n++; return n; }
+function newGame(){
+  const L=LEVELS[level], N=L.W*L.H;
+  g={W:L.W,H:L.H,M:L.M,N,mines:null,revealed:new Uint8Array(N),flag:new Uint8Array(N),count:new Int8Array(N).fill(-1),
+     start:-1,over:false,won:false,boom:-1,hint:-1,refs:[],fairBoard:true};
+  build(); setMsg('Tap any square to start – the first square is always safe.');
+}
+function build(){
+  boardEl.innerHTML=''; cellEls=[];
+  boardEl.style.gridTemplateColumns='repeat('+g.W+',1fr)';
+  for(let i=0;i<g.N;i++){ const d=document.createElement('div'); d.dataset.i=i; boardEl.appendChild(d); cellEls.push(d); }
+  refresh(); layout();
+}
+function layout(){
+  if(!g||!boardEl) return;
+  const px=POTD.fit(areaEl,g.W,g.H,64);
+  boardEl.style.gridTemplateColumns='repeat('+g.W+','+px+'px)';
+  boardEl.style.gridTemplateRows='repeat('+g.H+','+px+'px)';
+  boardEl.style.fontSize=(px*0.62)+'px';
+}
+function refresh(){
+  for(let i=0;i<g.N;i++){
+    let cls='cell', txt='';
+    if(i===g.boom){ cls+=' open boom'; txt='💥'; }
+    else if(g.revealed[i]){ cls+=' open'; const n=g.count[i]; if(n>0){ cls+=' n'+n; txt=n; } }
+    else if(g.flag[i]){ cls+=' flag'; txt='🚩'; if(g.over&&!g.won&&g.mines&&!g.mines[i]) cls+=' wrong'; }
+    else if(g.over&&!g.won&&g.mines&&g.mines[i]){ cls+=' mine'; txt='💣'; }
+    if(i===g.hint) cls+=' hint';
+    if(g.refs.indexOf(i)>=0) cls+=' ref';
+    const el=cellEls[i]; el.className=cls; if(el.textContent!==String(txt)) el.textContent=txt;
+  }
+  countEl.textContent='💣 '+(g.M-flagCount());
+}
+function floodState(){ return {W:g.W,H:g.H,revealed:g.revealed,count:g.count}; }
+function lose(i){
+  g.over=true; g.boom=i; g.hint=-1; g.refs=[];
+  setMsg('💥 Boom! Press Restart to try this same board again, or New Game.',true); refresh();
+}
+function winGame(){
+  g.over=true; g.won=true; g.hint=-1; g.refs=[];
+  for(let i=0;i<g.N;i++) if(g.mines[i]&&!g.revealed[i]) g.flag[i]=1;
+  setMsg(''); refresh(); POTD.win('🎉 Cleared! Well done! 🎉');
+}
+function checkWin(){
+  let open=0; for(let i=0;i<g.N;i++) if(g.revealed[i]) open++;
+  if(open===g.N-g.M) winGame();
+}
+function dig(i){
+  if(g.over||g.revealed[i]||g.flag[i]) return;
+  g.hint=-1; g.refs=[];
+  if(!g.mines){
+    const res=msGenerate(g.W,g.H,g.M,i,fairOn,900);
+    g.mines=res.mines; g.start=i; g.fairBoard=res.fair;
+    setMsg(fairOn?(res.fair?'No guessing needed on this board – everything can be worked out.':'Heads up: this board might need a guess.'):'');
+  }
+  if(g.mines[i]){ lose(i); return; }
+  msFlood(floodState(),i,g.mines);
+  for(let k=0;k<g.N;k++) if(g.revealed[k]&&g.flag[k]) g.flag[k]=0;
+  refresh(); checkWin();
+}
+function chord(i){
+  const nb=msNeigh(i,g.W,g.H); let f=0; for(const j of nb) if(g.flag[j]) f++;
+  if(f!==g.count[i]) return;
+  for(const j of nb){
+    if(g.over) break;
+    if(!g.revealed[j]&&!g.flag[j]){
+      if(g.mines[j]){ lose(j); return; }
+      msFlood(floodState(),j,g.mines);
+    }
+  }
+  for(let k=0;k<g.N;k++) if(g.revealed[k]&&g.flag[k]) g.flag[k]=0;
+  g.hint=-1; g.refs=[]; refresh(); checkWin();
+}
+function toggleFlag(i){
+  if(g.over||g.revealed[i]) return;
+  g.flag[i]=g.flag[i]?0:1; g.hint=-1; g.refs=[]; refresh();
+}
+/* alt = the other action (long-press / right-click) */
+function act(i,alt){
+  if(!g||g.over) return;
+  const m=alt?(mode==='dig'?'flag':'dig'):mode;
+  if(m==='flag'){ if(!g.revealed[i]) toggleFlag(i); return; }
+  if(g.revealed[i]){ if(g.count[i]>0) chord(i); return; }
+  dig(i);
+}
+function restart(){
+  if(!g) return;
+  if(!g.mines){ newGame(); return; }
+  const start=g.start;
+  g.revealed.fill(0); g.flag.fill(0); g.count.fill(-1); g.over=false; g.won=false; g.boom=-1; g.hint=-1; g.refs=[];
+  msFlood(floodState(),start,g.mines); setMsg('Same board again – good luck!'); refresh();
+}
+function showMines(){
+  if(!g||!g.mines||g.over) return;
+  g.over=true; g.hint=-1; g.refs=[]; setMsg('Mines shown.'); refresh();
+}
+function whyText(why,safe){
+  const w=safe?'safe':'a mine';
+  if(why==='single0') return 'The highlighted number already has all of its mines marked, so the flashing square next to it is safe.';
+  if(why==='singleAll') return 'The highlighted number needs every hidden square around it to be a mine, so the flashing square is a mine.';
+  if(why==='pair') return 'Compare the two highlighted numbers: the squares they do not share show that the flashing square is '+w+'.';
+  if(why==='tank') return 'No simple rule works here, but trying every possible arrangement of mines around the highlighted numbers shows the flashing square is '+w+'.';
+  return 'Count the mines left on the counter: that shows the flashing square is '+w+'.';
+}
+function hint(){
+  if(!g||g.over) return;
+  if(!g.mines){ setMsg('Tap a square first – the first square is always safe.'); return; }
+  for(let i=0;i<g.N;i++) if(g.flag[i]&&!g.mines[i]){ g.hint=i; g.refs=[]; refresh(); setMsg('One of your flags is wrong: the flashing flag is not on a mine.',true); return; }
+  const known=new Uint8Array(g.N); for(let i=0;i<g.N;i++) if(g.flag[i]&&g.mines[i]) known[i]=1;
+  const d=msDeduce({W:g.W,H:g.H,total:g.M,revealed:g.revealed,count:g.count,known},{maxComp:20});
+  let pool=[...d.safe.entries()], safe=true;
+  if(!pool.length){ pool=[...d.mine.entries()]; safe=false; }
+  if(!pool.length){ g.hint=-1; g.refs=[]; refresh(); setMsg('No move can be proved by logic here – this would need a guess.',true); return; }
+  const [cell,info]=pool[(Math.random()*pool.length)|0];
+  g.hint=cell; g.refs=info.refs||[]; refresh();
+  const t=whyText(info.why,safe);
+  setMsg('Hint: '+t);
+}
+
+function bindInput(){
+  const ptrs=new Set(); let timer=null, swallow=false, lastType='mouse', down=null;
+  function cancelTimer(){ if(timer){ clearTimeout(timer); timer=null; } }
+  boardEl.addEventListener('pointerdown',e=>{
+    lastType=e.pointerType; ptrs.add(e.pointerId); cancelTimer();
+    if(ptrs.size>1){ down=null; return; }
+    const cell=e.target.closest('.cell');
+    if(!cell||e.button!==0||e.pointerType==='mouse') return;
+    const i=+cell.dataset.i; down={x:e.clientX,y:e.clientY};
+    timer=setTimeout(()=>{ timer=null; swallow=true; act(i,true); },450);
+  });
+  boardEl.addEventListener('pointermove',e=>{
+    if(timer&&down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>10) cancelTimer();
+  });
+  function end(e){ ptrs.delete(e.pointerId); cancelTimer(); if(swallow) setTimeout(()=>{ swallow=false; },120); }
+  boardEl.addEventListener('pointerup',end); boardEl.addEventListener('pointercancel',end);
+  boardEl.addEventListener('click',e=>{
+    if(swallow){ swallow=false; return; }
+    const cell=e.target.closest('.cell'); if(!cell) return;
+    act(+cell.dataset.i,false);
+  });
+  boardEl.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    if(lastType!=='mouse') return;
+    const cell=e.target.closest('.cell'); if(!cell) return;
+    act(+cell.dataset.i,true);
+  });
+}
+
+function mount(panel){
+  panel.classList.add('ms');
+  panel.innerHTML=`<div class="bar"></div><div class="stage"><div class="gp-wrap">
+    <div class="rules">Clear every square that is not a mine. A number tells you how many of the squares touching it (including diagonals) are mines. Tap to dig; use Flag mode, or long-press / right-click, to mark a mine. Tap a number with enough flags around it to clear the rest.</div>
+    <div class="gp-area"><div class="board"></div></div><div class="msg"></div></div></div>`;
+  $=s=>panel.querySelector(s);
+  const bar=$('.bar'); boardEl=$('.board'); areaEl=$('.gp-area'); msgEl=$('.msg');
+  countEl=document.createElement('span'); countEl.className='count';
+  levelSeg=POTD.seg([['easy','Easy'],['medium','Medium'],['hard','Hard']],level,v=>{ level=v; newGame(); });
+  modeSeg=POTD.seg([['dig','⛏ Dig'],['flag','🚩 Flag']],mode,v=>{ mode=v; });
+  fairBtn=POTD.btn('No-guess boards','toggle active',()=>{ fairOn=!fairOn; fairBtn.classList.toggle('active',fairOn); });
+  const sp=document.createElement('span'); sp.className='spacer';
+  bar.append(levelSeg.el,modeSeg.el,countEl,fairBtn,sp,
+    POTD.btn('Hint','secondary',hint),POTD.btn('Restart','secondary',restart),
+    POTD.btn('Show Mines','secondary',showMines),POTD.btn('New Game','',newGame));
+  bindInput();
+  POTD.onResize(areaEl,layout);
+  newGame();
+}
+POTD.register({id:'ms',label:'Minesweeper',mount,onShow:layout});
+})();
+</script>
+
 <script>
 /* full-screen toggle for the board */
 (function(){
@@ -4879,7 +5580,7 @@ POTD.register({id:'py',label:'Pyramid',mount,onShow:layout});
 
 <script>
 /* ===== tab order: 24 Game first, then A-Z ===== */
-POTD.sortTabs(['g24','bin','ev','fk','ng','np','ns','py','sdk','tt']);
+POTD.sortTabs(['g24','bin','ev','fk','ms','nono','ng','np','ns','py','sdk','tt']);
 
 /* ===== pinch-to-zoom (and drag-to-pan once zoomed) for every puzzle board ===== */
 (function(){
