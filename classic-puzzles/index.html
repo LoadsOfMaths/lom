@@ -608,6 +608,59 @@ svg.pySvg{display:block;width:100%;margin:4px auto;max-height:340px}
 .paTop button.on{background:var(--accent);color:#2a1a00;border-color:var(--accent)}
 .paLog{text-align:center;color:var(--mute);font-size:.95rem;margin:4px 0}
 /* ===/CSS:passola=== */
+/* ===CSS:lights=== */
+.lo{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:clamp(6px,1.3vw,12px);
+  width:min(100%,calc(var(--n)*104px),68vh);margin:8px auto;padding:clamp(8px,1.6vw,14px);border-radius:var(--r);background:#08151f;
+  border:2px solid var(--line)}
+.lbulb{aspect-ratio:1;width:100%;padding:0;border-radius:50%;cursor:pointer;touch-action:manipulation;
+  border:3px solid #2a4a6a;background:radial-gradient(circle at 36% 30%,#2b4660,#12273b 62%,#0b1a29);
+  transition:background .25s,box-shadow .25s,border-color .25s,transform .12s}
+.lbulb:active{transform:scale(.93)}
+.lbulb.on{border-color:#ffe08a;background:radial-gradient(circle at 36% 30%,#fffbe0,#ffd84d 55%,#f2a900);
+  box-shadow:0 0 clamp(10px,2vw,22px) rgba(255,214,77,.75)}
+.lbulb:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.lbulb.pv:not(.on){border-color:#7aa7d0}
+.lbulb.pv.on{border-color:#fff}
+.lbulb.hint{box-shadow:0 0 0 5px var(--good),0 0 18px rgba(70,208,138,.8)}
+.lostat{text-align:center;font-weight:700;color:var(--mute);min-height:1.6em}
+.lostat.done{color:var(--good)}
+.lomini{display:inline-flex;flex-direction:column;gap:2px;margin:4px 12px 4px 0;vertical-align:middle}
+.lomini span{display:flex;gap:2px}
+.lomini i{width:15px;height:15px;border-radius:50%;background:#10263b;border:1px solid var(--line)}
+.lomini i.on{background:var(--accent);border-color:var(--accent)}
+table.lochase{border-collapse:collapse;margin:6px 0}
+table.lochase th,table.lochase td{border:1px solid var(--line);padding:4px 12px;text-align:left}
+table.lochase th{color:var(--accent)}
+/* ===/CSS:lights=== */
+/* ===CSS:wires=== */
+.ws{display:flex;flex-direction:column;gap:10px}
+.wsbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wswhere{color:var(--mute);font-weight:600}
+.wspanel{background:rgba(255,255,255,.05);border:2px solid var(--line);border-radius:var(--r);padding:8px 12px}
+.wspanel.dim{opacity:.5}
+.wspanel h3{margin:.2em 0 .5em;font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.wsnote{color:var(--mute);margin:.3em 0;font-size:.92rem}
+.wsrow{display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:center;margin:6px 0}
+.wsb{display:flex;flex-direction:column;align-items:center;width:80px}
+.wsglass{position:relative;width:44px;height:50px;border-radius:50% 50% 42% 42%;border:3px solid #2a4a6a;background:#1c3550;transition:background .3s,box-shadow .3s}
+.wsglass::after{content:"";position:absolute;left:9px;right:9px;bottom:-11px;height:9px;border-radius:0 0 4px 4px;background:#8b8f96}
+.wsglass.on{border-color:#ffe08a;background:radial-gradient(circle at 38% 32%,#fffbe0,#ffd84d 58%,#f2a900);box-shadow:0 0 18px rgba(255,214,77,.8)}
+.wsglass.warm{border-color:#d08a3c;background:radial-gradient(circle at 38% 32%,#c98a4a,#6e4219)}
+.wsl{font-weight:800;margin-top:14px}
+.wsst{font-size:.74rem;color:var(--mute);min-height:1.2em;text-align:center}
+.wswire{width:3px;height:12px;background:#8b8f96}
+.wsend{width:32px;height:32px;border-radius:50%;border:3px solid #c9d6e4;background:#0e2339;color:#08121c;font-size:.9rem;line-height:1;cursor:pointer;padding:0;touch-action:manipulation}
+.wsend.sel{box-shadow:0 0 0 4px var(--accent)}
+.wsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0}
+.wse{border:2px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.2)}
+.wse.pow{border-color:var(--accent);background:rgba(255,184,77,.13)}
+.wse.buzz{border-color:var(--good);box-shadow:0 0 0 3px var(--good)}
+.wse.probe{border-style:dashed}
+.wsn{font-weight:800}
+.wsbz{min-height:1.3em;font-size:.85rem;color:var(--good);font-weight:700}
+.wssel{min-height:42px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.wsnotes{width:100%;border-radius:12px;border:2px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font:inherit;padding:8px;resize:vertical}
+/* ===/CSS:wires=== */
 /* ==INV-CSS-END== */
 </style>
 </head>
@@ -3526,6 +3579,317 @@ const PEGS={id:'pegs',icon:'📍',title:'Peg Solitaire',blurb:'Jump pegs over ea
     {name:'Cross: other start',make:()=>pegLevel('cross',[2,2])},
     {name:'Cross: classic',make:()=>pegLevel('cross',[3,3],[3,3])}
   ]};
+
+/* ---------- LIGHTS OUT ---------- */
+const LO_DIRS=[[0,0],[1,0],[-1,0],[0,1],[0,-1]];
+const LO_INFO={};
+function loInfo(n){
+  if(LO_INFO[n])return LO_INFO[n];
+  const N=n*n,nb=Array.from({length:N},()=>[]);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)LO_DIRS.forEach(([dr,dc])=>{const rr=r+dr,cc=c+dc;if(rr>=0&&rr<n&&cc>=0&&cc<n)nb[r*n+c].push(rr*n+cc);});
+  /* Row-reduce [A | I] over mod 2. A[i][j]=1 when pressing j flips light i (A is symmetric). */
+  const W=2*N,M=Array.from({length:N},(_,i)=>{const row=new Array(W).fill(0);nb[i].forEach(j=>{row[j]=1;});row[N+i]=1;return row;});
+  const piv=[];let rk=0;
+  for(let c=0;c<N;c++){
+    let p=-1;for(let i=rk;i<N;i++)if(M[i][c]){p=i;break;}
+    if(p<0)continue;
+    [M[rk],M[p]]=[M[p],M[rk]];
+    for(let i=0;i<N;i++)if(i!==rk&&M[i][c])for(let k=0;k<W;k++)M[i][k]^=M[rk][k];
+    piv.push(c);rk++;
+  }
+  const basis=[];
+  for(let f=0;f<N;f++){if(piv.includes(f))continue;const v=new Array(N).fill(0);v[f]=1;piv.forEach((pc,k)=>{if(M[k][f])v[pc]=1;});basis.push(v);}
+  return (LO_INFO[n]={n,N,nb,M,piv,rk,basis});
+}
+function loPress(n,s,i){const t=s.slice();loInfo(n).nb[i].forEach(j=>{t[j]^=1;});return t;}
+/* Fewest presses that clear the board: any solution plus any "quiet" set of presses is also a solution, so try them all. */
+function loSolve(n,b){
+  const {N,M,piv,rk,basis}=loInfo(n);
+  const dot=k=>{let s=0;for(let i=0;i<N;i++)if(b[i]&&M[k][N+i])s^=1;return s;};
+  for(let k=rk;k<N;k++)if(dot(k))return null;
+  const x0=new Array(N).fill(0);piv.forEach((pc,k)=>{x0[pc]=dot(k);});
+  let best=null;
+  for(let m=0;m<(1<<basis.length);m++){
+    const x=x0.slice();
+    basis.forEach((v,t)=>{if((m>>t)&1)for(let i=0;i<N;i++)x[i]^=v[i];});
+    const w=x.reduce((a,v)=>a+v,0);
+    if(!best||w<best.w)best={x,w};
+  }
+  return best;
+}
+function loMini(rows){return `<span class="lomini">${rows.map(r=>`<span>${[...r].map(ch=>`<i${ch==='#'?' class="on"':''}></i>`).join('')}</span>`).join('')}</span>`;}
+const LO_QUIET5=[['#.#.#','#.#.#','.....','#.#.#','#.#.#'],['.###.','#.#.#','##.##','#.#.#','.###.'],['##.##','.....','##.##','.....','##.##']];
+function loMaths(n,allOn){
+  const base=`<p><strong>Pressing a light twice puts everything back</strong>, so there is never a reason to press the same light twice. The <strong>order</strong> of the presses doesn't matter either: all that counts is which lights you press an odd number of times. So a solution is really just a <em>set</em> of lights to press, once each.</p>`;
+  if(n===3)return base+`<p>A 3 × 3 board has 9 lights, so there are 2<sup>9</sup> = 512 different sets of presses and 512 different patterns of lit lights. Every set of presses gives a <em>different</em> pattern, so <strong>every</strong> pattern can be cleared, and in <strong>exactly one</strong> way. There is no choice to make: the fewest presses is just the one set that works. The hardest pattern of all needs every one of the 9 lights pressed.</p>`;
+  if(n===4)return base+`<p>A 4 × 4 board has 2<sup>16</sup> = 65 536 patterns of lit lights, but only 2<sup>12</sup> = 4096 of them can ever be cleared: just <strong>1 in 16</strong>. The reason is that different sets of presses can have exactly the same effect. There are 15 non-empty “quiet” sets of presses that, between them, change nothing at all, so far fewer than 65 536 patterns can be reached. Every puzzle here was made by pressing lights, so it can always be solved, but a pattern thrown together at random usually can't.</p><p>Each solvable pattern can be cleared in 16 different ways (a solution plus any quiet set is another solution), and the puzzle asks for the shortest. No solvable 4 × 4 pattern needs more than 7 presses.</p>`;
+  if(n===5)return base+`<p>A 5 × 5 board has 2<sup>25</sup> = 33 554 432 patterns of lit lights, but only 2<sup>23</sup> = 8 388 608 of them can be cleared: exactly <strong>1 in 4</strong>. The reason is three “quiet” sets of presses that leave every light exactly as it was (a lit dot means “press this light”):</p><p>${LO_QUIET5.map(loMini).join('')}</p><p>Any solution plus a quiet set is another solution, so every solvable pattern can be cleared in exactly <strong>four</strong> ways, and the fewest-presses answer is the shortest of the four.${allOn?` Starting with all 25 lights on, the shortest has <strong>15</strong> presses, and no solvable 5 × 5 pattern ever needs more than 15, so this is one of the hardest of all.`:''}</p>
+<p><strong>Can a pattern be cleared at all?</strong> Count the lit lights that sit on a lit dot of the first picture, then do the same for the second picture. If <em>both</em> counts are even the pattern can be cleared; if either count is odd it can't (the third picture then takes care of itself).</p>
+<p><strong>Chasing the lights.</strong> Go down the board one row at a time: whenever a light in row 1 is on, press the light directly below it in row 2. Then do the same for row 2, row 3 and row 4. Every press switches off the light above it, so afterwards only the <em>bottom row</em> can still have lights on. If it is empty, you're done. If not, look at which columns are lit (counting from the left), press the listed lights in the <em>top</em> row, and chase down again:</p>
+<table class="lochase"><tr><th>Bottom row lit</th><th>Press in the top row</th></tr>
+<tr><td>1, 5</td><td>4 and 5</td></tr><tr><td>2, 4</td><td>2 and 5</td></tr><tr><td>1, 2, 3</td><td>2</td></tr><tr><td>3, 4, 5</td><td>4</td></tr>
+<tr><td>2, 3, 5</td><td>1</td></tr><tr><td>1, 3, 4</td><td>5</td></tr><tr><td>1, 2, 4, 5</td><td>3</td></tr></table>
+<p>Any other bottom row means the pattern can't be cleared. Chasing always works, but it doesn't always use the fewest presses.</p>`;
+  return base+`<p>A 6 × 6 board has 2<sup>36</sup> = 68 719 476 736 patterns, and <strong>every</strong> one of them can be cleared, in exactly one way, just as on 3 × 3. Not all sizes behave like that: 3 × 3, 6 × 6, 7 × 7 and 8 × 8 do, but 4 × 4 and 5 × 5 have “quiet” sets of presses that make the answers less tidy. Because each pattern has only one solution, the fewest presses is simply the number of lights in that one set.</p>`;
+}
+function lightsLevel(n,opt){
+  opt=opt||{};
+  const N=n*n;
+  let start;
+  if(opt.allOn)start=new Array(N).fill(1);
+  else{
+    for(let t=0;t<2000;t++){
+      let b=new Array(N).fill(0);
+      for(let i=0;i<N;i++)if(Math.random()<.5)b=loPress(n,b,i);
+      start=b;
+      const r=loSolve(n,b);
+      if(r&&r.w>=opt.minW&&r.w<=opt.maxW)break;
+    }
+  }
+  const lab=i=>`Press the light in row ${Math.floor(i/n)+1}, column ${i%n+1}`;
+  const def={
+    scoreLabel:'Presses',unit:'presses',
+    start,
+    key:s=>s.join(''),
+    isGoal:s=>!s.some(v=>v),
+    moves(s){return s.map((_,i)=>({kind:'press',i,to:loPress(n,s,i),label:lab(i)}));},
+    solver(s){
+      const r=loSolve(n,s);
+      if(!r)return {path:null,cost:null,states:[]};
+      const path=[];let cur=s;
+      r.x.forEach((v,i)=>{if(v){const to=loPress(n,cur,i);path.push({kind:'press',i,to,label:lab(i)});cur=to;}});
+      return {path,cost:path.length,states:[]};
+    },
+    brief:`Switch <strong>every light off</strong>. Pressing a light flips it <em>and</em> the lights directly <strong>above, below, left and right</strong> of it: on becomes off, off becomes on. Diagonal lights aren't touched, and a light at an edge or in a corner has fewer neighbours. Can you do it in the fewest presses?`,
+    maths:loMaths(n,!!opt.allOn),
+    mount(stage,S){
+      const cells=[],stat=el('div',{class:'lostat'});
+      const grid=el('div',{class:'lo',style:`--n:${n}`,role:'group','aria-label':`${n} by ${n} grid of lights`});
+      const prev=(i,on)=>{loInfo(n).nb[i].forEach(j=>cells[j].classList.toggle('pv',on));};
+      for(let i=0;i<N;i++){
+        const b=el('button',{type:'button',class:'lbulb'});
+        b.addEventListener('click',()=>tap(i));
+        b.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')prev(i,true);});
+        b.addEventListener('pointerleave',()=>prev(i,false));
+        b.addEventListener('focus',()=>{if(b.matches(':focus-visible'))prev(i,true);});
+        b.addEventListener('blur',()=>prev(i,false));
+        cells.push(b);grid.append(b);
+      }
+      stage.append(grid,stat);
+      function paint(s){
+        let k=0;
+        s.forEach((v,i)=>{
+          cells[i].classList.toggle('on',!!v);
+          cells[i].setAttribute('aria-label',`Row ${Math.floor(i/n)+1}, column ${i%n+1}, ${v?'on':'off'}`);
+          if(v)k++;
+        });
+        stat.textContent=k?`Lights on: ${k}`:'All the lights are off!';
+        stat.classList.toggle('done',!k);
+      }
+      function tap(i){
+        if(S.busy)return;
+        if(def.isGoal(S.state)){S.say('That one is solved. Press Reset to play it again.','info');return;}
+        S.play(S.moves()[i]);
+      }
+      return {
+        update(s){this.clear();paint(s);},
+        highlight(m){this.clear();cells[m.i].classList.add('hint');},
+        clear(){cells.forEach(c=>c.classList.remove('hint'));}
+      };
+    }
+  };
+  return def;
+}
+const LIGHTS={id:'lights-out',icon:'💡',title:'Lights Out',blurb:'Switch every light off, but each press flips its neighbours too.',
+  levels:[
+    {name:'3 × 3',random:true,make:()=>lightsLevel(3,{minW:4,maxW:7})},
+    {name:'4 × 4',random:true,make:()=>lightsLevel(4,{minW:5,maxW:7})},
+    {name:'5 × 5',random:true,make:()=>lightsLevel(5,{minW:8,maxW:13})},
+    {name:'5 × 5, all on',make:()=>lightsLevel(5,{allOn:true})},
+    {name:'6 × 6',random:true,make:()=>lightsLevel(6,{minW:12,maxW:36})}
+  ]};
+
+/* ---------- THE ELECTRICIAN'S STAIRS ---------- */
+const WS_COL=['#ff8fb1','#6cc0ee','#9bd870','#f2b84b','#c58bd9','#74d6c9','#f29a5b'];
+const WS_SUBS=[[0,1,2],[0,1],[0,2],[1,2],[0],[1],[2]];
+const WS_NAME=['ON','WARM','COLD'];
+/* The "recipes": distinct combinations of groups, together using exactly n wires (fewest bundles first). */
+function wsPick(n){let best=null;for(let m=1;m<128;m++){const F=WS_SUBS.filter((_,i)=>(m>>i)&1);if(F.reduce((a,s)=>a+s.length,0)!==n)continue;if(!best||F.length<best.length)best=F;}return best;}
+function wsShuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function wsMaths(n){
+  return (n===3?`<p>With only three wires, the groups ON, WARM and COLD each hold exactly one wire, so the bulbs alone give the whole answer. With more wires you need the tester as well.</p>`:'')+
+`<p><strong>Why climb only once?</strong> You must go up (that's where the bulbs are) and come back down (that's where the switches are), so two flights is the least possible. The question is whether one trip up is <em>enough</em>.</p>
+<p><strong>Bulbs on their own</strong> sort the wires into just three groups: ON now, WARM (on earlier, off now) and COLD. With six wires split 2 + 2 + 2 you would still have 2 × 2 × 2 = 8 possible arrangements left.</p>
+<p><strong>Twisting on its own</strong> lets the tester pair wires up, but never tells you which end of a pair is which. Twisting six top ends into three pairs still leaves 48 of the 720 arrangements possible.</p>
+<p><strong>Together they work.</strong> Twist together bulbs from <em>different</em> groups. When the tester finds those wires at the bottom, you know which group each one was in, so you know exactly which wire is which. The trick works as long as no two twisted bundles have the same “recipe” of groups. A recipe is a combination of ON, WARM and COLD, and there are only seven: all three; the three pairs ON + WARM, ON + COLD and WARM + COLD; and each group on its own. Using every recipe once takes 3 + 2 + 2 + 2 + 1 + 1 + 1 = <strong>12 wires</strong>, so <strong>12 is the most wires that can be sorted out in a single trip</strong>.</p>
+<p>Without the WARM trick there are only two groups and three recipes (ON + OFF, ON alone, OFF alone), which copes with at most 4 wires. To label more than 12 wires you would have to climb the stairs a second time.</p>`;
+}
+function wiresLevel(n){
+  const LET='ABCDEFGHIJKL'.slice(0,n).split('');
+  const perm=wsShuffle([...Array(n).keys()]);          /* perm[end] = the bulb at the far end of that wire */
+  const wireOf=[];perm.forEach((b,i)=>{wireOf[b]=i;});
+  const def={
+    custom:true,
+    brief:`The switches are at the <strong>bottom</strong> of a long flight of stairs and the ${n} bulbs (${LET[0]}–${LET[n-1]}) are at the <strong>top</strong>. A bundle of ${n} identical wires joins them, and nobody knows which wire goes to which bulb. <strong>Label each numbered wire end at the bottom with its bulb's letter</strong>, so the switches can be connected, and climb the stairs as few times as you can. Down here you can power wire ends, wait for bulbs to warm up, and touch the tester to an end (it buzzes at every end joined to it at the far end). Up there you can look at the bulbs and twist wire ends together.`,
+    maths:wsMaths(n),
+    mount(stage,S){
+      const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+      let st,demoing=false,tok=0,hintN=0;
+      const newState=()=>({loc:'bottom',flights:0,pow:Array(n).fill(false),grp:[...Array(n).keys()],next:n,heat:Array(n).fill(false),labels:Array(n).fill(-1),sel:-1,buzz:null,probe:-1});
+      const lit=b=>{const g=st.grp[b];for(let c=0;c<n;c++)if(st.grp[c]===g&&st.pow[wireOf[c]])return true;return false;};
+      const joined=i=>{const g=st.grp[perm[i]],r=[];for(let j=0;j<n;j++)if(j!==i&&st.grp[perm[j]]===g)r.push(j);return r;};
+      const groups=()=>{const m=new Map();st.grp.forEach((g,b)=>{if(!m.has(g))m.set(g,[]);m.get(g).push(b);});return [...m.values()].filter(x=>x.length>1);};
+      const join=(a,b)=>{const ga=st.grp[a],gb=st.grp[b];st.grp=st.grp.map(g=>g===gb?ga:g);};
+      const btn=(t,f,c,dis)=>{const b=el('button',{type:'button',class:c||'btn'},t);b.addEventListener('click',f);if(dis)b.disabled=true;return b;};
+      const root=el('div',{class:'ws'}),bar=el('div',{class:'wsbar'}),topP=el('div',{class:'wspanel'}),botP=el('div',{class:'wspanel'});
+      const notesBox=el('textarea',{class:'wsnotes',rows:'3',placeholder:'Notebook: jot down what you see and what you have twisted…','aria-label':'Notebook'});
+      root.append(bar,topP,botP,notesBox);stage.append(root);
+
+      function doWait(){st.heat=st.heat.map((_,b)=>lit(b));st.buzz=null;st.probe=-1;}
+      function doClimb(){st.flights++;st.loc=st.loc==='top'?'bottom':'top';st.sel=-1;st.buzz=null;st.probe=-1;}
+      function doTest(i){st.probe=i;st.buzz=joined(i);}
+      function power(i){if(demoing)return;st.pow[i]=!st.pow[i];st.buzz=null;st.probe=-1;S.say('');draw();S.refresh();}
+      function wait(){if(demoing)return;doWait();S.say('You wait five minutes. Any bulb that is on gets warm; any bulb that is off cools down.','info');draw();S.refresh();}
+      function climb(){
+        if(demoing)return;doClimb();
+        S.say(st.loc==='top'?'You climb the stairs. Now you can see the bulbs, and twist their wire ends together.':'You are back at the switch panel, with the tester and the power.','info');
+        draw();S.refresh();
+      }
+      function test(i){
+        if(demoing)return;doTest(i);const J=st.buzz;
+        S.say(J.length?`Tester on end ${i+1}: it buzzes at end ${J.map(x=>x+1).join(' and end ')}.`:`Tester on end ${i+1}: silence. Its wire isn't twisted to any other.`,'info');
+        draw();S.refresh();
+      }
+      function tapEnd(b){
+        if(st.loc!=='top'||demoing)return;
+        if(st.sel<0){st.sel=b;draw();return;}
+        if(st.sel===b){st.sel=-1;draw();return;}
+        const a=st.sel;st.sel=-1;
+        if(st.grp[a]===st.grp[b]){st.grp[b]=st.next++;}else join(a,b);
+        draw();
+      }
+      function untwistAll(){if(demoing)return;st.grp=[...Array(n).keys()];st.next=n;st.sel=-1;draw();}
+      function check(){
+        if(st.loc!=='bottom'){S.say('You need to be at the switch panel to label the wire ends.','info');return;}
+        if(st.labels.some(v=>v<0)){S.say('Give every wire end a label first (the drop-down under each end).','info');return;}
+        if(new Set(st.labels).size<n){S.say('Two ends have the same bulb letter, and every bulb has just one wire.','bad');return;}
+        if(st.labels.some((v,i)=>v!==perm[i])){S.say("Those labels aren't all right. Think again about what you saw, or test some more.",'bad');return;}
+        const f=st.flights;
+        if(f===2)S.win(`🎉 All ${n} wires labelled correctly with just one trip up and one trip down. You can't do better!`);
+        else if(f===0)S.win(`✅ All ${n} labelled correctly without climbing at all. A lucky guess! Can you work it out by reasoning, with one trip up and down?`);
+        else S.win(`✅ All ${n} labelled correctly, but you used ${f} flights of stairs. The least possible is 2 (up once, down once). Can you do it?`);
+      }
+      function twistedText(){const g=groups();return g.length?'Twisted together at the top: '+g.map(x=>x.map(b=>LET[b]).join(' + ')).join(',  '):'Nothing is twisted together at the top yet.';}
+      function bulbEl(b,k){
+        const on=lit(b),warm=!on&&st.heat[b];
+        const e=el('button',{type:'button',class:'wsend'+(st.sel===b?' sel':''),'aria-label':`Top end of the wire at bulb ${LET[b]}${k>=0?', twisted':''}`},k>=0?'●':'○');
+        if(k>=0)e.style.background=WS_COL[k%WS_COL.length];
+        e.addEventListener('click',()=>tapEnd(b));
+        return el('div',{class:'wsb'},el('div',{class:'wsglass '+(on?'on':warm?'warm':'cold')}),el('div',{class:'wsl'},LET[b]),el('div',{class:'wsst'},on?'ON':warm?'off, warm':'off, cold'),el('div',{class:'wswire'}),e);
+      }
+      function endEl(i){
+        const buzz=st.buzz&&st.buzz.includes(i);
+        const c=el('div',{class:'wse'+(st.pow[i]?' pow':'')+(buzz?' buzz':'')+(st.probe===i?' probe':'')});
+        const sel=el('select',{class:'wssel','aria-label':`Label for end ${i+1}`});
+        sel.append(el('option',{value:'-1'},'label?'),...LET.map((l,j)=>el('option',{value:String(j)},'Bulb '+l)));
+        sel.value=String(st.labels[i]);
+        sel.addEventListener('change',()=>{st.labels[i]=+sel.value;});
+        c.append(el('div',{class:'wsn'},'End '+(i+1)),btn(st.pow[i]?'⚡ Power ON':'⚡ Power off',()=>power(i),'mini'),btn('🔔 Test',()=>test(i),'mini'),el('div',{class:'wsbz'},buzz?'🔔 buzzes':st.probe===i?'tester here':''),sel);
+        return c;
+      }
+      function draw(){
+        const atTop=st.loc==='top',grps=groups();
+        bar.replaceChildren(
+          btn(atTop?'⬇ Go down the stairs':'⬆ Climb the stairs',climb,'btn primary',demoing),
+          atTop?btn('✂ Untwist all',untwistAll,'btn',demoing):btn('⏱ Wait five minutes',wait,'btn',demoing),
+          el('span',{class:'wswhere'},atTop?'You are at the top of the stairs.':'You are at the bottom of the stairs.'));
+        topP.className='wspanel'+(atTop?'':' dim');
+        const row=el('div',{class:'wsrow'});
+        for(let b=0;b<n;b++)row.append(bulbEl(b,grps.findIndex(g=>g.includes(b))));
+        topP.replaceChildren(...[el('h3',null,'Top of the stairs: the bulbs'),
+          atTop?row:el('p',{class:'wsnote'},"You can't see the bulbs from down here."),
+          atTop?el('p',{class:'wsnote'},'Tap one wire end, then another, to twist them together. Tap an end and then one of its twisted partners to untwist it.'):null,
+          el('p',{class:'wsnote'},twistedText())].filter(Boolean));
+        botP.className='wspanel'+(atTop?' dim':'');
+        const grid=el('div',{class:'wsgrid'});
+        for(let i=0;i<n;i++)grid.append(endEl(i));
+        const pw=st.pow.map((p,i)=>p?i+1:0).filter(Boolean);
+        botP.replaceChildren(...[el('h3',null,'Bottom of the stairs: the switch panel'),
+          atTop?el('p',{class:'wsnote'},"You can't power or test anything from up here."+(pw.length?' (Ends powered at the bottom: '+pw.join(', ')+'.)':'')):grid,
+          atTop?null:btn('✔ Check my labels',check,'btn primary')].filter(Boolean));
+      }
+      function resetState(){tok++;demoing=false;hintN=0;st=newState();notesBox.value='';}
+      function reset(){resetState();S.say('');draw();S.refresh();}
+      const HINTS=[
+        'You have three ways to find things out: a bulb lights when its wire is powered; a bulb that was on a while ago stays warm after it is switched off; and the tester buzzes between two wires that are twisted together at the far end.',
+        'The bulbs alone can only sort the wires into three groups: ON, WARM and COLD. Can you set that up at the bottom before you climb?',
+        'Twisting wire ends together lets the tester pair wires up from below. Twist together bulbs from <em>different</em> groups, so that the groups of the buzzing wires tell you which is which.',
+        'One trip: power one group, wait, switch it off, power a second group, then climb. Note each bulb as ON, WARM or COLD. Twist some bulbs together, taking care that no two bundles contain the same mix of groups. Go down and test the ends.'
+      ];
+      function hint(){
+        if(demoing)return;
+        const h=HINTS[Math.min(hintN,HINTS.length-1)];S.say('💡 Hint '+(Math.min(hintN,HINTS.length-1)+1)+' of '+HINTS.length+': '+h.replace(/<[^>]+>/g,''),'info');hintN++;
+      }
+      async function show(){
+        if(demoing){tok++;demoing=false;S.say('Demo stopped. Press Reset to try it yourself.','info');draw();S.refresh();return;}
+        resetState();S.say('');
+        const my=++tok;demoing=true;draw();S.refresh();
+        const F=wsPick(n),sizes=[0,1,2].map(c=>F.filter(s=>s.includes(c)).length);
+        const endCls=i=>i<sizes[0]?0:i<sizes[0]+sizes[1]?1:2;
+        const endsOf=c=>[...Array(n).keys()].filter(i=>endCls(i)===c);
+        const nums=a=>a.map(x=>x+1).join(', ');
+        const letters=a=>a.map(b=>LET[b]).join(', ');
+        const step=async(txt,ms)=>{if(txt)S.say(txt,'info');draw();S.refresh();await sleep(ms);return my===tok;};
+        if(!await step('Plan: before climbing, sort the wires into three groups (ON, WARM, COLD). At the top, twist bulbs from different groups together so the tester can pair the wires up.',2600))return;
+        if(sizes[1]){endsOf(1).forEach(i=>{st.pow[i]=true;});if(!await step(`At the bottom: power ends ${nums(endsOf(1))}. They will be the WARM group.`,1800))return;
+          doWait();if(!await step('Wait five minutes. Those bulbs heat up.',1600))return;
+          endsOf(1).forEach(i=>{st.pow[i]=false;});}
+        endsOf(0).forEach(i=>{st.pow[i]=true;});
+        if(!await step(`Switch the warm group off and power ends ${nums(endsOf(0))}. They are the ON group. The rest (ends ${nums(endsOf(2))}) stay COLD. Now climb.`,2400))return;
+        doClimb();
+        const byc=[[],[],[]];for(let b=0;b<n;b++)byc[lit(b)?0:st.heat[b]?1:2].push(b);
+        if(!await step(`At the top: ON ${letters(byc[0])}. WARM ${letters(byc[1])}. COLD ${letters(byc[2])}.`,2600))return;
+        const use=[0,0,0],tw=[];
+        for(const s of F){
+          const g=s.map(c=>byc[c][use[c]++]);tw.push({s,g});
+          if(g.length>1){for(const b of g.slice(1))join(g[0],b);
+            if(!await step(`Twist ${letters(g)} together (${s.map(c=>WS_NAME[c]).join(' + ')}).`,1700))return;}
+          else if(!await step(`Leave ${letters(g)} (${WS_NAME[s[0]]}) on its own.`,1300))return;
+        }
+        doClimb();
+        if(!await step('Back down with the tester. Wires that buzz together form a twisted bundle.',1900))return;
+        const seen=new Set(),bundles=[];
+        for(let i=0;i<n;i++){
+          if(seen.has(i))continue;
+          doTest(i);const J=joined(i);
+          if(J.length){const E=[i,...J];E.forEach(x=>seen.add(x));bundles.push(E);
+            if(!await step(`Test end ${i+1}: it buzzes with ends ${nums(J)}. Their groups: ${E.map(x=>WS_NAME[endCls(x)]).join(', ')}.`,1700))return;}
+          else if(!await step(`Test end ${i+1}: silence (a ${WS_NAME[endCls(i)]} wire left on its own).`,900))return;
+        }
+        const lab=Array(n).fill(-1);
+        bundles.forEach(E=>{
+          const sig=E.map(endCls).sort().join();
+          const t=tw.find(x=>x.s.slice().sort().join()===sig);
+          t.g.forEach((b,k)=>{lab[E.find(x=>endCls(x)===t.s[k])]=b;});
+        });
+        tw.filter(x=>x.g.length===1).forEach(x=>{const e=[...Array(n).keys()].find(i=>endCls(i)===x.s[0]&&lab[i]<0);lab[e]=x.g[0];});
+        st.labels=lab;
+        if(lab.some((v,i)=>v!==perm[i])){demoing=false;draw();S.say("The demo's labels came out wrong. That shouldn't happen!",'bad');S.refresh();return;}
+        if(!await step('Each bundle has a different mix of groups, so its wires can be identified. Label the ends.',2000))return;
+        demoing=false;draw();
+        S.win(`That's how it's done: one trip up and one trip down, and all ${n} wires labelled. Press Reset to try it yourself!`);S.refresh();
+      }
+      return {
+        ctl:()=>({undo:false,reset:true,hint:!demoing,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Flights of stairs: ${st?st.flights:0}`}),
+        reset,undo(){},hint,show,
+        stop(){tok++;demoing=false;}
+      };
+    }
+  };
+  return def;
+}
+const WIRES={id:'electrician',icon:'⚡',title:"The Electrician's Stairs",blurb:'Match unmarked wires to their bulbs with as few trips up the stairs as you can.',
+  levels:[3,6,9,12].map(n=>({name:n+' bulbs',random:true,make:()=>wiresLevel(n)}))};
 
 /* ==INV-BEGIN== investigations are added here, one after another */
 const INV_LIST=[],INV_API={};
@@ -6696,12 +7060,13 @@ INV_API.passola={paSolver,PA_FIND};
 /* ===/JS:passola=== */
 /* ==INV-END== */
 
-const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,LIGHTS,WIRES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Weights and Measures',items:[JUGS,COLSORT,COINS]},
   {title:'River and bridge crossings',items:[WGC,FOX,BRIDGE]},
   {title:'Candles and Matches',items:[MATCHES,CANDLES]},
+  {title:'Lights and Switches',items:[LIGHTS,WIRES]},
   {title:'Chess board',items:[
     CHESS,
     KNIGHT,
@@ -6824,7 +7189,7 @@ function showPuzzle(P){
   function win(){
     solved=true;updateUI();
     const u=def.unit;
-    const un=n=>n===1?u.replace(/^\w+/,w=>w==='matches'?'match':w.replace(/s$/,'')):u;
+    const un=n=>n===1?u.replace(/^\w+/,w=>w==='matches'?'match':w==='presses'?'press':w.replace(/s$/,'')):u;
     if(cost===best.cost)say(`🎉 Solved in ${cost} ${un(cost)} — that's the fewest possible!`,'good');
     else say(`✅ Solved in ${cost} ${un(cost)}. The fewest possible is ${best.cost} — can you beat it? (Press Reset to try again.)`,'good');
     showMaths();
@@ -6862,7 +7227,7 @@ function showPuzzle(P){
       if(my!==token)return;
       if(k>=path.length){
         busy=false;demoing=false;shown=true;updateUI();
-        say(`That's one shortest route: ${best.cost} ${best.cost===1?def.unit.replace(/^\w+/,w=>w==='matches'?'match':w.replace(/s$/,'')):def.unit}. Press Reset to try it yourself!`,'info');showMaths();return;
+        say(`That's one shortest route: ${best.cost} ${best.cost===1?def.unit.replace(/^\w+/,w=>w==='matches'?'match':w==='presses'?'press':w.replace(/s$/,'')):def.unit}. Press Reset to try it yourself!`,'info');showMaths();return;
       }
       const m=path[k++];
       say(`Step ${k}: ${m.label}.`,'info');
@@ -6909,7 +7274,7 @@ function route(){
   if(PUZZLES[id]){homeTab=INVESTIGATIONS.includes(PUZZLES[id])?'investigations':'puzzles';showPuzzle(PUZZLES[id]);}else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
+window.CP={wiresLevel,WIRES,lightsLevel,loSolve,loPress,LIGHTS,pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
 route();
 })();
 </script>
