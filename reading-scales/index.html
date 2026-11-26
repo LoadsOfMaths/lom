@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reading Scales | LoadsOfMaths</title>
+<style>
+:root{
+  --orange:#f28c1e; --blue:#1f6fb5; --grey:#6b6b6b; --ink:#222;
+  --bg:#eef4fa; --card:#fff; --green:#2e9e5b; --red:#d62828; --line:#d5e0ec;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:'Anak Orang','Trebuchet MS','Segoe UI',Arial,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:20px; line-height:1.4;
+}
+header{
+  background:#fff; border-bottom:4px solid var(--orange);
+  display:flex; align-items:center; gap:14px; padding:8px 18px; flex-wrap:wrap;
+}
+.logo{font-family:'Super Bouncer','Trebuchet MS',Arial,sans-serif; font-size:1.05rem; font-weight:700; white-space:nowrap}
+.logo .l{color:var(--orange)} .logo .o{color:var(--grey)} .logo .m{color:var(--blue)}
+h1{font-family:'Super Bouncer','Trebuchet MS',Arial,sans-serif; font-size:1.9rem; margin:0; color:var(--blue); flex:1; text-align:center}
+.iconbtn{border:2px solid var(--line); background:#fff; border-radius:10px; font-size:1.4rem; padding:4px 12px; cursor:pointer}
+.iconbtn:hover{border-color:var(--blue)}
+main{max-width:1150px; margin:0 auto; padding:14px}
+.tabs{display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; align-items:center}
+.tab{
+  font:inherit; font-family:'Super Bouncer','Trebuchet MS',Arial,sans-serif; font-size:1.3rem;
+  padding:8px 26px; border-radius:30px; border:3px solid var(--blue); background:#fff; color:var(--blue); cursor:pointer;
+}
+.tab.on{background:var(--blue); color:#fff}
+.levels{margin-left:auto; display:flex; gap:6px; align-items:center}
+.levels span{font-size:.95rem; color:var(--grey)}
+.lv{
+  font:inherit; font-weight:700; width:44px; height:44px; border-radius:50%;
+  border:3px solid var(--orange); background:#fff; color:var(--orange); cursor:pointer; font-size:1.1rem;
+}
+.lv.on{background:var(--orange); color:#fff}
+#lvdesc{font-size:1rem; color:var(--grey); margin:0 2px 8px 4px; min-height:1.4em}
+.card{background:var(--card); border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.08); padding:12px 14px; margin-bottom:12px}
+#scalewrap{overflow-x:auto}
+#scale{display:block; width:100%; min-width:600px; height:auto}
+#panel{min-height:210px}
+h2{font-family:'Super Bouncer','Trebuchet MS',Arial,sans-serif; margin:0 0 6px; font-size:1.55rem; color:var(--blue)}
+.steptext{font-size:1.35rem; min-height:3.6em}
+.steptext b{color:var(--blue)}
+.chain{display:inline-block; background:#eaf6ef; border:2px solid var(--green); border-radius:10px; padding:2px 10px; margin-top:6px; font-weight:700; color:#1d6b3d}
+.eq{display:inline-block; background:#fff4e5; border:2px solid var(--orange); border-radius:10px; padding:2px 12px; font-weight:700; margin:4px 0}
+.btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center}
+button.big{
+  font:inherit; font-weight:700; font-size:1.2rem; padding:9px 22px; border-radius:12px;
+  border:none; background:var(--blue); color:#fff; cursor:pointer;
+}
+button.big:hover{filter:brightness(1.1)}
+button.big:disabled{background:#b9c6d4; cursor:default; filter:none}
+button.big.org{background:var(--orange)}
+button.big.ghost{background:#fff; color:var(--blue); border:3px solid var(--blue)}
+.dots{display:flex; gap:6px; margin-bottom:8px}
+.dot{width:14px; height:14px; border-radius:50%; background:var(--line)}
+.dot.on{background:var(--orange)} .dot.past{background:var(--blue)}
+.dot.ok{background:var(--green)} .dot.part{background:#e8c04a} .dot.no{background:#e07b7b}
+.qhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-weight:700; color:var(--grey)}
+.score{color:var(--blue)}
+.part{border:3px solid var(--line); border-radius:14px; padding:8px 12px; margin-bottom:8px}
+.part.active{border-color:var(--orange); background:#fffaf2}
+.part.locked{opacity:.5}
+.part.done{border-color:var(--green); background:#f3fbf6}
+.part label{font-size:1.3rem; display:block; margin-bottom:4px}
+.part label b{color:var(--blue)}
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+input[type=text]{
+  font:inherit; font-size:1.5rem; width:170px; padding:6px 10px; border:3px solid var(--blue); border-radius:10px;
+}
+input[type=text]:disabled{background:#eee; border-color:#ccc}
+.fb{margin-top:6px; font-size:1.15rem; min-height:1.3em}
+.fb.ok{color:#1d6b3d} .fb.no{color:#b3261e} .fb.show{color:#6a4a00} .fb.bad{color:var(--grey)}
+.bigscore{font-size:3rem; font-family:'Super Bouncer','Trebuchet MS',Arial,sans-serif; color:var(--blue); margin:0}
+table.res{border-collapse:collapse; margin:8px 0; font-size:1.1rem}
+table.res td,table.res th{border:2px solid var(--line); padding:4px 14px; text-align:center}
+.tick{color:var(--green); font-weight:700} .cross{color:#c0392b; font-weight:700}
+#overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:10}
+#overlay.show{display:flex}
+#dlg{background:#fff; border-radius:16px; padding:20px 26px; max-width:460px; width:90%}
+#dlg label{display:flex; gap:10px; align-items:flex-start; margin:10px 0; cursor:pointer}
+#dlg input{width:24px; height:24px; margin-top:4px}
+#dlg small{display:block; color:var(--grey); font-size:.9rem}
+.qintro{font-size:1.3rem; margin-bottom:8px}
+.qgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); gap:12px}
+.qcard{border:3px solid var(--line); border-radius:14px; padding:6px 10px; background:#fff; overflow-x:auto}
+.qtop{display:flex; align-items:center; gap:12px; min-height:84px}
+.qnum{flex:none; width:46px; height:46px; border-radius:50%; background:var(--orange); color:#fff; font-family:'Super Bouncer','Trebuchet MS',Arial,sans-serif; font-size:1.6rem; display:flex; align-items:center; justify-content:center}
+.qans{flex:1; font-size:1.2rem}
+.qans .ansmain b{color:var(--blue)} .qans .sep{margin:0 10px; color:var(--orange)}
+.qans .work{font-size:.85rem; color:var(--grey)}
+.qcard svg{display:block; width:100%; min-width:420px; height:auto}
+@media (max-width:700px){
+  body{font-size:17px} h1{font-size:1.4rem; order:3; flex-basis:100%} .levels{margin-left:0}
+  .steptext{font-size:1.15rem}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span class="o">www.</span><span class="l">loads</span><span class="o">of</span><span class="m">maths</span><span class="o">.co.uk</span></div>
+  <h1>Reading Scales</h1>
+  <button class="iconbtn" id="gear" title="Settings" aria-label="Settings">⚙</button>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab on" id="tabTeach">Teach it</button>
+    <button class="tab" id="tabPractise">Practise it</button>
+    <div class="levels"><span>Level</span>
+      <button class="lv on" data-lv="1">1</button><button class="lv" data-lv="2">2</button>
+      <button class="lv" data-lv="3">3</button><button class="lv" data-lv="4">4</button>
+      <button class="lv" data-lv="5">5</button>
+    </div>
+  </div>
+  <div id="lvdesc"></div>
+
+  <div class="card" id="scalewrap"><svg id="scale" viewBox="0 0 1000 330" role="img" aria-label="A number line with an arrow"></svg></div>
+  <div class="card" id="panel"></div>
+</main>
+
+<div id="overlay"><div id="dlg">
+  <h2>Settings</h2>
+  <label><input type="checkbox" id="optNeg"><span>Include negative numbers<small>Scales may start below zero and cross zero.</small></span></label>
+  <div class="btns"><button class="big" id="closeDlg">Done</button></div>
+</div></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const r6 = x => Math.round(x*1e6)/1e6;
+function fmt(x){
+  x = r6(x);
+  let s = x.toFixed(6).replace(/\.?0+$/,'');
+  if(s===''||s==='-0') s='0';
+  return s.replace('-','−');
+}
+const randInt = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const near = (a,b) => Math.abs(a-b) < 1e-7;
+function parseNum(s){
+  s = String(s).replace(/[−–—]/g,'-').replace(/,/g,'').trim();
+  if(!/^-?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
+  return parseFloat(s);
+}
+
+/* ---------- scale generator ---------- */
+const LEVEL_INFO = {
+  1:'Level 1 – Whole numbers: friendly scales (1s, 2s, 5s, 10s, 20s, 50s)',
+  2:'Level 2 – Bigger and trickier: 25s, 100s, 250s, scales that don’t start at 0',
+  3:'Level 3 – Decimals: one decimal place (0.1, 0.2, 0.5)',
+  4:'Level 4 – Two decimal places (0.01, 0.02, 0.05, 0.25)',
+  5:'Level 5 – Between the marks: the arrow is halfway between two divisions'
+};
+function pool(Ls, gs, dset){
+  const out=[];
+  for(const L of Ls) for(const g of gs){
+    const d=r6(L/g);
+    if(dset.some(x=>near(x,d))) out.push({L,g,d});
+  }
+  return out;
+}
+const POOLS = {};
+POOLS[1] = [[10,10],[10,5],[10,2],[20,2],[20,10],[50,5],[50,10],[100,2],[100,5],[100,10],[2,2],[5,5]]
+  .map(([L,g])=>({L,g,d:r6(L/g)}));
+POOLS[2] = pool([2,4,5,10,20,25,50,100,200,250,500,1000],[2,4,5,10],[1,2,5,10,20,25,50,100,200,250,500]);
+POOLS[3] = pool([0.2,0.4,0.5,1,2,5],[2,4,5,10],[0.1,0.2,0.5]);
+POOLS[4] = pool([0.05,0.1,0.2,0.25,0.5,1,2.5],[2,4,5,10],[0.01,0.02,0.05,0.25]);
+POOLS[5] = POOLS[2].concat(POOLS[3], POOLS[4]);
+
+function makeScale(level, neg, used){
+  const P = POOLS[level];
+  let pick, tries=0;
+  do { pick = P[randInt(0,P.length-1)]; tries++; }
+  while(used && used.has(pick.L+'/'+pick.g) && tries<40);
+  let n = randInt(4,6);
+  while((n-1)*pick.g > 30) n--;
+  const total = (n-1)*pick.g;
+  let mult;
+  if(neg) mult = randInt(-(n+1), 3);
+  else mult = (level===1) ? randInt(0,3) : randInt(0,8);
+  const start = r6(mult*pick.L);
+  let p;
+  if(level===5){
+    p = randInt(0,total-1) + 0.5;
+  } else {
+    const c=[]; for(let k=1;k<total;k++) if(k%pick.g!==0) c.push(k);
+    p = c[randInt(0,c.length-1)];
+  }
+  return {level, start, L:pick.L, g:pick.g, d:pick.d, n, p, key:pick.L+'/'+pick.g};
+}
+function info(sc){
+  const total=(sc.n-1)*sc.g;
+  const k=Math.floor(sc.p), half=(sc.p!==k);
+  const bm=Math.floor(k/sc.g);
+  const off=sc.p-bm*sc.g;
+  const lo=r6(sc.start+bm*sc.L), hi=r6(lo+sc.L);
+  const val=r6(sc.start+sc.p*sc.d);
+  const kc=k-bm*sc.g;           // whole divisions counted on from lo
+  return {total,k,half,bm,off,lo,hi,val,kc};
+}
+const tickVal = (sc,i) => r6(sc.start + i*sc.d);
+
+/* ---------- drawing ---------- */
+const X0=70, X1=930, Y=115;
+const xAt=(pos,total)=>X0+(X1-X0)*pos/total;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function drawScale(sc, ov, target, compact){
+  ov = ov||{}; target = target||$('#scale');
+  const inf=info(sc), total=inf.total, g=sc.g;
+  const sp = (X1-X0)/total;
+  let h='';
+  // background highlights
+  if(ov.band){
+    const a=xAt(ov.band[0]*g,total), b=xAt(ov.band[1]*g,total);
+    h+=`<rect x="${a}" y="${Y-18}" width="${b-a}" height="86" rx="8" fill="#1f6fb5" opacity=".13"/>`;
+  }
+  if(ov.between){
+    const a=xAt(ov.between[0],total), b=xAt(ov.between[1],total);
+    h+=`<rect x="${a}" y="${Y-18}" width="${b-a}" height="86" rx="6" fill="#f28c1e" opacity=".3"/>`;
+  }
+  if(ov.oneGap!=null){
+    const a=xAt(ov.oneGap,total), b=xAt(ov.oneGap+1,total);
+    h+=`<rect x="${a}" y="${Y-18}" width="${b-a}" height="86" rx="4" fill="#f28c1e" opacity=".4"/>`;
+  }
+  // axis
+  h+=`<line x1="${X0-38}" y1="${Y}" x2="${X1+38}" y2="${Y}" stroke="#222" stroke-width="4" stroke-linecap="round"/>`;
+  // ticks + labels
+  for(let i=0;i<=total;i++){
+    const x=xAt(i,total), major=(i%g===0);
+    let len = major?46:(g===10&&i%g===5?33:24);
+    h+=`<line x1="${x}" y1="${Y}" x2="${x}" y2="${Y+len}" stroke="#222" stroke-width="${major?4:2.5}"/>`;
+    if(major){
+      const ring = (ov.ringMajor===i/g);
+      if(ring) h+=`<rect x="${x-52}" y="${Y+52}" width="104" height="44" rx="10" fill="none" stroke="#2e9e5b" stroke-width="4"/>`;
+      h+=`<text x="${x}" y="${Y+86}" text-anchor="middle" font-size="34" font-weight="700" fill="#222" font-family="Trebuchet MS,Arial,sans-serif">${fmt(tickVal(sc,i))}</text>`;
+    }
+  }
+  // gap numbers
+  const rowY=Y+150, rad=Math.min(15,sp/2-2);
+  if(!compact && ov.gapsFrom!=null){
+    for(let j=0;j<g;j++){
+      const cx=xAt(ov.gapsFrom+j+0.5,total);
+      h+=`<circle cx="${cx}" cy="${rowY}" r="${rad}" fill="#f28c1e"/><text x="${cx}" y="${rowY+7}" text-anchor="middle" font-size="${rad>12?20:16}" font-weight="700" fill="#fff" font-family="Trebuchet MS,Arial,sans-serif">${j+1}</text>`;
+    }
+  }
+  if(!compact && ov.counts){
+    for(let j=ov.counts[0]+1;j<=ov.counts[1];j++){
+      const cx=xAt(j,total);
+      h+=`<circle cx="${cx}" cy="${rowY}" r="${rad}" fill="#2e9e5b"/><text x="${cx}" y="${rowY+7}" text-anchor="middle" font-size="${rad>12?20:16}" font-weight="700" fill="#fff" font-family="Trebuchet MS,Arial,sans-serif">${j-ov.counts[0]}</text>`;
+    }
+  }
+  if(!compact && ov.bracket){
+    const a=xAt(ov.bracket.i0*g,total), b=xAt(ov.bracket.i1*g,total), by=rowY;
+    h+=`<path d="M${a} ${by-12} V${by} H${b} V${by-12}" fill="none" stroke="#1f6fb5" stroke-width="4"/>`;
+    h+=`<text x="${clamp((a+b)/2,130,870)}" y="${by+44}" text-anchor="middle" font-size="32" font-weight="700" fill="#1f6fb5" font-family="Trebuchet MS,Arial,sans-serif">${ov.bracket.text}</text>`;
+  }
+  if(!compact && ov.oneGapText){
+    const cx=clamp((xAt(ov.oneGap,total)+xAt(ov.oneGap+1,total))/2,150,850);
+    h+=`<text x="${cx}" y="${rowY+44}" text-anchor="middle" font-size="32" font-weight="700" fill="#c26500" font-family="Trebuchet MS,Arial,sans-serif">${ov.oneGapText}</text>`;
+  }
+  // arrow
+  const ax=xAt(sc.p,total);
+  h+=`<rect x="${ax-5}" y="46" width="10" height="${Y-38-46}" fill="#d62828"/>`;
+  h+=`<polygon points="${ax},${Y-6} ${ax-18},${Y-40} ${ax+18},${Y-40}" fill="#d62828"/>`;
+  if(ov.answer!=null){
+    const lx=clamp(ax,95,905);
+    h+=`<rect x="${lx-85}" y="2" width="170" height="46" rx="12" fill="#d62828"/><text x="${lx}" y="35" text-anchor="middle" font-size="30" font-weight="700" fill="#fff" font-family="Trebuchet MS,Arial,sans-serif">${ov.answer}</text>`;
+  }
+  target.innerHTML=h;
+}
+
+/* ---------- state ---------- */
+let mode='teach', level=1, neg=false;
+const teach={sc:null, step:0};
+const pr={qs:[], revealed:false};
+const panel=$('#panel');
+
+/* ---------- Teach ---------- */
+function buildSteps(sc){
+  const f=info(sc), steps=[];
+  const unit = x => x===1?'division':'divisions';
+  steps.push({
+    title:'Two jobs to do',
+    html:`<b>Job 1:</b> work out what <b>one small division</b> is worth.<br><b>Job 2:</b> use that to read the value the <b>arrow</b> is pointing to.`,
+    ov:{}
+  });
+  steps.push({
+    title:'Pick two labelled numbers next to each other',
+    html:`Look at <b>${fmt(f.lo)}</b> and <b>${fmt(f.hi)}</b>. The jump between them is<br><span class="eq">${fmt(f.hi)} − ${fmt(f.lo)} = ${fmt(sc.L)}</span>`,
+    ov:{band:[f.bm,f.bm+1], bracket:{i0:f.bm,i1:f.bm+1,text:`jump = ${fmt(sc.L)}`}, ringMajor:null}
+  });
+  steps.push({
+    title:'Count the gaps, not the marks',
+    html:`Count the <b>spaces</b> between ${fmt(f.lo)} and ${fmt(f.hi)}. There are <b>${sc.g} gaps</b>.<br><small>(There are ${sc.g+1} marks, counting both labelled ones – but it’s the gaps that matter!)</small>`,
+    ov:{band:[f.bm,f.bm+1], gapsFrom:f.bm*sc.g}
+  });
+  steps.push({
+    title:'Share the jump equally',
+    html:`The jump of ${fmt(sc.L)} is shared between ${sc.g} gaps:<br><span class="eq">${fmt(sc.L)} ÷ ${sc.g} = ${fmt(sc.d)}</span><br><b>One small division is worth ${fmt(sc.d)}.</b>`,
+    ov:{band:[f.bm,f.bm+1], oneGap:f.bm*sc.g, oneGapText:`1 division = ${fmt(sc.d)}`}
+  });
+  // count on
+  let chain='';
+  if(f.kc>0){
+    const arr=[]; for(let j=0;j<=f.kc;j++) arr.push(fmt(r6(f.lo+j*sc.d)));
+    chain=`<br><span class="chain">${arr.join(' → ')}</span>`;
+  }
+  steps.push({
+    title:`Job 2: count on from ${fmt(f.lo)}`,
+    html: f.kc>0
+      ? `The arrow is past <b>${fmt(f.lo)}</b>. Count the divisions up to the arrow (${f.kc} ${unit(f.kc)}), adding <b>${fmt(sc.d)}</b> each time:${chain}`
+      : `The arrow is just past <b>${fmt(f.lo)}</b> – it hasn’t reached the next mark.`,
+    ov:{ringMajor:f.bm, counts:[f.bm*sc.g,f.k]}
+  });
+  if(f.half){
+    steps.push({
+      title:'The arrow is between two marks',
+      html:`It is <b>halfway</b> between <b>${fmt(tickVal(sc,f.k))}</b> and <b>${fmt(tickVal(sc,f.k+1))}</b>.<br>Half of ${fmt(sc.d)} is <b>${fmt(sc.d/2)}</b>, so add ${fmt(sc.d/2)} to ${fmt(tickVal(sc,f.k))}.`,
+      ov:{between:[f.k,f.k+1], ringMajor:f.bm, counts:[f.bm*sc.g,f.k]}
+    });
+  }
+  steps.push({
+    title:`The arrow shows ${fmt(f.val)}`,
+    html:`<span class="eq">${fmt(f.lo)} + ${fmt(f.off)} × ${fmt(sc.d)} = ${fmt(f.val)}</span><br>Sense check: ${fmt(f.val)} is between ${fmt(f.lo)} and ${fmt(f.hi)} ✓`,
+    ov:{answer:fmt(f.val), ringMajor:f.bm, counts:[f.bm*sc.g,f.k]}
+  });
+  return steps;
+}
+function newTeach(){ teach.sc=makeScale(level,neg); teach.step=0; }
+function renderTeach(){
+  const steps=buildSteps(teach.sc), st=steps[teach.step], last=teach.step===steps.length-1;
+  drawScale(teach.sc, st.ov);
+  let dots=''; for(let i=0;i<steps.length;i++) dots+=`<span class="dot ${i===teach.step?'on':(i<teach.step?'past':'')}"></span>`;
+  panel.innerHTML=`<div class="dots">${dots}</div>
+    <h2>${st.title}</h2><div class="steptext">${st.html}</div>
+    <div class="btns">
+      <button class="big ghost" data-act="back" ${teach.step===0?'disabled':''}>◀ Back</button>
+      <button class="big" data-act="next" ${last?'disabled':''}>Next ▶</button>
+      <button class="big org" data-act="newex">⟳ New example</button>
+      ${last?'<button class="big ghost" data-act="topractise">Practise it ▶</button>':''}
+    </div>`;
+}
+
+/* ---------- Practise (class quiz: six scales at once) ---------- */
+function newRound(){
+  const used=new Set(), qs=[];
+  for(let i=0;i<6;i++){ const sc=makeScale(level,neg,used); used.add(sc.key); qs.push(sc); }
+  pr.qs=qs; pr.revealed=false;
+}
+function workA(sc,f){ return `(${fmt(f.hi)} \u2212 ${fmt(f.lo)}) \u00f7 ${sc.g} = ${fmt(sc.d)}`; }
+function workB(sc,f){ return `${fmt(f.lo)} + ${fmt(f.off)} \u00d7 ${fmt(sc.d)} = ${fmt(f.val)}`; }
+
+function renderPractise(){
+  let cards='';
+  pr.qs.forEach((sc,i)=>{
+    const f=info(sc);
+    const ans = pr.revealed
+      ? `<div class="ansmain"><b>Each division is ${fmt(sc.d)}</b><span class="sep">\u2022</span><b>The arrow points to ${fmt(f.val)}</b></div><div class="work">${workA(sc,f)} \u00a0\u00a0 ${workB(sc,f)}</div>`
+      : '';
+    cards+=`<div class="qcard"><div class="qtop"><div class="qnum">${i+1}</div><div class="qans">${ans}</div></div>
+      <svg id="q${i}" viewBox="0 0 1000 215" role="img" aria-label="Scale ${i+1}"></svg></div>`;
+  });
+  panel.innerHTML=`<div class="qintro">For each scale, write down <b>what one division is worth</b> and <b>the value the arrow points to</b>.</div>
+    <div class="qgrid">${cards}</div>
+    <div class="btns">
+      <button class="big org" data-act="reveal">${pr.revealed?'Hide answers':'Show answers'}</button>
+      <button class="big ghost" data-act="newround">\u27f3 New quiz</button>
+    </div>`;
+  pr.qs.forEach((sc,i)=>{
+    const f=info(sc), ov={};
+    if(pr.revealed){ ov.band=[f.bm,f.bm+1]; ov.oneGap=f.bm*sc.g; ov.answer=fmt(f.val); }
+    drawScale(sc,ov,$('#q'+i),true);
+  });
+}
+
+/* ---------- wiring ---------- */
+function render(){
+  $('#tabTeach').classList.toggle('on',mode==='teach');
+  $('#tabPractise').classList.toggle('on',mode==='practise');
+  document.querySelectorAll('.lv').forEach(b=>b.classList.toggle('on',+b.dataset.lv===level));
+  $('#lvdesc').textContent=LEVEL_INFO[level];
+  $('#scalewrap').style.display = mode==='teach' ? '' : 'none';
+  if(mode==='teach') renderTeach(); else renderPractise();
+}
+function setLevel(l){ level=l; newTeach(); newRound(); render(); }
+
+panel.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
+  switch(b.dataset.act){
+    case 'back': teach.step=Math.max(0,teach.step-1); render(); break;
+    case 'next': teach.step++; render(); break;
+    case 'newex': newTeach(); render(); break;
+    case 'topractise': mode='practise'; render(); break;
+    case 'newround': newRound(); render(); break;
+    case 'reveal': pr.revealed=!pr.revealed; render(); break;
+  }
+});
+$('#tabTeach').onclick=()=>{mode='teach';render();};
+$('#tabPractise').onclick=()=>{mode='practise';render();};
+document.querySelectorAll('.lv').forEach(b=>b.onclick=()=>setLevel(+b.dataset.lv));
+$('#gear').onclick=()=>$('#overlay').classList.add('show');
+$('#closeDlg').onclick=()=>$('#overlay').classList.remove('show');
+$('#optNeg').onchange=e=>{ neg=e.target.checked; newTeach(); newRound(); render(); };
+
+window.__scales={makeScale,info,fmt,parseNum,buildSteps,POOLS,drawScale};
+newTeach(); newRound(); render();
+})();
+</script>
+</body>
+</html>

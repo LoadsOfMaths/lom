@@ -68,6 +68,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Prime Quest | `prime-quest/` |
 | Puzzle of the Day | `puzzle-of-the-day/` |
 | Quick On The Draw | `quick-on-the-draw/` |
+| Reading Scales | `reading-scales/` |
 | Recite Pi | `recite-pi/` |
 | Slider | `slider/` |
 | Sports Day | `sports-day/` |
