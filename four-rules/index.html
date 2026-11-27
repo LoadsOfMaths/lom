@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>4 Rules – LoadsOfMaths</title>
+<style>
+:root{
+  --orange:#f58220;--blue:#1f6fb5;--grey:#7a7f87;--ink:#1d2733;--paper:#fffaf0;
+  --add:#2e9e5b;--sub:#d6452f;--mul:#7a4ec7;--div:#1f6fb5;--hl:#fff1b8;
+  --acc:var(--add);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Anak Orang','Trebuchet MS','Segoe UI',system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+body.op-add{--acc:var(--add)} body.op-sub{--acc:var(--sub)} body.op-mul{--acc:var(--mul)} body.op-div{--acc:var(--div)}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:8px 18px;background:#fff;border-bottom:5px solid var(--orange)}
+h1{margin:0;font-family:'Super Bouncer','Trebuchet MS',sans-serif;font-size:2.2rem;color:var(--blue);letter-spacing:.5px}
+.logo{font-family:'Super Bouncer','Trebuchet MS',sans-serif;font-size:1.05rem;font-weight:700;margin-left:auto}
+.logo .o{color:var(--orange)}.logo .g{color:var(--grey)}.logo .b{color:var(--blue)}
+.modes{display:flex;gap:6px}
+.modes button{font:inherit;font-size:1.15rem;padding:8px 18px;border:3px solid var(--blue);background:#fff;color:var(--blue);border-radius:999px;cursor:pointer;font-weight:700}
+.modes button.on{background:var(--blue);color:#fff}
+nav{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px 0}
+nav button{font:inherit;font-size:1.35rem;font-weight:700;padding:10px 22px;border:3px solid transparent;border-bottom:none;border-radius:14px 14px 0 0;cursor:pointer;color:#fff;opacity:.55}
+nav button[data-op=add]{background:var(--add)}nav button[data-op=sub]{background:var(--sub)}
+nav button[data-op=mul]{background:var(--mul)}nav button[data-op=div]{background:var(--div)}
+nav button.on{opacity:1;border-color:var(--ink)}
+#settings{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;padding:10px 18px;background:#fff;border-top:4px solid var(--acc);border-bottom:1px solid #ddd}
+#settings label{display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:700;color:#444}
+#settings select{font:inherit;font-size:1rem;padding:5px 8px;border:2px solid #aaa;border-radius:8px;background:#fff}
+#settings .chk{cursor:pointer}
+#settings input[type=checkbox]{width:20px;height:20px}
+main{padding:16px 18px 40px;max-width:1300px;margin:0 auto}
+.qhead{font-size:clamp(2rem,4vw,3rem);font-weight:700;margin:4px 0 6px;color:var(--acc)}
+.sub{color:#555;font-size:1.05rem;margin-bottom:6px}
+.work{background:#fff;border:3px solid #e6dcc6;border-radius:18px;padding:18px 24px;display:flex;flex-wrap:wrap;gap:24px 40px;align-items:flex-start;justify-content:flex-start;min-height:200px;overflow-x:auto}
+.say{margin:14px 0;padding:14px 20px;background:var(--hl);border-left:8px solid var(--orange);border-radius:10px;font-size:clamp(1.15rem,2.2vw,1.6rem);min-height:3.2em;line-height:1.4}
+.final{margin:10px 0;padding:12px 20px;background:var(--acc);color:#fff;border-radius:12px;font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.btn{font:inherit;font-size:1.25rem;font-weight:700;padding:11px 24px;border-radius:12px;border:3px solid var(--acc);background:#fff;color:var(--acc);cursor:pointer}
+.btn.pri{background:var(--acc);color:#fff}
+.btn:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:5px;align-items:center;margin-left:8px}
+.dots i{width:12px;height:12px;border-radius:50%;background:#ddd;display:block}
+.dots i.on{background:var(--acc)}
+/* column working */
+table.cg{border-collapse:collapse;font-size:clamp(2rem,4.2vw,3.2rem);font-variant-numeric:tabular-nums;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif}
+table.cg td{padding:0;text-align:center;line-height:1.25;height:1.3em}
+table.cg td.d{width:1.05em}
+table.cg td.pt{width:.4em;font-weight:700}
+table.cg td.lab{width:1.1em;text-align:right;padding-right:.15em;color:var(--acc);font-weight:700}
+table.cg tr.rule td.d,table.cg tr.rule td.pt{border-top:4px solid var(--ink)}
+table.cg td.hl{background:var(--hl)}
+table.cg td.res{color:var(--blue);font-weight:700}
+table.cg tr.carry td{font-size:.55em;color:var(--orange);height:1.3em;font-weight:700}
+table.cg .pad{color:#bbb}
+table.cg .pl{color:var(--orange);font-weight:700}
+.stk{display:inline-flex;flex-direction:column;line-height:.95;vertical-align:middle}
+.stk .nw{font-size:.62em;color:var(--orange);font-weight:700;white-space:nowrap}
+.stk .old{text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:var(--sub);color:#777}
+/* grid method */
+table.grid{border-collapse:collapse;font-size:clamp(1.3rem,2.6vw,2rem);font-variant-numeric:tabular-nums}
+table.grid th{padding:8px 14px;background:#f0e6ff;color:var(--mul);border:3px solid var(--mul)}
+table.grid td{min-width:5.2em;height:2em;text-align:center;border:3px solid var(--mul);padding:6px 10px}
+table.grid td.hl{background:var(--hl);font-weight:700}
+.small table.cg{font-size:clamp(1.3rem,2.4vw,2rem)}
+pre.lines{margin:0;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;font-size:clamp(1.4rem,2.8vw,2.2rem);line-height:1.7;white-space:pre-wrap;font-variant-numeric:tabular-nums}
+pre.lines .v{color:var(--blue);font-weight:700}
+pre.lines .hl{background:var(--hl)}
+svg.lat text{font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums}
+/* division */
+table.dv{border-collapse:collapse;font-size:clamp(2rem,4.2vw,3.2rem);font-variant-numeric:tabular-nums;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif}
+table.dv td{padding:0;text-align:center;width:1.1em;height:1.35em;line-height:1.3;position:relative}
+table.dv td.pt{width:.45em;font-weight:700}
+table.dv td.dvs{width:auto;min-width:1.2em;padding-right:.2em;color:var(--acc);font-weight:700;text-align:right}
+table.dv tr.drow td.c{border-top:4px solid var(--ink)}
+table.dv tr.drow td.dvs{border-right:4px solid var(--ink);border-top-left-radius:0;border-bottom-right-radius:.6em 100%;border-top:0}
+table.dv td.q{color:var(--blue);font-weight:700}
+table.dv td.hl{background:var(--hl)}
+table.dv td.faint{color:#aaa}
+table.dv td.ul{border-bottom:3px solid var(--ink)}
+table.dv sup.cr{position:absolute;left:2px;top:2px;font-size:.42em;color:var(--orange);font-weight:700}
+.dot{position:relative;display:inline-block}
+.dot::before{content:'';position:absolute;left:50%;top:.02em;width:.14em;height:.14em;border-radius:50%;background:currentColor;transform:translateX(-50%)}
+td.dot{position:relative}
+/* practise */
+.qs{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.qc{background:#fff;border:3px solid #e6dcc6;border-radius:16px;padding:14px 18px;position:relative;min-height:150px}
+.qc .n{position:absolute;top:-14px;left:-10px;width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.qc .qt{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;margin:8px 0 4px;word-break:break-word}
+.qc .tag{display:inline-block;font-size:.95rem;font-weight:700;background:#eee;border-radius:999px;padding:3px 12px;margin-top:4px;color:#444}
+.qc .an{margin-top:10px;font-size:clamp(1.5rem,2.8vw,2.2rem);color:var(--blue);font-weight:700;border-top:3px dashed #ddd;padding-top:8px}
+.qc .an small{font-size:.5em;color:#777;font-weight:400}
+.qc .wk{margin-top:8px;font:inherit;font-size:1rem;font-weight:700;color:var(--acc);background:none;border:2px solid var(--acc);border-radius:8px;padding:4px 12px;cursor:pointer}
+@media (max-width:640px){
+  main{padding:10px}
+  .work{padding:10px 8px}
+  nav button{padding:8px 12px;font-size:1.05rem}
+}
+@media print{header,nav,#settings,.ctl{display:none}}
+</style>
+</head>
+<body class="op-add">
+<header>
+  <h1>4 Rules</h1>
+  <div class="modes" id="modes">
+    <button data-mode="teach" class="on">Teach it</button>
+    <button data-mode="practise">Practise it</button>
+  </div>
+  <div class="logo"><span class="g">www.</span><span class="o">loads</span><span class="g">of</span><span class="b">maths</span><span class="g">.co.uk</span></div>
+</header>
+<nav id="tabs">
+  <button data-op="add" class="on">+ Addition</button>
+  <button data-op="sub">− Subtraction</button>
+  <button data-op="mul">× Multiplication</button>
+  <button data-op="div">÷ Division</button>
+</nav>
+<section id="settings"></section>
+<main id="stage"></main>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= helpers ================= */
+const $=(s,r)=>(r||document).querySelector(s);
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[rnd(0,a.length-1)];
+const P10=n=>Math.pow(10,n);
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;}
+const dg=(v,c)=>{const s=String(v);return c<s.length?+s[s.length-1-c]:0;};
+const rndInt=d=>rnd(P10(d-1),P10(d)-1);                 // d-digit number, first digit non-zero
+const rndFrac=n=>rnd(0,P10(n-1)-1)*10+rnd(1,9);          // n digits, last digit non-zero
+function rndDigits(n,zeroP){let s='';for(let i=0;i<n;i++){s+=i===0?rnd(1,9):(Math.random()<zeroP?0:rnd(0,9));}return +s;}
+function fmtDec(v,dp){let s=String(v);if(dp>0){s=s.padStart(dp+1,'0');s=s.slice(0,-dp)+'.'+s.slice(-dp);}return s;}
+function trimDec(s){return s.indexOf('.')<0?s:s.replace(/0+$/,'').replace(/\.$/,'');}
+const SING=['unit','ten','hundred','thousand','ten-thousand','hundred-thousand','million','ten-million'];
+const PLUR=['units','tens','hundreds','thousands','ten-thousands','hundred-thousands','millions','ten-millions'];
+const DEC=['','tenth','hundredth','thousandth','ten-thousandth'];
+function pname(pos,plural){if(pos>=0)return(plural?PLUR:SING)[pos];const b=DEC[-pos];return plural?b+'s':b;}
+function numCell(v,dp,c,S){                              // c = column from the right
+  const len=String(v).length;
+  if(c>=len&&c>S)return '';
+  if(c<S-dp)return '<span class="pad">0</span>';
+  return String(dg(v,c));
+}
+function colGrid(rows,W,S,extra){
+  let h='<table class="cg '+(extra||'')+'">';
+  for(const r of rows){
+    h+='<tr class="'+(r.cls||'')+(r.rule?' rule':'')+'"><td class="lab">'+(r.lab||'')+'</td>';
+    for(let i=0;i<W;i++){
+      h+='<td class="d'+(r.cc&&r.cc[i]?' '+r.cc[i]:'')+'">'+(r.cells[i]||'')+'</td>';
+      if(S>0&&i===W-S-1)h+='<td class="pt">'+(r.pt?'.':'')+'</td>';
+    }
+    h+='</tr>';
+  }
+  return h+'</table>';
+}
+function plainRows(vals,lastLab,total){      // addition list of whole numbers
+  const W=Math.max(String(total).length,...vals.map(v=>String(v).length));
+  const mk=v=>{const s=String(v);const a=[];for(let i=0;i<W;i++){const c=W-1-i;a.push(c<s.length?s[s.length-1-c]:'');}return a;};
+  const rows=vals.map((v,i)=>({cells:mk(v),lab:i===vals.length-1?lastLab:''}));
+  rows.push({cells:mk(total),rule:true,cc:Array(W).fill('res')});
+  return colGrid(rows,W,0);
+}
+
+/* ================= ADDITION ================= */
+function genAdd(s){
+  const D=+s.digits,N=+s.count,mode=s.dp;
+  const dps=[];
+  for(let i=0;i<N;i++)dps.push(mode==='mixed'?rnd(0,3):+mode);
+  if(mode==='mixed'&&Math.max(...dps)===0)dps[rnd(0,N-1)]=rnd(1,3);
+  const S=Math.max(...dps);
+  let nums=dps.map((dp,i)=>{
+    const dgs=i===0?D:rnd(Math.max(1,D-2),D);
+    const base=rndInt(dgs)*P10(dp)+(dp?rndFrac(dp):0);
+    return {v:base*P10(S-dp),dp,str:fmtDec(base,dp)};
+  });
+  shuffle(nums);
+  const sum=nums.reduce((a,n)=>a+n.v,0);
+  const W=Math.max(S+1,String(sum).length);
+  const steps=[];let carry=0;
+  for(let c=0;c<W;c++){
+    const parts=[];
+    nums.forEach(n=>{if(c>=S-n.dp&&c<String(n.v).length)parts.push(dg(n.v,c));});
+    const cin=carry;if(cin>0)parts.push(cin);
+    const total=parts.reduce((a,b)=>a+b,0);
+    const digit=total%10;carry=Math.floor(total/10);
+    const nm=cap(pname(c-S,true));
+    let text;
+    if(parts.length===0)text=nm+': nothing to add, write 0.';
+    else if(parts.length===1&&cin>0)text=nm+': just the carried '+cin+', so write '+digit+'.';
+    else if(parts.length===1)text=nm+': '+parts[0]+', so write '+digit+'.';
+    else text=nm+': '+parts.join(' + ')+(cin>0?' (including the carry)':'')+' = '+total+(carry>0?' → write '+digit+' and carry '+carry+'.':' → write '+digit+'.');
+    steps.push({c,digit,carryOut:carry,text});
+  }
+  if(S>0)steps[W-1].text+=' The decimal point goes straight down.';
+  return {op:'add',nums,S,sum,W,steps,total:W,
+    q:nums.map(n=>n.str).join(' + ')+' =',
+    ans:trimDec(fmtDec(sum,S)),
+    intro:'Line the numbers up by place value'+(S>0?' (decimal points directly under each other, adding zeros as place-holders)':'')+'. Add one column at a time, starting on the right.'};
+}
+function renderAdd(ex,k){
+  const {nums,S,W,steps}=ex;
+  const hlc=k>0?steps[k-1].c:-1;
+  const rows=[];
+  nums.forEach((n,i)=>{
+    const cells=[],cc=[];
+    for(let i2=0;i2<W;i2++){const c=W-1-i2;cells.push(numCell(n.v,n.dp,c,S));cc.push(c===hlc?'hl':'');}
+    rows.push({cells,cc,pt:true,lab:i===nums.length-1?'+':''});
+  });
+  const a=[],ac=[],cr=[];
+  for(let i2=0;i2<W;i2++){
+    const c=W-1-i2;
+    a.push(c<k?String(steps[c].digit):'');ac.push('res'+(c===hlc?' hl':''));
+    cr.push(c>0&&c-1<k&&steps[c-1].carryOut>0?String(steps[c-1].carryOut):'');
+  }
+  rows.push({cells:a,cc:ac,pt:true,rule:true});
+  rows.push({cells:cr,cls:'carry'});
+  return {work:colGrid(rows,W,S),text:k===0?ex.intro:steps[k-1].text};
+}
+
+/* ================= SUBTRACTION ================= */
+function subPlan(A,B,S){
+  const W=Math.max(String(A).length,S+1);
+  const ta=[],tb=[];
+  for(let c=0;c<W;c++){ta.push(dg(A,c));tb.push(dg(B,c));}
+  const cur=ta.slice(),steps=[];let ex=0,zc=0;
+  const nm=(c,pl)=>pname(c-S,pl);
+  function borrow(j,pre){
+    if(cur[j]===0){zc++;borrow(j+1,pre);pre='';}
+    const bj=cur[j],bp=cur[j-1];
+    cur[j]-=1;cur[j-1]+=10;ex++;
+    steps.push({kind:'ex',j,snap:cur.slice(),
+      text:(pre||'')+'Exchange: take 1 '+nm(j,false)+' from the '+bj+' '+nm(j,true)+' (leaves '+(bj-1)+') and add 10 '+nm(j-1,true)+' to the '+bp+' '+nm(j-1,true)+' (makes '+(bp+10)+').'});
+  }
+  for(let c=0;c<W;c++){
+    if(cur[c]<tb[c])borrow(c+1,cur[c]+' is smaller than '+tb[c]+', so we need to exchange. ');
+    const d=cur[c]-tb[c];
+    const blankB=c>S&&c>=String(B).length;
+    steps.push({kind:'sub',c,d,snap:cur.slice(),
+      text:blankB?cap(nm(c,true))+': nothing to take away, so bring down the '+cur[c]+'.':cap(nm(c,true))+': '+cur[c]+' − '+tb[c]+' = '+d+'.'});
+  }
+  return {W,ta,tb,steps,ex,zc};
+}
+function genSub(s){
+  const D=+s.digits,mode=s.dp;
+  let want=s.type==='mixed'?pick(['without','with','with','zeros']):s.type;
+  let best=null;
+  for(let tries=0;tries<800;tries++){
+    if(tries>400&&want==='zeros')want='with';
+    const dpA=mode==='mixed'?rnd(0,3):+mode,dpB=mode==='mixed'?rnd(0,3):+mode;
+    if(mode==='mixed'&&dpA+dpB===0)continue;
+    const S=Math.max(dpA,dpB);
+    const zp=want==='zeros'?0.4:0.12;
+    const a0=rndDigits(D,zp)*P10(dpA)+(dpA?rndFrac(dpA):0);
+    const b0=rndDigits(rnd(Math.max(1,D-1),D),0.1)*P10(dpB)+(dpB?rndFrac(dpB):0);
+    const A=a0*P10(S-dpA),B=b0*P10(S-dpB);
+    if(A<=B)continue;
+    const plan=subPlan(A,B,S);
+    const ok=want==='without'?plan.ex===0:want==='with'?(plan.ex>0&&plan.zc===0):plan.zc>0
+    const okR=!(s.reduce&&want==='zeros')||(B>1&&subPlan(A-1,B-1,S).zc===0);
+    const ok2=ok&&okR;
+    const cand={A,B,S,dpA,dpB,a0,b0,plan};
+    if(!best)best=cand;
+    if(ok2){best=cand;break;}
+  }
+  const {A,B,S,dpA,dpB,a0,b0,plan}=best;
+  const R=A-B;
+  const ex={op:'sub',A,B,S,dpA,dpB,R,plan,W:plan.W,total:plan.steps.length,
+    q:fmtDec(a0,dpA)+' − '+fmtDec(b0,dpB)+' =',
+    ans:trimDec(fmtDec(R,S)),
+    intro:'Line the numbers up by place value'+(S>0?', with the decimal points under each other and zeros as place-holders':'')+'. Subtract one column at a time, starting on the right. If the top digit is too small, exchange (decompose) from the next column.'};
+  if(s.reduce&&plan.zc>0&&B>1&&subPlan(A-1,B-1,S).zc===0){
+    const A2=A-1,B2=B-1,plan2=subPlan(A2,B2,S);
+    ex.orig={A,B,dpA,dpB,plan,strA:fmtDec(a0,dpA),strB:fmtDec(b0,dpB)};
+    ex.A=A2;ex.B=B2;ex.dpA=S;ex.dpB=S;ex.plan=plan2;ex.W=plan2.W;ex.total=plan2.steps.length+1;ex.reduce=true;
+    ex.strA2=fmtDec(A2,S);ex.strB2=fmtDec(B2,S);
+  }
+  return ex;
+}
+function renderSub(ex,k){
+  if(ex.reduce){
+    const o=ex.orig,same=o.strA+' − '+o.strB+' = '+ex.strA2+' − '+ex.strB2;
+    if(k===0){
+      const r=renderSub(Object.assign({},ex,{A:o.A,B:o.B,dpA:o.dpA,dpB:o.dpB,plan:o.plan,W:o.plan.W,total:o.plan.steps.length,reduce:false}),0);
+      return {work:r.work,text:'Exchanging across the zeros would be awkward. Instead subtract 1 from both numbers: the difference stays the same. '+same+'.'};
+    }
+    const r=renderSub(Object.assign({},ex,{reduce:false,total:ex.total-1}),k-1);
+    return {work:'<div class="sub" style="width:100%;font-size:1.3rem">'+same+' (same difference)</div>'+r.work,
+      text:k===1?'Both numbers are 1 smaller, so there are no awkward exchanges. Subtract column by column.':r.text};
+  }
+  const {plan,S,W,A,B,R}=ex,steps=plan.steps;
+  const snap=k>0?steps[k-1].snap:plan.ta;
+  const st=k>0?steps[k-1]:null;
+  const hl={};
+  if(st){if(st.kind==='sub')hl[st.c]=1;else{hl[st.j]=1;hl[st.j-1]=1;}}
+  const top=[],bot=[],res=[],tc=[],bc=[],rc=[];
+  const rlen=String(R).length;
+  const resD={};
+  for(let j=0;j<k;j++)if(steps[j].kind==='sub')resD[steps[j].c]=steps[j].d;
+  for(let i=0;i<W;i++){
+    const c=W-1-i;
+    const base=numCell(A,ex.dpA,c,S);
+    top.push(snap[c]!==plan.ta[c]?'<span class="stk"><span class="nw">'+snap[c]+'</span><span class="old">'+(base||plan.ta[c])+'</span></span>':base);
+    bot.push(numCell(B,ex.dpB,c,S));
+    res.push(resD[c]!==undefined&&!(c>S&&c>=rlen)?String(resD[c]):'');
+    tc.push(hl[c]?'hl':'');bc.push(hl[c]?'hl':'');rc.push('res'+(hl[c]?' hl':''));
+  }
+  const rows=[{cells:top,cc:tc,pt:true},{cells:bot,cc:bc,pt:true,lab:'−'},{cells:res,cc:rc,pt:true,rule:true}];
+  return {work:colGrid(rows,W,S),text:k===0?ex.intro:steps[k-1].text+(k===ex.total&&S>0?' The decimal point goes straight down.':'')};
+}
+
+/* ================= MULTIPLICATION ================= */
+const MUL_METHODS=['grid','column','lattice','partition'];
+const MUL_NAMES={grid:'Grid method',column:'Column method',lattice:'Lattice method',partition:'Partitioning'};
+function genMul(s,methodArg){
+  const [d,e]=s.size.split('x').map(Number);
+  const dec=!!s.dec;
+  let method=methodArg||s.method;
+  if(method==='any')method=pick(MUL_METHODS);
+  let dpa=0,dpb=0;
+  if(dec){
+    dpa=rnd(0,d-1);dpb=e>=2?rnd(0,e-1):0;
+    if(dpa+dpb===0)dpa=rnd(1,d-1);
+  }
+  let a=rndDigits(d,d>=3?0.15:0);
+  if(dpa>0&&a%10===0)a+=rnd(1,9);
+  let bs='';for(let i=0;i<e;i++)bs+=rnd(1,9);
+  const b=+bs;
+  const P=a*b,dpt=dpa+dpb;
+  const ex={op:'mul',a,b,dpa,dpb,dec:dec&&dpt>0,P,method,d,e,
+    strA:fmtDec(a,dpa),strB:fmtDec(b,dpb),
+    ans:trimDec(fmtDec(P,dpt))};
+  ex.q=ex.strA+' × '+ex.strB+' =';
+  ex.tag=MUL_NAMES[method];
+  const mdl=method==='grid'?mulGrid(ex):method==='column'?mulColumn(ex):method==='lattice'?mulLattice(ex):mulPartition(ex);
+  ex.total=mdl.total;ex.render=mdl.render;
+  return ex;
+}
+function decStep(ex){
+  const full=fmtDec(ex.P,ex.dpa+ex.dpb);
+  return 'Now put the decimal point back. '+ex.dpa+' + '+ex.dpb+' = '+(ex.dpa+ex.dpb)+' decimal places altogether, so '+ex.P+' becomes '+full+(full!==ex.ans?', which is '+ex.ans:'')+'.';
+}
+function decIntro(ex){return ex.dec?'Ignore the decimal points for now and work out '+ex.a+' × '+ex.b+'. ':'';}
+
+/* ---- grid ---- */
+function mulGrid(ex){
+  const A=String(ex.a),B=String(ex.b),pa=[],pb=[];
+  [...A].forEach((ch,i)=>{if(ch!=='0')pa.push(+ch*P10(A.length-1-i));});
+  [...B].forEach((ch,i)=>{if(ch!=='0')pb.push(+ch*P10(B.length-1-i));});
+  const cells=[];pb.forEach((y,r)=>pa.forEach((x,c)=>cells.push({x,y,v:x*y})));
+  const nC=cells.length,total=nC+1+(ex.dec?1:0);
+  return {total,render(k){
+    const shown=Math.min(k,nC);
+    let h='<table class="grid"><tr><th>×</th>'+pa.map(x=>'<th>'+x+'</th>').join('')+'</tr>';
+    pb.forEach((y,r)=>{h+='<tr><th>'+y+'</th>'+pa.map((x,c)=>{const i=r*pa.length+c;return '<td class="'+(i===k-1?'hl':'')+'">'+(i<shown?cells[i].v:'')+'</td>';}).join('')+'</tr>';});
+    h+='</table>';
+    if(k>nC)h+='<div class="small">'+plainRows(cells.map(c=>c.v),'+',ex.P)+'</div>';
+    let text;
+    if(k===0)text=decIntro(ex)+'Split each number into its place-value parts, draw a grid, then multiply each pair of parts.';
+    else if(k<=nC){const c=cells[k-1];text=c.y+' × '+c.x+' = '+c.v+'.';}
+    else if(k===nC+1)text='Add up all the boxes: '+cells.map(c=>c.v).join(' + ')+' = '+ex.P+'.';
+    else text=decStep(ex);
+    return {work:h,text};
+  }};
+}
+
+/* ---- column (long multiplication) ---- */
+function mulColumn(ex){
+  const A=String(ex.a),B=String(ex.b),e=B.length;
+  const W=Math.max(String(ex.P).length,A.length,B.length)+0;
+  const rowsD=[];
+  for(let j=0;j<e;j++){
+    const bd=+B[e-1-j],prod=ex.a*bd;
+    let carry=0;const parts=[];
+    for(let i=A.length-1;i>=0;i--){
+      const x=+A[i],t=x*bd+carry;
+      const calc=x+' × '+bd+(carry?' + '+carry:'')+' = '+t;
+      if(i===0)parts.push(calc+' → write '+t);
+      else if(t>=10)parts.push(calc+' → write '+(t%10)+', carry '+Math.floor(t/10));
+      else parts.push(calc+' → write '+t);
+      carry=Math.floor(t/10);
+    }
+    rowsD.push({j,bd,prod,text:'Multiply '+A+' by the '+bd+' ('+bd+' '+pname(j,true)+')'+(j>0?'. First write '+j+' zero'+(j>1?'s':'')+' as place-holder'+(j>1?'s':''):'')+'. '+parts.join('; ')+'.'});
+  }
+  const total=e+1+(ex.dec?1:0);
+  const mk=(s,j)=>{const a=[];for(let i=0;i<W;i++){const c=W-1-i;a.push(c<j?'<span class="pl">0</span>':(c-j<s.length?s[s.length-1-(c-j)]:''));}return a;};
+  return {total,render(k){
+    const rows=[];
+    rows.push({cells:mk(A,0)});
+    rows.push({cells:mk(B,0),lab:'×'});
+    const shown=Math.min(k,e);
+    for(let j=0;j<shown;j++){
+      rows.push({cells:mk(String(rowsD[j].prod),rowsD[j].j),rule:j===0,cc:Array(W).fill(j===k-1?'hl':'')});
+    }
+    if(k>=e+1){
+      const tot=[];const s=String(ex.P);for(let i=0;i<W;i++){const c=W-1-i;tot.push(c<s.length?s[s.length-1-c]:'');}
+      rows.push({cells:tot,rule:true,cc:Array(W).fill('res')});
+    }
+    let text;
+    if(k===0)text=decIntro(ex)+'Multiply the top number by each digit of the bottom number in turn, then add up the rows.';
+    else if(k<=e)text=rowsD[k-1].text;
+    else if(k===e+1)text='Add the rows: '+rowsD.map(r=>r.prod*P10(r.j)).join(' + ')+' = '+ex.P+'.';
+    else text=decStep(ex);
+    return {work:colGrid(rows,W,0),text};
+  }};
+}
+
+/* ---- partitioning (expanded) ---- */
+function mulPartition(ex){
+  const B=String(ex.b),parts=[];
+  [...B].forEach((ch,i)=>{if(ch!=='0')parts.push(+ch*P10(B.length-1-i));});
+  const vals=parts.map(p=>ex.a*p);
+  const np=parts.length,total=1+np+1+(ex.dec?1:0);
+  return {total,render(k){
+    let h='<pre class="lines">'+ex.a+' × '+ex.b;
+    if(k>=1)h+='\n= '+ex.a+' × ('+parts.join(' + ')+')\n= '+parts.map(p=>ex.a+' × '+p).join(' + ');
+    const sh=Math.min(Math.max(k-1,0),np);
+    for(let i=0;i<sh;i++)h+='\n'+ex.a+' × '+parts[i]+' = <span class="v'+(i===k-2?'':'')+'">'+vals[i]+'</span>';
+    h+='</pre>';
+    if(k>=np+2)h+='<div class="small">'+plainRows(vals,'+',ex.P)+'</div>';
+    let text;
+    if(k===0)text=decIntro(ex)+'Partition the bottom number into hundreds, tens and units (place-value parts), multiply the top number by each part, then add.';
+    else if(k===1)text='Partition '+ex.b+' into '+parts.join(' + ')+' and multiply '+ex.a+' by each part.';
+    else if(k<=np+1)text=ex.a+' × '+parts[k-2]+' = '+vals[k-2]+'.';
+    else if(k===np+2)text='Add the answers: '+vals.join(' + ')+' = '+ex.P+'.';
+    else text=decStep(ex);
+    return {work:h,text};
+  }};
+}
+
+/* ---- lattice ---- */
+function mulLattice(ex){
+  const A=[...String(ex.a)].map(Number),B=[...String(ex.b)].map(Number),n=A.length,m=B.length;
+  const cells=[];
+  for(let r=0;r<m;r++)for(let c=0;c<n;c++){const p=A[c]*B[r];cells.push({r,c,p,t:Math.floor(p/10),u:p%10,ku:(n-1-c)+(m-1-r)});}
+  const diag=[];let carry=0;
+  for(let k=0;k<n+m;k++){
+    const items=[];
+    cells.forEach(cl=>{if(cl.ku===k)items.push(cl.u);if(cl.ku+1===k)items.push(cl.t);});
+    const parts=items.slice();if(carry)parts.push(carry);
+    const sum=parts.reduce((a,b)=>a+b,0);
+    diag.push({k,items,cin:carry,sum,digit:sum%10,cout:Math.floor(sum/10)});
+    carry=Math.floor(sum/10);
+  }
+  const nC=cells.length,nD=n+m,total=nC+nD+(ex.dec?1:0);
+  const cs=66,L=64,T=52,R=56,Bm=76;
+  const Wd=L+n*cs+R,Ht=T+m*cs+Bm;
+  const lab=k=>k<n?{x:L+(n-1-k)*cs+cs/2,y:T+m*cs+34}:{x:L-30,y:T+(m-1-(k-n))*cs+cs/2+9};
+  return {total,render(k){
+    const shownC=Math.min(k,nC),shownD=Math.max(0,Math.min(k-nC,nD));
+    const curCell=k>=1&&k<=nC?k-1:-1,curDiag=k>nC&&k<=nC+nD?k-nC-1:-1;
+    let s='<svg class="lat" viewBox="0 0 '+Wd+' '+Ht+'" width="'+Math.min(Wd*1.6,720)+'" role="img" aria-label="Lattice multiplication grid">';
+    A.forEach((x,c)=>{s+='<text x="'+(L+c*cs+cs/2)+'" y="'+(T-16)+'" text-anchor="middle" font-size="30" font-weight="700" fill="#1d2733">'+x+'</text>';});
+    B.forEach((y,r)=>{s+='<text x="'+(L+n*cs+26)+'" y="'+(T+r*cs+cs/2+10)+'" text-anchor="middle" font-size="30" font-weight="700" fill="#1d2733">'+y+'</text>';});
+    cells.forEach((cl,i)=>{
+      const x=L+cl.c*cs,y=T+cl.r*cs;
+      s+='<rect x="'+x+'" y="'+y+'" width="'+cs+'" height="'+cs+'" fill="'+(i===curCell?'#fff1b8':'#fff')+'" stroke="#7a4ec7" stroke-width="3"/>';
+      s+='<line x1="'+(x+cs)+'" y1="'+y+'" x2="'+x+'" y2="'+(y+cs)+'" stroke="#7a4ec7" stroke-width="2"/>';
+      if(i<shownC){
+        s+='<text x="'+(x+cs*0.27)+'" y="'+(y+cs*0.46)+'" text-anchor="middle" font-size="26" fill="'+(curDiag>=0&&cl.ku+1===curDiag?'#f58220':'#1d2733')+'" font-weight="700">'+cl.t+'</text>';
+        s+='<text x="'+(x+cs*0.73)+'" y="'+(y+cs*0.86)+'" text-anchor="middle" font-size="26" fill="'+(curDiag>=0&&cl.ku===curDiag?'#f58220':'#1d2733')+'" font-weight="700">'+cl.u+'</text>';
+      }
+    });
+    for(let j=0;j<shownD;j++){
+      const p=lab(j);
+      s+='<text x="'+p.x+'" y="'+p.y+'" text-anchor="middle" font-size="30" font-weight="700" fill="#1f6fb5">'+diag[j].digit+'</text>';
+      if(diag[j].cout>0&&j+1<nD){const q=lab(j+1);s+='<text x="'+(q.x+(j+1<n?20:-20))+'" y="'+(q.y-(j+1<n?14:16))+'" text-anchor="middle" font-size="18" font-weight="700" fill="#f58220">'+diag[j].cout+'</text>';}
+    }
+    s+='</svg>';
+    let text;
+    if(k===0)text=decIntro(ex)+'Write '+ex.a+' across the top and '+ex.b+' down the right-hand side. Draw a grid with a diagonal through every box.';
+    else if(k<=nC){const c=cells[k-1];text=A[c.c]+' × '+B[c.r]+' = '+c.p+': write '+c.t+' above the diagonal and '+c.u+' below it.';}
+    else if(k<=nC+nD){
+      const d=diag[k-nC-1];
+      text='Add along diagonal '+(d.k+1)+' (starting bottom right): '+d.items.join(' + ')+(d.cin?' + '+d.cin+' carried':'')+' = '+d.sum+' → write '+d.digit+(d.cout?' and carry '+d.cout+' to the next diagonal':'')+'.';
+      if(d.k===nD-1)text+=' Now read the answer from the top left, round the corner to the bottom right: '+ex.P+'.';
+    }
+    else text=decStep(ex);
+    return {work:s,text};
+  }};
+}
+
+/* ================= DIVISION ================= */
+function divSteps(n,d){
+  const ds=String(n).split('').map(Number),intLen=ds.length;
+  let rem=0;const steps=[];
+  for(let i=0;i<intLen;i++){const cur=rem*10+ds[i],q=Math.floor(cur/d),prod=q*d;rem=cur-prod;steps.push({i,cur,q,prod,rem,dec:false});}
+  let repStart=-1,t=0;const seen={};
+  while(rem!==0&&t<30){
+    if(seen[rem]!==undefined){repStart=seen[rem];break;}
+    seen[rem]=steps.length;
+    const cur=rem*10,q=Math.floor(cur/d),prod=q*d;rem=cur-prod;
+    steps.push({i:intLen+t,cur,q,prod,rem,dec:true});t++;
+  }
+  return {steps,intLen,repStart,decCount:t};
+}
+function dotted(b){
+  if(b.length===1)return '<span class="dot">'+b[0]+'</span>';
+  return '<span class="dot">'+b[0]+'</span>'+b.slice(1,-1).join('')+'<span class="dot">'+b[b.length-1]+'</span>';
+}
+function divAnswer(info){
+  const {steps,intLen,repStart}=info,q=steps.map(x=>x.q);
+  const ip=String(parseInt(q.slice(0,intLen).join(''),10)),fr=q.slice(intLen);
+  if(!fr.length)return {html:ip,kind:'exact'};
+  if(repStart<0)return {html:ip+'.'+fr.join(''),kind:'term'};
+  const pre=repStart-intLen,nr=fr.slice(0,pre),blk=fr.slice(pre);
+  return {html:ip+'.'+nr.join('')+dotted(blk)+' <small>= '+ip+'.'+nr.join('')+blk.join('').repeat(Math.max(2,Math.ceil(4/blk.length)))+'…</small>',kind:'rec',blk,pre};
+}
+function genDiv(s){
+  const kind=s.kind==='any'?pick(['exact','term','rec']):s.kind;
+  const two=+s.dsize===2;
+  const dig=Math.max(+s.size,two?3:2);
+  const lo=P10(dig-1),hi=P10(dig)-1;
+  let n,d,info=null;
+  for(let tries=0;tries<3000;tries++){
+    d=two?rnd(11,30):rnd(2,9);
+    if(kind==='exact'){
+      const k=rnd(Math.ceil(lo/d),Math.floor(hi/d));
+      if(k<1)continue;
+      n=d*k;if(two&&k<3)continue;
+      info=divSteps(n,d);break;
+    }
+    n=rnd(lo,hi);
+    if(n%d===0)continue;
+    info=divSteps(n,d);
+    if(kind==='term'&&info.repStart<0&&info.decCount>=1&&info.decCount<=4)break;
+    if(kind==='rec'&&info.repStart>=0&&(info.steps.length-info.repStart)<=6&&info.decCount<=8)break;
+    info=null;
+  }
+  if(!info){n=kind==='exact'?24:(kind==='term'?15:10);d=kind==='exact'?6:(kind==='term'?4:3);info=divSteps(n,d);}
+  const first=info.steps.findIndex((x,i)=>x.q>0||i===info.intLen-1);
+  const ans=divAnswer(info);
+  const ex={op:'div',n,d,info,kind:ans.kind,method:s.method,s:first,ans:ans.html,ansObj:ans,
+    q:n+' ÷ '+d+' =',
+    tag:{exact:'exact answer',term:'terminating decimal',rec:'recurring decimal'}[ans.kind]};
+  ex.total=s.method==='long'?info.steps.length-first:info.steps.length;
+  return ex;
+}
+function divText(ex,t){
+  const st=ex.info.steps,d=ex.d,intLen=ex.info.intLen,long=ex.method==='long';
+  if(t===0)return long?'Long division: work out how many '+d+'s fit into the first digits, write the answer on top, then subtract and bring down the next digit.':'Short division: divide each digit by '+d+' in turn. Write any remainder small, in front of the next digit.';
+  const j=(long?ex.s:0)+t-1,x=st[j],last=j===st.length-1;
+  let tx='';
+  if(x.dec&&j===intLen)tx+='We have run out of digits, so put a decimal point in the answer and keep going, bringing down zeros. ';
+  if(!long){
+    tx+=x.cur+' ÷ '+d+' = '+x.q+(x.rem?' remainder '+x.rem:'')+'.';
+    if(!last&&x.rem)tx+=' Carry the '+x.rem+' to the next digit.';
+  }else{
+    if(j===ex.s&&!x.dec&&x.i>0)tx+='Take the first digits: '+x.cur+'. ';
+    if(x.q===0)tx+=x.cur+' is smaller than '+d+', so write 0 in the answer and bring down the next digit.';
+    else tx+='How many '+d+'s fit into '+x.cur+'? '+x.q+', because '+x.q+' × '+d+' = '+x.prod+'. Subtract: '+x.cur+' − '+x.prod+' = '+x.rem+'.'+(last?'':' Bring down the next digit.');
+  }
+  if(last){
+    if(x.rem===0)tx+=' The remainder is 0, so we are finished.';
+    else tx+=' The remainder '+x.rem+' has appeared before, so the digits '+ex.ansObj.blk.join('')+' repeat for ever. Show this with a dot over the first and last repeating digit.';
+  }
+  return tx;
+}
+function renderDiv(ex,t){
+  const {info,d}=ex,st=info.steps,intLen=info.intLen,dc=info.decCount,long=ex.method==='long';
+  const s=long?ex.s:0,vis=s+t;
+  const C=intLen+(dc>0?1+dc:0);
+  const colOf=i=>i<intLen?i:i+1;
+  const q=Array(C).fill(''),qc=Array(C).fill(''),dr=Array(C).fill(''),dcl=Array(C).fill('c');
+  let nz=false;
+  const cur=vis-1;
+  for(let e=0;e<vis;e++){
+    const x=st[e];let txt=String(x.q);
+    if(!nz&&x.q===0&&x.i<intLen-1)txt='';
+    if(x.q>0)nz=true;
+    q[colOf(x.i)]=txt;
+    if(e===cur&&t>0)qc[colOf(x.i)]+=' hl';
+  }
+  if(t===ex.total&&ex.info.repStart>=0){
+    const rs=ex.info.repStart,re=st.length-1;
+    qc[colOf(st[rs].i)]+=' dot';qc[colOf(st[re].i)]+=' dot';
+  }
+  const ds=String(ex.n);
+  const total=st.length;
+  for(let i=0;i<total;i++){
+    if(i<intLen){dr[colOf(i)]=ds[i];}
+    else if(i<=vis){dr[colOf(i)]='0';dcl[colOf(i)]+=' faint';}
+  }
+  if(!long){
+    for(let e=0;e<vis&&e<total;e++){
+      const x=st[e];
+      if(x.rem>0&&e+1<total){const cc=colOf(e+1);dr[cc]='<sup class="cr">'+x.rem+'</sup>'+dr[cc];}
+    }
+  }
+  if(t>0)dcl[colOf(st[cur].i)]+=' hl';
+  if(long&&t===1){for(let i=0;i<=st[cur].i&&i<intLen;i++)if(!dcl[colOf(i)].includes('hl'))dcl[colOf(i)]+=' hl';}
+  const pt=dc>0&&vis>intLen;
+  let h='<table class="dv"><tr class="qrow"><td class="dvs"></td>';
+  for(let c=0;c<C;c++){
+    if(dc>0&&c===intLen)h+='<td class="pt q">'+(pt?'.':'')+'</td>';
+    else h+='<td class="q'+qc[c]+'">'+q[c]+'</td>';
+  }
+  h+='</tr><tr class="drow"><td class="dvs">'+d+'</td>';
+  for(let c=0;c<C;c++){
+    if(dc>0&&c===intLen)h+='<td class="pt c">'+(pt?'.':'')+'</td>';
+    else h+='<td class="'+dcl[c]+'">'+dr[c]+'</td>';
+  }
+  h+='</tr>';
+  if(long&&t>0){
+    const rows=[];
+    for(let j=s;j<s+t;j++){
+      const x=st[j],lastj=j===st.length-1;
+      if(x.q>0){
+        rows.push({text:String(x.prod),end:x.i,ul:true});
+        rows.push(lastj?{text:String(x.rem),end:x.i}:{text:String(st[j+1].cur),end:st[j+1].i});
+      }else if(!lastj){
+        const nx={text:String(st[j+1].cur),end:st[j+1].i};
+        if(j>s&&rows.length&&!rows[rows.length-1].ul)rows[rows.length-1]=nx;else rows.push(nx);
+      }
+    }
+    rows.forEach(r=>{
+      const cells=Array(C).fill('');let pos=colOf(r.end);
+      for(let ci=r.text.length-1;ci>=0;ci--){if(dc>0&&pos===intLen)pos--;cells[pos]=r.text[ci];pos--;}
+      h+='<tr><td class="dvs" style="border:0"></td>';
+      for(let c=0;c<C;c++){
+        if(dc>0&&c===intLen)h+='<td class="pt'+(r.ul&&cells[c-1]&&cells[c+1]?' ul':'')+'"></td>';
+        else h+='<td class="'+(r.ul&&cells[c]?'ul':'')+'">'+cells[c]+'</td>';
+      }
+      h+='</tr>';
+    });
+  }
+  h+='</table>';
+  return {work:h,text:divText(ex,t)};
+}
+
+/* ================= generators / meta ================= */
+const GEN={add:genAdd,sub:genSub,mul:genMul,div:genDiv};
+const SETTINGS={
+  add:[{k:'digits',l:'Digits (up to)',o:[['1','1'],['2','2'],['3','3'],['4','4']]},
+       {k:'count',l:'Numbers',o:[['2','2'],['3','3'],['4','4']]},
+       {k:'dp',l:'Decimals',o:[['0','Whole numbers'],['1','1 decimal place'],['2','2 decimal places'],['mixed','Mixed']]}],
+  sub:[{k:'digits',l:'Digits (top number)',o:[['2','2'],['3','3'],['4','4']]},
+       {k:'type',l:'Type',o:[['without','Without decomposition'],['with','With decomposition'],['zeros','Decomposition across zeros'],['mixed','Mixed']]},
+       {k:'dp',l:'Decimals',o:[['0','Whole numbers'],['1','1 decimal place'],['2','2 decimal places'],['mixed','Mixed']]},
+       {k:'reduce',l:'Reduce both numbers by 1 (avoids zero chains)',type:'chk'}],
+  mul:[{k:'size',l:'Size',o:[['2x1','2 digits × 1'],['3x1','3 digits × 1'],['4x1','4 digits × 1'],['2x2','2 × 2 digits'],['3x2','3 × 2 digits'],['4x2','4 × 2 digits'],['3x3','3 × 3 digits'],['4x3','4 × 3 digits']]},
+       {k:'method',l:'Method',o:[['grid','Grid'],['column','Column'],['lattice','Lattice'],['partition','Partitioning'],['any','Any (mix)']]},
+       {k:'dec',l:'Include decimals',type:'chk'}],
+  div:[{k:'kind',l:'Answer',o:[['exact','Exact'],['term','Terminating decimal'],['rec','Recurring decimal'],['any','Mixed']]},
+       {k:'dsize',l:'Divide by',o:[['1','1-digit number'],['2','2-digit number']]},
+       {k:'size',l:'Dividend digits',o:[['2','2'],['3','3'],['4','4']]},
+       {k:'method',l:'Method',o:[['short','Short division'],['long','Long division']]}]
+};
+const state={op:'add',mode:'teach',k:0,ex:null,qs:null,reveal:false,
+  set:{add:{digits:'3',count:'2',dp:'0'},sub:{digits:'3',type:'mixed',dp:'0',reduce:false},mul:{size:'3x2',method:'grid',dec:false},div:{kind:'exact',dsize:'1',size:'3',method:'short'}}};
+
+function newEx(){state.ex=GEN[state.op](state.set[state.op]);state.k=0;}
+function newQs(){
+  state.qs=[];
+  for(let i=0;i<6;i++){state.qs.push(GEN[state.op](state.set[state.op]));}
+  state.reveal=false;
+}
+function renderEx(ex,k){
+  if(ex.op==='add')return renderAdd(ex,k);
+  if(ex.op==='sub')return renderSub(ex,k);
+  if(ex.op==='mul')return ex.render(k);
+  return renderDiv(ex,k);
+}
+
+/* ================= UI ================= */
+function drawSettings(){
+  const box=$('#settings');let h='';
+  SETTINGS[state.op].forEach(f=>{
+    const v=state.set[state.op][f.k];
+    if(f.type==='chk')h+='<label class="chk"><input type="checkbox" data-k="'+f.k+'"'+(v?' checked':'')+'> '+f.l+'</label>';
+    else h+='<label>'+f.l+' <select data-k="'+f.k+'">'+f.o.map(o=>'<option value="'+o[0]+'"'+(String(v)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';
+  });
+  box.innerHTML=h;
+}
+function ctlBtn(act,label,cls,dis){return '<button class="btn '+(cls||'')+'" data-act="'+act+'"'+(dis?' disabled':'')+'>'+label+'</button>';}
+function render(){
+  document.body.className='op-'+state.op;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.op===state.op));
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('on',b.dataset.mode===state.mode));
+  const st=$('#stage');
+  if(state.mode==='teach'){
+    if(!state.ex)newEx();
+    const ex=state.ex,k=state.k,r=renderEx(ex,k);
+    let dots='';for(let i=0;i<ex.total;i++)dots+='<i class="'+(i<k?'on':'')+'"></i>';
+    st.innerHTML='<div class="qhead">'+ex.q.replace(/ =$/,'')+(ex.tag&&ex.op==='mul'?' <span class="sub" style="font-size:1.1rem">('+ex.tag+')</span>':'')+'</div>'+
+      '<div class="work">'+r.work+'</div>'+
+      '<div class="say">'+r.text+'</div>'+
+      (k===ex.total?'<div class="final">Answer: '+ex.ans+'</div>':'')+
+      '<div class="ctl">'+ctlBtn('back','◀ Back','',k===0)+ctlBtn('next','Next step ▶','pri',k===ex.total)+ctlBtn('all','Show all','',k===ex.total)+ctlBtn('new','New example','')+'<span class="dots">'+dots+'</span></div>';
+  }else{
+    if(!state.qs)newQs();
+    let h='<div class="qs">';
+    state.qs.forEach((ex,i)=>{
+      h+='<div class="qc"><span class="n">'+(i+1)+'</span><div class="qt">'+ex.q+'</div>'+(ex.tag?'<span class="tag">'+ex.tag+'</span>':'');
+      if(state.reveal)h+='<div class="an">'+ex.ans+'</div><button class="wk" data-act="work" data-i="'+i+'">Show working</button>';
+      h+='</div>';
+    });
+    h+='</div><div class="ctl">'+ctlBtn('reveal',state.reveal?'Hide answers':'Show answers','pri')+ctlBtn('newqs','New questions','')+'</div>';
+    st.innerHTML=h;
+  }
+}
+document.addEventListener('click',e=>{
+  const m=e.target.closest('#modes button');
+  if(m){state.mode=m.dataset.mode;render();return;}
+  const t=e.target.closest('#tabs button');
+  if(t){state.op=t.dataset.op;state.ex=null;state.qs=null;drawSettings();render();return;}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act;
+  if(a==='next'){if(state.k<state.ex.total)state.k++;}
+  else if(a==='back'){if(state.k>0)state.k--;}
+  else if(a==='all'){state.k=state.ex.total;}
+  else if(a==='new'){newEx();}
+  else if(a==='reveal'){state.reveal=!state.reveal;}
+  else if(a==='newqs'){newQs();}
+  else if(a==='work'){state.ex=state.qs[+b.dataset.i];state.k=0;state.mode='teach';}
+  render();
+});
+$('#settings').addEventListener('change',e=>{
+  const el=e.target,k=el.dataset.k;if(!k)return;
+  state.set[state.op][k]=el.type==='checkbox'?el.checked:el.value;
+  state.ex=null;state.qs=null;render();
+});
+document.addEventListener('keydown',e=>{
+  if(state.mode!=='teach'||!state.ex||/SELECT|INPUT/.test(e.target.tagName))return;
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(state.k<state.ex.total){state.k++;render();}}
+  if(e.key==='ArrowLeft'){if(state.k>0){state.k--;render();}}
+});
+window.__FOURRULES={GEN,SETTINGS,renderEx,divSteps,state};
+drawSettings();render();
+})();
+</script>
+</body>
+</html>

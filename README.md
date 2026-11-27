@@ -7,6 +7,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Game | Folder |
 | --- | --- |
 | 3D Drawing | `3d-drawing/` |
+| 4 Rules | `four-rules/` |
 | About Time | `about-time/` |
 | Algebra Lab | `algebra-lab/` |
 | Angle Detective | `angle-detective/` |
