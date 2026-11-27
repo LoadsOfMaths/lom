@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metric Units - LoadsOfMaths</title>
+<style>
+:root{--o:#f58220;--b:#1c6fb8;--g:#6b7280;--bg:#f2f7fc;--ink:#1f2937;--ok:#1a9a52;--bad:#d9382f}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Trebuchet MS",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:#fff;border-bottom:3px solid var(--o)}
+.logo{font-family:"Super Bouncer","Arial Rounded MT Bold","Trebuchet MS",sans-serif;font-weight:bold;color:var(--g);font-size:15px}
+.logo .o{color:var(--o)}.logo .b{color:var(--b)}
+h1{margin:0;font-family:"Super Bouncer","Arial Rounded MT Bold","Trebuchet MS",sans-serif;color:var(--b);font-size:clamp(24px,4vw,38px)}
+nav button,.btn{font:inherit;font-weight:bold;border:2px solid var(--b);background:#fff;color:var(--b);border-radius:10px;padding:8px 16px;cursor:pointer;font-size:clamp(15px,1.8vw,20px)}
+nav button.on,.btn.pri{background:var(--b);color:#fff}
+.btn.org{background:var(--o);border-color:var(--o);color:#fff}
+#levels{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px 0}
+#levels button{font:inherit;border:2px solid var(--o);background:#fff;color:#333;border-radius:12px;padding:6px 12px;cursor:pointer;font-size:clamp(14px,1.6vw,18px)}
+#levels button.on{background:var(--o);color:#fff;font-weight:bold}
+#ldesc{padding:6px 18px;color:var(--g);font-size:16px}
+main{padding:8px 16px 40px;max-width:1200px;margin:auto}
+.card{background:#fff;border-radius:14px;padding:14px 16px;margin:12px 0;box-shadow:0 2px 6px #0001}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:inherit;border:2px solid #cbd5e1;background:#fff;border-radius:20px;padding:5px 14px;cursor:pointer;font-size:18px}
+.chip.on{border-color:var(--b);background:#e6f1fb;font-weight:bold}
+.chip.o2.on{border-color:var(--o);background:#fff0e0}
+.ctxline{font-size:clamp(18px,2.2vw,26px);margin:8px 0;min-height:1.3em}
+.eqbig{font-size:clamp(26px,4vw,48px);font-weight:bold;margin:8px 0}
+.eqbig span.f{color:var(--o)}.eqbig span.t{color:var(--b)}
+.ladder{display:flex;align-items:center;overflow-x:auto;padding:6px 0}
+.lu{min-width:64px;text-align:center;border:3px solid #cbd5e1;border-radius:12px;padding:10px 8px;font-size:clamp(20px,2.4vw,30px);font-weight:bold;background:#fff}
+.lu.off{opacity:.4}.lu.mid{background:#eef5fb}.lu.from{border-color:var(--o);background:#fff0e0}.lu.to{border-color:var(--b);background:#e6f1fb}
+.lc{display:flex;flex-direction:column;font-size:14px;color:var(--g);padding:0 6px;text-align:center;white-space:nowrap}
+.lc.path{color:var(--ink);font-weight:bold}
+.steps p{font-size:clamp(17px,2vw,24px);margin:8px 0}
+#slide{position:relative;margin:10px 0;overflow:hidden}
+.tile{position:absolute;text-align:center;font-weight:bold;border-radius:6px;transition:left 1.2s ease,opacity .7s}
+.tile.dg{background:var(--b);color:#fff}
+.tile.pad{background:#ffe3c4;color:var(--o)}
+.colbg{position:absolute;border:1px solid #e5e7eb;background:#fafafa}
+.hd{position:absolute;text-align:center;color:var(--g)}
+.pt{position:absolute;font-weight:bold;text-align:center}
+.qs{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
+.q{background:#fff;border-radius:14px;padding:12px 14px 12px 52px;position:relative;box-shadow:0 2px 6px #0001;cursor:pointer;min-height:110px}
+.q .n{position:absolute;left:10px;top:10px;background:var(--o);color:#fff;border-radius:50%;width:32px;height:32px;text-align:center;line-height:32px;font-weight:bold}
+.q .ctx{font-size:clamp(16px,1.8vw,22px);margin-bottom:6px}
+.q .eq{font-size:clamp(22px,3vw,38px);font-weight:bold}
+.blank{display:inline-block;min-width:110px;border-bottom:3px solid #333;height:1em;vertical-align:baseline}
+.av{color:var(--ok)}.wk{font-size:16px;color:var(--g);margin-top:4px}
+input.ans{font:inherit;font-size:inherit;width:150px;border:2px solid var(--b);border-radius:8px;padding:2px 6px}
+.mk.ok{color:var(--ok)}.mk.bad{color:var(--bad)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0}
+.fam{border:1px solid #e2e8f0;border-radius:12px;padding:10px;margin:8px 0}
+.note{color:var(--g);font-size:15px}
+input#tval{font:inherit;font-size:24px;width:150px;border:2px solid var(--o);border-radius:8px;padding:4px 8px}
+svg text{font-family:inherit}
+</style>
+</head>
+<body>
+<header>
+<div><div class="logo">www.<span class="o">loads</span>of<span class="b">maths</span>.co.uk</div><h1>Metric Units</h1></div>
+<nav id="modes"></nav>
+</header>
+<div id="levels"></div><div id="ldesc"></div>
+<main id="view"></main>
+<script>
+(function(){
+'use strict';
+var KEY='lom-metric-units-v1';
+function u(s,n,x,ex){var o={s:s,n:n,x:x};if(ex)for(var k in ex)o[k]=ex[k];return o}
+var UNITS={
+length:[u('mm','millimetres',-3),u('cm','centimetres',-2),u('m','metres',0),u('km','kilometres',3)],
+mass:[u('mg','milligrams',-3),u('g','grams',0),u('kg','kilograms',3),u('t','tonnes',6)],
+capacity:[u('ml','millilitres',-3),u('cl','centilitres',-2),u('l','litres',0)],
+data:[u('B','bytes',0),u('kB','kilobytes',3),u('MB','megabytes',6),u('GB','gigabytes',9),u('TB','terabytes',12)],
+power:[u('mW','milliwatts',-3),u('W','watts',0),u('kW','kilowatts',3),u('MW','megawatts',6),u('GW','gigawatts',9)],
+energy:[u('J','joules',0),u('kJ','kilojoules',3),u('MJ','megajoules',6)],
+freq:[u('Hz','hertz',0),u('kHz','kilohertz',3),u('MHz','megahertz',6),u('GHz','gigahertz',9)],
+area:[u('mm²','square millimetres',-6,{lk:'mm'}),u('cm²','square centimetres',-4,{lk:'cm'}),u('m²','square metres',0,{lk:'m'}),u('km²','square kilometres',6,{lk:'km'})],
+volume:[u('mm³','cubic millimetres',-9,{lk:'mm'}),u('cm³','cubic centimetres',-6,{lk:'cm'}),u('m³','cubic metres',0,{lk:'m'}),u('km³','cubic kilometres',9,{lk:'km'}),u('ml','millilitres',-6,{cap:1}),u('cl','centilitres',-5,{cap:1}),u('l','litres',-3,{cap:1})]
+};
+Object.keys(UNITS).forEach(function(k){UNITS[k].forEach(function(x){x.kind=k})});
+var KN={length:'Length',mass:'Mass',capacity:'Capacity',data:'Data (bytes)',power:'Power (watts)',energy:'Energy (joules)',freq:'Frequency (hertz)',area:'Area',volume:'Volume'};
+var FAMKEYS=['length','mass','capacity','data','power','energy','freq'];
+// contexts: [low, high, sentence] in the base unit (m, g, l, B, W, J, Hz, m2, m3). low==high means a fixed real value.
+var CTX={
+length:[[.004,.008,'A ladybird is {v} long.'],[.006,.009,'A grain of rice is {v} long.'],[.0028,.0028,'A £1 coin is {v} thick.'],[.0001,.0001,'A sheet of paper is {v} thick.'],[.00006,.0001,'A human hair is {v} wide.'],[.12,.19,'A pencil is {v} long.'],[.3,.3,'A school ruler is {v} long.'],[.297,.297,'The long side of an A4 sheet is {v}.'],[.14,.16,'A mobile phone is {v} long.'],[1.2,1.6,'A desk is {v} wide.'],[1.9,2.1,'A door is {v} high.'],[1.35,1.7,'A Year 7 pupil is {v} tall.'],[7,10,'A classroom is {v} long.'],[10,11,'A double-decker bus is {v} long.'],[25,25,'A swimming pool is {v} long.'],[100,110,'A football pitch is {v} long.'],[20.12,20.12,'A cricket pitch is {v} long.'],[4.5,5.5,'A giraffe is {v} tall.'],[310,310,'The Shard in London is {v} tall.'],[1345,1345,'Ben Nevis is {v} high.'],[1085,1085,'Snowdon is {v} high.'],[2000,4000,'An airport runway is {v} long.'],[500,2500,'The walk to school is {v} long.'],[5000,40000,'A charity bike ride is {v} long.'],[42200,42200,'A marathon is {v} long.'],[354000,354000,'The River Severn is {v} long.'],[320000,340000,'The road from London to Manchester is {v} long.']],
+mass:[[.015,.03,'A grain of rice has a mass of {v}.'],[.5,.5,'A paracetamol tablet has a mass of {v}.'],[8.75,8.75,'A £1 coin has a mass of {v}.'],[20,100,'A letter has a mass of {v}.'],[50,70,'An egg has a mass of {v}.'],[100,200,'An apple has a mass of {v}.'],[415,415,'A tin of baked beans has a mass of {v}.'],[1000,1000,'A bag of sugar has a mass of {v}.'],[1500,1500,'A bag of flour has a mass of {v}.'],[3000,4000,'A newborn baby has a mass of {v}.'],[1200,2500,'A laptop has a mass of {v}.'],[35000,55000,'A Year 7 pupil has a mass of {v}.'],[9000,15000,'A bicycle has a mass of {v}.'],[9e5,1.5e6,'A small car has a mass of {v}.'],[1.1e7,1.4e7,'A double-decker bus has a mass of {v}.'],[4e6,6.5e6,'An elephant has a mass of {v}.'],[1e8,1.5e8,'A blue whale has a mass of {v}.']],
+capacity:[[.005,.005,'A teaspoon holds {v}.'],[.33,.33,'A can of fizzy drink holds {v}.'],[.15,.25,'A glass of juice holds {v}.'],[.2,.3,'A mug of tea holds {v}.'],[.5,.5,'A small bottle of water holds {v}.'],[.568,.568,'A pint of milk is {v}.'],[2,2,'A bottle of lemonade holds {v}.'],[1,1,'A carton of orange juice holds {v}.'],[.25,.4,'A bottle of shampoo holds {v}.'],[1.5,1.7,'A kettle holds {v}.'],[8,12,'A bucket holds {v}.'],[40,60,'A car petrol tank holds {v}.'],[120,180,'A bath holds {v}.'],[40,200,'A fish tank holds {v}.'],[300,600,'A paddling pool holds {v}.'],[.03,.1,'A bottle of perfume holds {v}.']],
+data:[[1e4,6e4,'A text document is {v}.'],[2e4,1e5,'An email is {v}.'],[2e6,8e6,'A photo is {v}.'],[3e6,1e7,'An MP3 song is {v}.'],[1.44e6,1.44e6,'A floppy disc holds {v}.'],[7e8,7e8,'A CD holds {v}.'],[2e7,2e8,'A short video clip is {v}.'],[1e6,3e6,'A web page is {v}.'],[1e9,6e9,'A film download is {v}.'],[2e10,1.5e11,'A video game is {v}.'],[6.4e10,6.4e10,'A USB stick holds {v}.'],[1.28e11,1.28e11,'A phone has {v} of storage.'],[5.12e11,5.12e11,'A laptop has {v} of storage.'],[2e12,2e12,'An external hard drive holds {v}.']],
+power:[[.0002,.001,'A pocket calculator uses {v}.'],[.005,.05,'A hearing aid uses {v}.'],[5,12,'An LED light bulb uses {v}.'],[5,25,'A phone charger delivers {v}.'],[45,90,'A laptop charger delivers {v}.'],[250,400,'A solar panel produces {v}.'],[700,1000,'A microwave oven uses {v}.'],[800,1500,'A toaster uses {v}.'],[2000,3000,'A kettle uses {v}.'],[8000,10500,'An electric shower uses {v}.'],[3600,22000,'An electric car charger delivers {v}.'],[2e6,8e6,'A wind turbine produces {v}.'],[1e9,3.2e9,'A power station produces {v}.']],
+energy:[[1e4,1.5e4,'An AA battery stores {v} of energy.'],[4e4,6e4,'A mobile phone battery stores {v} of energy.'],[20,100,'A thrown cricket ball has {v} of kinetic energy.'],[2e5,4e5,'An apple contains {v} of energy.'],[4e5,6e5,'Boiling a kettle uses {v} of energy.'],[3e5,5e5,'A slice of toast contains {v} of energy.'],[8e5,1.2e6,'A chocolate bar contains {v} of energy.'],[4e5,9e5,'A car on a motorway has {v} of kinetic energy.'],[8e6,1.1e7,'A teenager needs {v} of energy each day.']],
+freq:[[50,50,'Mains electricity in the UK has a frequency of {v}.'],[440,440,'The note A used for tuning has a frequency of {v}.'],[16000,20000,'The highest sound a young person can hear is about {v}.'],[23000,54000,'A dog whistle makes a sound of {v}.'],[8.8e7,1.08e8,'A radio station broadcasts at {v}.'],[7e8,2.6e9,'A 4G mobile signal uses {v}.'],[2.4e9,2.4e9,'A Wi-Fi router can use {v}.'],[5e9,5e9,'A Wi-Fi router can also use {v}.'],[2.45e9,2.45e9,'A microwave oven uses microwaves of {v}.'],[2.5e9,4.5e9,'A computer processor runs at {v}.']],
+area:[[1e-4,1e-4,'A fingernail has an area of about {v}.'],[3e-4,4e-4,'A postage stamp has an area of {v}.'],[.005,.006,'A playing card has an area of {v}.'],[.009,.012,'A mobile phone screen has an area of {v}.'],[.0624,.0624,'A sheet of A4 paper has an area of {v}.'],[.8,1.5,'A desk top has an area of {v}.'],[1,2,'A window has an area of {v}.'],[45,70,'A classroom floor has an area of {v}.'],[80,250,'A garden has an area of {v}.'],[261,261,'A tennis court has an area of {v}.'],[6500,7500,'A football pitch has an area of {v}.'],[3.8e8,3.8e8,'The Isle of Wight has an area of {v}.'],[2.08e10,2.08e10,'Wales has an area of {v}.'],[7.8e10,7.8e10,'Scotland has an area of {v}.'],[1.3e11,1.3e11,'England has an area of {v}.']],
+volume:[[1e-6,1e-6,'A sugar cube has a volume of about {v}.'],[4e-6,4e-6,'A small die has a volume of about {v}.'],[5e-6,5e-6,'A teaspoon holds {v}.'],[2.4e-5,3e-5,'A matchbox has a volume of {v}.'],[2e-4,3.5e-4,'A mug holds {v}.'],[3e-4,5e-4,'A tin of soup has a volume of {v}.'],[5e-4,5e-4,'A small bottle of water holds {v}.'],[.008,.012,'A bucket holds {v}.'],[.06,.15,'A fish tank has a volume of {v}.'],[.12,.18,'A bath holds {v}.'],[.8,1.5,'A wardrobe has a volume of {v}.'],[150,250,'A classroom has a volume of {v}.'],[300,500,'A swimming pool holds {v}.'],[2500,2500,'An Olympic swimming pool holds {v}.'],[7.4e9,7.4e9,'Loch Ness holds {v} of water.']]
+};
+var LV=[null,
+{n:'1 Neighbours',d:'Neighbouring units, mostly whole numbers',fd:1,ad:1,sd:[1,2]},
+{n:'2 Decimals',d:'Neighbouring units, with decimals',fd:2,ad:3,sd:[2,3]},
+{n:'3 Jumps',d:'Jump two or more units, e.g. kB to GB',fd:3,ad:4,sd:[2,3]},
+{n:'4 Big jumps',d:'Bigger jumps and more decimal places',fd:5,ad:6,sd:[3,4]},
+{n:'5 Square units',d:'Square units (area), e.g. m² to cm²',fd:2,ad:4,sd:[1,3]},
+{n:'6 Cubic units',d:'Cubic units (volume), with litres and millilitres',fd:2,ad:5,sd:[1,3]}];
+
+var cfg={fam:{length:1,mass:1,capacity:1,data:1,power:1,energy:0,freq:0},units:{},ctx:true,fmt:'space',type:false,cap:true,level:1};
+function defUnits(){var o={};FAMKEYS.forEach(function(k){o[k]={};UNITS[k].forEach(function(x){o[k][x.s]=1})});return o}
+cfg.units=defUnits();
+try{var sv=JSON.parse(localStorage.getItem(KEY));if(sv){['ctx','fmt','type','cap','level'].forEach(function(k){if(sv[k]!==undefined)cfg[k]=sv[k]});
+ if(sv.fam)FAMKEYS.forEach(function(k){if(sv.fam[k]!==undefined)cfg.fam[k]=sv.fam[k]});
+ if(sv.units)FAMKEYS.forEach(function(k){if(sv.units[k])UNITS[k].forEach(function(x){if(sv.units[k][x.s]!==undefined)cfg.units[k][x.s]=sv.units[k][x.s]})})}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(cfg))}catch(e){}}
+var S={mode:'teach',qs:[],rev:{},typed:{},res:null,t:null,slid:false};
+function rnd(n){return Math.floor(Math.random()*n)}
+function pick(a){return a[rnd(a.length)]}
+function wpick(l){var t=0,i;for(i=0;i<l.length;i++)t+=l[i].w;var r=Math.random()*t;for(i=0;i<l.length;i++){r-=l[i].w;if(r<=0)return l[i]}return l[l.length-1]}
+// decimals as {d:'digits',e:exp}: value = d x 10^e
+function mk(d,e){d=d.replace(/^0+/,'');if(!d)return{d:'0',e:0};while(d.length>1&&d.charAt(d.length-1)==='0'){d=d.slice(0,-1);e++}return{d:d,e:e}}
+function num(x){return parseFloat(x.d+'e'+x.e)}
+function dp(x){return Math.max(0,-x.e)}
+function intDigits(x){return x.e>=0?x.d.length+x.e:Math.max(0,x.d.length+x.e)}
+function roundSig(x,sd){var e0=Math.floor(Math.log10(x))-sd+1;var n=Math.round(e0>=0?x/Math.pow(10,e0):x*Math.pow(10,-e0));if(String(n).length>sd){n=Math.round(n/10);e0++}return mk(String(n),e0)}
+function grp(i){if(cfg.fmt==='none')return i;var sep=cfg.fmt==='comma'?',':' ',min=cfg.fmt==='comma'?4:5;if(i.length<min)return i;return i.replace(/\B(?=(\d{3})+(?!\d))/g,sep)}
+function plain(x){var s=x.d,e=x.e,i,f;if(e>=0){i=s+new Array(e+1).join('0');f=''}else{var k=-e;if(s.length>k){i=s.slice(0,s.length-k);f=s.slice(s.length-k)}else{i='0';f=new Array(k-s.length+1).join('0')+s}}return[i,f]}
+function fmtDec(x,raw){var p=plain(x);return(raw?p[0]:grp(p[0]))+(p[1]?'.'+p[1]:'')}
+function parseDec(str){str=String(str).replace(/[\s,  ]/g,'');var m=/^(\d*)\.?(\d*)$/.exec(str);if(!m||(m[1]+m[2]).length===0)return null;return mk(m[1]+m[2],-m[2].length)}
+function p10(n){return n<=9?grp('1'+new Array(n+1).join('0')):'10<sup>'+n+'</sup>'}
+function lenOn(k){var c=0;['mm','cm','m','km'].forEach(function(z){if(cfg.units.length[z])c++});return c<2?true:!!cfg.units.length[k]}
+function isOn(kind,x){if(kind==='area'||kind==='volume'){if(x.cap)return !!(cfg.cap&&cfg.units.capacity[x.s]);return lenOn(x.lk)}return !!cfg.units[kind][x.s]}
+function pairsFor(kind,level){var U=UNITS[kind],out=[],i,j;
+ for(i=0;i<U.length;i++)for(j=0;j<U.length;j++){
+  if(i===j||!isOn(kind,U[i])||!isOn(kind,U[j]))continue;
+  var d=Math.abs(i-j),w=1;
+  if(level<=2&&d!==1)continue;
+  if(level===3||level===4){if(d<2)continue;if(level===4)w=d}
+  if(level===5&&d===1)w=3;
+  if(level===6){if(U[i].cap&&U[j].cap)continue;if(U[i].x===U[j].x)w=.4;else if(!U[i].cap&&!U[j].cap&&d===1)w=3}
+  out.push({from:U[i],to:U[j],w:w})}
+ return out}
+function kindsFor(level){var ks=level===5?['area']:level===6?['volume']:FAMKEYS.filter(function(k){return cfg.fam[k]});return ks.filter(function(k){return pairsFor(k,level).length>0})}
+function genOne(level,prefer,used){
+ var kinds=kindsFor(level);if(!kinds.length)return null;var L=LV[level];
+ for(var t=0;t<700;t++){
+  var kind=(prefer&&kinds.indexOf(prefer)>=0&&t<400)?prefer:pick(kinds);
+  var pr=wpick(pairsFor(kind,level)),sd=pick(L.sd),dec,ctx=null;
+  if(cfg.ctx&&t<500&&Math.random()<.92){
+   var c=pick(CTX[kind]),lo=c[0],hi=c[1];
+   var b=lo===hi?lo:(hi/lo>3?Math.exp(Math.log(lo)+Math.random()*Math.log(hi/lo)):lo+Math.random()*(hi-lo));
+   dec=roundSig(b*Math.pow(10,-pr.from.x),sd);
+   var base=num(dec)*Math.pow(10,pr.from.x);
+   if(lo===hi){if(Math.abs(base-lo)/lo>1e-9)continue}else if(base<lo*.7||base>hi*1.3)continue;
+   ctx=c[2];
+  }else{var d='';for(var i=0;i<sd;i++)d+=i===0?1+rnd(9):rnd(10);dec=mk(d,-rnd(L.fd+1)+(Math.random()<.5?1:0))}
+  var ans=mk(dec.d,dec.e+pr.from.x-pr.to.x);
+  if(dp(dec)>L.fd||dp(ans)>L.ad||intDigits(ans)>13||intDigits(dec)>10)continue;
+  if(level===2&&dp(dec)===0&&dp(ans)===0)continue;
+  if((level===3||level===4)&&Math.random()<.7&&dp(dec)===0&&dp(ans)===0)continue;
+  var key=pr.from.s+'|'+pr.to.s+'|'+dec.d+'|'+dec.e;
+  if(used&&used[key])continue;if(used)used[key]=1;
+  return{kind:kind,from:pr.from,to:pr.to,dec:dec,ans:ans,ctxT:ctx};
+ }
+ return null}
+function ctxText(q){return q.ctxT?q.ctxT.replace('{v}',fmtDec(q.dec)+' '+q.from.s):''}
+function newSet(){var kinds=kindsFor(cfg.level),used={},out=[],order=kinds.slice().sort(function(){return Math.random()-.5});
+ for(var i=0;i<6&&order.length;i++){var q=genOne(cfg.level,order[i%order.length],used);if(q)out.push(q)}
+ S.qs=out;S.rev={};S.typed={};S.res=null}
+function newTeach(kind){var q=genOne(cfg.level,kind,null);S.t=q?{kind:q.kind,from:q.from,to:q.to,dec:q.dec,ctxT:q.ctxT,err:''}:null;S.slid=false}
+
+function $(s){return document.querySelector(s)}
+function shiftOf(q){return q.from.x-q.to.x}
+function working(q){var s=shiftOf(q),h;
+ if(s===0)h='Same size, so the number stays the same.';
+ else{h=(s>0?'× ':'÷ ')+p10(Math.abs(s));
+  if(q.kind==='length'||!/^(area|volume)$/.test(q.kind)){}
+  h+=' (digits move '+Math.abs(s)+' place'+(Math.abs(s)>1?'s':'')+(s>0?' left':' right')+')'}
+ return h}
+function noUnits(){return '<div class="card"><b>Not enough units switched on for this level.</b><p class="note">Open Settings and switch on more units (this level needs '+(cfg.level<=2?'two neighbouring units':'units at least two steps apart')+' in the same family).</p></div>'}
+function qHTML(q,i){
+ var shown=S.rev[i]||S.res,ctx=cfg.ctx&&q.ctxT?'<div class="ctx">'+ctxText(q)+'</div>':'',blank;
+ if(S.res&&cfg.type){var ok=S.res[i];blank='<span class="mk '+(ok?'ok':'bad')+'">'+(S.typed[i]||'–')+(ok?' ✓':' ✗')+'</span>'+(ok?'':' <span class="av">'+fmtDec(q.ans)+'</span>')}
+ else if(shown)blank='<span class="av">'+fmtDec(q.ans)+'</span>';
+ else if(cfg.type)blank='<input class="ans" data-i="'+i+'" inputmode="decimal" autocomplete="off" value="'+(S.typed[i]||'')+'">';
+ else blank='<span class="blank"></span>';
+ return '<div class="q" data-act="qshow" data-i="'+i+'"><div class="n">'+(i+1)+'</div>'+ctx+'<div class="eq">'+fmtDec(q.dec)+' '+q.from.s+' = '+blank+' '+q.to.s+'</div>'+(shown&&!cfg.type?'<div class="wk">'+working(q)+'</div>':'')+'</div>'}
+function practiseHTML(){
+ if(!S.qs.length)return noUnits();
+ var h='<div class="row"><button class="btn org" data-act="pnew">New questions</button>';
+ if(cfg.type)h+='<button class="btn pri" data-act="pcheck">Check answers</button>';
+ h+='<button class="btn" data-act="pall">'+(S.res||Object.keys(S.rev).length===S.qs.length?'Hide answers':'Show all answers')+'</button>';
+ if(S.res&&cfg.type){var n=0;S.res.forEach(function(r){if(r)n++});h+='<b style="font-size:24px">Score: '+n+' / '+S.qs.length+'</b>'}
+ h+='</div><div class="qs">';S.qs.forEach(function(q,i){h+=qHTML(q,i)});return h+'</div><p class="note">'+(cfg.type?'Type your answers, then press Check answers.':'Write your answers on paper. Tap a question to reveal its answer.')+'</p>'}
+function settingsHTML(){
+ var h='<div class="card"><h2>Units</h2><p class="note">Switch whole families on or off, or individual units. Levels 5 and 6 use the Length switches (and Capacity for litres).</p>';
+ FAMKEYS.forEach(function(k){h+='<div class="fam"><div class="chips"><button class="chip o2 '+(cfg.fam[k]?'on':'')+'" data-act="fam" data-k="'+k+'"><b>'+(cfg.fam[k]?'☑ ':'☐ ')+KN[k]+'</b></button>';
+  UNITS[k].forEach(function(x){h+='<button class="chip '+(cfg.units[k][x.s]?'on':'')+'" data-act="unit" data-k="'+k+'" data-s="'+x.s+'">'+x.s+'</button>'});h+='</div></div>'});
+ h+='</div><div class="card"><h2>Options</h2>';
+ [['ctx','Show real-life context sentences'],['type','Pupils type answers on screen (otherwise paper)'],['cap','Include litres and millilitres with cubic units (Level 6)']].forEach(function(o){h+='<p><button class="chip '+(cfg[o[0]]?'on':'')+'" data-act="opt" data-k="'+o[0]+'">'+(cfg[o[0]]?'☑ ':'☐ ')+o[1]+'</button></p>'});
+ h+='<p>Large numbers: <select id="fmt"><option value="space">10 000 (spaces)</option><option value="comma">10,000 (commas)</option><option value="none">10000 (none)</option></select></p>';
+ h+='<p class="note">Data uses 1 kB = 1000 B (SI units).</p><p><button class="btn" data-act="reset">Reset to defaults</button></p></div>';return h}
+function ladderHTML(t){
+ var U=UNITS[t.kind].slice().sort(function(a,b){return a.x-b.x}),ia=U.indexOf(t.from),ib=U.indexOf(t.to),lo=Math.min(ia,ib),hi=Math.max(ia,ib),h='<div class="ladder">';
+ U.forEach(function(x,i){h+='<div class="lu '+(x===t.from?'from ':'')+(x===t.to?'to ':'')+(i>lo&&i<hi?'mid ':'')+(isOn(t.kind,x)?'':'off')+'">'+x.s+'</div>';
+  if(i<U.length-1){var d=U[i+1].x-x.x,p=i>=lo&&i<hi;h+='<div class="lc '+(p?'path':'')+'"><span>'+(d?'÷ '+p10(d)+' →':'=')+'</span><span>'+(d?'← × '+p10(d):'=')+'</span></div>'}});
+ return h+'</div>'}
+function stepsHTML(t){var s=shiftOf(t),a=Math.abs(s),ans=mk(t.dec.d,t.dec.e+s),h='<div class="steps">',f=t.from,to=t.to;
+ if(s>0)h+='<p><b>1.</b> '+to.n+' are <b>smaller</b> than '+f.n+', so there are <b>more</b> of them: <b>multiply</b>.</p>';
+ else if(s<0)h+='<p><b>1.</b> '+to.n+' are <b>bigger</b> than '+f.n+', so there are <b>fewer</b> of them: <b>divide</b>.</p>';
+ else h+='<p><b>1.</b> '+f.s+' and '+to.s+' are the same size, so the number does not change.</p>';
+ if(s!==0){var big=s>0?f:to,sm=s>0?to:f;h+='<p><b>2.</b> 1 '+big.s+' = '+p10(a)+' '+sm.s;
+  if(!f.cap&&!to.cap&&(t.kind==='area'||t.kind==='volume')){var k=t.kind==='area'?2:3,ls=a/k,ps=p10(ls),pr=[];for(var i=0;i<k;i++)pr.push(ps);h+='<br><span class="note">because 1 '+big.lk+' = '+ps+' '+sm.lk+', so 1 '+big.s+' = '+pr.join(' × ')+' = '+p10(a)+' '+sm.s+'</span>'}
+  h+='</p><p><b>3.</b> '+fmtDec(t.dec)+' '+(s>0?'×':'÷')+' '+p10(a)+' = <b>'+fmtDec(ans)+'</b></p>'}
+ if(t.kind==='volume')h+='<p class="note">Remember: 1 ml = 1 cm³, 1 l = 1000 ml = 1000 cm³, 1 m³ = 1000 l.</p>';
+ return h+'</div>'}
+function diagramHTML(t){var f=t.from,to=t.to;if(!(t.kind==='area'||t.kind==='volume')||f.cap||to.cap||f.x===to.x)return '';
+ var s=shiftOf(t),k=t.kind==='area'?2:3,lf=Math.abs(s)/k,big=s>0?f:to,sm=s>0?to:f,n=Math.min(lf,k===2?10:5),svg='<svg viewBox="0 0 360 250" width="100%" style="max-width:420px">';
+ function face(o,U,V,col){var p=[o,[o[0]+U[0],o[1]+U[1]],[o[0]+U[0]+V[0],o[1]+U[1]+V[1]],[o[0]+V[0],o[1]+V[1]]],r='<polygon points="'+p.map(function(z){return z.join(',')}).join(' ')+'" fill="'+col+'" stroke="#1c6fb8" stroke-width="2"/>';
+  for(var i=1;i<n;i++){var a=i/n;r+='<line x1="'+(o[0]+U[0]*a)+'" y1="'+(o[1]+U[1]*a)+'" x2="'+(o[0]+U[0]*a+V[0])+'" y2="'+(o[1]+U[1]*a+V[1])+'" stroke="#1c6fb8" stroke-width="1"/><line x1="'+(o[0]+V[0]*a)+'" y1="'+(o[1]+V[1]*a)+'" x2="'+(o[0]+V[0]*a+U[0])+'" y2="'+(o[1]+V[1]*a+U[1])+'" stroke="#1c6fb8" stroke-width="1"/>'}return r}
+ var side=p10(lf).replace(/<\/?sup>/g,'');
+ if(k===2){svg+=face([80,20],[200,0],[0,200],'#e6f1fb')+'<text x="180" y="12" text-anchor="middle" font-size="15">1 '+big.lk+' = '+side+' '+sm.lk+'</text><text x="180" y="240" text-anchor="middle" font-size="15">'+side+' × '+side+' squares of 1 '+sm.s+'</text>'}
+ else{svg+=face([40,80],[150,0],[0,150],'#e6f1fb')+face([40,80],[150,0],[70,-60],'#fff0e0')+face([190,80],[70,-60],[0,150],'#d8e9f7')+'<text x="115" y="248" text-anchor="middle" font-size="15">1 '+big.lk+' = '+side+' '+sm.lk+'</text><text x="300" y="200" font-size="14" text-anchor="middle">'+side+' × '+side+' × '+side+'</text><text x="300" y="218" font-size="14" text-anchor="middle">cubes of 1 '+sm.s+'</text>'}
+ if(lf>n)svg+='<text x="180" y="'+(k===2?248:12)+'" text-anchor="end" font-size="11" fill="#888" x2="0"></text>';
+ return '<div class="card" style="text-align:center">'+svg+'</svg>'+(lf>n?'<div class="note">(not every square is drawn)</div>':'')+'</div>'}
+function teachHTML(){
+ var t=S.t;if(!t)return noUnits();
+ var kinds=kindsFor(cfg.level),h='<div class="card"><div class="chips">';
+ if(kinds.length>1||cfg.level<5)FAMKEYS.concat([]).forEach(function(){});
+ kinds.forEach(function(k){h+='<button class="chip '+(k===t.kind?'on':'')+'" data-act="tkind" data-k="'+k+'">'+KN[k]+'</button>'});
+ h+='<button class="btn org" data-act="tnew">New example</button></div>';
+ h+='<div class="ctxline">'+(cfg.ctx&&t.ctxT?ctxText(t):'')+'</div>';
+ h+='<div class="row"><input id="tval" value="'+fmtDec(t.dec,true)+'"><span>from</span><span class="chips">';
+ UNITS[t.kind].forEach(function(x,i){h+='<button class="chip '+(x===t.from?'on':'')+'" data-act="tfrom" data-i="'+i+'">'+x.s+'</button>'});
+ h+='</span><span>to</span><span class="chips">';
+ UNITS[t.kind].forEach(function(x,i){h+='<button class="chip o2 '+(x===t.to?'on':'')+'" data-act="tto" data-i="'+i+'">'+x.s+'</button>'});
+ h+='</span></div>'+(t.err?'<div style="color:var(--bad)">'+t.err+'</div>':'');
+ var ans=mk(t.dec.d,t.dec.e+shiftOf(t));
+ h+='<div class="eqbig"><span class="f">'+fmtDec(t.dec)+' '+t.from.s+'</span> = <span class="t">'+fmtDec(ans)+' '+t.to.s+'</span></div></div>';
+ h+='<div class="card"><b>The unit ladder</b>'+ladderHTML(t)+'</div><div class="card">'+stepsHTML(t);
+ if(shiftOf(t)!==0)h+='<div class="row"><button class="btn pri" data-act="tslide" id="sbtn">▶ Slide the digits</button><b id="scap"></b></div><div id="slide"></div>';
+ h+='</div>'+diagramHTML(t);return h}
+function buildSlide(){
+ var el=$('#slide'),t=S.t;if(!el||!t)return;
+ var s=shiftOf(t),n=t.dec.d.length,lowB=t.dec.e,highB=lowB+n-1,lowA=lowB+s,highA=highB+s,cMax=Math.max(highB,highA,0),cMin=Math.min(lowB,lowA,0),nc=cMax-cMin+1;
+ var W=Math.max(16,Math.min(46,Math.floor(((el.clientWidth||600)-10)/(nc+.4)))),Wp=Math.round(W*.4),hh=W>=28?Math.round(W*.6):0;
+ function X(q){return(cMax-q)*W+(q<0?Wp:0)}
+ var h='',q;el.style.height=(W*1.2+hh+4)+'px';
+ for(q=cMin;q<=cMax;q++){h+='<div class="colbg" style="left:'+X(q)+'px;top:'+hh+'px;width:'+W+'px;height:'+W*1.2+'px"></div>';
+  if(hh&&q>=-4&&q<=5)h+='<div class="hd" style="left:'+X(q)+'px;width:'+W+'px;font-size:'+Math.round(W*.3)+'px;top:0">'+(q>=0?(q===0?'1':'10'+(q>1?'<sup>'+q+'</sup>':'')):'0.'+new Array(-q).join('0')+'1')+'</div>'}
+ h+='<div class="pt" style="left:'+((cMax+1)*W)+'px;width:'+Wp+'px;top:'+hh+'px;font-size:'+W+'px;line-height:'+W*1.2+'px">.</div>';
+ function tile(cls,x,txt,op){return '<div class="tile '+cls+'" style="left:'+x+'px;top:'+hh+'px;width:'+W+'px;height:'+W*1.2+'px;line-height:'+W*1.2+'px;font-size:'+W*.8+'px;'+(op===undefined?'':'opacity:'+op)+'">'+txt+'</div>'}
+ var i;for(i=0;i<n;i++)h+=tile('dg" data-p="'+(lowB+n-1-i),X(lowB+n-1-i),t.dec.d.charAt(i));
+ for(q=Math.min(lowB,0);q<=Math.max(highB,0);q++)if(q<lowB||q>highB)h+=tile('pad b',X(q),'0',1);
+ for(q=Math.min(lowA,0);q<=Math.max(highA,0);q++)if(q<lowA||q>highA)h+=tile('pad a',X(q),'0',0);
+ el.innerHTML=h;el.dataset.cm=cMax;el.dataset.w=W;el.dataset.wp=Wp;S.slid=false;slideTo(false)}
+function slideTo(go){
+ var el=$('#slide'),t=S.t;if(!el||!t)return;var s=shiftOf(t),cMax=+el.dataset.cm,W=+el.dataset.w,Wp=+el.dataset.wp;
+ function X(q){return(cMax-q)*W+(q<0?Wp:0)}
+ [].forEach.call(el.querySelectorAll('.dg'),function(d){var p=+d.dataset.p;d.style.left=X(go?p+s:p)+'px'});
+ [].forEach.call(el.querySelectorAll('.pad.b'),function(d){d.style.opacity=go?0:1});
+ [].forEach.call(el.querySelectorAll('.pad.a'),function(d){d.style.opacity=go?1:0});
+ var cap=$('#scap'),b=$('#sbtn'),ans=mk(t.dec.d,t.dec.e+s);
+ if(cap)cap.textContent=go?fmtDec(ans)+' '+t.to.s:fmtDec(t.dec)+' '+t.from.s;
+ if(b)b.textContent=go?'↺ Back':'▶ Slide the digits';S.slid=go}
+
+function render(){
+ var m=$('#modes');m.innerHTML=[['teach','Teach it'],['practise','Practise it'],['settings','⚙ Settings']].map(function(x){return '<button class="'+(S.mode===x[0]?'on':'')+'" data-act="mode" data-v="'+x[0]+'">'+x[1]+'</button>'}).join(' ');
+ var lv=$('#levels'),lh='';for(var i=1;i<=6;i++)lh+='<button class="'+(cfg.level===i?'on':'')+'" data-act="level" data-v="'+i+'">'+LV[i].n+'</button>';
+ lv.innerHTML=lh;lv.style.display=S.mode==='settings'?'none':'flex';$('#ldesc').textContent=S.mode==='settings'?'':LV[cfg.level].d;
+ var v=$('#view');
+ if(S.mode==='teach'){if(!S.t)newTeach();v.innerHTML=teachHTML();if($('#slide'))buildSlide()}
+ else if(S.mode==='practise'){if(!S.qs.length)newSet();v.innerHTML=practiseHTML()}
+ else{v.innerHTML=settingsHTML();$('#fmt').value=cfg.fmt}
+}
+function checkAnswers(){S.res=S.qs.map(function(q,i){var p=parseDec(S.typed[i]||'');return !!p&&p.d===q.ans.d&&p.e===q.ans.e})}
+function fixAfterCfg(){S.qs=[];S.t=null;save()}
+document.addEventListener('click',function(e){
+ var a=e.target.closest('[data-act]');if(!a)return;var act=a.dataset.act;
+ if(act==='mode'){S.mode=a.dataset.v}
+ else if(act==='level'){cfg.level=+a.dataset.v;S.qs=[];S.t=null;save()}
+ else if(act==='fam'){cfg.fam[a.dataset.k]=cfg.fam[a.dataset.k]?0:1;fixAfterCfg()}
+ else if(act==='unit'){var o=cfg.units[a.dataset.k];o[a.dataset.s]=o[a.dataset.s]?0:1;fixAfterCfg()}
+ else if(act==='opt'){cfg[a.dataset.k]=!cfg[a.dataset.k];fixAfterCfg()}
+ else if(act==='reset'){var l=cfg.level;cfg.fam={length:1,mass:1,capacity:1,data:1,power:1,energy:0,freq:0};cfg.units=defUnits();cfg.ctx=true;cfg.fmt='space';cfg.type=false;cfg.cap=true;fixAfterCfg()}
+ else if(act==='pnew'){newSet()}
+ else if(act==='qshow'){if(e.target.tagName==='INPUT')return;if(cfg.type&&!S.res)return;var i=a.dataset.i;S.rev[i]=!S.rev[i]}
+ else if(act==='pall'){if(S.res||Object.keys(S.rev).length===S.qs.length){S.rev={};if(S.res){S.res=null;S.typed={}}}else{S.qs.forEach(function(q,i){S.rev[i]=1});if(cfg.type)checkAnswers()}}
+ else if(act==='pcheck'){checkAnswers()}
+ else if(act==='tnew'){newTeach(S.t&&S.t.kind)}
+ else if(act==='tkind'){newTeach(a.dataset.k)}
+ else if(act==='tfrom'||act==='tto'){var t=S.t;t[act==='tfrom'?'from':'to']=UNITS[t.kind][+a.dataset.i];t.ctxT=null;S.slid=false}
+ else if(act==='tslide'){slideTo(!S.slid);return}
+ render()});
+document.addEventListener('input',function(e){if(e.target.classList.contains('ans'))S.typed[e.target.dataset.i]=e.target.value});
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.classList.contains('ans')){checkAnswers();render()}});
+document.addEventListener('change',function(e){
+ if(e.target.id==='fmt'){cfg.fmt=e.target.value;save();render()}
+ else if(e.target.id==='tval'){var p=parseDec(e.target.value),t=S.t;
+  if(!p||p.d==='0'||p.d.length>9){t.err='Please enter a positive number.'}else{t.err='';t.dec=p;t.ctxT=null}S.slid=false;render()}});
+window.addEventListener('resize',function(){if(S.mode==='teach'&&$('#slide'))buildSlide()});
+window.__mu={genOne:genOne,cfg:cfg,LV:LV,UNITS:UNITS,num:num,dp:dp,fmtDec:fmtDec,S:S,render:render,mk:mk};
+render();
+})();
+</script>
+</body>
+</html>
