@@ -66,6 +66,8 @@ textarea{resize:vertical}
 .row .l1{font-weight:700;overflow-wrap:anywhere}
 .row .l2{color:var(--mute);font-size:.92rem;overflow-wrap:anywhere}
 .row .note{display:inline-block;margin-top:3px;font-size:.78rem;background:var(--warnbg);color:var(--warn);padding:2px 8px;border-radius:99px}
+.row .bk{display:inline-block;margin:3px 0 0 4px;font-size:.78rem;font-weight:700;padding:2px 8px;border-radius:99px}
+.bk.yes{background:#dcfce7;color:#166534}.bk.no{background:#fee2e2;color:#b91c1c}.bk.na{background:#ececf1;color:#5b5668}
 .row .mv{display:flex;flex-direction:column;gap:3px;flex:none}
 .row .mv button{border:1px solid var(--line);background:#fff;border-radius:6px;width:34px;height:24px;line-height:1;cursor:pointer;color:var(--acc)}
 .row.interval{background:repeating-linear-gradient(45deg,#faf5ff,#faf5ff 10px,#f3eafb 10px,#f3eafb 20px);border-left-color:#7c3aed;border-style:dashed;border-left-style:solid}
@@ -261,7 +263,7 @@ canvas.pv{width:100%;height:auto;display:block;border:1px solid #cfc5dc;box-shad
 
   <div class="card">
     <h2>Running order as plain text</h2>
-    <p class="hint">Copy this, or save the file, and paste it into “Paste your list” on another device. Notes and the Interval come with it.</p>
+    <p class="hint">Copy this, or save the file, and paste it into “Paste your list” on another device. Notes, backing-track status and the Interval come with it.</p>
     <textarea id="exportText" rows="10" readonly></textarea>
     <div class="btns"><button class="btn primary" id="btnCopyText">Copy text</button><button class="btn" id="btnSaveText">Save as .txt file</button></div>
     <div id="copyMsg" class="small" style="margin-top:6px"></div>
@@ -285,6 +287,7 @@ canvas.pv{width:100%;height:auto;display:block;border:1px solid #cfc5dc;box-shad
       <label>Act<input id="fAct" autocomplete="off"></label>
       <label>Note <span class="small">(for organisers – not printed unless you choose)</span><input id="fNote" autocomplete="off" placeholder="e.g. Needs backing track"></label>
       <div class="chips" id="noteChips"></div>
+      <label>Backing track <span class="small">(for organisers – never printed)</span><select id="fBack"><option value="">Not set</option><option value="yes">Yes – we have it</option><option value="no">No – still needed</option><option value="na">Not required</option></select></label>
     </div>
     <div id="mInt" hidden>
       <label>Interval heading<input id="fIntT"></label>
@@ -340,6 +343,8 @@ function migrate(o){ const c=o&&o.cover; if(c) ['heading','details'].forEach(k=>
 function loadSaved(){ try{ const t=localStorage.getItem(KEY); if(t) S=merge(DEFAULTS(),migrate(JSON.parse(t))); }catch(e){} }
 
 /* ---------- parsing / exporting the list ---------- */
+const BACK_LABEL={yes:'Yes',no:'No (needed)',na:'Not required'};
+function normBacking(t){ t=(t||'').trim(); if(!t) return ''; if(/not\s*req|^n\/?a$|none|no\s*need/i.test(t)) return 'na'; if(/^y/i.test(t)) return 'yes'; if(/^(no|need)/i.test(t)) return 'no'; return ''; }
 const INTERVAL_RE=/^[\s\-=~*_—–•·.#]*(interval|intermission)[\s\-=~*_—–•·.#]*$/i;
 function parseText(text,personFirst){
   const out=[]; let sawInt=false;
@@ -347,12 +352,12 @@ function parseText(text,personFirst){
     let line=raw.replace(/ /g,' ').trim(); if(!line) continue;
     if(INTERVAL_RE.test(line)){ if(!sawInt){out.push({id:uid(),type:'interval'});sawInt=true;} continue; }
     line=line.replace(/^(?:\d{1,2}\s*[.)]\s+|\d{1,2}\s+[-–—:]\s+|[•·▪►*-]\s+)/,'');
-    let name='',act='',note='';
+    let name='',act='',note='',backing='';
     if(line.includes('|')){                       // our own export format: name | act | note
-      const f=line.split('|').map(s=>s.trim()); name=f[0]||''; act=f[1]||''; note=f[2]||'';
+      const f=line.split('|').map(s=>s.trim()); name=f[0]||''; act=f[1]||''; note=f[2]||''; backing=normBacking(f[3]);
     } else {
       let a,b;
-      if(line.includes('\t')){ const f=line.split(/\t+/).map(s=>s.trim()); a=f[0]||''; b=f[1]||''; note=f[2]||''; }
+      if(line.includes('\t')){ const f=line.split(/\t+/).map(s=>s.trim()); a=f[0]||''; b=f[1]||''; note=f[2]||''; backing=normBacking(f[3]); }
       else{
         const m=line.match(/\s*[\[{]([^\]}]+)[\]}]\s*$/); if(m){note=m[1].trim(); line=line.slice(0,m.index).trim();}
         const mm=line.match(/^(.*?)\s+[-–—]+\s+(.*)$/)||line.match(/^(.*?)\s*[–—]\s*(.*)$/)||line.match(/^([^:]{2,}?):\s+(.*)$/)||line.match(/^(.*?),\s+(.*)$/);
@@ -361,7 +366,7 @@ function parseText(text,personFirst){
       if(personFirst){name=a;act=b;} else {act=a;name=b;}
     }
     if(!name&&!act) continue;
-    out.push({id:uid(),type:'act',name,act,note});
+    out.push({id:uid(),type:'act',name,act,note,backing});
   }
   return out;
 }
@@ -373,7 +378,7 @@ function ensureInterval(){
   if(!S.items.some(i=>!isAct(i))) S.items.splice(Math.ceil(acts/2),0,{id:uid(),type:'interval'});
 }
 function exportText(){
-  return S.items.map(i=>isAct(i)?[i.name,i.act,i.note].join(' | ').replace(/( \| )+$/,''):'--- INTERVAL ---').join('\n');
+  return S.items.map(i=>isAct(i)?[i.name,i.act,i.note,BACK_LABEL[i.backing]||''].join(' | ').replace(/( \| )+$/,''):'--- INTERVAL ---').join('\n');
 }
 
 /* ---------- list UI ---------- */
@@ -394,6 +399,7 @@ function renderList(){
       const t=mk('div','rtext'); const [l1,l2]=lines(it);
       t.appendChild(mk('div','l1',l1||'(untitled)')); if(l2) t.appendChild(mk('div','l2',l2));
       if(it.note) t.appendChild(mk('span','note','⚑ '+it.note));
+      if(it.backing) t.appendChild(mk('span','bk '+it.backing,'♪ Backing track: '+BACK_LABEL[it.backing]));
       row.appendChild(t);
     } else {
       const t=mk('div','rtext'); t.appendChild(mk('div','l1',S.intervalText||'Interval')); if(S.intervalSub) t.appendChild(mk('div','l2',S.intervalSub)); row.appendChild(t);
@@ -415,8 +421,8 @@ function renumberDOM(){
 function updateCounts(){
   const idx=S.items.findIndex(i=>!isAct(i)); const cut=idx<0?S.items.length:idx;
   const a1=S.items.slice(0,cut).filter(isAct).length, a2=S.items.slice(cut).filter(isAct).length;
-  const notes=S.items.filter(i=>isAct(i)&&i.note).length;
-  $('#counts').textContent=S.items.length?`Act 1: ${a1} · Act 2: ${a2}`+(notes?` · ⚑ ${notes} with notes`:''):'';
+  const notes=S.items.filter(i=>isAct(i)&&i.note).length, needBk=S.items.filter(i=>isAct(i)&&i.backing==='no').length;
+  $('#counts').textContent=S.items.length?`Act 1: ${a1} · Act 2: ${a2}`+(notes?` · ⚑ ${notes} with notes`:'')+(needBk?` · ♪ ${needBk} backing track${needBk>1?'s':''} still needed`:''):'';
 }
 function afterListChange(){ save(); renderList(); renderPreviews(); }
 
@@ -467,12 +473,12 @@ $('#list').addEventListener('click',e=>{
 let editing=null;
 const NOTE_CHIPS=['Needs backing track','Who is accompanying this?','Needs microphone','Needs piano','Check spelling','Confirm act length'];
 function openEdit(id){
-  const isNew=!id; let it=id?S.items.find(i=>i.id===id):{id:uid(),type:'act',name:'',act:'',note:''};
+  const isNew=!id; let it=id?S.items.find(i=>i.id===id):{id:uid(),type:'act',name:'',act:'',note:'',backing:''};
   editing={it,isNew};
   const act=isAct(it);
   $('#mAct').hidden=!act; $('#mInt').hidden=act; $('#mSwap').hidden=!act; $('#mDel').hidden=isNew||!act;
   $('#mTitle').textContent=isNew?'Add an act':act?'Edit act':'Interval wording';
-  if(act){ $('#fName').value=it.name; $('#fAct').value=it.act; $('#fNote').value=it.note||''; }
+  if(act){ $('#fName').value=it.name; $('#fAct').value=it.act; $('#fNote').value=it.note||''; $('#fBack').value=it.backing||''; }
   else { $('#fIntT').value=S.intervalText; $('#fIntS').value=S.intervalSub; }
   $('#modal').hidden=false; setTimeout(()=>{ (act?$('#fName'):$('#fIntT')).focus(); },30);
 }
@@ -480,7 +486,7 @@ function closeModal(){ $('#modal').hidden=true; editing=null; }
 function saveModal(){
   if(!editing) return; const it=editing.it;
   if(isAct(it)){
-    it.name=$('#fName').value.trim(); it.act=$('#fAct').value.trim(); it.note=$('#fNote').value.trim();
+    it.name=$('#fName').value.trim(); it.act=$('#fAct').value.trim(); it.note=$('#fNote').value.trim(); it.backing=$('#fBack').value;
     if(!it.name&&!it.act){ closeModal(); return; }
     if(editing.isNew){ S.items.push(it); ensureInterval(); }
   } else { S.intervalText=$('#fIntT').value.trim(); S.intervalSub=$('#fIntS').value.trim(); syncInputs(); }
