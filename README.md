@@ -66,6 +66,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Prime Factor Circles | `prime-factor-circles/` |
 | Prime Products | `prime-products/` |
 | Prime Quest | `prime-quest/` |
+| Programme Maker | `programme-maker/` |
 | Puzzle of the Day | `puzzle-of-the-day/` |
 | Quick On The Draw | `quick-on-the-draw/` |
 | Reading Scales | `reading-scales/` |
