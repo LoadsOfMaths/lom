@@ -81,6 +81,11 @@ table.dv td.hl{background:var(--hl)}
 table.dv td.faint{color:#aaa}
 table.dv td.ul{border-bottom:3px solid var(--ink)}
 table.dv sup.cr{position:absolute;left:2px;top:2px;font-size:.42em;color:var(--orange);font-weight:700}
+.eq{display:flex;align-items:center;gap:.6em;font-size:clamp(1.8rem,3.6vw,2.8rem);width:100%;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.eq.sm{font-size:1.3rem;color:#555}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle}
+.fr>span:first-child{border-bottom:3px solid var(--ink);padding:0 .35em}
+.fr>span:last-child{padding:0 .35em}
 .dot{position:relative;display:inline-block}
 .dot::before{content:'';position:absolute;left:50%;top:.02em;width:.14em;height:.14em;border-radius:50%;background:currentColor;transform:translateX(-50%)}
 td.dot{position:relative}
@@ -510,35 +515,74 @@ function divAnswer(info){
   const pre=repStart-intLen,nr=fr.slice(0,pre),blk=fr.slice(pre);
   return {html:ip+'.'+nr.join('')+dotted(blk)+' <small>= '+ip+'.'+nr.join('')+blk.join('').repeat(Math.max(2,Math.ceil(4/blk.length)))+'…</small>',kind:'rec',blk,pre};
 }
+function gcd(a,b){while(b){const t=a%b;a=b;b=t;}return a;}
 function genDiv(s){
-  const kind=s.kind==='any'?pick(['exact','term','rec']):s.kind;
+  const kind0=s.kind==='any'?pick(['exact','term','rec']):s.kind;
   const two=+s.dsize===2;
   const dig=Math.max(+s.size,two?3:2);
   const lo=P10(dig-1),hi=P10(dig)-1;
-  let n,d,info=null;
-  for(let tries=0;tries<3000;tries++){
-    d=two?rnd(11,30):rnd(2,9);
-    if(kind==='exact'){
-      const k=rnd(Math.ceil(lo/d),Math.floor(hi/d));
-      if(k<1)continue;
-      n=d*k;if(two&&k<3)continue;
-      info=divSteps(n,d);break;
+  const decMode=s.dec||'0',long=s.method==='long';
+  let found=null;
+  for(let pass=0;pass<3&&!found;pass++){
+    const kind=(pass===2&&kind0==='exact')?'term':kind0;
+    const needCoprime=long&&kind!=='exact'&&pass===0;   // long division: no common factor to cancel first
+    for(let tries=0;tries<3000&&!found;tries++){
+      let N,D,dpn=0,dpd=0,nInt,dInt;
+      const mode=decMode==='any'?pick(['dividend','divisor','both']):decMode;
+      dInt=two?rnd(11,30):rnd(2,9);
+      if(mode==='0'){
+        if(kind==='exact'){
+          const k=rnd(Math.ceil(lo/dInt),Math.floor(hi/dInt));
+          if(k<1||(two&&k<3))continue;
+          nInt=dInt*k;
+        }else nInt=rnd(lo,hi);
+        N=nInt;D=dInt;
+      }else{
+        nInt=rnd(lo,hi);
+        if(mode==='dividend'){dpn=1;}
+        else if(mode==='divisor'){dpd=rnd(1,2);}
+        else{dpn=rnd(1,2);dpd=rnd(1,2);}
+        if(dpn>=dig)dpn=dig-1;
+        if(dpn>0&&nInt%10===0)nInt+=rnd(1,9);
+        if(dpd>0&&dInt%10===0)continue;
+        const k=Math.max(dpn,dpd);
+        if(k===0)continue;
+        N=nInt*P10(k-dpn);D=dInt*P10(k-dpd);
+      }
+      if(N%D===0&&kind!=='exact')continue;
+      if(needCoprime&&gcd(N,D)!==1)continue;
+      const info=divSteps(N,D);
+      if(kind==='exact'){if(N%D!==0)continue;}
+      else if(kind==='term'){if(!(info.repStart<0&&info.decCount>=1&&info.decCount<=4))continue;}
+      else if(!(info.repStart>=0&&(info.steps.length-info.repStart)<=6&&info.decCount<=8))continue;
+      found={N,D,info,nInt,dInt,dpn,dpd};
     }
-    n=rnd(lo,hi);
-    if(n%d===0)continue;
-    info=divSteps(n,d);
-    if(kind==='term'&&info.repStart<0&&info.decCount>=1&&info.decCount<=4)break;
-    if(kind==='rec'&&info.repStart>=0&&(info.steps.length-info.repStart)<=6&&info.decCount<=8)break;
-    info=null;
   }
-  if(!info){n=kind==='exact'?24:(kind==='term'?15:10);d=kind==='exact'?6:(kind==='term'?4:3);info=divSteps(n,d);}
+  if(!found){
+    const N=kind0==='exact'?24:(kind0==='term'?15:10),D=kind0==='exact'?6:(kind0==='term'?4:3);
+    found={N,D,info:divSteps(N,D),nInt:N,dInt:D,dpn:0,dpd:0};
+  }
+  const {N,D,info,nInt,dInt,dpn,dpd}=found;
   const first=info.steps.findIndex((x,i)=>x.q>0||i===info.intLen-1);
   const ans=divAnswer(info);
-  const ex={op:'div',n,d,info,kind:ans.kind,method:s.method,s:first,ans:ans.html,ansObj:ans,
-    q:n+' ÷ '+d+' =',
+  const k=Math.max(dpn,dpd);
+  const ex={op:'div',n:N,d:D,info,kind:ans.kind,method:s.method,s:first,ans:ans.html,ansObj:ans,
+    q:fmtDec(nInt,dpn)+' ÷ '+fmtDec(dInt,dpd)+' =',
     tag:{exact:'exact answer',term:'terminating decimal',rec:'recurring decimal'}[ans.kind]};
   ex.total=s.method==='long'?info.steps.length-first:info.steps.length;
+  if(k>0){
+    ex.dcv={nStr:fmtDec(nInt,dpn),dStr:fmtDec(dInt,dpd),m:P10(k),N,D};
+    ex.total+=1;
+  }
   return ex;
+}
+function fracHtml(a,b){return '<span class="fr"><span>'+a+'</span><span>'+b+'</span></span>';}
+function renderDivDec(ex,t){
+  const c=ex.dcv;
+  const line='<span class="eq">'+fracHtml(c.nStr,c.dStr)+' = '+fracHtml(c.nStr+' × '+c.m,c.dStr+' × '+c.m)+' = '+fracHtml(c.N,c.D)+'</span>';
+  if(t===0)return {work:line,text:'Write the division as a fraction, then multiply the top and bottom by '+c.m+' so that both become whole numbers: '+c.nStr+' ÷ '+c.dStr+' is the same as '+c.N+' ÷ '+c.D+'. Now we can do an ordinary division.'};
+  const r=renderDiv(Object.assign({},ex,{dcv:null,total:ex.total-1}),t-1);
+  return {work:'<div class="eq sm">'+c.nStr+' ÷ '+c.dStr+' = '+c.N+' ÷ '+c.D+'</div>'+r.work,text:t===1?'Now work out '+c.N+' ÷ '+c.D+'. '+r.text:r.text};
 }
 function divText(ex,t){
   const st=ex.info.steps,d=ex.d,intLen=ex.info.intLen,long=ex.method==='long';
@@ -646,12 +690,13 @@ const SETTINGS={
        {k:'method',l:'Method',o:[['grid','Grid'],['column','Column'],['lattice','Lattice'],['partition','Partitioning'],['any','Any (mix)']]},
        {k:'dec',l:'Include decimals',type:'chk'}],
   div:[{k:'kind',l:'Answer',o:[['exact','Exact'],['term','Terminating decimal'],['rec','Recurring decimal'],['any','Mixed']]},
+       {k:'dec',l:'Decimals',o:[['0','Whole numbers'],['dividend','Decimal dividend'],['divisor','Decimal divisor'],['any','Any decimals']]},
        {k:'dsize',l:'Divide by',o:[['1','1-digit number'],['2','2-digit number']]},
        {k:'size',l:'Dividend digits',o:[['2','2'],['3','3'],['4','4']]},
        {k:'method',l:'Method',o:[['short','Short division'],['long','Long division']]}]
 };
 const state={op:'add',mode:'teach',k:0,ex:null,qs:null,reveal:false,
-  set:{add:{digits:'3',count:'2',dp:'0'},sub:{digits:'3',type:'mixed',dp:'0',reduce:false},mul:{size:'3x2',method:'grid',dec:false},div:{kind:'exact',dsize:'1',size:'3',method:'short'}}};
+  set:{add:{digits:'3',count:'2',dp:'0'},sub:{digits:'3',type:'mixed',dp:'0',reduce:false},mul:{size:'3x2',method:'grid',dec:false},div:{kind:'exact',dec:'0',dsize:'1',size:'3',method:'short'}}};
 
 function newEx(){state.ex=GEN[state.op](state.set[state.op]);state.k=0;}
 function newQs(){
@@ -663,7 +708,7 @@ function renderEx(ex,k){
   if(ex.op==='add')return renderAdd(ex,k);
   if(ex.op==='sub')return renderSub(ex,k);
   if(ex.op==='mul')return ex.render(k);
-  return renderDiv(ex,k);
+  return ex.dcv?renderDivDec(ex,k):renderDiv(ex,k);
 }
 
 /* ================= UI ================= */
