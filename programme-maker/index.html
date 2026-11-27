@@ -68,6 +68,10 @@ textarea{resize:vertical}
 .row .note{display:inline-block;margin-top:3px;font-size:.78rem;background:var(--warnbg);color:var(--warn);padding:2px 8px;border-radius:99px}
 .row .bk{display:inline-block;margin:3px 0 0 4px;font-size:.78rem;font-weight:700;padding:2px 8px;border-radius:99px}
 .bk.yes{background:#dcfce7;color:#166534}.bk.no{background:#fee2e2;color:#b91c1c}.bk.na{background:#ececf1;color:#5b5668}
+.row .eye{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;font:inherit;font-size:.78rem;font-weight:600;color:var(--acc);cursor:pointer;flex:none}
+.row.hid{opacity:.6;background:#f4f2f7}
+.row.hid .l1{text-decoration:line-through}
+.row.hid .tag{background:#e5e1ec;color:#5b5668}
 .row .mv{display:flex;flex-direction:column;gap:3px;flex:none}
 .row .mv button{border:1px solid var(--line);background:#fff;border-radius:6px;width:34px;height:24px;line-height:1;cursor:pointer;color:var(--acc)}
 .row.interval{background:repeating-linear-gradient(45deg,#faf5ff,#faf5ff 10px,#f3eafb 10px,#f3eafb 20px);border-left-color:#7c3aed;border-style:dashed;border-left-style:solid}
@@ -263,7 +267,7 @@ canvas.pv{width:100%;height:auto;display:block;border:1px solid #cfc5dc;box-shad
 
   <div class="card">
     <h2>Running order as plain text</h2>
-    <p class="hint">Copy this, or save the file, and paste it into “Paste your list” on another device. Notes, backing-track status and the Interval come with it.</p>
+    <p class="hint">Copy this, or save the file, and paste it into “Paste your list” on another device. Notes, backing-track status, hidden acts and the Interval come with it.</p>
     <textarea id="exportText" rows="10" readonly></textarea>
     <div class="btns"><button class="btn primary" id="btnCopyText">Copy text</button><button class="btn" id="btnSaveText">Save as .txt file</button></div>
     <div id="copyMsg" class="small" style="margin-top:6px"></div>
@@ -287,6 +291,7 @@ canvas.pv{width:100%;height:auto;display:block;border:1px solid #cfc5dc;box-shad
       <label>Act<input id="fAct" autocomplete="off"></label>
       <label>Note <span class="small">(for organisers – not printed unless you choose)</span><input id="fNote" autocomplete="off" placeholder="e.g. Needs backing track"></label>
       <div class="chips" id="noteChips"></div>
+      <label class="inl"><input type="checkbox" id="fHide"> Hide from the printed programme <span class="small">(stays in your list)</span></label>
       <label>Backing track <span class="small">(for organisers – never printed)</span><select id="fBack"><option value="">Not set</option><option value="yes">Yes – we have it</option><option value="no">No – still needed</option><option value="na">Not required</option></select></label>
     </div>
     <div id="mInt" hidden>
@@ -352,12 +357,12 @@ function parseText(text,personFirst){
     let line=raw.replace(/ /g,' ').trim(); if(!line) continue;
     if(INTERVAL_RE.test(line)){ if(!sawInt){out.push({id:uid(),type:'interval'});sawInt=true;} continue; }
     line=line.replace(/^(?:\d{1,2}\s*[.)]\s+|\d{1,2}\s+[-–—:]\s+|[•·▪►*-]\s+)/,'');
-    let name='',act='',note='',backing='';
+    let name='',act='',note='',backing='',hidden=false;
     if(line.includes('|')){                       // our own export format: name | act | note
-      const f=line.split('|').map(s=>s.trim()); name=f[0]||''; act=f[1]||''; note=f[2]||''; backing=normBacking(f[3]);
+      const f=line.split('|').map(s=>s.trim()); name=f[0]||''; act=f[1]||''; note=f[2]||''; backing=normBacking(f[3]); hidden=/^hid/i.test((f[4]||'').trim());
     } else {
       let a,b;
-      if(line.includes('\t')){ const f=line.split(/\t+/).map(s=>s.trim()); a=f[0]||''; b=f[1]||''; note=f[2]||''; backing=normBacking(f[3]); }
+      if(line.includes('\t')){ const f=line.split(/\t+/).map(s=>s.trim()); a=f[0]||''; b=f[1]||''; note=f[2]||''; backing=normBacking(f[3]); hidden=/^hid/i.test((f[4]||'').trim()); }
       else{
         const m=line.match(/\s*[\[{]([^\]}]+)[\]}]\s*$/); if(m){note=m[1].trim(); line=line.slice(0,m.index).trim();}
         const mm=line.match(/^(.*?)\s+[-–—]+\s+(.*)$/)||line.match(/^(.*?)\s*[–—]\s*(.*)$/)||line.match(/^([^:]{2,}?):\s+(.*)$/)||line.match(/^(.*?),\s+(.*)$/);
@@ -366,7 +371,7 @@ function parseText(text,personFirst){
       if(personFirst){name=a;act=b;} else {act=a;name=b;}
     }
     if(!name&&!act) continue;
-    out.push({id:uid(),type:'act',name,act,note,backing});
+    out.push({id:uid(),type:'act',name,act,note,backing,hidden});
   }
   return out;
 }
@@ -378,7 +383,7 @@ function ensureInterval(){
   if(!S.items.some(i=>!isAct(i))) S.items.splice(Math.ceil(acts/2),0,{id:uid(),type:'interval'});
 }
 function exportText(){
-  return S.items.map(i=>isAct(i)?[i.name,i.act,i.note,BACK_LABEL[i.backing]||''].join(' | ').replace(/( \| )+$/,''):'--- INTERVAL ---').join('\n');
+  return S.items.map(i=>isAct(i)?[i.name,i.act,i.note,BACK_LABEL[i.backing]||'',i.hidden?'Hidden':''].join(' | ').replace(/( \| )+$/,''):'--- INTERVAL ---').join('\n');
 }
 
 /* ---------- list UI ---------- */
@@ -391,7 +396,7 @@ function renderList(){
   const list=$('#list'); list.innerHTML='';
   if(!S.items.length){ list.appendChild(mk('div','empty','No acts yet – paste your list above, or add an act.')); updateCounts(); return; }
   S.items.forEach(it=>{
-    const row=mk('div','row'+(isAct(it)?'':' interval')); row.dataset.id=it.id;
+    const row=mk('div','row'+(isAct(it)?(it.hidden?' hid':''):' interval')); row.dataset.id=it.id;
     const h=mk('button','handle editonly','☰'); h.setAttribute('aria-label','Drag to reorder'); h.type='button';
     row.appendChild(h);
     if(isAct(it)){
@@ -404,6 +409,7 @@ function renderList(){
     } else {
       const t=mk('div','rtext'); t.appendChild(mk('div','l1',S.intervalText||'Interval')); if(S.intervalSub) t.appendChild(mk('div','l2',S.intervalSub)); row.appendChild(t);
     }
+    if(isAct(it)){ const eye=mk('button','eye editonly',it.hidden?'Show':'Hide'); eye.type='button'; eye.title=it.hidden?'Put back in the printed programme':'Leave out of the printed programme'; row.appendChild(eye); }
     const mv=mk('div','mv editonly'); const up=mk('button','','▲'),dn=mk('button','','▼');
     up.type=dn.type='button'; up.dataset.dir='-1'; dn.dataset.dir='1'; up.setAttribute('aria-label','Move up'); dn.setAttribute('aria-label','Move down');
     mv.append(up,dn); row.appendChild(mv); list.appendChild(row);
@@ -414,15 +420,16 @@ function renumberDOM(){
   let n=0,side=1;
   $$('#list .row').forEach(r=>{
     if(r.classList.contains('interval')){ side=2; return; }
-    n++; r.classList.toggle('side2',side===2);
-    $('.num',r).textContent=n; $('.tag',r).textContent='Act '+side;
+    r.classList.toggle('side2',side===2);
+    if(r.classList.contains('hid')){ $('.num',r).textContent='–'; $('.tag',r).textContent='Hidden'; return; }
+    n++; $('.num',r).textContent=n; $('.tag',r).textContent='Act '+side;
   });
 }
 function updateCounts(){
   const idx=S.items.findIndex(i=>!isAct(i)); const cut=idx<0?S.items.length:idx;
-  const a1=S.items.slice(0,cut).filter(isAct).length, a2=S.items.slice(cut).filter(isAct).length;
+  const shown=i=>isAct(i)&&!i.hidden, a1=S.items.slice(0,cut).filter(shown).length, a2=S.items.slice(cut).filter(shown).length, nHid=S.items.filter(i=>isAct(i)&&i.hidden).length;
   const notes=S.items.filter(i=>isAct(i)&&i.note).length, needBk=S.items.filter(i=>isAct(i)&&i.backing==='no').length;
-  $('#counts').textContent=S.items.length?`Act 1: ${a1} · Act 2: ${a2}`+(notes?` · ⚑ ${notes} with notes`:'')+(needBk?` · ♪ ${needBk} backing track${needBk>1?'s':''} still needed`:''):'';
+  $('#counts').textContent=S.items.length?`Act 1: ${a1} · Act 2: ${a2}`+(notes?` · ⚑ ${notes} with notes`:'')+(nHid?` · ${nHid} hidden from print`:'')+(needBk?` · ♪ ${needBk} backing track${needBk>1?'s':''} still needed`:''):'';
 }
 function afterListChange(){ save(); renderList(); renderPreviews(); }
 
@@ -462,6 +469,8 @@ $('#list').addEventListener('click',e=>{
   if(S.status==='final') return;
   const row=e.target.closest('.row'); if(!row) return;
   if(e.target.closest('.handle')) return;
+  const eyeB=e.target.closest('.eye');
+  if(eyeB){ const it=S.items.find(x=>x.id===row.dataset.id); if(it){ it.hidden=!it.hidden; afterListChange(); } return; }
   const b=e.target.closest('.mv button');
   if(b){ const i=S.items.findIndex(x=>x.id===row.dataset.id), j=i+Number(b.dataset.dir);
     if(j<0||j>=S.items.length) return; [S.items[i],S.items[j]]=[S.items[j],S.items[i]]; afterListChange();
@@ -478,7 +487,7 @@ function openEdit(id){
   const act=isAct(it);
   $('#mAct').hidden=!act; $('#mInt').hidden=act; $('#mSwap').hidden=!act; $('#mDel').hidden=isNew||!act;
   $('#mTitle').textContent=isNew?'Add an act':act?'Edit act':'Interval wording';
-  if(act){ $('#fName').value=it.name; $('#fAct').value=it.act; $('#fNote').value=it.note||''; $('#fBack').value=it.backing||''; }
+  if(act){ $('#fName').value=it.name; $('#fAct').value=it.act; $('#fNote').value=it.note||''; $('#fBack').value=it.backing||''; $('#fHide').checked=!!it.hidden; }
   else { $('#fIntT').value=S.intervalText; $('#fIntS').value=S.intervalSub; }
   $('#modal').hidden=false; setTimeout(()=>{ (act?$('#fName'):$('#fIntT')).focus(); },30);
 }
@@ -486,7 +495,7 @@ function closeModal(){ $('#modal').hidden=true; editing=null; }
 function saveModal(){
   if(!editing) return; const it=editing.it;
   if(isAct(it)){
-    it.name=$('#fName').value.trim(); it.act=$('#fAct').value.trim(); it.note=$('#fNote').value.trim(); it.backing=$('#fBack').value;
+    it.name=$('#fName').value.trim(); it.act=$('#fAct').value.trim(); it.note=$('#fNote').value.trim(); it.backing=$('#fBack').value; it.hidden=$('#fHide').checked;
     if(!it.name&&!it.act){ closeModal(); return; }
     if(editing.isNew){ S.items.push(it); ensureInterval(); }
   } else { S.intervalText=$('#fIntT').value.trim(); S.intervalSub=$('#fIntS').value.trim(); syncInputs(); }
@@ -580,7 +589,7 @@ function pageHead(ctx,big){
 function drawActs(ctx,actNo){
   const fam=FONTS[S.font].body, acc=S.accent;
   const idx=S.items.findIndex(i=>!isAct(i)), cut=idx<0?S.items.length:idx;
-  const before=S.items.slice(0,cut).filter(isAct), after=S.items.slice(cut).filter(isAct);
+  const vis=i=>isAct(i)&&!i.hidden, before=S.items.slice(0,cut).filter(vis), after=S.items.slice(cut).filter(vis);
   const list=actNo===1?before:after, start=actNo===1?1:before.length+1;
   frame(ctx); pageHead(ctx,'Act '+actNo);
   ctx.font=F('italic',46,fam);
@@ -809,7 +818,7 @@ const GROUP_RE=/\b(year|class|choir|group|band|club|troupe|team|drummers|rockers
 const TITLE_RE=/^(mr|mrs|miss|ms|mx|dr|sir)\.?\s+/i;
 function performersList(){
   const seen=new Set(), people=[], groups=[];
-  S.items.filter(isAct).forEach(it=>{
+  S.items.filter(i=>isAct(i)&&!i.hidden).forEach(it=>{
     (it.name||'').split(/\s*(?:,|&|\+|\band\b)\s*/i).map(x=>x.trim()).filter(Boolean).forEach(n=>{
       const k=n.toLowerCase(); if(seen.has(k)) return; seen.add(k);
       (GROUP_RE.test(n)?groups:people).push(n);
