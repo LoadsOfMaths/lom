@@ -677,6 +677,34 @@ table.lochase th{color:var(--accent)}
 .dsBtns .dsGo.idle{opacity:.75}
 .dsBtns .dsNudge{min-width:56px;padding:0 14px}
 .dsBtns .btn.hint{box-shadow:0 0 0 4px var(--good)}
+/* self describing cards */
+.sd{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.sd .slot{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.35);stroke-width:3;stroke-dasharray:9 7;cursor:pointer;outline:none}
+.sd .slot.ghost{stroke-opacity:.18;cursor:default}
+.sd .slot.hintr{stroke:var(--good);stroke-width:7;stroke-dasharray:none;fill:rgba(70,208,138,.15)}
+.sd .slot:focus-visible{stroke:#fff;stroke-dasharray:none}
+.sd .card{cursor:grab;outline:none}
+.sd .card .cf{fill:#fffdf5;stroke:#12263b;stroke-width:3}
+.sd .card .cn,.sd .card .cc{fill:#1a2f4a;text-anchor:middle;pointer-events:none}
+.sd .card .cn{font-weight:800}.sd .card .cc{font-weight:700}
+.sd .card.gold .cf{fill:url(#sdGold);stroke:#b8780a;stroke-width:5}
+.sd .card.gold .cn,.sd .card.gold .cc{fill:#5a3600}
+.sd .card.bad .cf{stroke:#ff5252;stroke-width:6}
+.sd .card.sel .cf{stroke:var(--accent);stroke-width:8}
+.sd .card.hintc .cf{stroke:var(--good);stroke-width:8}
+.sd .card.lift{opacity:.3}
+.sd .card.ghostcard{opacity:.92;pointer-events:none;cursor:grabbing}
+.sd .card:focus-visible .cf{stroke:#fff;stroke-width:7}
+.sd .pos{fill:var(--mute);font-size:22px;text-anchor:middle;pointer-events:none}
+.sd .lbl{fill:var(--mute);font-size:26px;pointer-events:none}
+.sd .badge{pointer-events:none}
+.sd .badge circle{fill:var(--accent);stroke:#12263b;stroke-width:2}
+.sd .badge text{fill:#2a1a00;font-weight:800;text-anchor:middle}
+.sdTrack{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px;align-items:center}
+.sdLab{color:var(--mute);font-size:.85rem;margin-right:4px}
+.sdChip{padding:3px 10px;border-radius:999px;border:2px solid var(--line);font-size:.85rem;color:var(--mute)}
+.sdChip.ok{background:linear-gradient(135deg,#ffe58a,#f0a500);border-color:#b8780a;color:#3a2400;font-weight:700}
+.sdChip.no{border-color:#ff7a7a;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -4166,6 +4194,293 @@ function desertLevel(L){
 const DESERT={id:'desert',icon:'🚚',title:'Desert Crossing',blurb:'Cross the desert with a thirsty truck, dumping fuel for the trip back.',
   levels:DS_LEVELS.map(L=>({name:L.name,make:()=>desertLevel(L)}))};
 
+/* ---------- SELF DESCRIBING CARDS (Langford pairs, custom) ---------- */
+/* One stored solution for every n that has one, and for the others the best possible near miss
+   (n-1 golden pairs; the omitted pair is dropped into the two places left over). */
+const SD_SOL={
+  3:[3,1,2,1,3,2],
+  4:[4,1,3,1,2,4,3,2],
+  7:[7,3,6,2,5,3,2,4,7,6,5,1,4,1],
+  8:[8,3,7,2,6,3,2,4,5,8,7,6,4,1,5,1],
+  11:[11,6,10,2,9,3,2,8,6,3,7,5,11,10,9,4,8,5,7,1,4,1],
+  12:[12,10,11,6,4,5,9,7,8,4,6,5,10,12,11,7,9,8,3,1,2,1,3,2]
+};
+const SD_NEAR={
+  5:{omit:5,arr:[4,2,3,0,2,4,3,1,0,1]},
+  6:{omit:6,arr:[5,2,4,0,2,3,5,4,1,3,1,0]},
+  9:{omit:9,arr:[8,6,7,2,0,5,2,4,6,8,7,5,4,3,1,0,1,3]},
+  10:{omit:10,arr:[9,7,8,4,1,6,1,5,4,7,9,8,6,5,3,0,2,0,3,2]}
+};
+const SD_COUNT={3:1,4:1,7:26,8:150,11:17792,12:108144};
+const sdNum=x=>String(x).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+const sdPossible=n=>n%4===0||n%4===3;
+/* Can the cards already placed (arr[i] = number, or 0 for empty) be completed? Returns a full arrangement, null, or throws if it gives up. */
+function sdComplete(n,arr,cap){
+  const L=2*n,a=arr.slice();let nodes=0;
+  const rec=k=>{
+    if(k===0)return true;
+    if(++nodes>cap)throw new Error('cap');
+    const ps=[];for(let i=0;i<L;i++)if(a[i]===k)ps.push(i);
+    if(ps.length>=2)return ps[1]-ps[0]===k+1&&rec(k-1);
+    if(ps.length===1){
+      const p=ps[0];
+      for(const q of [p-k-1,p+k+1])if(q>=0&&q<L&&a[q]===0){a[q]=k;if(rec(k-1))return true;a[q]=0;}
+      return false;
+    }
+    for(let i=0;i+k+1<L;i++)if(a[i]===0&&a[i+k+1]===0){a[i]=a[i+k+1]=k;if(rec(k-1))return true;a[i]=a[i+k+1]=0;}
+    return false;
+  };
+  return rec(n)?a:null;
+}
+function sdGold(n,arr){
+  const g=[];
+  for(let k=1;k<=n;k++){const ps=[];arr.forEach((v,i)=>{if(v===k)ps.push(i);});g[k]=ps.length===2&&ps[1]-ps[0]===k+1;}
+  return g;
+}
+function sdMaths(n){
+  const L=2*n,T=n*(2*n+1),S2=n*(n+3)/2,P=n*(3*n-1)/4,ok=sdPossible(n);
+  let h=`<p>For the number <em>k</em>, the two cards must be <strong>k + 1 places apart</strong>: with <em>k</em> cards between them, the second card is <em>k</em> + 1 places along from the first. So if the first card is in place <em>p</em>, the second is in place <em>p</em> + <em>k</em> + 1.</p>
+<p><strong>Adding up the places.</strong> Number the places 1 to ${L}. Their total is 1 + 2 + … + ${L} = ${T}. Now add them up pair by pair instead: pair <em>k</em> uses places <em>p</em> and <em>p</em> + <em>k</em> + 1, which add up to 2<em>p</em> + <em>k</em> + 1. Over all ${n} pairs the extra bits come to 2 + 3 + … + ${n+1} = ${S2}, so</p>
+<p style="text-align:center">${T} = 2<em>P</em> + ${S2},</p>
+<p>where <em>P</em> is the total of the places of all the <em>first</em> cards. That means <em>P</em> = ${T-S2} ÷ 2 = <strong>${P}</strong>.</p>`;
+  if(ok)h+=`<p>That is a whole number, so the sum doesn't rule anything out, and indeed ${n} pairs <strong>can</strong> be done. ${SD_COUNT[n]===1?`There is just one arrangement, apart from its mirror image.`:`There are ${sdNum(SD_COUNT[n])} different arrangements, not counting mirror images.`}</p>`;
+  else h+=`<p>But <em>P</em> is a total of whole numbers, so it <strong>must</strong> be a whole number, and ${P} is not. So ${n} pairs is <strong>impossible</strong>, however cleverly you shuffle. The best you can do is ${n-1} golden pairs.</p>`;
+  h+=`<p>Try the same sum for other values of <em>n</em>. <em>P</em> = <em>n</em>(3<em>n</em> − 1) ÷ 4 is a whole number only when <em>n</em> is a multiple of 4, or one less than a multiple of 4: <strong>n = 3, 4, 7, 8, 11, 12, 15, 16, …</strong> In 1959 Roy Davies proved that those are exactly the values that work.</p>
+<p>The puzzle is named after the Scottish mathematician C. Dudley Langford, who noticed in 1958 that his young son had stacked coloured blocks in this way. It is called <em>Langford's problem</em>, and the arrangements are <em>Langford pairings</em>. The number of solutions grows very quickly: 1, 1, 26, 150, 17 792, 108 144, … for n = 3, 4, 7, 8, 11, 12.</p>`;
+  return h;
+}
+function sdLevel(n){
+  const L=2*n,possible=sdPossible(n);
+  const maxRow=window.innerWidth<600?6:8,rowsS=Math.ceil(L/maxRow),perRow=Math.ceil(L/rowsS);
+  const art=k=>(k===8||k===11)?'an':'a';
+  const def={
+    custom:true,
+    brief:`You have <strong>${L} cards</strong>, two each of 1 to ${n}. Arrange them in a line so that each number <em>describes its own pair</em>: <strong>one</strong> card between the two 1s, <strong>two</strong> cards between the two 2s, and so on up to <strong>${n}</strong> cards between the two ${n}s. A pair with the right gap turns <strong style="color:var(--accent)">golden</strong>. Tap a card and then a place, or drag it there.${rowsS>1?' The places form one long line: read along each row, then carry on with the next.':''}`,
+    maths:sdMaths(n),
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg',W=1000;
+      const mk=(tag,attrs,txt)=>{const e=document.createElementNS(ns,tag);for(const a in attrs)e.setAttribute(a,attrs[a]);if(txt!=null)e.textContent=txt;return e;};
+      const cw=Math.min(130,(W-40)/perRow),cardW=cw-12,cardH=Math.round(cardW*1.32),rowH=cardH+42,x0=(W-perRow*cw)/2,y0=12;
+      const rowsT=Math.ceil(n/maxRow),perT=Math.ceil(n/rowsT),tcw=cw*.86,tW=tcw-10,tH=Math.round(tW*1.32),tRowH=tH+32;
+      const trayTop=y0+rowsS*rowH+6,trayY=trayTop+54,x0T=(W-perT*tcw)/2,H=trayY+rowsT*tRowH+6;
+      const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,class:'sd',role:'group','aria-label':`${L} places for the cards, and ${n} pairs of cards to place`});
+      const defs=mk('defs',{});
+      const gr=mk('linearGradient',{id:'sdGold',x1:0,y1:0,x2:1,y2:1});
+      gr.append(mk('stop',{offset:'0%','stop-color':'#fff1b3'}),mk('stop',{offset:'55%','stop-color':'#ffd24d'}),mk('stop',{offset:'100%','stop-color':'#f0a500'}));
+      defs.append(gr);svg.append(defs);
+      const layer=mk('g',{}),over=mk('g',{});
+      svg.append(layer,over);
+      stage.append(svg);
+      const track=document.createElement('div');track.className='sdTrack';
+      stage.append(track);
+
+      let arr=new Array(L).fill(0),hist=[],sel=null,solved=false,demoing=false,demoTok=0,hintN=0,hintSlot=-1,hintK=0,init=true,drag=null,liftSrc=null;
+      const slotXY=i=>({x:x0+(i%perRow)*cw+6,y:y0+Math.floor(i/perRow)*rowH});
+      const trayXY=k=>{const j=k-1;return {x:x0T+(j%perT)*tcw+5,y:trayY+Math.floor(j/perT)*tRowH+8};};
+      const count=k=>{let c=0;for(const v of arr)if(v===k)c++;return c;};
+      const gold=()=>sdGold(n,arr);
+      const goldCount=()=>gold().filter(Boolean).length;
+      function cardEl(k,w,h,cls,src,label){
+        const g=mk('g',{class:'card '+(cls||''),'data-src':src,role:'button',tabindex:0,'aria-label':label});
+        g.append(mk('rect',{x:0,y:0,width:w,height:h,rx:Math.round(w*.12),class:'cf'}));
+        const big=String(k).length>1;
+        g.append(mk('text',{x:w/2,y:h/2,dy:'.35em',class:'cn','font-size':Math.round(h*(big?.42:.56))},k));
+        const fs=Math.round(h*.14);
+        g.append(mk('text',{x:w*.17,y:h*.15,dy:'.35em',class:'cc','font-size':fs},k));
+        g.append(mk('text',{x:w*.83,y:h*.85,dy:'.35em',class:'cc','font-size':fs},k));
+        return g;
+      }
+      function draw(){
+        const focusKey=document.activeElement&&svg.contains(document.activeElement)?document.activeElement.getAttribute('data-src'):null;
+        layer.replaceChildren();over.replaceChildren();
+        const gd=gold();
+        const pos={};arr.forEach((v,i)=>{if(v)(pos[v]=pos[v]||[]).push(i);});
+        for(let i=0;i<L;i++){
+          const {x,y}=slotXY(i);
+          const r=mk('rect',{x,y,width:cardW,height:cardH,rx:Math.round(cardW*.12),class:'slot'+(hintSlot===i?' hintr':''),'data-src':'e:'+i,tabindex:0,role:'button','aria-label':`Place ${i+1}, empty`});
+          layer.append(r);
+          layer.append(mk('text',{x:x+cardW/2,y:y+cardH+26,class:'pos'},i+1));
+        }
+        for(let i=0;i<L;i++){
+          const k=arr[i];if(!k)continue;
+          const {x,y}=slotXY(i);
+          const bad=pos[k].length===2&&!gd[k];
+          const cls=(gd[k]?'gold ':'')+(bad?'bad ':'')+(sel&&sel.t==='s'&&sel.i===i?'sel ':'')+(liftSrc==='s:'+i?'lift ':'');
+          const g=cardEl(k,cardW,cardH,cls,'s:'+i,`Place ${i+1}, card ${k}${gd[k]?', golden':''}`);
+          g.setAttribute('transform',`translate(${x},${y})`);
+          layer.append(g);
+        }
+        layer.append(mk('text',{x:W/2,y:trayTop+30,class:'lbl','text-anchor':'middle'},'Cards left to place'));
+        for(let k=1;k<=n;k++){
+          const rem=2-count(k),{x,y}=trayXY(k);
+          if(!rem){layer.append(mk('rect',{x,y,width:tW,height:tH,rx:Math.round(tW*.12),class:'slot ghost'}));continue;}
+          const cls=(sel&&sel.t==='t'&&sel.k===k?'sel ':'')+(hintK===k?'hintc ':'')+(liftSrc==='t:'+k?'lift ':'');
+          const g=cardEl(k,tW,tH,cls,'t:'+k,`Card ${k}, ${rem} left`);
+          g.setAttribute('transform',`translate(${x},${y})`);
+          const b=mk('g',{class:'badge'});
+          b.append(mk('circle',{cx:tW-4,cy:4,r:Math.round(tW*.2)}),mk('text',{x:tW-4,y:4,dy:'.35em','font-size':Math.round(tW*.26)},'×'+rem));
+          g.append(b);
+          layer.append(g);
+        }
+        track.replaceChildren();
+        const lab=document.createElement('span');lab.className='sdLab';lab.textContent='Cards between each pair:';track.append(lab);
+        for(let k=1;k<=n;k++){
+          const p=pos[k]||[],chip=document.createElement('span');
+          let txt,cls='sdChip';
+          if(gd[k]){txt=`✓ ${k}`;cls+=' ok';}
+          else if(p.length===2){txt=`${k}: has ${p[1]-p[0]-1}, needs ${k}`;cls+=' no';}
+          else txt=`${k}: needs ${k}`;
+          chip.className=cls;chip.textContent=txt;track.append(chip);
+        }
+        if(focusKey){const f=svg.querySelector(`[data-src="${focusKey}"]`);if(f)f.focus({preventScroll:true});}
+        if(!init)S.refresh();
+      }
+      function push(){hist.push(arr.slice());}
+      function commit(){
+        hintSlot=-1;hintK=0;
+        const gc=goldCount();
+        const was=solved;solved=gc===n;
+        draw();
+        if(solved&&!was)S.win(`🎉 All ${n} pairs are golden! Every number describes its own pair.`);
+        else if(!solved)S.say('');
+      }
+      function place(k,i){push();arr[i]=k;if(count(k)>=2&&sel&&sel.t==='t'&&sel.k===k)sel=null;commit();}
+      function removeAt(i){push();arr[i]=0;sel=null;commit();}
+      function swap(i,j){push();[arr[i],arr[j]]=[arr[j],arr[i]];sel=null;commit();}
+      function tapSrc(src){
+        if(demoing)return;
+        const t=src[0],v=+src.slice(2);
+        if(t==='t'){
+          if(sel&&sel.t==='s'){removeAt(sel.i);return;}
+          sel=sel&&sel.t==='t'&&sel.k===v?null:{t:'t',k:v};S.say('');draw();return;
+        }
+        if(t==='s'){
+          if(!sel){sel={t:'s',i:v};S.say('');draw();return;}
+          if(sel.t==='s'){if(sel.i===v){removeAt(v);return;}swap(sel.i,v);return;}
+          place(sel.k,v);return;
+        }
+        /* an empty place */
+        if(!sel){S.say('Tap a card first, then tap the place you want it in.','info');return;}
+        if(sel.t==='s'){swap(sel.i,v);return;}
+        place(sel.k,v);
+      }
+      /* ---- dragging ---- */
+      const toSvg=e=>{const r=svg.getBoundingClientRect();return {x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};};
+      function slotAt(p){
+        const col=Math.floor((p.x-x0)/cw),row=Math.floor((p.y-y0)/rowH);
+        if(col<0||col>=perRow||row<0||row>=rowsS)return -1;
+        const i=row*perRow+col;return i<L?i:-1;
+      }
+      svg.addEventListener('pointerdown',e=>{
+        if(demoing||(e.button!=null&&e.button>0))return;
+        const t=e.target.closest&&e.target.closest('[data-src]');
+        if(!t)return;
+        drag={src:t.getAttribute('data-src'),id:e.pointerId,sx:e.clientX,sy:e.clientY,moved:false,ghost:null};
+        try{svg.setPointerCapture(e.pointerId);}catch(_){}
+        e.preventDefault();
+      });
+      svg.addEventListener('pointermove',e=>{
+        if(!drag||e.pointerId!==drag.id||drag.src[0]==='e')return;
+        const dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
+        if(!drag.moved){
+          if(dx*dx+dy*dy<80)return;
+          drag.moved=true;
+          const k=drag.src[0]==='t'?+drag.src.slice(2):arr[+drag.src.slice(2)];
+          liftSrc=drag.src;sel=null;draw();
+          drag.ghost=cardEl(k,cardW,cardH,'ghostcard','g','');
+          drag.ghost.removeAttribute('tabindex');drag.ghost.removeAttribute('data-src');
+          over.append(drag.ghost);
+        }
+        const p=toSvg(e);
+        drag.ghost.setAttribute('transform',`translate(${p.x-cardW/2},${p.y-cardH/2})`);
+      });
+      svg.addEventListener('pointerup',e=>{
+        if(!drag||e.pointerId!==drag.id)return;
+        const d=drag;drag=null;
+        if(!d.moved){tapSrc(d.src);return;}
+        liftSrc=null;
+        const p=toSvg(e),i=slotAt(p),t=d.src[0],v=+d.src.slice(2);
+        if(t==='t'){if(i>=0)place(v,i);else draw();}
+        else if(t==='s'){
+          if(i>=0){if(i!==v)swap(v,i);else draw();}
+          else if(p.y>=trayTop-6)removeAt(v);
+          else draw();
+        }
+      });
+      svg.addEventListener('pointercancel',()=>{if(drag){drag=null;liftSrc=null;draw();}});
+      svg.addEventListener('keydown',e=>{
+        if(e.key!=='Enter'&&e.key!==' ')return;
+        const t=e.target.closest&&e.target.closest('[data-src]');
+        if(!t)return;
+        e.preventDefault();tapSrc(t.getAttribute('data-src'));
+      });
+      /* ---- controls ---- */
+      function reset(){demoTok++;demoing=false;arr=new Array(L).fill(0);hist=[];sel=null;solved=false;hintN=0;hintSlot=-1;hintK=0;liftSrc=null;S.say('');draw();}
+      function undo(){
+        if(demoing||!hist.length)return;
+        arr=hist.pop();sel=null;solved=false;hintSlot=-1;hintK=0;S.say('');draw();
+      }
+      function hint(){
+        if(demoing||solved)return;
+        sel=null;
+        if(!possible){
+          const m=[
+            `💡 Not every number of pairs can be done. Have you found a solution for the smaller numbers of pairs? Which ones worked?`,
+            `💡 If the first card of a pair is in place p, the second is in place p + k + 1. So the two places add up to 2p + k + 1.`,
+            `💡 Add up all the place numbers, 1 to ${L}, and then add them up pair by pair. Do the two totals ever agree? Press Show me, then open “What's the maths?”`
+          ];
+          S.say(m[Math.min(hintN,m.length-1)],'info');hintN++;draw();return;
+        }
+        let full;
+        try{full=sdComplete(n,arr,3000000);}catch(_){S.say(`💡 I can't tell from here whether this can be finished. Try taking a few cards back.`,'info');draw();return;}
+        if(!full){S.say('💡 With the cards where they are, this can never be finished. Tap a card to lift it, or press Undo.','info');draw();return;}
+        let pick=-1;
+        for(let k=n;k>=1&&pick<0;k--)pick=full.findIndex((v,i)=>v===k&&arr[i]===0);
+        if(pick<0)return;
+        hintSlot=pick;hintK=full[pick];
+        S.say(`💡 Try ${art(hintK)} ${hintK} in the ringed place.`,'info');draw();
+      }
+      function show(){
+        if(demoing){demoTok++;demoing=false;reset();S.say('Demo stopped.','info');return;}
+        reset();
+        let src=possible?SD_SOL[n]:SD_NEAR[n].arr;
+        if(Math.random()<.5)src=src.slice().reverse();
+        const order=[];for(let k=n;k>=1;k--)if(possible||k!==SD_NEAR[n].omit)order.push(k);
+        const omit=possible?0:SD_NEAR[n].omit;
+        demoing=true;const my=++demoTok;S.refresh();
+        let j=0;
+        S.say(possible?'Watch: the biggest numbers go in first…':'Watch how close we can get…','info');
+        const stepf=()=>{
+          if(my!==demoTok)return;
+          if(j<order.length){
+            const k=order[j++];
+            src.forEach((v,i)=>{if(v===k)arr[i]=k;});
+            draw();setTimeout(stepf,possible?650:600);return;
+          }
+          if(!possible&&omit&&count(omit)===0){
+            src.forEach((v,i)=>{if(v===0)arr[i]=omit;});
+            draw();setTimeout(stepf,900);return;
+          }
+          demoing=false;solved=possible;draw();
+          if(possible)S.say(SD_COUNT[n]===1?'That is the only arrangement, apart from its mirror image. Press Reset to try it yourself!':`That is just one of ${sdNum(SD_COUNT[n])} arrangements (not counting mirror images). Press Reset to find your own!`,'info');
+          else S.say(`${n-1} golden pairs, but the two ${omit}s are stuck in the only places left. In fact ${n} pairs can never be done.`,'info');
+          S.revealMaths();
+        };
+        setTimeout(stepf,500);
+      }
+      draw();init=false;
+      return {
+        reset,undo,hint,show,
+        stop(){demoTok++;demoing=false;},
+        ctl:()=>({undo:!demoing&&hist.length>0,reset:true,hint:!demoing&&!solved,show:true,showText:demoing?'■ Stop':'▶ Show me',score:`Golden pairs: ${goldCount()} of ${n}`})
+      };
+    }
+  };
+  return def;
+}
+const SDCARDS={id:'self-describing-cards',icon:'🃏',title:'Self Describing Cards',blurb:'Two of each number. Put them in a line so each number says how many cards lie between its twins.',
+  levels:[3,4,5,6,7,8,9,10,11,12].map(n=>({name:`${n} pairs`,make:()=>sdLevel(n)}))};
+
 /* ==INV-BEGIN== investigations are added here, one after another */
 const INV_LIST=[],INV_API={};
 /* ===JS:stamps=== */
@@ -7335,7 +7650,7 @@ INV_API.passola={paSolver,PA_FIND};
 /* ===/JS:passola=== */
 /* ==INV-END== */
 
-const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,LIGHTS,WIRES,COINS,SWAP,CARPARK,HANOI,PEGS,DESERT,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,LIGHTS,WIRES,COINS,SWAP,CARPARK,HANOI,PEGS,DESERT,SDCARDS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Weights and Measures',items:[JUGS,COLSORT,COINS]},
@@ -7346,7 +7661,8 @@ const GROUPS=[
     CHESS,
     KNIGHT,
     MUTILATED]},
-  {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS,DESERT]}
+  {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS,DESERT]},
+  {title:'Cards and Numbers',items:[SDCARDS]}
 ];
 const INVESTIGATIONS=[
     STAMPS,
@@ -7549,7 +7865,7 @@ function route(){
   if(PUZZLES[id]){homeTab=INVESTIGATIONS.includes(PUZZLES[id])?'investigations':'puzzles';showPuzzle(PUZZLES[id]);}else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={desertLevel,DESERT,dsSearch,dsMoves,wiresLevel,WIRES,lightsLevel,loSolve,loPress,LIGHTS,pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
+window.CP={sdLevel,sdComplete,sdGold,SDCARDS,desertLevel,DESERT,dsSearch,dsMoves,wiresLevel,WIRES,lightsLevel,loSolve,loPress,LIGHTS,pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
 route();
 })();
 </script>
