@@ -662,6 +662,21 @@ table.lochase th{color:var(--accent)}
 .wsnotes{width:100%;border-radius:12px;border:2px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font:inherit;padding:8px;resize:vertical}
 /* ===/CSS:wires=== */
 /* ==INV-CSS-END== */
+
+/* desert crossing */
+.dsWrap{border-radius:14px;overflow:hidden;border:2px solid var(--line)}
+.dsSvg{display:block;width:100%;height:auto;touch-action:manipulation;cursor:pointer}
+.dsPanel{margin:10px 0 4px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.dsGauge{display:flex;gap:6px}
+.dsCell{display:block;width:clamp(36px,9vw,70px);height:26px;border:2px solid var(--accent);border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.dsCell i{display:block;height:100%;background:#f08a24}
+.dsRead{color:var(--mute);font-size:.9rem;line-height:1.35}
+.dsRead strong{color:var(--ink)}
+.dsBtns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.dsBtns .dsGo{flex:1 1 150px}
+.dsBtns .dsGo.idle{opacity:.75}
+.dsBtns .dsNudge{min-width:56px;padding:0 14px}
+.dsBtns .btn.hint{box-shadow:0 0 0 4px var(--good)}
 </style>
 </head>
 <body>
@@ -3891,6 +3906,266 @@ function wiresLevel(n){
 const WIRES={id:'electrician',icon:'⚡',title:"The Electrician's Stairs",blurb:'Match unmarked wires to their bulbs with as few trips up the stairs as you can.',
   levels:[3,6,9,12].map(n=>({name:n+' bulbs',random:true,make:()=>wiresLevel(n)}))};
 
+/* ---------- DESERT CROSSING ---------- */
+const DS_G=10; /* one marker post every 10 km */
+const DS_LEVELS=[
+  {name:'Easy 1',d:10,C:2,P:21,best:3,sol:'t0,t0,d4,x4,d0,t0,d4,t4,d21'},
+  {name:'Easy 2',d:10,C:3,P:31,best:4,sol:'t0,t0,d4,x4,d0,t0,t0,d4,t4,d31'},
+  {name:'Easy 3',d:10,C:2,P:25,best:4,sol:'t0,t0,d5,x5,d0,t0,t0,d7,x7,d5,t5,d7,t7,d25'},
+  {name:'Medium 1',d:10,C:2,P:27,best:5,sol:'t0,t0,d3,d2,x2,d0,t0,d2,x2,d0,t0,t0,d6,x6,d2,t2,t2,d8,x8,d6,t6,d8,t8,d27'},
+  {name:'Medium 2',d:6,C:4,P:31,best:8,sol:'t0,t0,t0,t0,d6,x6,x6,d0,t0,t0,t0,t0,d8,x8,d6,t6,t6,d8,t8,d31'},
+  {name:'Medium 3',d:8,C:3,P:33,best:8,sol:'t0,t0,t0,d4,x4,x4,d0,t0,t0,t0,d10,x10,d4,t4,d0,t0,t0,d4,t4,d3,d10,t10,d33'},
+  {name:'Hard 1',d:10,C:2,P:29,best:7,sol:'t0,t0,d4,x4,d0,t0,d4,t4,d6,x6,d0,t0,t0,d5,x5,d0,t0,t0,d7,x7,d5,t5,d6,t6,d10,x10,d7,t7,d10,t10,d29'},
+  {name:'Hard 2',d:10,C:3,P:41,best:7,sol:'t0,t0,t0,d2,x2,x2,d0,t0,t0,d2,x2,x2,d0,t0,t0,d2,t2,d12,x12,d2,t2,t2,t2,d12,t12,d41'},
+  {name:'Hard 3',d:8,C:3,P:35,best:9,sol:'t0,t0,t0,d4,x4,x4,d0,t0,t0,t0,d4,x4,x4,d0,t0,t0,t0,d6,d4,t4,d12,x12,d4,t4,t4,t4,d12,t12,d35'}
+];
+function dsMoves(L,s){
+  const {d,P}=L,cap=L.d*L.C,out=[],{pos,f,dep}=s;
+  for(let q=0;q<=P;q++){
+    const u=Math.abs(q-pos);
+    if(q!==pos&&u<=f)out.push({kind:'drive',q,cost:0,to:{pos:q,f:f-u,dep},label:q===0?'Drive back to the base':q===P?'Drive on to the far side':`Drive to the ${q*DS_G} km post`});
+  }
+  if(pos>0&&pos<P&&f>=d&&dep[pos-1]<9){const dd=dep.slice();dd[pos-1]++;out.push({kind:'dump',cost:0,to:{pos,f:f-d,dep:dd},label:`Dump a canister at ${pos*DS_G} km`});}
+  if(f+d<=cap){
+    if(pos===0)out.push({kind:'take',base:true,cost:1,to:{pos,f:f+d,dep},label:'Load a canister from the base'});
+    else if(pos<P&&dep[pos-1]>0){const dd=dep.slice();dd[pos-1]--;out.push({kind:'take',cost:0,to:{pos,f:f+d,dep:dd},label:`Pick up a canister at ${pos*DS_G} km`});}
+  }
+  return out;
+}
+function dsKey(s){return s.pos+'.'+s.f+'.'+s.dep.join('');}
+/* Fewest canisters from the base first, then fewest actions. */
+function dsSearch(L,start){
+  const heap=[];
+  const push=(c,i)=>{heap.push([c,i]);let k=heap.length-1;while(k>0){const p=(k-1)>>1;if(heap[p][0]<=heap[k][0])break;[heap[p],heap[k]]=[heap[k],heap[p]];k=p;}};
+  const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<heap.length&&heap[l][0]<heap[m][0])m=l;if(r<heap.length&&heap[r][0]<heap[m][0])m=r;if(m===k)break;[heap[m],heap[k]]=[heap[k],heap[m]];k=m;}}return top;};
+  const nodes=[{s:start,par:-1,mv:null}],dist=new Map([[dsKey(start),0]]);
+  push(0,0);
+  while(heap.length){
+    const [c,i]=pop(),n=nodes[i];
+    if(c>(dist.get(dsKey(n.s))??1e18))continue;
+    if(n.s.pos===L.P){const path=[];for(let k=i;nodes[k].par>=0;k=nodes[k].par)path.push(nodes[k].mv);path.reverse();return {path,cost:Math.floor(c/1000),states:[]};}
+    for(const m of dsMoves(L,n.s)){
+      const nc=c+(m.cost?1000:0)+1,k=dsKey(m.to);
+      if(nc<(dist.get(k)??1e18)){dist.set(k,nc);nodes.push({s:m.to,par:i,mv:m});push(nc,nodes.length-1);}
+    }
+  }
+  return {path:null,cost:null,states:[]};
+}
+function dsMaths(L){
+  const T=L.d*L.C*DS_G,dk=L.d*DS_G,len=L.P*DS_G;
+  let tot=0,rows='';
+  for(let n=1;n<=5;n++){tot+=1/(2*n-1);rows+=`<tr><td>${n}</td><td>${(T*tot).toFixed(0)} km</td></tr>`;}
+  return `<p><strong>Work backwards from the far side.</strong> A full load of ${L.C} canisters takes the truck ${T} km. So to cross the <em>last</em> ${T} km all the truck needs is to arrive at a post with a <strong>full load</strong>. The whole puzzle is getting a full load to a post as far out as possible.</p>
+<p><strong>Why dump fuel?</strong> A trip of <em>x</em> km out and <em>x</em> km back burns 2<em>x</em> km of fuel for nothing, so the further out you leave a depot, the more fuel the shuttling eats. The skill is choosing where the depots go.</p>
+<p>This is the famous <strong>jeep problem</strong> (also called the desert crossing problem), studied by mathematicians since the 1940s. If fuel could be dumped in any amount, a truck that can go ${T} km on a full tank, and has <em>n</em> tankfuls to start with, can get this far:</p>
+<table class="lochase"><tr><th>Tankfuls of fuel used</th><th>Furthest it can cross</th></tr>${rows}</table>
+<p>Each row adds <em>T</em> × 1/3, then <em>T</em> × 1/5, then <em>T</em> × 1/7… (odd numbers on the bottom). These fractions keep shrinking, but the sum never stops growing, so <strong>any</strong> desert can be crossed with enough fuel. It just takes a <em>lot</em> more fuel as the desert gets longer: each extra stage costs another full tank and buys less and less distance.</p>
+<p>In this puzzle the canisters are sealed, so you can only dump or pick up <strong>whole canisters</strong>. That is why the answers don't quite match the table, and why sometimes you have to burn off a little fuel on purpose: the truck can't pick up a canister unless there is room for it. This desert is ${len} km, a canister lasts ${dk} km, and the truck holds ${L.C}.</p>`;
+}
+function desertLevel(L){
+  const P=L.P,d=L.d,cap=L.d*L.C,dk=d*DS_G;
+  const start={pos:0,f:0,dep:new Array(P-1).fill(0)};
+  /* stored best route from the start, so the hint and "Show me" are instant */
+  const stored=[],skeys=new Map();
+  {
+    let s=start;skeys.set(dsKey(s),0);
+    L.sol.split(',').forEach((tok,i)=>{
+      const q=+tok.slice(1),t=tok[0];
+      const m=dsMoves(L,s).find(m=>t==='d'?(m.kind==='drive'&&m.q===q):t==='x'?m.kind==='dump':m.kind==='take');
+      stored.push(m);s=m.to;skeys.set(dsKey(s),i+1);
+    });
+  }
+  const def={
+    scoreLabel:'Canisters from the base',unit:'canisters',zeroCost:true,
+    start,key:dsKey,
+    isGoal:s=>s.pos===P,
+    moves:s=>dsMoves(L,s),
+    solver(s){
+      const k=dsKey(s);
+      if(skeys.has(k)){const path=stored.slice(skeys.get(k));return {path,cost:L.best,states:[]};}
+      return dsSearch(L,s);
+    },
+    noHint:"From here the truck can't get across. Press Undo, or Reset to start again.",
+    brief:`The truck must cross a <strong>${P*DS_G} km desert</strong>, but one canister of fuel only lasts <strong>${dk} km</strong> and the truck can carry just <strong>${L.C} canisters</strong> at a time. There are no petrol stations, but the truck can <strong>dump</strong> canisters at any marker post and come back for them later. The base has plenty of fuel, so use as <strong>few canisters from the base</strong> as you can. Tap the road to choose where to drive, then press <strong>Drive</strong>. Canisters are sealed: dump or pick up whole ones only.`,
+    maths:dsMaths(L),
+    mount(stage,S){
+      const ns='http://www.w3.org/2000/svg';
+      const mk=(tag,at,parent)=>{const e=document.createElementNS(ns,tag);for(const a in at)e.setAttribute(a,at[a]);if(parent)parent.append(e);return e;};
+      const W=1000,H=320,X0=60,X1=940,sp=(X1-X0)/P,X=i=>X0+i*sp;
+      const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const wrap=el('div',{class:'dsWrap'});
+      const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':`A ${P*DS_G} km desert road with a truck at the left`,class:'dsSvg'});
+      /* scenery */
+      mk('rect',{x:0,y:0,width:W,height:H,fill:'#f6d98f'},svg);
+      mk('rect',{x:0,y:0,width:W,height:120,fill:'#8fd0ee'},svg);
+      mk('circle',{cx:860,cy:52,r:30,fill:'#ffd34d'},svg);
+      mk('path',{d:'M0 125 Q120 70 260 118 T520 112 T780 122 T1000 100 V150 H0Z',fill:'#e9c26e'},svg);
+      mk('rect',{x:0,y:150,width:W,height:170,fill:'#f2cf7d'},svg);
+      mk('rect',{x:0,y:170,width:W,height:22,fill:'#8a6a3a'},svg);
+      mk('line',{x1:0,y1:181,x2:W,y2:181,stroke:'#f3e3b0','stroke-width':2,'stroke-dasharray':'14 12'},svg);
+      /* base */
+      mk('rect',{x:X0-44,y:116,width:44,height:54,fill:'#c0553a'},svg);
+      mk('path',{d:`M${X0-50} 118 L${X0-22} 98 L${X0+6} 118Z`,fill:'#7a2f1f'},svg);
+      mk('rect',{x:X0-32,y:140,width:14,height:30,fill:'#5a2a1c'},svg);
+      const tb=mk('text',{x:X0-22,y:92,'text-anchor':'middle','font-size':20,'font-weight':700,fill:'#4a2a10'},svg);tb.textContent='BASE';
+      /* far side oasis */
+      [[X1+6,0],[X1+34,12]].forEach(([x,o])=>{mk('rect',{x:x-3,y:112+o,width:6,height:58-o,fill:'#7a5a2a'},svg);[-1,0,1].forEach(k=>mk('path',{d:`M${x} ${112+o} q${k*34} -26 ${k*52} ${6}`,stroke:'#2f8f4a','stroke-width':7,fill:'none','stroke-linecap':'round'},svg));});
+      const tf=mk('text',{x:X1+16,y:92,'text-anchor':'middle','font-size':18,'font-weight':700,fill:'#1f5a2f'},svg);tf.textContent='FAR SIDE';
+      /* posts */
+      const lab=Math.max(1,Math.round(P>30?5:P>20?5:4));
+      for(let i=0;i<=P;i++){
+        const big=i%lab===0||i===P;
+        mk('line',{x1:X(i),y1:192,x2:X(i),y2:big?204:199,stroke:'#6b4a1f','stroke-width':big?3:2},svg);
+        if(big&&i>0&&i<P-2){const t=mk('text',{x:X(i),y:230,'text-anchor':'middle','font-size':23,fill:'#5a3d12'},svg);t.textContent=(i*DS_G)+'';}
+      }
+      const t0=mk('text',{x:X(0),y:230,'text-anchor':'middle','font-size':23,fill:'#5a3d12'},svg);t0.textContent='0 km';
+      const tP=mk('text',{x:X(P)-6,y:230,'text-anchor':'middle','font-size':23,'font-weight':700,fill:'#5a3d12'},svg);tP.textContent=(P*DS_G)+' km';
+      const reach=mk('rect',{y:174,height:16,rx:6,fill:'rgba(70,208,138,.45)',stroke:'#1f8f55','stroke-width':2,'stroke-dasharray':'6 4'},svg);
+      const depG=mk('g',{},svg);
+      /* target marker */
+      const tgt=mk('g',{visibility:'hidden'},svg);
+      const tLine=mk('line',{y1:104,y2:192,stroke:'#d1252d','stroke-width':3,'stroke-dasharray':'7 5'},tgt);
+      const tFlag=mk('path',{d:'M0 104 l30 10 l-30 10Z',fill:'#d1252d'},tgt);
+      const tTxt=mk('text',{y:98,'text-anchor':'middle','font-size':19,'font-weight':700,fill:'#7a1218'},tgt);
+      /* truck */
+      const truckOuter=mk('g',{class:'dsTruck'},svg);const truck=mk('g',{transform:'scale(1.4)'},truckOuter);
+      mk('rect',{x:-44,y:-52,width:56,height:36,rx:4,fill:'#e8eef5',stroke:'#34506b','stroke-width':3},truck);
+      mk('path',{d:'M12 -44 h22 l12 16 v12 h-34Z',fill:'#2f7fb8',stroke:'#34506b','stroke-width':3,'stroke-linejoin':'round'},truck);
+      mk('path',{d:'M18 -40 h13 l8 11 h-21Z',fill:'#bfe6fa'},truck);
+      mk('rect',{x:-44,y:-18,width:90,height:8,fill:'#34506b'},truck);
+      [-26,28].forEach(x=>{mk('circle',{cx:x,cy:-6,r:11,fill:'#222',stroke:'#999','stroke-width':2},truck);mk('circle',{cx:x,cy:-6,r:4,fill:'#ccc'},truck);});
+      const bed=[];
+      const slotW=Math.min(13,50/L.C);
+      for(let k=0;k<L.C;k++){
+        const x=-41+k*(slotW+1.5);
+        mk('rect',{x,y:-49,width:slotW,height:28,fill:'#fff',stroke:'#8a4a10','stroke-width':1.5,rx:2},truck);
+        bed.push(mk('rect',{x:x+1,y:-21,width:slotW-2,height:0,fill:'#f08a24'},truck));
+      }
+      svg.append(truckOuter);
+      wrap.append(svg);
+      /* controls */
+      const gauge=el('div',{class:'dsGauge','aria-hidden':'true'});
+      const cells=[];
+      for(let k=0;k<L.C;k++){const f=el('i');cells.push(f);gauge.append(el('span',{class:'dsCell'},f));}
+      const read=el('div',{class:'dsRead',role:'status'});
+      const bL=el('button',{type:'button',class:'btn dsNudge','aria-label':'Choose a place one post nearer the base'},'◀');
+      const bR=el('button',{type:'button',class:'btn dsNudge','aria-label':'Choose a place one post further on'},'▶');
+      const bGo=el('button',{type:'button',class:'btn primary dsGo'},'🚚 Drive');
+      const bDump=el('button',{type:'button',class:'btn'},'⬇ Dump a canister');
+      const bTake=el('button',{type:'button',class:'btn'},'⬆ Pick up a canister');
+      stage.append(wrap,el('div',{class:'dsPanel'},gauge,read),el('div',{class:'dsBtns'},bL,bGo,bR),el('div',{class:'dsBtns'},bDump,bTake));
+      let target=null,cur=start,hintBtn=null;
+      const setTruck=(p,ms)=>{truckOuter.style.transition=ms?`transform ${ms}ms linear`:'none';truckOuter.style.transform=`translate(${X(p)}px,170px)`;};
+      function paintTarget(hint){
+        if(target==null){tgt.setAttribute('visibility','hidden');return;}
+        tgt.setAttribute('visibility','visible');
+        const x=X(target);tLine.setAttribute('x1',x);tLine.setAttribute('x2',x);
+        tFlag.setAttribute('transform',`translate(${x},0)`);
+        tTxt.setAttribute('x',x);tTxt.textContent=(target*DS_G)+' km';
+        const col=hint?'#1f8f55':'#d1252d';
+        tLine.setAttribute('stroke',col);tFlag.setAttribute('fill',col);
+      }
+      function paintBtns(){
+        const s=cur;
+        if(target==null||target===s.pos){bGo.textContent='🚚 Tap the road to choose where';bGo.disabled=false;bGo.classList.add('idle');}
+        else{
+          const u=Math.abs(target-s.pos)*DS_G;
+          bGo.classList.remove('idle');
+          bGo.textContent=`🚚 Drive to ${target*DS_G} km (uses ${u} km of fuel)`;
+        }
+        bTake.textContent=s.pos===0?'⬆ Load a canister from the base':'⬆ Pick up a canister here';
+      }
+      function paint(s){
+        cur=s;target=null;hintBtn=null;
+        [bGo,bDump,bTake].forEach(b=>b.classList.remove('hint'));
+        setTruck(s.pos,0);
+        /* fuel on the truck */
+        bed.forEach((r,k)=>{const fr=Math.max(0,Math.min(1,(s.f-k*d)/d));r.setAttribute('height',27*fr);r.setAttribute('y',-21-27*fr);});
+        cells.forEach((c,k)=>{c.style.width=Math.max(0,Math.min(1,(s.f-k*d)/d))*100+'%';});
+        const km=s.f*DS_G;
+        read.innerHTML=`At <strong>${s.pos*DS_G} km</strong> · Fuel on board: <strong>${km} km</strong> of driving · Carrying room for <strong>${Math.floor((cap-s.f)/d)}</strong> more canister${Math.floor((cap-s.f)/d)===1?'':'s'}`;
+        const lo=Math.max(0,s.pos-s.f),hi=Math.min(P,s.pos+s.f);
+        reach.setAttribute('x',X(lo));reach.setAttribute('width',Math.max(2,X(hi)-X(lo)));
+        /* depots */
+        depG.replaceChildren();
+        s.dep.forEach((n,i)=>{
+          if(!n)return;
+          const x=X(i+1),g=mk('g',{},depG);
+          for(let k=0;k<Math.min(n,3);k++){
+            const y=296-k*23;
+            mk('rect',{x:x-10,y,width:20,height:20,rx:4,fill:'#f08a24',stroke:'#8a4a10','stroke-width':2},g);
+            mk('rect',{x:x-5,y:y-6,width:10,height:7,rx:3,fill:'#8a4a10'},g);
+          }
+          if(n>3){
+            mk('circle',{cx:x,cy:273,r:14,fill:'#4a2a10',stroke:'#fff','stroke-width':2},g);
+            const q=mk('text',{x,y:279,'text-anchor':'middle','font-size':18,'font-weight':700,fill:'#fff'},g);q.textContent=n;}
+        });
+        paintTarget(false);paintBtns();
+      }
+      function choose(i){
+        i=Math.max(0,Math.min(P,i));
+        if(i===cur.pos){target=null;paintTarget(false);paintBtns();return;}
+        target=i;[bGo].forEach(b=>b.classList.remove('hint'));paintTarget(false);paintBtns();
+        const u=Math.abs(i-cur.pos);
+        if(u>cur.f)S.say(`Not enough fuel to get there: that is ${u*DS_G} km and the truck only has ${cur.f*DS_G} km of fuel.`,'bad');
+        else S.say('');
+      }
+      svg.addEventListener('pointerdown',e=>{
+        if(S.busy)return;
+        const r=svg.getBoundingClientRect(),xv=(e.clientX-r.left)/r.width*W;
+        choose(Math.round((xv-X0)/sp));
+      });
+      bL.addEventListener('click',()=>{if(S.busy)return;choose((target==null?cur.pos:target)-1);});
+      bR.addEventListener('click',()=>{if(S.busy)return;choose((target==null?cur.pos:target)+1);});
+      bGo.addEventListener('click',()=>{
+        if(S.busy)return;
+        if(S.state.pos===P){S.say('Already across! Press Reset to play it again.','info');return;}
+        if(target==null||target===cur.pos){S.say('Tap the road to choose where to drive.','info');return;}
+        const m=S.moves().find(x=>x.kind==='drive'&&x.q===target);
+        if(!m){S.say(`Not enough fuel to get there: that is ${Math.abs(target-cur.pos)*DS_G} km and the truck only has ${cur.f*DS_G} km of fuel.`,'bad');return;}
+        S.play(m);
+      });
+      bDump.addEventListener('click',()=>{
+        if(S.busy)return;
+        if(S.state.pos===P){S.say('Already across! Press Reset to play it again.','info');return;}
+        const m=S.moves().find(x=>x.kind==='dump');
+        if(m){S.play(m);return;}
+        S.say(cur.pos===0?'There is no point dumping fuel at the base: it already has plenty.':`Dumping needs a whole canister. The truck has only ${cur.f*DS_G} km of fuel, and a canister is ${dk} km.`,'bad');
+      });
+      bTake.addEventListener('click',()=>{
+        if(S.busy)return;
+        if(S.state.pos===P){S.say('Already across! Press Reset to play it again.','info');return;}
+        const m=S.moves().find(x=>x.kind==='take');
+        if(m){S.play(m);return;}
+        if(cur.f+d>cap)S.say(`No room: the truck holds ${L.C} canisters and is carrying ${(cur.f/d).toFixed(1).replace('.0','')} already. Drive a little to burn some fuel first.`,'bad');
+        else S.say('There are no canisters here to pick up.','bad');
+      });
+      let timer=0;
+      return {
+        update(s){clearTimeout(timer);paint(s);},
+        animate(m,done){
+          if(m.kind==='drive'){
+            const u=Math.abs(m.q-cur.pos),ms=reduce?0:Math.max(350,Math.min(1500,u*60));
+            target=m.q;paintTarget(false);
+            setTruck(m.q,ms);
+            timer=setTimeout(done,ms+40);
+          }else timer=setTimeout(done,reduce?0:180);
+        },
+        highlight(m){
+          this.clear();
+          if(m.kind==='drive'){target=m.q;paintTarget(true);bGo.classList.add('hint');paintBtns();}
+          else (m.kind==='dump'?bDump:bTake).classList.add('hint');
+        },
+        clear(){[bGo,bDump,bTake].forEach(b=>b.classList.remove('hint'));},
+        stop(){clearTimeout(timer);}
+      };
+    }
+  };
+  return def;
+}
+const DESERT={id:'desert',icon:'🚚',title:'Desert Crossing',blurb:'Cross the desert with a thirsty truck, dumping fuel for the trip back.',
+  levels:DS_LEVELS.map(L=>({name:L.name,make:()=>desertLevel(L)}))};
+
 /* ==INV-BEGIN== investigations are added here, one after another */
 const INV_LIST=[],INV_API={};
 /* ===JS:stamps=== */
@@ -7060,7 +7335,7 @@ INV_API.passola={paSolver,PA_FIND};
 /* ===/JS:passola=== */
 /* ==INV-END== */
 
-const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,LIGHTS,WIRES,COINS,SWAP,CARPARK,HANOI,PEGS,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
+const PUZZLES={};[JUGS,COLSORT,WGC,FOX,BRIDGE,MATCHES,CANDLES,LIGHTS,WIRES,COINS,SWAP,CARPARK,HANOI,PEGS,DESERT,CHESS,KNIGHT,MUTILATED,...INV_LIST].forEach(p=>PUZZLES[p.id]=p);
 
 const GROUPS=[
   {title:'Weights and Measures',items:[JUGS,COLSORT,COINS]},
@@ -7071,7 +7346,7 @@ const GROUPS=[
     CHESS,
     KNIGHT,
     MUTILATED]},
-  {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS]}
+  {title:'Movement',items:[CARPARK,SWAP,HANOI,PEGS,DESERT]}
 ];
 const INVESTIGATIONS=[
     STAMPS,
@@ -7181,7 +7456,7 @@ function showPuzzle(P){
   function showMaths(){mathsBody.innerHTML=def.maths||'';maths.hidden=false;}
   function apply(move,quiet){
     hist.push({state,cost,moves});
-    state=move.to;cost+=move.cost||1;moves++;
+    state=move.to;cost+=def.zeroCost?(move.cost||0):(move.cost||1);moves++;
     if(!quiet)say('');
     render();
     if(!quiet&&def.isGoal(state))win();
@@ -7274,7 +7549,7 @@ function route(){
   if(PUZZLES[id]){homeTab=INVESTIGATIONS.includes(PUZZLES[id])?'investigations':'puzzles';showPuzzle(PUZZLES[id]);}else showHome();
 }
 window.addEventListener('hashchange',route);
-window.CP={wiresLevel,WIRES,lightsLevel,loSolve,loPress,LIGHTS,pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
+window.CP={desertLevel,DESERT,dsSearch,dsMoves,wiresLevel,WIRES,lightsLevel,loSolve,loPress,LIGHTS,pegLevel,PEGS,hanoiLevel,HANOI,candleLevel,CT_LEVELS,csSolve,csGen,csLevel,mcLevel,mcPair,mcTile,knightLevel,ktClosed,ktExtend,ktNb,KNIGHT,chessLevel,chSolve,CHESS,SH_GEN_SETS,SH_CUT,SH_TRI,shGrid,solve,carLevel,CAR_DATA,cherryLevel,shapeLevel,plusLevel,SH_SQUARES,SH_TAKE,SH_PICS,jugsLevel,crossingLevel,matchLevel,matchTokens,matchText,matchValid,coinsLevel,coinBest,coinOut,coinHyps,swapLevel,PUZZLES,INV_LIST,INV_API};
 route();
 })();
 </script>
