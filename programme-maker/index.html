@@ -95,6 +95,18 @@ canvas.pv{width:100%;height:auto;display:block;border:1px solid #cfc5dc;box-shad
 #pdfMsg a{color:var(--acc);font-weight:700}
 .tip{background:#f3eafb;border-radius:10px;padding:10px 12px;font-size:.88rem;margin-top:10px}
 .small{font-size:.8rem;color:var(--mute)}
+.edfull{position:fixed;inset:0;background:#fff;z-index:60;display:flex;flex-direction:column}
+.edbar{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.edbar .small{flex:1}
+.edbody{flex:1;display:flex;min-height:0}
+#edStage{flex:1;display:flex;align-items:center;justify-content:center;background:#6b6577;min-width:0;min-height:0;padding:10px}
+#edCanvas{touch-action:none;background:#fff;cursor:crosshair}
+.edpanel{width:340px;overflow:auto;padding:12px;border-left:1px solid var(--line)}
+@media(max-width:800px){.edbody{flex-direction:column}.edpanel{width:auto;max-height:48vh;border-left:none;border-top:1px solid var(--line)}}
+.nudge{display:grid;grid-template-columns:repeat(3,54px);gap:6px}
+.nudge button{height:42px;border:1px solid #bfaed3;background:#fff;border-radius:8px;font-size:1.1rem;color:var(--acc);cursor:pointer;touch-action:manipulation}
+.chip.sel{background:var(--acc);color:#fff;border-color:var(--acc)}
+.chip.g{font-size:1.1rem;background:#f3eafb;color:var(--acc);border-color:#d9c8ec;min-width:34px}
 </style>
 </head>
 <body>
@@ -189,6 +201,8 @@ canvas.pv{width:100%;height:auto;display:block;border:1px solid #cfc5dc;box-shad
        <button class="btn danger" id="btnCoverClear">Remove</button>
      </div>
      <div id="coverMsg" class="small" style="margin-top:6px"></div>
+     <div class="btns"><button class="btn primary" id="btnEditPic">✎ Edit picture – add text (e.g. an apostrophe)</button></div>
+     <div id="markNote" class="small" style="margin-top:6px"></div>
      <div class="grid2" style="margin-top:10px">
        <label>Picture fit<select data-k="cover.fit"><option value="fill">Fill the page (crop edges)</option><option value="fit">Fit whole picture</option></select></label>
        <label>Behind / border colour<br><input type="color" data-k="cover.bg"></label>
@@ -306,6 +320,32 @@ canvas.pv{width:100%;height:auto;display:block;border:1px solid #cfc5dc;box-shad
     </div>
   </div>
 </div>
+<div id="editor" class="edfull" hidden>
+  <div class="edbar"><b>Edit cover picture</b><span class="small" id="edHelp">Tap or drag on the picture to place the selected text box.</span><button class="btn primary" id="edDone">Done</button></div>
+  <div class="edbody">
+    <div id="edStage"><canvas id="edCanvas"></canvas></div>
+    <div class="edpanel">
+      <div class="btns" style="margin-top:0"><button class="btn primary" id="edAdd">+ Add text box</button><button class="btn danger" id="edDel">Delete this box</button></div>
+      <div class="chips" id="edChips" style="margin-top:8px"></div>
+      <div id="edTools" hidden>
+        <label>Text<input id="eText" autocomplete="off"></label>
+        <div class="chips" id="edGlyphs"></div>
+        <label>Size <span class="small" id="eSizeV"></span><input type="range" id="eSize" min="1" max="40" step="0.5"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          <span class="small">Colour</span><input type="color" id="eColor"><button class="btn" id="ePick">Pick from picture</button>
+        </div>
+        <div class="radios"><label><input type="checkbox" id="eBold"> <b>Bold</b></label><label><input type="checkbox" id="eItalic"> <i>Italic</i></label>
+          <label><input type="checkbox" id="eOutline"> Outline</label><input type="color" id="eOutC" title="Outline colour"><button class="btn" id="ePickO">Pick</button></div>
+        <label>Lettering<select id="eFont"><option value="match">Same as the programme</option><option value="serif">Classic (serif)</option><option value="sans">Friendly (sans)</option><option value="fun">Fun (rounded)</option></select></label>
+        <label>Tilt <span class="small" id="eTiltV"></span><input type="range" id="eTilt" min="-180" max="180" step="1"></label>
+        <p class="small" style="margin:6px 0 4px"><b>Nudge</b> (hold to keep moving)</p>
+        <div class="nudge"><span></span><button id="nU">▲</button><span></span><button id="nL">◀</button><button id="nC" title="Centre the view on this box">◎</button><button id="nR">▶</button><span></span><button id="nD">▼</button><span></span></div>
+        <p class="small" style="margin:10px 0 4px"><b>Zoom the view</b> (for precise placing)</p>
+        <div class="btns" style="margin-top:0" id="edZoom"><button class="btn" data-z="1">Fit</button><button class="btn" data-z="2">×2</button><button class="btn" data-z="4">×4</button><button class="btn" data-z="8">×8</button></div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="lightbox" hidden><canvas id="bigcv" style="background:#fff;box-shadow:0 10px 40px rgba(0,0,0,.5)"></canvas></div>
 
 <script>
@@ -328,7 +368,7 @@ const DEFAULTS=()=>({
   order:'act-first',numbering:true,showNotes:false,border:true,
   intervalText:'Interval',intervalSub:'',closingText:'Thank you for coming!',
   items:[],status:'draft',layout:'booklet',
-  cover:{img:null,fit:'fill',zoom:100,x:50,y:50,rot:0,bg:'#ffffff',border:0,
+  cover:{img:null,fit:'fill',zoom:100,x:50,y:50,rot:0,bg:'#ffffff',border:0,marks:[],
     heading:{text:'',vpos:0,size:110,color:'#ffffff',style:'outline',back:'#000000'},
     details:{text:'',vpos:100,size:60,color:'#ffffff',style:'band',back:'#000000'}},
   thanks:{heading:'Thank You',text:'',join:false,closing:'',perfDone:false}
@@ -657,15 +697,32 @@ function drawBlock(ctx,blk,b,fallback){
     ctx.fillStyle=blk.color; ctx.fillText(ln,W/2,y);
   });
 }
+let editorMode=false, markBounds=[], coverGeom=null;
+function markFont(m,sz){ const fam=m.font==='serif'?FONTS.classic.body:m.font==='sans'?FONTS.friendly.body:m.font==='fun'?FONTS.fun.body:FONTS[S.font].body; return `${m.italic?'italic ':''}${m.bold?'bold ':''}${sz}px ${fam}`; }
+function drawMarks(ctx){
+  const g=coverGeom; if(!g) return;
+  (S.cover.marks||[]).forEach(m=>{
+    if(!m.text) return;
+    const sz=m.size/100*g.ih, px=g.ix+m.x*g.iw, py=g.iy+m.y*g.ih;
+    ctx.save(); ctx.translate(px,py); ctx.rotate((m.tilt||0)*Math.PI/180);
+    ctx.font=markFont(m,sz); ctx.textAlign='center'; ctx.textBaseline='middle';
+    if(m.outline){ ctx.lineJoin='round'; ctx.lineWidth=sz*0.14; ctx.strokeStyle=m.outlineColor; ctx.strokeText(m.text,0,0); }
+    ctx.fillStyle=m.color; ctx.fillText(m.text,0,0);
+    if(editorMode) markBounds.push({id:m.id,x:px,y:py,w:Math.max(ctx.measureText(m.text).width,sz*0.5),h:sz,tilt:m.tilt||0});
+    ctx.restore();
+  });
+}
 function drawCover(ctx){
-  const c=S.cover, b=c.border*10;
+  const c=S.cover, b=c.border*10; coverGeom=null; markBounds=[];
   ctx.fillStyle=c.bg; ctx.fillRect(0,0,W,H);
   if(coverSrc){
     const dw=W-2*b, dh=H-2*b, sw=coverSrc.width, sh=coverSrc.height;
     const base=c.fit==='fill'?Math.max(dw/sw,dh/sh):Math.min(dw/sw,dh/sh), s=base*c.zoom/100, iw=sw*s, ih=sh*s;
     ctx.save(); ctx.beginPath(); ctx.rect(b,b,dw,dh); ctx.clip();
-    ctx.drawImage(coverSrc,b+(dw-iw)*c.x/100,b+(dh-ih)*c.y/100,iw,ih); ctx.restore();
-    drawBlock(ctx,c.heading,b,''); drawBlock(ctx,c.details,b,'');
+    const ix=b+(dw-iw)*c.x/100, iy=b+(dh-ih)*c.y/100;
+    ctx.drawImage(coverSrc,ix,iy,iw,ih); ctx.restore();
+    coverGeom={ix,iy,iw,ih}; drawMarks(ctx);
+    if(!editorMode){ drawBlock(ctx,c.heading,b,''); drawBlock(ctx,c.details,b,''); }
   } else {
     const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,S.accent); g.addColorStop(1,shade(S.accent,-0.55));
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
@@ -712,13 +769,13 @@ function drawThanks(ctx){
   if(S.thanks.closing){ ctx.fillStyle=acc; fitFont(ctx,S.thanks.closing,'italic',54,fam,CW-40); ctx.fillText(S.thanks.closing,W/2,H-210-closeH+120); }
   return {warn};
 }
-function drawPage(kind,ctx,sc,ox=0,oy=0){
+function drawPage(kind,ctx,sc,ox=0,oy=0,noStamp=false){
   ctx.save(); ctx.setTransform(sc,0,0,sc,ox,oy);
   ctx.beginPath(); ctx.rect(0,0,W,H); ctx.clip();
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
   let info={};
   if(kind==='cover') info=drawCover(ctx); else if(kind==='act1') info=drawActs(ctx,1); else if(kind==='act2') info=drawActs(ctx,2); else info=drawThanks(ctx);
-  if(S.status==='draft') drawDraft(ctx);
+  if(S.status==='draft'&&!noStamp) drawDraft(ctx);
   ctx.restore(); return info;
 }
 
@@ -797,6 +854,7 @@ function extractPdfImage(buf){
   return best?new Blob([u8.slice(best.a,best.b)],{type:'image/jpeg'}):null;
 }
 async function handleCoverFile(file){
+  if((S.cover.marks||[]).length&&!confirm('Loading a new picture will remove the text boxes added to the current one. Continue?')) return;
   const msg=$('#coverMsg'); msg.textContent='Loading…';
   try{
     let blob=file;
@@ -805,13 +863,18 @@ async function handleCoverFile(file){
       if(!blob){ msg.textContent='Couldn’t find a picture inside that PDF (it may be drawn rather than scanned). Please save or screenshot it as a JPG and load that instead.'; return; }
     }
     const url=URL.createObjectURL(blob); const img=await loadImgUrl(url); await setCoverFromImage(img,true); URL.revokeObjectURL(url);
-    msg.textContent='Picture loaded.'; save(); renderPreviews();
+    S.cover.marks=[]; updateMarkNote(); msg.textContent='Picture loaded.'; save(); renderPreviews();
   }catch(e){ msg.textContent='Sorry – that file couldn’t be read as a picture. Try a JPG or PNG.'; }
 }
 $('#btnCoverPick').onclick=()=>$('#coverFile').click();
 $('#coverFile').onchange=e=>{ const f=e.target.files[0]; if(f) handleCoverFile(f); e.target.value=''; };
-$('#btnCoverRot').onclick=()=>{ if(!coverBase) return; S.cover.rot=(S.cover.rot+1)%4; rebuildCoverSrc(); save(); renderPreviews(); };
-$('#btnCoverClear').onclick=()=>{ coverBase=coverSrc=null; S.cover.img=null; S.cover.rot=0; $('#coverMsg').textContent=''; save(); renderPreviews(); };
+$('#btnCoverRot').onclick=()=>{
+  if(!coverBase) return;
+  const ow=coverSrc.width, oh=coverSrc.height;
+  (S.cover.marks||[]).forEach(m=>{ const x=m.x,y=m.y; m.x=1-y; m.y=x; m.size=Math.round(m.size*oh/ow*10)/10; let t=(m.tilt||0)+90; if(t>180) t-=360; m.tilt=t; });
+  S.cover.rot=(S.cover.rot+1)%4; rebuildCoverSrc(); save(); renderPreviews();
+};
+$('#btnCoverClear').onclick=()=>{ if((S.cover.marks||[]).length&&!confirm('Remove the picture and its text boxes?')) return; S.cover.marks=[]; updateMarkNote(); coverBase=coverSrc=null; S.cover.img=null; S.cover.rot=0; $('#coverMsg').textContent=''; save(); renderPreviews(); };
 
 /* performers list for the Thanks page */
 const GROUP_RE=/\b(year|class|choir|group|band|club|troupe|team|drummers|rockers|ensemble|orchestra|staff|school|form|dancers|crew|squad|trio|duo|quartet)\b|\d/i;
@@ -854,6 +917,103 @@ $('#btnThanksEx').onclick=()=>{
   S.thanks.text='# Staff\nMrs A. Smith\nMr B. Jones\nMiss C. Patel\n\n# Parent Teacher Association\nThe Ridgeway PTA\n\n# With special thanks to\nThe Site Team\nThe Catering Team\nOur wonderful volunteers';
   S.thanks.perfDone=false; updatePerformers(true); syncInputs(); save(); renderPreviews();
 };
+
+/* ---------- cover picture editor (text boxes on the artwork) ---------- */
+const ED={sel:null,zoom:1,cx:W/2,cy:H/2,pick:null,view:null,drag:null};
+const selMark=()=>(S.cover.marks||[]).find(m=>m.id===ED.sel)||null;
+function updateMarkNote(){ const n=(S.cover.marks||[]).length; $('#markNote').textContent=n?`${n} text box${n>1?'es':''} on the picture.`:''; }
+function centreOnSel(){ const m=selMark(); if(m&&coverGeom){ ED.cx=coverGeom.ix+m.x*coverGeom.iw; ED.cy=coverGeom.iy+m.y*coverGeom.ih; } else { ED.cx=W/2; ED.cy=H/2; } }
+function edRender(overlay=true){
+  const st=$('#edStage'), cv=$('#edCanvas'); if($('#editor').hidden) return;
+  const aw=st.clientWidth-20, ah=st.clientHeight-20; if(aw<50||ah<50) return;
+  const cssW=Math.min(aw,ah*W/H), cssH=cssW*H/W, dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.style.width=cssW+'px'; cv.style.height=cssH+'px'; cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssH*dpr);
+  const base=cv.width/W, sc=base*ED.zoom, ctx=cv.getContext('2d');
+  const ox=ED.zoom===1?0:cv.width/2-ED.cx*sc, oy=ED.zoom===1?0:cv.height/2-ED.cy*sc;
+  ctx.fillStyle='#9a93a6'; ctx.fillRect(0,0,cv.width,cv.height);
+  editorMode=true; drawPage('cover',ctx,sc,ox,oy,true); editorMode=false;
+  ED.view={sc,ox,oy};
+  const m=selMark();
+  if(overlay&&m){ const b=markBounds.find(x=>x.id===m.id);
+    if(b){ ctx.save(); ctx.setTransform(sc,0,0,sc,ox,oy); ctx.translate(b.x,b.y); ctx.rotate(b.tilt*Math.PI/180);
+      const pad=Math.max(14,10/ED.zoom); ctx.setLineDash([12*dpr/sc,8*dpr/sc]); ctx.strokeStyle='#00a6d6'; ctx.lineWidth=2.5*dpr/sc; ctx.strokeRect(-b.w/2-pad,-b.h/2-pad,b.w+2*pad,b.h+2*pad); ctx.restore(); } }
+}
+function edSync(){
+  const marks=S.cover.marks||[], chips=$('#edChips'); chips.innerHTML='';
+  marks.forEach((m,i)=>{ const c=mk('button','chip'+(m.id===ED.sel?' sel':''),(i+1)+': '+(m.text||'(empty)')); c.type='button'; c.onclick=()=>{ ED.sel=m.id; centreOnSel(); edSync(); edRender(); }; chips.appendChild(c); });
+  const m=selMark(); $('#edTools').hidden=!m; $('#edDel').hidden=!m;
+  if(!m) return;
+  $('#eText').value=m.text; $('#eSize').value=m.size; $('#eSizeV').textContent=m.size+'%'; $('#eColor').value=m.color;
+  $('#eBold').checked=!!m.bold; $('#eItalic').checked=!!m.italic; $('#eOutline').checked=!!m.outline; $('#eOutC').value=m.outlineColor||'#ffffff';
+  $('#eFont').value=m.font||'match'; $('#eTilt').value=m.tilt||0; $('#eTiltV').textContent=(m.tilt||0)+'°';
+}
+function edChanged(){ save(); edRender(); renderPreviews(); updateMarkNote(); }
+function edOpen(){
+  if(!coverSrc){ alert('Load a cover picture first, then you can add text to it.'); return; }
+  S.cover.marks=S.cover.marks||[]; ED.sel=S.cover.marks.length?S.cover.marks[0].id:null; ED.zoom=1; ED.pick=null;
+  $('#editor').hidden=false; drawOnce(); centreOnSel(); edSync(); edRender();
+}
+function drawOnce(){ const c=document.createElement('canvas'); c.width=10; c.height=10; editorMode=true; drawPage('cover',c.getContext('2d'),10/W,0,0,true); editorMode=false; } // fills coverGeom
+function edAdd(){
+  const g=coverGeom; if(!g) return;
+  let fx=0.5, fy=0.5;
+  if(ED.zoom>1){ fx=(ED.cx-g.ix)/g.iw; fy=(ED.cy-g.iy)/g.ih; }
+  const m={id:uid(),text:'’',x:fx,y:fy,size:9,color:'#000000',bold:true,italic:false,font:'match',outline:false,outlineColor:'#ffffff',tilt:0};
+  S.cover.marks.push(m); ED.sel=m.id; edSync(); edChanged(); setTimeout(()=>$('#eText').focus(),50);
+}
+$('#btnEditPic').onclick=edOpen; $('#edAdd').onclick=edAdd;
+$('#edDone').onclick=()=>{ $('#editor').hidden=true; updateMarkNote(); save(); renderPreviews(); };
+$('#edDel').onclick=()=>{ const m=selMark(); if(!m) return; S.cover.marks=S.cover.marks.filter(x=>x.id!==m.id); ED.sel=S.cover.marks.length?S.cover.marks[0].id:null; edSync(); edChanged(); };
+['’','‘','“','”','!','?',',','.','-'].forEach(g=>{ const b=mk('button','chip g',g); b.type='button'; b.onclick=()=>{ const m=selMark(); if(!m) return; m.text+=g; $('#eText').value=m.text; edChanged(); edSync(); }; $('#edGlyphs').appendChild(b); });
+const upd=fn=>()=>{ const m=selMark(); if(!m) return; fn(m); edChanged(); };
+$('#eText').addEventListener('input',upd(m=>{ m.text=$('#eText').value; }));
+$('#eSize').addEventListener('input',upd(m=>{ m.size=Number($('#eSize').value); $('#eSizeV').textContent=m.size+'%'; }));
+$('#eColor').addEventListener('input',upd(m=>{ m.color=$('#eColor').value; }));
+$('#eBold').addEventListener('change',upd(m=>{ m.bold=$('#eBold').checked; }));
+$('#eItalic').addEventListener('change',upd(m=>{ m.italic=$('#eItalic').checked; }));
+$('#eOutline').addEventListener('change',upd(m=>{ m.outline=$('#eOutline').checked; }));
+$('#eOutC').addEventListener('input',upd(m=>{ m.outlineColor=$('#eOutC').value; m.outline=true; $('#eOutline').checked=true; }));
+$('#eFont').addEventListener('change',upd(m=>{ m.font=$('#eFont').value; }));
+$('#eTilt').addEventListener('input',upd(m=>{ m.tilt=Number($('#eTilt').value); $('#eTiltV').textContent=m.tilt+'°'; }));
+$('#edZoom').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; ED.zoom=Number(b.dataset.z); centreOnSel(); edRender(); });
+$('#nC').onclick=()=>{ centreOnSel(); edRender(); };
+function holdBtn(id,dx,dy){
+  const b=$(id); let t1=0,t2=0;
+  const step=()=>{ const m=selMark(); if(!m) return; const k=0.004/ED.zoom; m.x+=dx*k; m.y+=dy*k*(coverGeom?coverGeom.iw/coverGeom.ih:1); edChanged(); };
+  const stop=()=>{ clearTimeout(t1); clearInterval(t2); };
+  b.addEventListener('pointerdown',e=>{ e.preventDefault(); step(); t1=setTimeout(()=>{ t2=setInterval(step,70); },350); });
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));
+}
+holdBtn('#nU',0,-1); holdBtn('#nD',0,1); holdBtn('#nL',-1,0); holdBtn('#nR',1,0);
+function startPick(which){ ED.pick=which; $('#edHelp').textContent='Tap the picture to pick a colour from it…'; }
+$('#ePick').onclick=()=>startPick('text'); $('#ePickO').onclick=()=>startPick('outline');
+function edPt(e){ const cv=$('#edCanvas'), r=cv.getBoundingClientRect(), px=(e.clientX-r.left)*cv.width/r.width, py=(e.clientY-r.top)*cv.height/r.height, v=ED.view; return {px,py,ux:(px-v.ox)/v.sc,uy:(py-v.oy)/v.sc}; }
+function hitMark(ux,uy){
+  for(let i=markBounds.length-1;i>=0;i--){ const b=markBounds[i], a=b.tilt*Math.PI/180, dx=ux-b.x, dy=uy-b.y;
+    const lx=dx*Math.cos(a)+dy*Math.sin(a), ly=-dx*Math.sin(a)+dy*Math.cos(a), pad=30;
+    if(Math.abs(lx)<=b.w/2+pad&&Math.abs(ly)<=b.h/2+pad) return b.id; }
+  return null;
+}
+function moveSelTo(ux,uy,offx,offy){ const m=selMark(), g=coverGeom; if(!m||!g) return; m.x=Math.max(-0.2,Math.min(1.2,(ux+offx-g.ix)/g.iw)); m.y=Math.max(-0.2,Math.min(1.2,(uy+offy-g.iy)/g.ih)); }
+$('#edCanvas').addEventListener('pointerdown',e=>{
+  if(!ED.view) return; e.preventDefault();
+  const pt=edPt(e);
+  if(ED.pick){
+    edRender(false); const d=$('#edCanvas').getContext('2d').getImageData(Math.max(0,Math.round(pt.px)),Math.max(0,Math.round(pt.py)),1,1).data;
+    const hex='#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join(''), m=selMark();
+    if(m){ if(ED.pick==='text') m.color=hex; else { m.outlineColor=hex; m.outline=true; } }
+    ED.pick=null; $('#edHelp').textContent='Tap or drag on the picture to place the selected text box.'; edSync(); edChanged(); return;
+  }
+  const hit=hitMark(pt.ux,pt.uy); let offx=0,offy=0;
+  if(hit&&hit!==ED.sel){ ED.sel=hit; edSync(); }
+  const m=selMark(); if(!m) return;
+  if(hit&&coverGeom){ offx=coverGeom.ix+m.x*coverGeom.iw-pt.ux; offy=coverGeom.iy+m.y*coverGeom.ih-pt.uy; }
+  moveSelTo(pt.ux,pt.uy,offx,offy); ED.drag={offx,offy}; $('#edCanvas').setPointerCapture(e.pointerId); edChanged();
+});
+$('#edCanvas').addEventListener('pointermove',e=>{ if(!ED.drag) return; const pt=edPt(e); moveSelTo(pt.ux,pt.uy,ED.drag.offx,ED.drag.offy); edChanged(); });
+['pointerup','pointercancel'].forEach(ev=>$('#edCanvas').addEventListener(ev,()=>{ ED.drag=null; }));
+window.addEventListener('resize',()=>edRender());
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('#editor').hidden) $('#edDone').click(); });
 
 /* ---------- tabs ---------- */
 function switchTab(n){
@@ -946,7 +1106,7 @@ $('#btnPdfCentre').onclick=()=>exportPDF(['act1','act2'],'centre-pages');
 (async function init(){
   loadSaved(); await restoreCover(); bindInputs(); syncInputs(); applyStatus();
   if(S.items.some(isAct)) $('#pasteBox').open=false;
-  renderList(); updateTip(); renderPreviews();
+  renderList(); updateTip(); updateMarkNote(); renderPreviews();
 })();
 </script>
 </body>
