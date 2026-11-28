@@ -82,6 +82,7 @@ Each game lives in its own folder as `index.html`, so every game has its own lin
 | Times Tables Quiz | `times-tables-quiz/` |
 | Times Tables Tile Match | `times-tables-tile-match/` |
 | Toast | `toast/` |
+| Tracey | `tracey/` |
 | Triangle Tangle | `triangle-tangle/` |
 | Trio | `trio/` |
 | Units, Tens and Hundreds | `units-tens-hundreds/` |
